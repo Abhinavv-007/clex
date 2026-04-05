@@ -2,8 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ─── Google Fonts ───────────────────────────────────────────────────────── */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;450;500;600;700&display=swap');
+/* ─── Google Fonts loaded via app.html <link> ────────────────────────────── */
 
 /* ─── Design tokens (light mode default) ───────────────────────────────── */
 :root {
@@ -42,23 +41,23 @@
 
 /* ─── Dark mode tokens ─────────────────────────────────────────────────── */
 .dark {
-  --canvas: #080808;
-  --surface: #101010;
-  --raised: #161616;
-  --overlay: rgba(10,10,10,0.9);
+  --canvas: #060609;
+  --surface: #0e0e12;
+  --raised: #131316;
+  --overlay: rgba(6,6,9,0.92);
 
-  --border: rgba(255,255,255,0.08);
-  --border-strong: rgba(255,255,255,0.16);
-  --border-focus: rgba(59,130,246,0.5);
+  --border: rgba(255,255,255,0.06);
+  --border-strong: rgba(255,255,255,0.12);
+  --border-focus: rgba(16,185,129,0.4);
 
-  --text-1: #fafafa;
-  --text-2: #a1a1aa;
-  --text-3: #52525b;
-  --text-inv: #0a0a0a;
+  --text-1: #f0f0f2;
+  --text-2: #8a8a96;
+  --text-3: #4a4a56;
+  --text-inv: #060609;
 
-  --blue-dim: rgba(59,130,246,0.12);
+  --blue-dim: rgba(16,185,129,0.08);
 
-  --hero-radial: radial-gradient(60% 60% at 50% -10%, rgba(59,130,246,0.08) 0%, transparent 100%);
+  --hero-radial: radial-gradient(60% 60% at 50% -10%, rgba(16,185,129,0.04) 0%, transparent 100%);
 
   color-scheme: dark;
 }
@@ -81,6 +80,9 @@ body {
   line-height: 1.6;
   overflow-x: hidden;
   cursor: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 @media (pointer: coarse) { body { cursor: auto; } }

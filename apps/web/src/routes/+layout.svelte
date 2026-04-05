@@ -125,8 +125,8 @@
     height: 56px;
     /* Glass blur strip */
     background: var(--overlay);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(20px) saturate(1.2);
+    -webkit-backdrop-filter: blur(20px) saturate(1.2);
     border-bottom: 1px solid var(--border);
   }
 
@@ -136,8 +136,8 @@
     position: absolute;
     inset: 0;
     background: var(--overlay);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(20px) saturate(1.2);
+    -webkit-backdrop-filter: blur(20px) saturate(1.2);
     border-bottom: 1px solid var(--border);
     pointer-events: none;
   }
@@ -156,7 +156,10 @@
     transition: opacity 0.15s;
   }
 
-  .logo-mark:hover { opacity: 0.8; }
+  .logo-mark:hover {
+    opacity: 0.8;
+    box-shadow: 0 0 12px rgba(16,185,129,0.15);
+  }
 
   .logo-text {
     font-size: 15px;

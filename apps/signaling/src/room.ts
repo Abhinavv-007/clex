@@ -1,11 +1,12 @@
-import type { ClientMessage, ServerMessage } from './types'
+import { normalizeRequestedMode, planJoin } from './room-session'
+import type { ClientMessage, ServerMessage, TransferProfile, TransferRole } from './types'
 
 const ROOM_TTL_MS = 30 * 60 * 1000 // 30 minutes
+const ROOM_MODE_KEY = 'mode'
 
 export class Room implements DurableObject {
   private state: DurableObjectState
-  private senderIP: string | null = null
-  private receiverIP: string | null = null
+  private roomMode: TransferProfile | null = null
 
   constructor(state: DurableObjectState) {
     this.state = state
@@ -18,42 +19,36 @@ export class Room implements DurableObject {
     }
 
     const url = new URL(request.url)
-    const role = url.searchParams.get('role') as 'sender' | 'receiver' | null
+    const role = url.searchParams.get('role') as TransferRole | null
     if (role !== 'sender' && role !== 'receiver') {
       return new Response('role query param must be sender or receiver', { status: 400 })
     }
 
-    const ip = request.headers.get('CF-Connecting-IP') ?? request.headers.get('X-Forwarded-For') ?? 'unknown'
+    const requestedMode = normalizeRequestedMode(url.searchParams.get('mode'))
+    const currentMode = await this.readRoomMode()
+    const joinPlan = planJoin(this.getPresence(), role, requestedMode, currentMode)
+    if (!joinPlan.ok) {
+      return new Response(joinPlan.code, { status: 409 })
+    }
+
+    await this.writeRoomMode(joinPlan.mode)
 
     const [client, server] = Object.values(new WebSocketPair()) as [WebSocket, WebSocket]
 
     // Hibernatable WebSocket API — survives DO hibernation
     this.state.acceptWebSocket(server, [role])
 
-    // Store IP by role for nearby detection
-    if (role === 'sender') {
-      this.senderIP = ip
-    } else {
-      this.receiverIP = ip
-    }
-
-    // Check if the opposite role is already connected
-    const existing = this.getWebSocketsByRole(role === 'sender' ? 'receiver' : 'sender')
-    const nearby = this.computeNearby()
-
     // Confirm join to new client
-    this.send(server, { type: 'joined', role, nearby })
+    this.send(server, { type: 'joined', role, mode: joinPlan.mode })
 
-    // Notify existing peer that a new peer joined
-    if (existing.length > 0) {
-      existing.forEach(ws => this.send(ws, { type: 'peer_joined', nearby }))
+    // Notify both peers when the room becomes complete.
+    if (joinPlan.becameReady) {
+      this.state.getWebSockets().forEach(ws => {
+        this.send(ws, { type: 'peer_joined', mode: joinPlan.mode })
+      })
     }
 
-    // Set room expiry alarm on first connection
-    const existing_alarm = await this.state.storage.getAlarm()
-    if (existing_alarm === null) {
-      await this.state.storage.setAlarm(Date.now() + ROOM_TTL_MS)
-    }
+    await this.refreshRoomTtl()
 
     return new Response(null, { status: 101, webSocket: client })
   }
@@ -83,13 +78,13 @@ export class Room implements DurableObject {
           // Relay SDP/ICE opaquely to the peer
           peers.forEach(peer => peer.send(message))
         }
+        await this.refreshRoomTtl()
         break
 
       case 'ping':
         this.send(ws, { type: 'pong' })
+        await this.refreshRoomTtl()
         break
-
-      // 'join' is handled at connect time via role query param
     }
   }
 
@@ -107,37 +102,63 @@ export class Room implements DurableObject {
     all.forEach(ws => {
       try { ws.close(1001, 'Room expired') } catch { /* already closed */ }
     })
+    await this.clearRoomMode()
   }
 
   // ─── Helpers ───────────────────────────────────────────────────────────────
 
   private async handleDisconnect(ws: WebSocket): Promise<void> {
     const tags = this.state.getTags(ws)
-    const closedRole = tags[0] as 'sender' | 'receiver'
-    const peerRole = closedRole === 'sender' ? 'receiver' : 'sender'
+    const closedRole = tags[0] as TransferRole | undefined
+    if (!closedRole) return
 
-    // Clear the stored IP for the closed role
-    if (closedRole === 'sender') this.senderIP = null
-    else this.receiverIP = null
+    const peerRole = closedRole === 'sender' ? 'receiver' : 'sender'
 
     // Notify peer
     const peers = this.getWebSocketsByRole(peerRole)
     peers.forEach(peer => {
       try { this.send(peer, { type: 'peer_left' }) } catch { /* already closed */ }
     })
+
+    if (this.state.getWebSockets().length === 0) {
+      await this.clearRoomMode()
+      await this.state.storage.deleteAlarm()
+      return
+    }
+
+    await this.refreshRoomTtl()
   }
 
-  private getWebSocketsByRole(role: 'sender' | 'receiver'): WebSocket[] {
+  private getWebSocketsByRole(role: TransferRole): WebSocket[] {
     return this.state.getWebSockets(role)
   }
 
-  private computeNearby(): boolean {
-    return (
-      this.senderIP !== null &&
-      this.receiverIP !== null &&
-      this.senderIP !== 'unknown' &&
-      this.senderIP === this.receiverIP
-    )
+  private getPresence(): { sender: number; receiver: number } {
+    return {
+      sender: this.getWebSocketsByRole('sender').length,
+      receiver: this.getWebSocketsByRole('receiver').length,
+    }
+  }
+
+  private async refreshRoomTtl(): Promise<void> {
+    await this.state.storage.setAlarm(Date.now() + ROOM_TTL_MS)
+  }
+
+  private async readRoomMode(): Promise<TransferProfile | null> {
+    if (this.roomMode !== null) return this.roomMode
+    const stored = await this.state.storage.get<TransferProfile>(ROOM_MODE_KEY)
+    this.roomMode = stored ?? null
+    return this.roomMode
+  }
+
+  private async writeRoomMode(mode: TransferProfile): Promise<void> {
+    this.roomMode = mode
+    await this.state.storage.put(ROOM_MODE_KEY, mode)
+  }
+
+  private async clearRoomMode(): Promise<void> {
+    this.roomMode = null
+    await this.state.storage.delete(ROOM_MODE_KEY)
   }
 
   private send(ws: WebSocket, msg: ServerMessage): void {

@@ -1,17 +1,18 @@
+import type { IceCandidatePayload, TransferProfile } from './types'
+
 // ─── Signaling message types (mirrors apps/signaling/src/types.ts) ───────────
 export type ClientMessage =
-  | { type: 'join'; role: 'sender' | 'receiver' }
   | { type: 'offer'; sdp: string }
   | { type: 'answer'; sdp: string }
-  | { type: 'ice'; candidate: RTCIceCandidateInit }
+  | { type: 'ice'; candidate: IceCandidatePayload }
   | { type: 'ping' }
 
 export type ServerMessage =
-  | { type: 'joined'; role: 'sender' | 'receiver'; nearby: boolean }
-  | { type: 'peer_joined'; nearby: boolean }
+  | { type: 'joined'; role: 'sender' | 'receiver'; mode: TransferProfile }
+  | { type: 'peer_joined'; mode: TransferProfile }
   | { type: 'offer'; sdp: string }
   | { type: 'answer'; sdp: string }
-  | { type: 'ice'; candidate: RTCIceCandidateInit }
+  | { type: 'ice'; candidate: IceCandidatePayload }
   | { type: 'peer_left' }
   | { type: 'error'; code: string }
   | { type: 'pong' }
@@ -32,12 +33,15 @@ export class SignalingClient {
     this.url = `${baseUrl}/room/${roomCode}`
   }
 
-  connect(role: 'sender' | 'receiver'): Promise<void> {
+  connect(role: 'sender' | 'receiver', mode?: TransferProfile): Promise<void> {
     return new Promise((resolve, reject) => {
       this.joinedResolve = resolve
       this.joinedReject = reject
 
-      const ws = new WebSocket(`${this.url}?role=${role}`)
+      const params = new URLSearchParams({ role })
+      if (mode) params.set('mode', mode)
+
+      const ws = new WebSocket(`${this.url}?${params.toString()}`)
       this.ws = ws
 
       ws.binaryType = 'arraybuffer'
@@ -78,6 +82,7 @@ export class SignalingClient {
           this.joinedReject(new Error(`WebSocket closed: ${event.code}`))
           this.joinedResolve = null
           this.joinedReject = null
+          return
         }
         // Notify listeners as a peer_left event
         this.emit({ type: 'peer_left' })

@@ -1,5 +1,10 @@
 import { PDFDocument } from 'pdf-lib'
 
+function toBlobBytes(bytes: Uint8Array): ArrayBuffer {
+  const copy = Uint8Array.from(bytes)
+  return copy.buffer.slice(copy.byteOffset, copy.byteOffset + copy.byteLength) as ArrayBuffer
+}
+
 export async function mergePdfs(
   files: File[],
   onProgress?: (pct: number) => void
@@ -20,5 +25,5 @@ export async function mergePdfs(
   onProgress?.(95)
   const pdfBytes = await merged.save()
   onProgress?.(100)
-  return new Blob([pdfBytes], { type: 'application/pdf' })
+  return new Blob([toBlobBytes(pdfBytes)], { type: 'application/pdf' })
 }

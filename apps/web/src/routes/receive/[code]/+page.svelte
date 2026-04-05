@@ -3,6 +3,7 @@
   import { onMount, onDestroy } from 'svelte'
   import { transferStore } from '$stores/transfer'
   import { WebRTCTransfer } from '$transfer/webrtc'
+  import type { TransferProfile } from '$transfer/types'
   import TransferProgress from '$components/sharing/TransferProgress.svelte'
 
   const signalingUrl = import.meta.env.PUBLIC_SIGNALING_URL ?? 'ws://localhost:8787'
@@ -16,7 +17,7 @@
 
   onMount(async () => {
     if (roomCode) {
-      transfer = new WebRTCTransfer(signalingUrl, roomCode, 'receiver')
+      transfer = new WebRTCTransfer(signalingUrl, roomCode, 'receiver', getRequestedProfile())
       try {
         await transfer.initReceiver()
       } catch (err) {
@@ -37,6 +38,10 @@
     transfer = null
     transferStore.reset()
     window.location.href = '/receive'
+  }
+
+  function getRequestedProfile(): TransferProfile {
+    return $page.url.searchParams.get('mode') === 'local' ? 'local' : 'webrtc'
   }
 </script>
 

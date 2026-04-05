@@ -1,9 +1,21 @@
 <script lang="ts">
+  import { onMount } from 'svelte'
+
   const year = new Date().getFullYear()
+  let footerEl: HTMLElement
+  let visible = false
+
+  onMount(() => {
+    const obs = new IntersectionObserver(
+      ([e]) => { if (e.isIntersecting) { visible = true; obs.disconnect() } },
+      { threshold: 0.2 }
+    )
+    obs.observe(footerEl)
+  })
 </script>
 
-<footer class="footer">
-  <div class="footer-inner">
+<footer class="footer" bind:this={footerEl}>
+  <div class="footer-inner" class:footer-visible={visible}>
     <!-- Logo block -->
     <div class="footer-brand">
       <div class="footer-logo">
@@ -39,7 +51,7 @@
 <style>
   .footer {
     border-top: 1px solid var(--border);
-    padding: 40px 24px;
+    padding: 48px 24px;
   }
 
   .footer-inner {
@@ -50,6 +62,14 @@
     justify-content: space-between;
     flex-wrap: wrap;
     gap: 24px;
+    opacity: 0;
+    transform: translateY(16px);
+    transition: opacity 0.6s cubic-bezier(0.16,1,0.3,1), transform 0.6s cubic-bezier(0.16,1,0.3,1);
+  }
+
+  .footer-inner.footer-visible {
+    opacity: 1;
+    transform: translateY(0);
   }
 
   /* Brand */
@@ -76,7 +96,10 @@
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+    transition: opacity 0.2s;
   }
+
+  .footer-logo-mark:hover { opacity: 0.8; }
 
   .footer-logo-text {
     font-size: 15px;
@@ -102,10 +125,28 @@
     font-size: 13px;
     color: var(--text-3);
     text-decoration: none;
-    transition: color 0.15s;
+    transition: color 0.2s;
+    position: relative;
   }
 
-  .footer-link:hover { color: var(--text-1); }
+  .footer-link::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 0;
+    height: 1px;
+    background: var(--text-1);
+    transition: width 0.25s ease;
+  }
+
+  .footer-link:hover {
+    color: var(--text-1);
+  }
+
+  .footer-link:hover::after {
+    width: 100%;
+  }
 
   /* Meta */
   .footer-meta {
@@ -119,7 +160,7 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 3px 10px;
+    padding: 4px 12px;
     border-radius: 100px;
     background: var(--raised);
     border: 1px solid var(--border);
@@ -132,7 +173,8 @@
     width: 5px;
     height: 5px;
     border-radius: 50%;
-    background: #22c55e;
+    background: #10b981;
+    box-shadow: 0 0 6px rgba(16,185,129,0.4);
   }
 
   .footer-copy {

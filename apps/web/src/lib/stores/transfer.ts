@@ -1,5 +1,6 @@
 import { writable, derived } from 'svelte/store'
 import { generateRoomCode } from '$utils/crypto'
+import type { ConnectionKind } from '$transfer/types'
 
 export type TransferState =
   | 'idle'
@@ -21,6 +22,8 @@ export interface TransferStore {
   bytesTotal: number
   speedBps: number
   nearby: boolean
+  connectionKind: ConnectionKind
+  diagnosticCode: string | null
   error: string | null
   driveLink: string | null
 }
@@ -30,12 +33,14 @@ function makeInitial(): TransferStore {
     state: 'idle',
     method: 'webrtc',
     roomCode: generateRoomCode(),
-  progress: 0,
-  bytesSent: 0,
-  bytesTotal: 0,
-  speedBps: 0,
-  nearby: false,
-  error: null,
+    progress: 0,
+    bytesSent: 0,
+    bytesTotal: 0,
+    speedBps: 0,
+    nearby: false,
+    connectionKind: 'unknown',
+    diagnosticCode: null,
+    error: null,
     driveLink: null,
   }
 }
@@ -49,7 +54,15 @@ function createTransferStore() {
       update(s => ({ ...s, state }))
     },
     setMethod(method: TransferMethod) {
-      update(s => ({ ...s, method, state: 'idle', error: null }))
+      update(s => ({
+        ...s,
+        method,
+        state: 'idle',
+        error: null,
+        nearby: false,
+        connectionKind: 'unknown',
+        diagnosticCode: null,
+      }))
     },
     setRoomCode(roomCode: string) {
       update(s => ({ ...s, roomCode }))
@@ -61,11 +74,22 @@ function createTransferStore() {
     setSpeed(speedBps: number) {
       update(s => ({ ...s, speedBps }))
     },
-    setNearby(nearby: boolean) {
-      update(s => ({ ...s, nearby }))
+    setConnectionKind(connectionKind: ConnectionKind) {
+      update(s => ({ ...s, connectionKind, nearby: connectionKind === 'lan' }))
     },
-    setError(error: string) {
-      update(s => ({ ...s, state: 'failed', error }))
+    setNearby(nearby: boolean) {
+      update(s => ({ ...s, nearby, connectionKind: nearby ? 'lan' : s.connectionKind }))
+    },
+    setDiagnosticCode(diagnosticCode: string | null) {
+      update(s => ({ ...s, diagnosticCode }))
+    },
+    setError(error: string, diagnosticCode?: string) {
+      update(s => ({
+        ...s,
+        state: 'failed',
+        error,
+        diagnosticCode: diagnosticCode ?? s.diagnosticCode,
+      }))
     },
     setDriveLink(driveLink: string) {
       update(s => ({ ...s, state: 'complete', driveLink }))

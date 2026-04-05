@@ -1,18 +1,62 @@
-<section id="features" class="features-section">
+<script lang="ts">
+  import { onMount } from 'svelte'
+
+  let sectionEl: HTMLElement
+  let visible = false
+  let cardEls: HTMLElement[] = []
+  let cardVisible: boolean[] = [false, false, false, false, false, false, false, false]
+
+  onMount(() => {
+    // Section header reveal
+    const sectionObs = new IntersectionObserver(
+      ([e]) => { if (e.isIntersecting) { visible = true; sectionObs.disconnect() } },
+      { threshold: 0.15 }
+    )
+    sectionObs.observe(sectionEl)
+
+    // Individual card staggered reveals
+    cardEls.forEach((el, i) => {
+      if (!el) return
+      const obs = new IntersectionObserver(
+        ([e]) => {
+          if (e.isIntersecting) {
+            setTimeout(() => { cardVisible[i] = true; cardVisible = cardVisible }, i * 80)
+            obs.disconnect()
+          }
+        },
+        { threshold: 0.1 }
+      )
+      obs.observe(el)
+    })
+  })
+</script>
+
+<section id="features" class="features-section" bind:this={sectionEl}>
   <div class="features-inner">
 
     <!-- Section header -->
-    <div class="section-header">
+    <div class="section-header" class:section-visible={visible}>
       <p class="section-eyebrow">What it does</p>
-      <h2 class="section-headline">Prepare. Then share.<br/>No in-between.</h2>
+      <h2 class="section-headline">
+        <span class="sh-word" style="--d:0">Prepare.</span>
+        <span class="sh-word" style="--d:1">Then</span>
+        <span class="sh-word" style="--d:2">share.</span>
+        <br/>
+        <span class="sh-word sh-muted" style="--d:3">No</span>
+        <span class="sh-word sh-muted" style="--d:4">in-between.</span>
+      </h2>
       <p class="section-sub">Every feature is connected. One workspace, one flow.</p>
     </div>
 
     <!-- Bento grid -->
     <div class="bento-grid">
 
-      <!-- Large featured cell — P2P transfer -->
-      <div class="bento-cell bento-large">
+      <!-- Large: P2P -->
+      <div
+        class="bento-cell bento-large"
+        class:card-revealed={cardVisible[0]}
+        bind:this={cardEls[0]}
+      >
         <div class="bento-icon-wrap">
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
             <circle cx="5" cy="10" r="2.5" stroke="currentColor" stroke-width="1.5"/>
@@ -23,9 +67,9 @@
         </div>
         <h3 class="bento-title">Direct P2P transfer</h3>
         <p class="bento-desc">Files travel browser-to-browser using WebRTC. No cloud hop, no server storage. Your data never leaves the devices.</p>
-        <!-- Transfer beam illustration -->
+        <!-- Beam illustration -->
         <div class="beam-illustration" aria-hidden="true">
-          <div class="beam-device beam-sender">
+          <div class="beam-device">
             <div class="bd-screen">
               <div class="bd-file" />
               <div class="bd-file" style="width:70%" />
@@ -35,17 +79,21 @@
             <div class="beam-particle" />
             <div class="beam-label">P2P · encrypted</div>
           </div>
-          <div class="beam-device beam-receiver">
+          <div class="beam-device">
             <div class="bd-screen">
-              <div class="bd-file" style="background: var(--text-1); opacity: 0.8" />
-              <div class="bd-file" style="width:55%; background: var(--text-1); opacity: 0.4" />
+              <div class="bd-file bd-received" />
+              <div class="bd-file bd-received" style="width:55%; opacity: 0.5" />
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Local network detection -->
-      <div class="bento-cell bento-medium">
+      <!-- Local network -->
+      <div
+        class="bento-cell bento-medium"
+        class:card-revealed={cardVisible[1]}
+        bind:this={cardEls[1]}
+      >
         <div class="bento-icon-wrap">
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
             <path d="M9 14a1 1 0 100-2 1 1 0 000 2z" fill="currentColor"/>
@@ -62,7 +110,11 @@
       </div>
 
       <!-- Google Drive -->
-      <div class="bento-cell bento-medium">
+      <div
+        class="bento-cell bento-medium"
+        class:card-revealed={cardVisible[2]}
+        bind:this={cardEls[2]}
+      >
         <div class="bento-icon-wrap">
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
             <path d="M3 13l3-6 3 6H3z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
@@ -75,7 +127,11 @@
       </div>
 
       <!-- Image tools -->
-      <div class="bento-cell bento-small">
+      <div
+        class="bento-cell bento-small"
+        class:card-revealed={cardVisible[3]}
+        bind:this={cardEls[3]}
+      >
         <div class="bento-icon-wrap">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
             <rect x="1.5" y="1.5" width="13" height="13" rx="2.5" stroke="currentColor" stroke-width="1.3"/>
@@ -88,7 +144,11 @@
       </div>
 
       <!-- PDF tools -->
-      <div class="bento-cell bento-small">
+      <div
+        class="bento-cell bento-small"
+        class:card-revealed={cardVisible[4]}
+        bind:this={cardEls[4]}
+      >
         <div class="bento-icon-wrap">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
             <path d="M9.5 1.5H4a1.5 1.5 0 00-1.5 1.5v10A1.5 1.5 0 004 14.5h8a1.5 1.5 0 001.5-1.5V5.5L9.5 1.5z" stroke="currentColor" stroke-width="1.3"/>
@@ -100,8 +160,12 @@
         <p class="bento-desc">Merge, split, extract pages, or export to images. No uploads.</p>
       </div>
 
-      <!-- Smart flow / chaining — wide cell -->
-      <div class="bento-cell bento-wide">
+      <!-- Smart chaining — wide -->
+      <div
+        class="bento-cell bento-wide"
+        class:card-revealed={cardVisible[5]}
+        bind:this={cardEls[5]}
+      >
         <div class="bento-icon-wrap">
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
             <path d="M3 9h4l2-5 2 10 2-5h2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -109,7 +173,6 @@
         </div>
         <h3 class="bento-title">Smart tool chaining</h3>
         <p class="bento-desc">After every operation Clex suggests what to do next. Compress → Convert → Share feels like one motion, not three separate tools.</p>
-        <!-- Chain suggestion chips -->
         <div class="chain-chips">
           <span class="chain-step">Compress</span>
           <span class="chain-arrow">→</span>
@@ -120,7 +183,11 @@
       </div>
 
       <!-- Word to PDF -->
-      <div class="bento-cell bento-small">
+      <div
+        class="bento-cell bento-small"
+        class:card-revealed={cardVisible[6]}
+        bind:this={cardEls[6]}
+      >
         <div class="bento-icon-wrap">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
             <path d="M2 3h6l2 2h4v9H2V3z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
@@ -132,7 +199,11 @@
       </div>
 
       <!-- ZIP -->
-      <div class="bento-cell bento-small">
+      <div
+        class="bento-cell bento-small"
+        class:card-revealed={cardVisible[7]}
+        bind:this={cardEls[7]}
+      >
         <div class="bento-icon-wrap">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
             <path d="M4 1.5h8A1.5 1.5 0 0113.5 3v10A1.5 1.5 0 0112 14.5H4A1.5 1.5 0 012.5 13V3A1.5 1.5 0 014 1.5z" stroke="currentColor" stroke-width="1.3"/>
@@ -150,7 +221,7 @@
 
 <style>
   .features-section {
-    padding: 100px 24px;
+    padding: 120px 24px;
     border-top: 1px solid var(--border);
   }
 
@@ -159,28 +230,60 @@
     margin: 0 auto;
   }
 
-  /* Section header */
+  /* ── Section header with reveal ── */
   .section-header {
     text-align: center;
-    margin-bottom: 64px;
+    margin-bottom: 72px;
+    opacity: 0;
+    transform: translateY(28px);
+    transition: opacity 0.7s cubic-bezier(0.16,1,0.3,1), transform 0.7s cubic-bezier(0.16,1,0.3,1);
+  }
+
+  .section-header.section-visible {
+    opacity: 1;
+    transform: translateY(0);
   }
 
   .section-eyebrow {
     font-size: 11px;
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.1em;
+    letter-spacing: 0.12em;
     color: var(--text-3);
-    margin-bottom: 16px;
+    margin-bottom: 20px;
   }
 
   .section-headline {
-    font-size: clamp(2rem, 5vw, 3.25rem);
+    font-family: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+    font-size: clamp(2.2rem, 5.5vw, 3.8rem);
     font-weight: 700;
-    letter-spacing: -0.03em;
-    line-height: 1.1;
-    color: var(--text-1);
-    margin-bottom: 16px;
+    letter-spacing: -0.035em;
+    line-height: 1.08;
+    margin-bottom: 18px;
+  }
+
+  .sh-word {
+    display: inline-block;
+    background: linear-gradient(
+      180deg,
+      rgba(190,190,195,1) 0%,
+      rgba(230,230,235,1) 50%,
+      rgba(255,255,255,1) 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  :global(:not(.dark)) .sh-word {
+    background: linear-gradient(180deg, rgba(10,10,10,0.6) 0%, rgba(10,10,10,1) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .sh-muted {
+    opacity: 0.5;
   }
 
   .section-sub {
@@ -188,10 +291,10 @@
     color: var(--text-2);
     max-width: 380px;
     margin: 0 auto;
-    line-height: 1.6;
+    line-height: 1.65;
   }
 
-  /* Bento grid */
+  /* ── Bento grid ── */
   .bento-grid {
     display: grid;
     grid-template-columns: repeat(6, 1fr);
@@ -202,18 +305,41 @@
   .bento-cell {
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 24px;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    border-radius: 16px;
+    padding: 26px;
+    /* Scroll reveal */
+    opacity: 0;
+    transform: translateY(24px);
+    transition:
+      opacity 0.6s cubic-bezier(0.16,1,0.3,1),
+      transform 0.6s cubic-bezier(0.16,1,0.3,1),
+      border-color 0.25s ease,
+      box-shadow 0.25s ease;
+  }
+
+  .bento-cell.card-revealed {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  :global(.dark) .bento-cell {
+    background: rgba(14,14,18,0.6);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
   }
 
   .bento-cell:hover {
     border-color: var(--border-strong);
-    box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+    box-shadow: 0 6px 28px rgba(0,0,0,0.08);
+    transform: translateY(-3px);
   }
 
   :global(.dark) .bento-cell:hover {
-    box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+    box-shadow: 0 6px 32px rgba(0,0,0,0.35);
+  }
+
+  .bento-cell.card-revealed:hover {
+    transform: translateY(-3px);
   }
 
   /* Grid placements */
@@ -224,16 +350,21 @@
 
   /* Icon */
   .bento-icon-wrap {
-    width: 36px;
-    height: 36px;
-    border-radius: 9px;
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
     background: var(--raised);
     border: 1px solid var(--border);
     display: flex;
     align-items: center;
     justify-content: center;
     color: var(--text-1);
-    margin-bottom: 16px;
+    margin-bottom: 18px;
+    transition: background 0.2s, border-color 0.2s;
+  }
+
+  .bento-cell:hover .bento-icon-wrap {
+    border-color: var(--border-strong);
   }
 
   .bento-title {
@@ -247,25 +378,25 @@
   .bento-desc {
     font-size: 13px;
     color: var(--text-2);
-    line-height: 1.65;
+    line-height: 1.7;
   }
 
-  /* Beam illustration */
+  /* ── Beam illustration ── */
   .beam-illustration {
     display: flex;
     align-items: center;
     gap: 16px;
-    margin-top: 28px;
+    margin-top: 32px;
   }
 
   .beam-device {
     flex-shrink: 0;
     width: 56px;
-    height: 40px;
-    border-radius: 6px;
+    height: 42px;
+    border-radius: 7px;
     background: var(--raised);
     border: 1px solid var(--border);
-    padding: 6px;
+    padding: 7px;
     display: flex;
     flex-direction: column;
     gap: 4px;
@@ -285,6 +416,11 @@
     width: 100%;
   }
 
+  .bd-received {
+    background: var(--text-1);
+    opacity: 0.7;
+  }
+
   .beam-track {
     flex: 1;
     position: relative;
@@ -292,54 +428,50 @@
     background: var(--border);
     border-radius: 1px;
     overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
   }
 
   .beam-particle {
     position: absolute;
     top: 0;
-    left: -20%;
+    left: -30%;
     width: 40%;
     height: 100%;
     background: linear-gradient(90deg, transparent, var(--text-1), transparent);
     border-radius: 1px;
-    animation: slideBeam 2s ease-in-out infinite;
+    animation: slideBeam 2.2s ease-in-out infinite;
   }
 
   .beam-label {
     position: absolute;
-    top: 6px;
+    top: 8px;
     left: 50%;
     transform: translateX(-50%);
     font-size: 9px;
     color: var(--text-3);
     white-space: nowrap;
     font-weight: 500;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.05em;
   }
 
   @keyframes slideBeam {
     0% { transform: translateX(-100%); opacity: 0; }
-    20% { opacity: 1; }
-    80% { opacity: 1; }
+    15% { opacity: 1; }
+    85% { opacity: 1; }
     100% { transform: translateX(350%); opacity: 0; }
   }
 
-  /* Nearby badge */
+  /* ── Nearby badge ── */
   .nearby-badge {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    margin-top: 16px;
-    padding: 5px 12px;
+    gap: 7px;
+    margin-top: 18px;
+    padding: 5px 13px;
     border-radius: 100px;
-    background: rgba(34,197,94,0.08);
-    border: 1px solid rgba(34,197,94,0.2);
+    background: rgba(16,185,129,0.06);
+    border: 1px solid rgba(16,185,129,0.15);
     font-size: 11px;
-    color: #22c55e;
+    color: #10b981;
     font-weight: 500;
   }
 
@@ -347,22 +479,22 @@
     width: 6px;
     height: 6px;
     border-radius: 50%;
-    background: #22c55e;
-    box-shadow: 0 0 6px rgba(34,197,94,0.5);
-    animation: pulseDot 2s ease-in-out infinite;
+    background: #10b981;
+    box-shadow: 0 0 8px rgba(16,185,129,0.5);
+    animation: nearbyPulse 2.5s ease-in-out infinite;
   }
 
-  @keyframes pulseDot {
-    0%,100% { opacity: 1; }
-    50% { opacity: 0.5; }
+  @keyframes nearbyPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
   }
 
-  /* Chain chips */
+  /* ── Chain chips ── */
   .chain-chips {
     display: flex;
     align-items: center;
     gap: 8px;
-    margin-top: 20px;
+    margin-top: 22px;
     flex-wrap: wrap;
   }
 
@@ -374,7 +506,12 @@
     background: var(--raised);
     border: 1px solid var(--border);
     color: var(--text-2);
-    transition: all 0.2s;
+    transition: all 0.25s ease;
+  }
+
+  .chain-step:hover {
+    border-color: var(--border-strong);
+    color: var(--text-1);
   }
 
   .chain-step-active {
@@ -383,13 +520,18 @@
     border-color: var(--text-1);
   }
 
+  .chain-step-active:hover {
+    color: var(--text-inv);
+    opacity: 0.9;
+  }
+
   .chain-arrow {
     font-size: 13px;
     color: var(--text-3);
     flex-shrink: 0;
   }
 
-  /* Responsive */
+  /* ── Responsive ── */
   @media (max-width: 768px) {
     .bento-grid { grid-template-columns: repeat(2, 1fr); }
     .bento-large  { grid-column: span 2; grid-row: span 1; }

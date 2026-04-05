@@ -14,10 +14,14 @@
     "dev:signal": "pnpm --filter signaling dev",
     "build": "pnpm --filter signaling build && pnpm --filter web build",
     "preview": "pnpm --filter web preview",
-    "typecheck": "pnpm -r typecheck"
+    "typecheck": "pnpm -r typecheck",
+    "test": "vitest run"
   },
   "engines": {
     "node": ">=20",
     "pnpm": ">=9"
+  },
+  "devDependencies": {
+    "vitest": "^1.6.1"
   }
 }

@@ -1,9 +1,21 @@
+import { normalizeStunServerUrls } from './network'
+
 export interface TransferFile {
   id: string
   name: string
   type: string
   size: number
   blob: Blob
+}
+
+export type TransferProfile = 'webrtc' | 'local'
+export type ConnectionKind = 'lan' | 'internet' | 'unknown'
+
+export interface IceCandidatePayload {
+  candidate: string
+  sdpMid?: string | null
+  sdpMLineIndex?: number | null
+  usernameFragment?: string | null
 }
 
 export const CHUNK_SIZE = 64 * 1024 // 64 KB — safe for WebRTC DataChannel
@@ -24,7 +36,6 @@ export function getDefaultRTCConfig(): RTCConfig {
     typeof window !== 'undefined'
       ? (import.meta.env.PUBLIC_STUN_SERVERS as string | undefined)
       : undefined
-  const stunUrls = raw ?? 'stun:stun.l.google.com:19302,stun:stun.cloudflare.com:3478'
-  const iceServers = stunUrls.split(',').map(url => ({ urls: url.trim() }))
+  const iceServers = normalizeStunServerUrls(raw).map(url => ({ urls: url }))
   return { iceServers }
 }

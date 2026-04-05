@@ -4,6 +4,7 @@
   import { filesStore } from '$stores/files'
   import { uiStore } from '$stores/ui'
   import { WebRTCTransfer } from '$transfer/webrtc'
+  import type { TransferProfile } from '$transfer/types'
   import { formatBytes } from '$utils/format'
   import TransferProgress from './TransferProgress.svelte'
   import QRCode from './QRCode.svelte'
@@ -15,11 +16,12 @@
 
   $: state = $transferStore.state
   $: nearby = $transferStore.nearby
+  $: transferProfile = (($transferStore.method === 'local' ? 'local' : 'webrtc') as TransferProfile)
   // Room code comes from the store — generated once, persists across method tab switches
   $: roomCode = $transferStore.roomCode ?? ''
   $: receivePageUrl = typeof window !== 'undefined'
-    ? `${window.location.origin}/receive/${roomCode}`
-    : `/receive/${roomCode}`
+    ? buildReceivePageUrl(window.location.origin, roomCode, transferProfile)
+    : buildReceivePath(roomCode, transferProfile)
 
   onDestroy(() => {
     transfer?.destroy()
@@ -43,7 +45,7 @@
       blob: f.processed?.blob ?? f.file,
     }))
 
-    transfer = new WebRTCTransfer(signalingUrl, roomCode, 'sender')
+    transfer = new WebRTCTransfer(signalingUrl, roomCode, 'sender', transferProfile)
     try {
       await transfer.initSender(transferFiles)
     } catch (err) {
@@ -65,6 +67,15 @@
   }
 
   $: totalSize = $filesStore.reduce((sum, f) => sum + f.size, 0)
+
+  function buildReceivePath(roomCode: string, profile: TransferProfile): string {
+    const params = new URLSearchParams({ mode: profile })
+    return `/receive/${roomCode}?${params.toString()}`
+  }
+
+  function buildReceivePageUrl(origin: string, roomCode: string, profile: TransferProfile): string {
+    return `${origin}${buildReceivePath(roomCode, profile)}`
+  }
 </script>
 
 <div class="ds-root">

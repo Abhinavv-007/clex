@@ -1,16 +1,56 @@
-<section class="methods-section">
+<script lang="ts">
+  import { onMount } from 'svelte'
+
+  let sectionEl: HTMLElement
+  let visible = false
+  let cardEls: HTMLElement[] = []
+  let cardVisible = [false, false, false]
+
+  onMount(() => {
+    const sectionObs = new IntersectionObserver(
+      ([e]) => { if (e.isIntersecting) { visible = true; sectionObs.disconnect() } },
+      { threshold: 0.12 }
+    )
+    sectionObs.observe(sectionEl)
+
+    cardEls.forEach((el, i) => {
+      if (!el) return
+      const obs = new IntersectionObserver(
+        ([e]) => {
+          if (e.isIntersecting) {
+            setTimeout(() => { cardVisible[i] = true; cardVisible = cardVisible }, i * 120)
+            obs.disconnect()
+          }
+        },
+        { threshold: 0.15 }
+      )
+      obs.observe(el)
+    })
+  })
+</script>
+
+<section class="methods-section" bind:this={sectionEl}>
   <div class="methods-inner">
 
-    <div class="methods-header">
+    <div class="methods-header" class:header-visible={visible}>
       <p class="methods-eyebrow">Transfer methods</p>
-      <h2 class="methods-headline">Smart routing, your choice.</h2>
+      <h2 class="methods-headline">
+        <span class="mh-word">Smart</span>
+        <span class="mh-word">routing,</span>
+        <span class="mh-word mh-muted">your</span>
+        <span class="mh-word mh-muted">choice.</span>
+      </h2>
       <p class="methods-sub">Clex automatically picks the best method. You always stay in control.</p>
     </div>
 
     <div class="methods-grid">
 
       <!-- P2P -->
-      <div class="method-card method-primary">
+      <div
+        class="method-card method-primary"
+        class:card-visible={cardVisible[0]}
+        bind:this={cardEls[0]}
+      >
         <div class="method-top">
           <div class="method-priority">
             <span class="priority-dot priority-green" />
@@ -36,7 +76,11 @@
       </div>
 
       <!-- Local -->
-      <div class="method-card">
+      <div
+        class="method-card"
+        class:card-visible={cardVisible[1]}
+        bind:this={cardEls[1]}
+      >
         <div class="method-top">
           <div class="method-priority">
             <span class="priority-dot priority-blue" />
@@ -61,7 +105,11 @@
       </div>
 
       <!-- Drive -->
-      <div class="method-card">
+      <div
+        class="method-card"
+        class:card-visible={cardVisible[2]}
+        bind:this={cardEls[2]}
+      >
         <div class="method-top">
           <div class="method-priority">
             <span class="priority-dot priority-amber" />
@@ -86,12 +134,13 @@
     </div>
 
     <!-- CTA -->
-    <div class="methods-cta">
-      <a href="/workspace" class="btn-primary methods-cta-btn">
-        Start sending files
+    <div class="methods-cta" class:cta-visible={cardVisible[2]}>
+      <a href="/workspace" class="methods-cta-btn">
+        <span>Start sending files</span>
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
           <path d="M3 7h8M7 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
+        <span class="cta-btn-shine" />
       </a>
       <p class="methods-cta-note">Free to use · No account required for P2P</p>
     </div>
@@ -101,44 +150,78 @@
 
 <style>
   .methods-section {
-    padding: 100px 24px;
+    padding: 120px 24px;
     border-top: 1px solid var(--border);
   }
 
   .methods-inner {
-    max-width: 900px;
+    max-width: 920px;
     margin: 0 auto;
   }
 
+  /* ── Header ── */
   .methods-header {
     text-align: center;
-    margin-bottom: 56px;
+    margin-bottom: 60px;
+    opacity: 0;
+    transform: translateY(28px);
+    transition: opacity 0.7s cubic-bezier(0.16,1,0.3,1), transform 0.7s cubic-bezier(0.16,1,0.3,1);
+  }
+
+  .methods-header.header-visible {
+    opacity: 1;
+    transform: translateY(0);
   }
 
   .methods-eyebrow {
     font-size: 11px;
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.1em;
+    letter-spacing: 0.12em;
     color: var(--text-3);
-    margin-bottom: 14px;
+    margin-bottom: 16px;
   }
 
   .methods-headline {
-    font-size: clamp(2rem, 5vw, 3.25rem);
+    font-family: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+    font-size: clamp(2.2rem, 5.5vw, 3.8rem);
     font-weight: 700;
-    letter-spacing: -0.03em;
-    color: var(--text-1);
-    margin-bottom: 14px;
+    letter-spacing: -0.035em;
+    margin-bottom: 16px;
+    line-height: 1.08;
   }
+
+  .mh-word {
+    display: inline-block;
+    background: linear-gradient(
+      180deg,
+      rgba(190,190,195,1) 0%,
+      rgba(230,230,235,1) 50%,
+      rgba(255,255,255,1) 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  :global(:not(.dark)) .mh-word {
+    background: linear-gradient(180deg, rgba(10,10,10,0.6) 0%, rgba(10,10,10,1) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .mh-muted { opacity: 0.5; }
 
   .methods-sub {
     font-size: 15px;
     color: var(--text-2);
     max-width: 400px;
     margin: 0 auto;
+    line-height: 1.65;
   }
 
+  /* ── Grid ── */
   .methods-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -148,40 +231,67 @@
   .method-card {
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 24px;
-    transition: border-color 0.2s, box-shadow 0.2s;
+    border-radius: 16px;
+    padding: 26px;
+    /* Scroll reveal + hover */
+    opacity: 0;
+    transform: translateY(24px);
+    transition:
+      opacity 0.6s cubic-bezier(0.16,1,0.3,1),
+      transform 0.6s cubic-bezier(0.16,1,0.3,1),
+      border-color 0.25s ease,
+      box-shadow 0.25s ease;
+  }
+
+  .method-card.card-visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  :global(.dark) .method-card {
+    background: rgba(14,14,18,0.6);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
   }
 
   .method-card:hover {
     border-color: var(--border-strong);
-    box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+    box-shadow: 0 6px 28px rgba(0,0,0,0.08);
+    transform: translateY(-3px);
+  }
+
+  .method-card.card-visible:hover {
+    transform: translateY(-3px);
   }
 
   :global(.dark) .method-card:hover {
-    box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+    box-shadow: 0 6px 32px rgba(0,0,0,0.35);
   }
 
   .method-primary {
     background: var(--raised);
   }
 
+  :global(.dark) .method-primary {
+    background: rgba(18,18,22,0.7);
+  }
+
   .method-top {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 16px;
+    margin-bottom: 18px;
   }
 
   .method-priority {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 7px;
     font-size: 11px;
     font-weight: 600;
     color: var(--text-3);
     text-transform: uppercase;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.07em;
   }
 
   .priority-dot {
@@ -191,20 +301,25 @@
     flex-shrink: 0;
   }
 
-  .priority-green { background: #22c55e; }
-  .priority-blue { background: #3b82f6; }
-  .priority-amber { background: #f59e0b; }
+  .priority-green { background: #10b981; box-shadow: 0 0 6px rgba(16,185,129,0.4); }
+  .priority-blue { background: #3b82f6; box-shadow: 0 0 6px rgba(59,130,246,0.3); }
+  .priority-amber { background: #f59e0b; box-shadow: 0 0 6px rgba(245,158,11,0.3); }
 
   .method-icon-wrap {
-    width: 34px;
-    height: 34px;
-    border-radius: 9px;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
     background: var(--raised);
     border: 1px solid var(--border);
     display: flex;
     align-items: center;
     justify-content: center;
     color: var(--text-1);
+    transition: border-color 0.2s;
+  }
+
+  .method-card:hover .method-icon-wrap {
+    border-color: var(--border-strong);
   }
 
   .method-primary .method-icon-wrap {
@@ -222,7 +337,7 @@
   .method-desc {
     font-size: 13px;
     color: var(--text-2);
-    line-height: 1.65;
+    line-height: 1.7;
     margin-bottom: 20px;
   }
 
@@ -232,7 +347,7 @@
     margin: 0;
     display: flex;
     flex-direction: column;
-    gap: 7px;
+    gap: 8px;
   }
 
   .method-features li {
@@ -241,6 +356,11 @@
     display: flex;
     align-items: center;
     gap: 8px;
+    transition: color 0.2s;
+  }
+
+  .method-card:hover .method-features li {
+    color: var(--text-1);
   }
 
   .method-features li::before {
@@ -250,22 +370,36 @@
     border-radius: 50%;
     background: var(--border-strong);
     flex-shrink: 0;
+    transition: background 0.2s;
   }
 
-  /* CTA */
+  .method-card:hover .method-features li::before {
+    background: rgba(16,185,129,0.4);
+  }
+
+  /* ── CTA ── */
   .methods-cta {
     text-align: center;
-    margin-top: 56px;
+    margin-top: 60px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 12px;
+    gap: 14px;
+    opacity: 0;
+    transform: translateY(16px);
+    transition: opacity 0.6s ease 0.3s, transform 0.6s ease 0.3s;
+  }
+
+  .methods-cta.cta-visible {
+    opacity: 1;
+    transform: translateY(0);
   }
 
   .methods-cta-btn {
-    padding: 12px 28px;
+    position: relative;
+    padding: 14px 32px;
     font-size: 15px;
-    border-radius: 10px;
+    border-radius: 12px;
     gap: 10px;
     display: inline-flex;
     align-items: center;
@@ -273,11 +407,35 @@
     color: var(--text-inv);
     border: 1px solid transparent;
     font-weight: 500;
-    transition: opacity 0.15s;
     text-decoration: none;
+    overflow: hidden;
+    transition: transform 0.2s cubic-bezier(0.16,1,0.3,1), box-shadow 0.2s ease;
   }
 
-  .methods-cta-btn:hover { opacity: 0.85; }
+  .methods-cta-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+  }
+
+  .methods-cta-btn:active {
+    transform: translateY(0) scale(0.98);
+  }
+
+  .cta-btn-shine {
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 60%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent);
+    animation: ctaShine 4s ease-in-out infinite;
+    pointer-events: none;
+  }
+
+  @keyframes ctaShine {
+    0%, 80%, 100% { left: -100%; }
+    40% { left: 120%; }
+  }
 
   .methods-cta-note {
     font-size: 12px;

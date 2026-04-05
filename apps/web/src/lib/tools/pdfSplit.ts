@@ -1,5 +1,10 @@
 import { PDFDocument } from 'pdf-lib'
 
+function toBlobBytes(bytes: Uint8Array): ArrayBuffer {
+  const copy = Uint8Array.from(bytes)
+  return copy.buffer.slice(copy.byteOffset, copy.byteOffset + copy.byteLength) as ArrayBuffer
+}
+
 export interface SplitResult {
   blob: Blob
   name: string
@@ -25,7 +30,7 @@ export async function splitPdfByPage(
     doc.addPage(page)
     const pdfBytes = await doc.save()
     results.push({
-      blob: new Blob([pdfBytes], { type: 'application/pdf' }),
+      blob: new Blob([toBlobBytes(pdfBytes)], { type: 'application/pdf' }),
       name: `${baseName}_page${i + 1}.pdf`,
       pageRange: [i + 1, i + 1],
     })
@@ -59,7 +64,7 @@ export async function splitPdfByChunk(
     const pdfBytes = await doc.save()
     part++
     results.push({
-      blob: new Blob([pdfBytes], { type: 'application/pdf' }),
+      blob: new Blob([toBlobBytes(pdfBytes)], { type: 'application/pdf' }),
       name: `${baseName}_part${part}.pdf`,
       pageRange: [start + 1, end],
     })

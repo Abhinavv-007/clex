@@ -3,6 +3,7 @@
   import { transferStore } from '$stores/transfer'
   import { WebRTCTransfer } from '$transfer/webrtc'
   import { isValidRoomCode } from '$utils/crypto'
+  import type { TransferProfile } from '$transfer/types'
   import TransferProgress from '$components/sharing/TransferProgress.svelte'
 
   const signalingUrl = import.meta.env.PUBLIC_SIGNALING_URL ?? 'ws://localhost:8787'
@@ -22,7 +23,7 @@
     }
     error = ''
     transfer?.destroy()
-    transfer = new WebRTCTransfer(signalingUrl, trimmed, 'receiver')
+    transfer = new WebRTCTransfer(signalingUrl, trimmed, 'receiver', getRequestedProfile())
     try {
       await transfer.initReceiver()
     } catch (err) {
@@ -42,6 +43,12 @@
   onDestroy(() => {
     transfer?.destroy()
   })
+
+  function getRequestedProfile(): TransferProfile {
+    if (typeof window === 'undefined') return 'webrtc'
+    const raw = new URL(window.location.href).searchParams.get('mode')
+    return raw === 'local' ? 'local' : 'webrtc'
+  }
 </script>
 
 <svelte:head>

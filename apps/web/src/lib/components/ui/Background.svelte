@@ -2,14 +2,10 @@
   import { onMount } from 'svelte'
 
   let mounted = false
-  let canvasEl: HTMLCanvasElement
-  let animFrame: number
 
-  // ── Star field (dark mode only) ───────────────────────────────────────
   onMount(() => {
     mounted = true
 
-    // Cursor reactive glow
     const onMove = (e: MouseEvent) => {
       document.documentElement.style.setProperty('--cursor-x', `${e.clientX}px`)
       document.documentElement.style.setProperty('--cursor-y', `${e.clientY}px`)
@@ -18,7 +14,6 @@
 
     return () => {
       window.removeEventListener('mousemove', onMove)
-      cancelAnimationFrame(animFrame)
     }
   })
 </script>
@@ -38,64 +33,110 @@
     transition: background 0.3s ease;
   }
 
-  /* Subtle hero radial highlight */
+  /* ── Hero radial glow — very subtle emerald tinted ── */
   .hero-glow {
     position: absolute;
-    top: -20%;
+    top: -30%;
     left: 50%;
     transform: translateX(-50%);
-    width: 900px;
-    height: 600px;
+    width: 1200px;
+    height: 800px;
     border-radius: 50%;
     opacity: 0;
-    filter: blur(100px);
-    transition: opacity 0.4s ease;
+    filter: blur(120px);
+    transition: opacity 0.6s ease;
     pointer-events: none;
   }
 
   :global(.dark) .hero-glow {
     opacity: 1;
-    background: radial-gradient(ellipse, rgba(59,130,246,0.06) 0%, transparent 70%);
+    background: radial-gradient(
+      ellipse 70% 60% at 50% 40%,
+      rgba(16,185,129,0.04) 0%,
+      rgba(59,130,246,0.02) 30%,
+      transparent 70%
+    );
   }
 
-  :global(.dark) .grid-overlay {
-    opacity: 1;
-  }
-
+  /* ── Grid overlay — subtle dot matrix ── */
   .grid-overlay {
     position: absolute;
     inset: 0;
     opacity: 0;
     pointer-events: none;
     background-image:
-      linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
-    background-size: 48px 48px;
-    mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 30%, transparent 80%);
-    transition: opacity 0.3s ease;
+      linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px);
+    background-size: 64px 64px;
+    mask-image: radial-gradient(ellipse 90% 60% at 50% 0%, black 20%, transparent 70%);
+    -webkit-mask-image: radial-gradient(ellipse 90% 60% at 50% 0%, black 20%, transparent 70%);
+    transition: opacity 0.4s ease;
   }
 
-  /* Cursor reactive spot — dark only */
-  .cursor-spot {
+  :global(.dark) .grid-overlay {
+    opacity: 1;
+  }
+
+  /* ── Ambient floating glow orbs ── */
+  .ambient-orb {
     position: absolute;
+    border-radius: 50%;
+    filter: blur(100px);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.6s ease;
+  }
+
+  :global(.dark) .ambient-orb { opacity: 1; }
+
+  .orb-1 {
+    width: 400px;
+    height: 400px;
+    top: 20%;
+    left: -5%;
+    background: rgba(16,185,129,0.015);
+    animation: orbFloat1 25s ease-in-out infinite;
+  }
+
+  .orb-2 {
     width: 500px;
     height: 500px;
+    top: 60%;
+    right: -10%;
+    background: rgba(59,130,246,0.01);
+    animation: orbFloat2 30s ease-in-out infinite;
+  }
+
+  @keyframes orbFloat1 {
+    0%, 100% { transform: translate(0, 0); }
+    33% { transform: translate(30px, -20px); }
+    66% { transform: translate(-15px, 25px); }
+  }
+
+  @keyframes orbFloat2 {
+    0%, 100% { transform: translate(0, 0); }
+    50% { transform: translate(-25px, -30px); }
+  }
+
+  /* ── Cursor reactive spot — dark only ── */
+  .cursor-spot {
+    position: absolute;
+    width: 600px;
+    height: 600px;
     border-radius: 50%;
     opacity: 0;
-    filter: blur(80px);
+    filter: blur(100px);
     pointer-events: none;
     transform: translate(-50%, -50%);
-    transition: opacity 0.4s ease;
-    background: radial-gradient(circle, rgba(255,255,255,0.025) 0%, transparent 70%);
+    transition: opacity 0.5s ease;
+    background: radial-gradient(circle, rgba(255,255,255,0.02) 0%, transparent 70%);
     left: var(--cursor-x, 50vw);
     top: var(--cursor-y, 50vh);
   }
 
-  :global(.dark) .cursor-spot {
-    opacity: 1;
-  }
+  :global(.dark) .cursor-spot { opacity: 1; }
 
-  /* Noise grain */
+  /* ── Noise grain ── */
   .noise {
     position: absolute;
     inset: 0;
@@ -106,14 +147,14 @@
     mix-blend-mode: overlay;
   }
 
-  :global(.dark) .noise {
-    opacity: 0.04;
-  }
+  :global(.dark) .noise { opacity: 0.03; }
 </style>
 
 <div class="bg-root" aria-hidden="true">
   <div class="hero-glow" />
   <div class="grid-overlay" />
+  <div class="ambient-orb orb-1" />
+  <div class="ambient-orb orb-2" />
   {#if mounted}
     <div class="cursor-spot" />
   {/if}
