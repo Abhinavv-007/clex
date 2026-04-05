@@ -64,58 +64,76 @@
       {/if}
     </div>
 
-    <div class="glass-panel p-6">
+    <div class="p-8 rounded-[20px] shadow-[0_8px_32px_rgba(0,0,0,0.2)] border border-white/5 bg-white/5 backdrop-blur-xl relative overflow-hidden">
+      <!-- Top edge highlight -->
+      <div class="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
+
       {#if autoConnecting || state === 'preparing' || state === 'waiting_peer'}
-        <div class="flex flex-col items-center gap-5 py-6 text-center">
+        <div class="flex flex-col items-center gap-6 py-6 text-center">
           <div class="relative">
-            <div class="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl animate-pulse-glow"
-                 style="background: rgba(124,58,237,0.12); border: 1px solid rgba(124,58,237,0.3);">
-              📡
+            <div class="w-[72px] h-[72px] rounded-[22px] flex items-center justify-center relative"
+                 style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1);">
+              <div class="absolute inset-0 border border-white/10 rounded-[22px] animate-[spin_3s_linear_infinite]" style="border-top-color: transparent"></div>
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" class="opacity-80">
+                <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 3"/>
+                <circle cx="12" cy="12" r="3" fill="currentColor" opacity="0.4"/>
+              </svg>
             </div>
-            <div class="absolute inset-0 rounded-2xl animate-ping opacity-10"
-                 style="background: rgba(124,58,237,0.5);" />
+            <div class="absolute inset-0 rounded-[22px] animate-ping opacity-10 bg-white" />
           </div>
           <div>
-            <p class="font-display font-semibold text-slate-100">Waiting for sender…</p>
-            <p class="text-xs text-slate-500 mt-1">Ready to receive when they start</p>
+            <p class="text-[16px] font-semibold text-white tracking-[-0.01em]">Waiting for sender…</p>
+            <p class="text-[14px] text-slate-400 mt-1">Ready to receive when they start</p>
           </div>
-          <button class="btn-secondary text-sm" on:click={reset}>Cancel</button>
+          <button class="text-[13px] text-slate-400 hover:text-white transition-colors" on:click={reset}>Cancel</button>
         </div>
 
       {:else if state === 'connecting'}
-        <div class="flex flex-col items-center gap-4 text-center py-4">
-          <span class="text-4xl animate-float">🌐</span>
-          <p class="font-display font-semibold text-slate-100">Establishing direct connection…</p>
-          <div class="w-full bg-white/5 rounded-full h-1 overflow-hidden">
-            <div class="h-full bg-gradient-to-r from-violet-600 to-cyan-400 animate-pulse w-3/5 rounded-full" />
+        <div class="flex flex-col items-center gap-5 text-center py-6">
+          <div class="w-[72px] h-[72px] rounded-[22px] flex items-center justify-center relative animate-[pulse_2s_ease-in-out_infinite]"
+               style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+              <path d="M12 3v18M3 12h18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div>
+            <p class="text-[16px] font-semibold text-white tracking-[-0.01em]">Establishing direct connection…</p>
+            <p class="text-[14px] text-slate-400 mt-1">Finding the optimal route</p>
           </div>
         </div>
 
       {:else if state === 'transferring'}
-        <div class="flex flex-col gap-4">
-          <div class="flex items-center gap-3">
-            <span class="text-3xl animate-float">📥</span>
+        <div class="flex flex-col gap-6 py-2">
+          <div class="flex items-center gap-4">
+            <div class="w-[56px] h-[56px] rounded-[16px] flex items-center justify-center bg-white/5 border border-white/10">
+              <svg width="24" height="24" viewBox="0 0 20 20" fill="none">
+                <path d="M10 3v11M5 9l5 5 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M3 17h14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+            </div>
             <div>
-              <p class="font-display font-semibold text-slate-100">Receiving…</p>
-              <p class="text-xs text-slate-400">Files will download automatically</p>
+              <p class="text-[16px] font-semibold text-white tracking-[-0.01em]">Receiving…</p>
+              <p class="text-[14px] text-slate-400 mt-0.5">Files will download automatically</p>
             </div>
           </div>
           <TransferProgress />
         </div>
 
       {:else if state === 'complete'}
-        <div class="flex flex-col items-center gap-5 text-center py-4">
-          <div class="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl"
-               style="background: rgba(34,197,94,0.12); border: 1px solid rgba(34,197,94,0.3);">
-            ✓
+        <div class="flex flex-col items-center gap-6 text-center py-6">
+          <div class="w-[72px] h-[72px] rounded-[22px] flex items-center justify-center text-green-400"
+               style="background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.2);">
+            <svg width="32" height="32" viewBox="0 0 28 28" fill="none">
+              <path d="M6 14l5.5 5.5L22 8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
           </div>
           <div>
-            <p class="font-display font-bold text-xl text-green-400">Files received!</p>
-            <p class="text-sm text-slate-400 mt-1">Check your downloads folder</p>
+            <p class="text-[20px] font-bold text-green-400 tracking-tight">Files received!</p>
+            <p class="text-[14px] text-slate-400 mt-1.5">Check your downloads folder</p>
           </div>
-          <div class="flex gap-3 w-full">
-            <button class="btn-secondary flex-1" on:click={reset}>Receive more</button>
-            <a href="/workspace" class="btn-primary flex-1 text-center text-sm">Workspace</a>
+          <div class="flex gap-3 w-full mt-2">
+            <button class="bg-white/10 text-white font-medium text-[14px] py-3 px-4 rounded-xl flex-1 hover:bg-white/15 transition-colors" on:click={reset}>Receive more</button>
+            <a href="/workspace" class="bg-white text-black font-semibold text-[14px] py-3 px-4 rounded-xl flex-1 hover:bg-slate-100 transition-colors">Workspace</a>
           </div>
         </div>
 

@@ -211,8 +211,8 @@
   .ds-root { display: flex; flex-direction: column; gap: 0; }
 
   .ds-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.015);
+    border: 1px dashed rgba(255, 255, 255, 0.1);
     border-radius: 12px;
     padding: 16px;
     display: flex;
@@ -226,7 +226,8 @@
   }
 
   .ds-card-error {
-    border-color: rgba(239,68,68,0.2);
+    border-color: rgba(239,68,68,0.3);
+    background: rgba(239,68,68,0.02);
   }
 
   /* Nearby */

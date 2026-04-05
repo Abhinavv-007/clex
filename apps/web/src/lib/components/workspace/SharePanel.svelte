@@ -86,8 +86,8 @@
     grid-template-columns: repeat(3, 1fr);
     gap: 4px;
     padding: 4px;
-    background: var(--raised);
-    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
     border-radius: 10px;
   }
 
@@ -105,16 +105,12 @@
   }
 
   .sp-tab:hover:not(.sp-tab-active) {
-    background: var(--surface);
+    background: rgba(255, 255, 255, 0.05);
   }
 
   .sp-tab-active {
-    background: var(--surface);
-    border-color: var(--border);
-    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-  }
-
-  :global(.dark) .sp-tab-active {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.1);
     box-shadow: 0 1px 6px rgba(0,0,0,0.3);
   }
 

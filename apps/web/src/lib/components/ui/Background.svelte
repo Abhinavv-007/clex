@@ -20,8 +20,6 @@
 
 <style>
   :global(:root) {
-    --cursor-x: 50vw;
-    --cursor-y: 50vh;
   }
 
   .bg-root {
@@ -118,24 +116,6 @@
     50% { transform: translate(-25px, -30px); }
   }
 
-  /* ── Cursor reactive spot — dark only ── */
-  .cursor-spot {
-    position: absolute;
-    width: 600px;
-    height: 600px;
-    border-radius: 50%;
-    opacity: 0;
-    filter: blur(100px);
-    pointer-events: none;
-    transform: translate(-50%, -50%);
-    transition: opacity 0.5s ease;
-    background: radial-gradient(circle, rgba(255,255,255,0.02) 0%, transparent 70%);
-    left: var(--cursor-x, 50vw);
-    top: var(--cursor-y, 50vh);
-  }
-
-  :global(.dark) .cursor-spot { opacity: 1; }
-
   /* ── Noise grain ── */
   .noise {
     position: absolute;
@@ -155,8 +135,5 @@
   <div class="grid-overlay" />
   <div class="ambient-orb orb-1" />
   <div class="ambient-orb orb-2" />
-  {#if mounted}
-    <div class="cursor-spot" />
-  {/if}
   <div class="noise" />
 </div>

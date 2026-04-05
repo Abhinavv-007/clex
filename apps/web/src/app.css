@@ -79,13 +79,10 @@ body {
   font-size: 14px;
   line-height: 1.6;
   overflow-x: hidden;
-  cursor: none;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
 }
-
-@media (pointer: coarse) { body { cursor: auto; } }
 
 /* ─── Utility layer ────────────────────────────────────────────────────── */
 @layer utilities {

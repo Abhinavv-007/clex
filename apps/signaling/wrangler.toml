@@ -19,4 +19,4 @@ ALLOWED_ORIGIN = "http://192.168.1.30:5173"
 name = "clex-signaling-prod"
 
 [env.production.vars]
-ALLOWED_ORIGIN = "https://clex.in"
+ALLOWED_ORIGIN = "https://clex.in, https://www.clex.in"

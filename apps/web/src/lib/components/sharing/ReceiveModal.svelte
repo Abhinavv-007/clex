@@ -51,20 +51,20 @@
   }
 </script>
 
-<div class="flex flex-col gap-5">
+<div class="flex flex-col gap-6">
   {#if state === 'idle' || state === 'failed'}
     <!-- Input form -->
-    <div class="flex flex-col gap-4">
+    <div class="flex flex-col gap-5">
       <div>
-        <p class="text-sm text-slate-400 leading-relaxed mb-4">
-          Enter the 6-character code shown on the sender's screen to receive files directly.
+        <p class="text-sm text-slate-400 font-medium">
+          Enter the 6-character code
         </p>
       </div>
 
       <div>
         <input
           type="text"
-          class="input-glass text-center font-mono text-2xl tracking-[0.3em] uppercase"
+          class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-4 text-center font-mono text-[28px] tracking-[0.4em] uppercase text-white placeholder:text-white/20 focus:outline-none focus:border-white/20 transition-all focus:shadow-[0_0_24px_rgba(255,255,255,0.05)]"
           placeholder="XXXXXX"
           maxlength="6"
           bind:value={code}
@@ -73,12 +73,12 @@
           spellcheck="false"
         />
         {#if inputError || error}
-          <p class="text-xs text-red-400 mt-1.5">{inputError || error}</p>
+          <p class="text-[13px] font-medium text-red-400 mt-2 text-center">{inputError || error}</p>
         {/if}
       </div>
 
       <button
-        class="btn-primary w-full flex items-center justify-center gap-2"
+        class="bg-white text-black font-semibold text-[15px] py-3.5 px-6 rounded-xl w-full flex items-center justify-center gap-2 hover:bg-slate-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         on:click={connect}
         disabled={code.length !== 6}
       >
@@ -88,51 +88,66 @@
     </div>
 
   {:else if state === 'preparing' || state === 'waiting_peer'}
-    <div class="flex flex-col items-center gap-4 text-center py-4">
-      <div class="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl animate-pulse-glow"
-           style="background: rgba(124,58,237,0.12); border: 1px solid rgba(124,58,237,0.25);">
-        🔗
+    <div class="flex flex-col items-center gap-4 text-center py-6">
+      <div class="w-[60px] h-[60px] rounded-[18px] flex items-center justify-center text-2xl relative"
+           style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1);">
+         <div class="absolute inset-0 border border-white/10 rounded-[18px] animate-[spin_3s_linear_infinite]" style="border-top-color: transparent"></div>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" class="opacity-80">
+          <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 3"/>
+          <circle cx="12" cy="12" r="3" fill="currentColor" opacity="0.4"/>
+        </svg>
       </div>
       <div>
-        <p class="font-display font-semibold text-slate-100">Connecting to sender…</p>
-        <p class="text-xs text-slate-500 mt-1">Room <span class="font-mono text-violet-400">{code.toUpperCase()}</span></p>
+        <p class="text-[15px] font-semibold text-white tracking-[-0.01em]">Connecting to sender</p>
+        <p class="text-[13px] text-slate-400 mt-1">Room <span class="font-mono text-white opacity-80">{code.toUpperCase()}</span></p>
       </div>
-      <button class="btn-secondary text-sm" on:click={close}>Cancel</button>
+      <button class="text-[13px] text-slate-400 hover:text-white transition-colors" on:click={close}>Cancel connection</button>
     </div>
 
   {:else if state === 'connecting'}
-    <div class="flex flex-col items-center gap-3 text-center py-4">
-      <div class="text-2xl animate-float">🌐</div>
-      <p class="font-display font-semibold text-slate-100">Establishing P2P connection…</p>
-      <p class="text-xs text-slate-500">Negotiating the best route</p>
-      <div class="w-full bg-white/5 rounded-full h-1 overflow-hidden mt-1">
-        <div class="h-full bg-gradient-to-r from-violet-600 to-cyan-400 rounded-full animate-pulse w-3/5" />
+    <div class="flex flex-col items-center gap-4 text-center py-6">
+      <div class="w-[60px] h-[60px] rounded-[18px] flex items-center justify-center relative animate-[pulse_2s_ease-in-out_infinite]"
+           style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <path d="M12 3v18M3 12h18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div>
+        <p class="text-[15px] font-semibold text-white tracking-[-0.01em]">Establishing secure P2P link…</p>
+        <p class="text-[13px] text-slate-400 mt-1">Finding the optimal route</p>
       </div>
     </div>
 
   {:else if state === 'transferring'}
-    <div class="flex flex-col gap-4">
-      <div class="flex items-center gap-3">
-        <span class="text-2xl animate-float">📥</span>
+    <div class="flex flex-col gap-6">
+      <div class="flex items-center gap-4">
+        <div class="w-[48px] h-[48px] rounded-[14px] flex items-center justify-center bg-white/5 border border-white/10">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <path d="M10 3v11M5 9l5 5 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M3 17h14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </div>
         <div>
-          <p class="font-display font-semibold text-sm text-slate-100">Receiving…</p>
-          <p class="text-xs text-slate-400">Files will download automatically</p>
+          <p class="text-[15px] font-semibold text-white tracking-[-0.01em]">Receiving files…</p>
+          <p class="text-[13px] text-slate-400 mt-0.5">They will download automatically</p>
         </div>
       </div>
       <TransferProgress />
     </div>
 
   {:else if state === 'complete'}
-    <div class="flex flex-col items-center gap-4 text-center py-2">
-      <div class="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl"
-           style="background: rgba(34,197,94,0.12); border: 1px solid rgba(34,197,94,0.25);">
-        ✓
+    <div class="flex flex-col items-center gap-5 text-center py-6">
+      <div class="w-[60px] h-[60px] rounded-[18px] flex items-center justify-center text-green-400"
+           style="background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.2);">
+        <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+          <path d="M6 14l5.5 5.5L22 8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
       </div>
       <div>
-        <p class="font-display font-bold text-green-400 text-lg">Files received!</p>
-        <p class="text-sm text-slate-400 mt-1">Check your downloads folder</p>
+        <p class="text-[18px] font-semibold text-white tracking-tight">Transfer Complete</p>
+        <p class="text-[14px] text-slate-400 mt-1">Check your browser's downloads</p>
       </div>
-      <button class="btn-primary" on:click={close}>Done</button>
+      <button class="bg-white text-black font-medium text-[14px] py-2.5 px-6 rounded-lg mt-2 hover:bg-slate-100 transition-colors" on:click={close}>Done</button>
     </div>
   {/if}
 </div>

@@ -3,8 +3,15 @@ import type { Env } from './types'
 
 const ROOM_CODE_RE = /^\/room\/([A-Z0-9]{6})$/i
 
-function corsHeaders(origin: string, allowedOrigin: string): HeadersInit {
-  const allowed = allowedOrigin === '*' ? '*' : origin === allowedOrigin ? origin : ''
+function corsHeaders(origin: string, allowedOriginsStr: string): HeadersInit {
+  const allowedOrigins = allowedOriginsStr.split(',').map(s => s.trim());
+  let allowed = ''
+  if (allowedOriginsStr === '*') {
+    allowed = '*';
+  } else if (allowedOrigins.includes(origin)) {
+    allowed = origin;
+  }
+  
   if (!allowed) return {}
   return {
     'Access-Control-Allow-Origin': allowed,

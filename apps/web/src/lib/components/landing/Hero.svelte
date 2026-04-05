@@ -115,7 +115,7 @@
   <!-- Product Demo Card — the centerpiece -->
   {#if visible}
     <div in:fade={{ duration: 800, delay: 640 }} class="demo-wrap">
-      <div class="demo-card">
+      <a href="/workspace" class="demo-card">
         <!-- Window chrome -->
         <div class="demo-chrome">
           <div class="chrome-dots">
@@ -256,7 +256,7 @@
             </div>
           </div>
         </div>
-      </div>
+      </a>
 
       <!-- Glow behind card -->
       <div class="demo-glow" aria-hidden="true" />

@@ -115,13 +115,19 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    padding: 24px;
+    gap: 12px;
+    padding: 48px 24px;
     color: var(--text-3);
-    font-size: 12px;
+    font-size: 13px;
+    background: rgba(255, 255, 255, 0.015);
+    border: 1px dashed rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    text-align: center;
   }
 
   .fl-empty svg {
-    opacity: 0.3;
+    color: var(--text-2);
+    opacity: 0.5;
+    margin-bottom: 4px;
   }
 </style>

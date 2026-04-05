@@ -5,25 +5,49 @@
   export let value: string
   export let size = 180
 
-  let canvas: HTMLCanvasElement
+  let svgContent = ''
 
-  $: if (canvas && value) {
-    QR.toCanvas(canvas, value, {
-      width: size,
-      margin: 1,
-      color: { dark: '#e2e8f0', light: '#00000000' },
-    })
+  $: if (value) {
+    generateQR(value)
+  }
+
+  async function generateQR(text: string) {
+    try {
+      const rawSvg = await QR.toString(text, {
+        type: 'svg',
+        width: size,
+        margin: 1,
+        color: { dark: '#000000', light: '#00000000' },
+      })
+      // Make the dark blocks use the current text color so it adapts to light/dark mode automatically
+      svgContent = rawSvg.replace(/fill="#000000"/g, 'fill="currentColor"')
+    } catch (err) {
+      console.error('Failed to generate QR', err)
+    }
   }
 
   onMount(() => {
-    if (value) {
-      QR.toCanvas(canvas, value, {
-        width: size,
-        margin: 1,
-        color: { dark: '#e2e8f0', light: '#00000000' },
-      })
-    }
+    if (value) generateQR(value)
   })
 </script>
 
-<canvas bind:this={canvas} width={size} height={size} class="rounded-lg" aria-label="QR code for {value}" />
+<div class="qr-container" style="width: {size}px; height: {size}px;" aria-label="QR code for {value}">
+  {#if svgContent}
+    {@html svgContent}
+  {/if}
+</div>
+
+<style>
+  .qr-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-1); /* This passes down to currentColor */
+  }
+
+  .qr-container :global(svg) {
+    width: 100%;
+    height: 100%;
+    border-radius: 8px;
+  }
+</style>

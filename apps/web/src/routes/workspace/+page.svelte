@@ -149,12 +149,15 @@
     .ws-grid { display: grid; }
   }
 
-  /* Panel card */
+  /* Panel card - Obsidian Resonance */
   .ws-col {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 20px;
+    background: rgba(18, 18, 24, 0.4);
+    backdrop-filter: blur(12px) saturate(1.2);
+    -webkit-backdrop-filter: blur(12px) saturate(1.2);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    border-radius: 16px;
+    padding: 24px;
     min-height: calc(100vh - 160px);
   }
 
