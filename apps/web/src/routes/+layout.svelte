@@ -11,18 +11,44 @@
   import { theme } from '$lib/theme'
   import { pickupToken } from '$transfer/gdrive'
 
+  function getOAuthErrorMessage(code: string): string {
+    switch (code) {
+      case 'oauth_not_configured':
+        return 'Google Drive is not configured yet. Add GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and GOOGLE_REDIRECT_URI in apps/web/.env, then restart pnpm dev.'
+      case 'oauth_denied':
+        return 'Google Drive authorization was cancelled.'
+      case 'state_mismatch':
+        return 'Google Drive auth state check failed. Please try again.'
+      case 'no_code':
+        return 'Google Drive did not return an authorization code.'
+      case 'token_exchange_failed':
+        return 'Google Drive token exchange failed. Check your Google OAuth redirect URI and client secret.'
+      case 'no_access_token':
+        return 'Google Drive did not return an access token.'
+      default:
+        return 'Google Drive auth failed. Please try again.'
+    }
+  }
+
   // After Google OAuth callback, pick up the token from the server-side cookie
   onMount(async () => {
     const params = new URLSearchParams(window.location.search)
-    if (params.get('gdrive') === 'connected') {
-      // Remove the query param from URL immediately
+    const connected = params.get('gdrive') === 'connected'
+    const errorCode = params.get('error')
+
+    if (connected || errorCode) {
       history.replaceState(null, '', window.location.pathname)
+    }
+
+    if (connected) {
       const token = await pickupToken()
       if (token) {
         uiStore.toast({ type: 'success', message: 'Google Drive connected' })
       } else {
         uiStore.toast({ type: 'error', message: 'Google Drive auth failed — try again' })
       }
+    } else if (errorCode) {
+      uiStore.toast({ type: 'error', message: getOAuthErrorMessage(errorCode) })
     }
   })
 

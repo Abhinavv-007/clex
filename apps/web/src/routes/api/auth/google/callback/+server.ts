@@ -1,5 +1,6 @@
 import { redirect } from '@sveltejs/kit'
 import { env } from '$env/dynamic/private'
+import { getGoogleOAuthConfigStatus } from '$lib/server/googleAuth'
 import type { RequestHandler } from './$types'
 
 export const GET: RequestHandler = async ({ url, cookies }) => {
@@ -27,9 +28,10 @@ export const GET: RequestHandler = async ({ url, cookies }) => {
   const clientId = env.GOOGLE_CLIENT_ID
   const clientSecret = env.GOOGLE_CLIENT_SECRET
   const redirectUri = env.GOOGLE_REDIRECT_URI
+  const config = getGoogleOAuthConfigStatus(env)
 
-  if (!clientId || !clientSecret || !redirectUri) {
-    return new Response('Google OAuth not configured', { status: 503 })
+  if (!config.configured) {
+    throw redirect(302, '/workspace?error=oauth_not_configured')
   }
 
   // Exchange authorization code for access token

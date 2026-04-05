@@ -523,6 +523,8 @@ export class WebRTCTransfer {
         return 'This room already has both peers connected. Start a new transfer code.'
       case 'NO_PEER':
         return 'The other device is not connected yet.'
+      case 'WS_ERROR':
+        return 'Signaling connection failed. Make sure the signaling server is running and reachable from this device.'
       default:
         return `Signaling error: ${code}`
     }
