@@ -4,12 +4,13 @@
   import { filesStore } from '$stores/files'
   import { uiStore } from '$stores/ui'
   import { WebRTCTransfer } from '$transfer/webrtc'
+  import { getSignalingBaseUrl } from '$transfer/signaling'
   import type { TransferProfile } from '$transfer/types'
   import { formatBytes } from '$utils/format'
   import TransferProgress from './TransferProgress.svelte'
   import QRCode from './QRCode.svelte'
 
-  const signalingUrl = import.meta.env.PUBLIC_SIGNALING_URL ?? 'ws://localhost:8787'
+  const signalingUrl = getSignalingBaseUrl(import.meta.env.PUBLIC_SIGNALING_URL as string | undefined)
 
   let transfer: WebRTCTransfer | null = null
   let copied = false

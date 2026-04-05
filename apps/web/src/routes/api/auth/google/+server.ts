@@ -1,14 +1,16 @@
 import { redirect } from '@sveltejs/kit'
 import { env } from '$env/dynamic/private'
+import { getGoogleOAuthConfigStatus } from '$lib/server/googleAuth'
 import type { RequestHandler } from './$types'
 
 export const GET: RequestHandler = async ({ url, cookies }) => {
   const clientId = env.GOOGLE_CLIENT_ID
   const redirectUri = env.GOOGLE_REDIRECT_URI
   const scope = env.GOOGLE_DRIVE_SCOPE ?? 'https://www.googleapis.com/auth/drive.file'
+  const config = getGoogleOAuthConfigStatus(env)
 
-  if (!clientId || !redirectUri) {
-    return new Response('Google OAuth not configured', { status: 503 })
+  if (!config.configured) {
+    throw redirect(302, '/workspace?error=oauth_not_configured')
   }
 
   // Generate CSRF state token and store in a short-lived cookie

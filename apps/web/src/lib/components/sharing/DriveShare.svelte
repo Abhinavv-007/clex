@@ -14,7 +14,17 @@
 
   onMount(() => { tokenPresent = hasToken() })
 
-  async function connectDrive() { initiateGoogleAuth() }
+  async function connectDrive() {
+    error = ''
+
+    try {
+      await initiateGoogleAuth()
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Google Drive connection could not be started'
+      error = msg
+      uiStore.toast({ type: 'error', message: msg })
+    }
+  }
 
   async function upload() {
     const files = $filesStore
@@ -24,7 +34,10 @@
     }
 
     const token = getStoredToken()
-    if (!token) { connectDrive(); return }
+    if (!token) {
+      await connectDrive()
+      return
+    }
 
     uploading = true
     uploadProgress = 0

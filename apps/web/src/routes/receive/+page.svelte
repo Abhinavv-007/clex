@@ -1,12 +1,13 @@
 <script lang="ts">
   import { onDestroy } from 'svelte'
   import { transferStore } from '$stores/transfer'
+  import { getSignalingBaseUrl } from '$transfer/signaling'
   import { WebRTCTransfer } from '$transfer/webrtc'
   import { isValidRoomCode } from '$utils/crypto'
   import type { TransferProfile } from '$transfer/types'
   import TransferProgress from '$components/sharing/TransferProgress.svelte'
 
-  const signalingUrl = import.meta.env.PUBLIC_SIGNALING_URL ?? 'ws://localhost:8787'
+  const signalingUrl = getSignalingBaseUrl(import.meta.env.PUBLIC_SIGNALING_URL as string | undefined)
 
   let code = ''
   let error = ''

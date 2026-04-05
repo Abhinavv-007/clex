@@ -10,8 +10,9 @@
     ]
   },
   "scripts": {
-    "dev": "pnpm --filter web dev",
-    "dev:signal": "pnpm --filter signaling dev",
+    "dev": "pnpm -r --parallel --stream --filter @clex/signaling --filter @clex/web dev",
+    "dev:web": "pnpm --filter @clex/web dev",
+    "dev:signal": "pnpm --filter @clex/signaling dev",
     "build": "pnpm --filter signaling build && pnpm --filter web build",
     "preview": "pnpm --filter web preview",
     "typecheck": "pnpm -r typecheck",

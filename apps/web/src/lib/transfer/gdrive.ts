@@ -33,6 +33,11 @@ export interface UploadResult {
   directLink: string
 }
 
+interface GoogleOAuthStatusResponse {
+  configured: boolean
+  missing: string[]
+}
+
 export async function uploadToDrive(
   blob: Blob,
   fileName: string,
@@ -138,6 +143,21 @@ export async function pickupToken(): Promise<string | null> {
 
 // ─── Initiate OAuth from the workspace ───────────────────────────────────────
 
-export function initiateGoogleAuth(): void {
+async function ensureGoogleOAuthConfigured(): Promise<void> {
+  const resp = await fetch('/api/auth/google/status')
+  if (!resp.ok) {
+    throw new Error('Could not verify Google Drive configuration. Try again in a moment.')
+  }
+
+  const data = (await resp.json()) as GoogleOAuthStatusResponse
+  if (!data.configured) {
+    throw new Error(
+      'Google Drive is not configured yet. Add GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and GOOGLE_REDIRECT_URI to apps/web/.env, then restart pnpm dev.'
+    )
+  }
+}
+
+export async function initiateGoogleAuth(): Promise<void> {
+  await ensureGoogleOAuthConfigured()
   window.location.href = '/api/auth/google'
 }

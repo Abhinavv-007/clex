@@ -2,11 +2,12 @@
   import { page } from '$app/stores'
   import { onMount, onDestroy } from 'svelte'
   import { transferStore } from '$stores/transfer'
+  import { getSignalingBaseUrl } from '$transfer/signaling'
   import { WebRTCTransfer } from '$transfer/webrtc'
   import type { TransferProfile } from '$transfer/types'
   import TransferProgress from '$components/sharing/TransferProgress.svelte'
 
-  const signalingUrl = import.meta.env.PUBLIC_SIGNALING_URL ?? 'ws://localhost:8787'
+  const signalingUrl = getSignalingBaseUrl(import.meta.env.PUBLIC_SIGNALING_URL as string | undefined)
 
   $: roomCode = $page.params.code?.toUpperCase() ?? ''
   $: state = $transferStore.state

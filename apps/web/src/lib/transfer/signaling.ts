@@ -21,6 +21,55 @@ export type SignalingEvent = ServerMessage
 
 type SignalingListener = (event: SignalingEvent) => void
 
+const SIGNALING_HEALTH_TIMEOUT_MS = 2_500
+const DEFAULT_SIGNALING_PORT = '8787'
+
+function isLocalHostname(hostname: string): boolean {
+  return (
+    hostname === 'localhost' ||
+    hostname === '127.0.0.1' ||
+    hostname.startsWith('10.') ||
+    hostname.startsWith('192.168.') ||
+    /^172\.(1[6-9]|2\d|3[0-1])\./.test(hostname)
+  )
+}
+
+export function getSignalingBaseUrl(configuredUrl?: string): string {
+  if (typeof window === 'undefined') {
+    return configuredUrl ?? `ws://localhost:${DEFAULT_SIGNALING_PORT}`
+  }
+
+  const fallbackProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+  const fallbackUrl = `${fallbackProtocol}//${window.location.hostname}:${DEFAULT_SIGNALING_PORT}`
+  if (!configuredUrl) return fallbackUrl
+
+  try {
+    const resolved = new URL(configuredUrl)
+    const pageHostname = window.location.hostname
+
+    if (isLocalHostname(pageHostname) && isLocalHostname(resolved.hostname) && resolved.hostname !== pageHostname) {
+      resolved.hostname = pageHostname
+    }
+
+    return resolved.toString().replace(/\/$/, '')
+  } catch {
+    return configuredUrl
+  }
+}
+
+function getHealthUrl(roomUrl: string): string | null {
+  try {
+    const url = new URL(roomUrl)
+    url.protocol = url.protocol === 'wss:' ? 'https:' : 'http:'
+    url.pathname = '/health'
+    url.search = ''
+    url.hash = ''
+    return url.toString()
+  } catch {
+    return null
+  }
+}
+
 export class SignalingClient {
   private ws: WebSocket | null = null
   private listeners: Set<SignalingListener> = new Set()
@@ -69,19 +118,14 @@ export class SignalingClient {
       }
 
       ws.onerror = () => {
-        const err = new Error('Signaling WebSocket connection failed')
-        this.joinedReject?.(err)
-        this.joinedResolve = null
-        this.joinedReject = null
+        void this.rejectInitialJoin()
         this.emit({ type: 'error', code: 'WS_ERROR' })
       }
 
       ws.onclose = (event) => {
         this.stopPing()
         if (this.joinedReject) {
-          this.joinedReject(new Error(`WebSocket closed: ${event.code}`))
-          this.joinedResolve = null
-          this.joinedReject = null
+          void this.rejectInitialJoin(event.code)
           return
         }
         // Notify listeners as a peer_left event
@@ -127,5 +171,46 @@ export class SignalingClient {
       clearInterval(this.pingInterval)
       this.pingInterval = null
     }
+  }
+
+  private async rejectInitialJoin(closeCode?: number): Promise<void> {
+    const reject = this.joinedReject
+    if (!reject) return
+
+    this.joinedResolve = null
+    this.joinedReject = null
+    reject(await this.createConnectionError(closeCode))
+  }
+
+  private async createConnectionError(closeCode?: number): Promise<Error> {
+    const healthUrl = getHealthUrl(this.url)
+    if (!healthUrl) {
+      return new Error('Signaling WebSocket connection failed. Check PUBLIC_SIGNALING_URL.')
+    }
+
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), SIGNALING_HEALTH_TIMEOUT_MS)
+
+    try {
+      const response = await fetch(healthUrl, { signal: controller.signal })
+      clearTimeout(timeout)
+
+      if (response.ok) {
+        return new Error(
+          closeCode
+            ? `Signaling server is reachable, but the WebSocket handshake still failed (close code ${closeCode}). Check PUBLIC_SIGNALING_URL and signaling ALLOWED_ORIGIN.`
+            : 'Signaling server is reachable, but the WebSocket handshake failed. Check PUBLIC_SIGNALING_URL and signaling ALLOWED_ORIGIN.'
+        )
+      }
+    } catch {
+      clearTimeout(timeout)
+      return new Error(
+        'Signaling server is unreachable. Start it with pnpm dev (or pnpm dev:signal) and verify PUBLIC_SIGNALING_URL points at the signaling server for this device.'
+      )
+    }
+
+    return new Error(
+      'Signaling server health check failed. Verify PUBLIC_SIGNALING_URL and signaling ALLOWED_ORIGIN, then restart pnpm dev.'
+    )
   }
 }
