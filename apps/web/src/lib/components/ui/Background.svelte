@@ -6,10 +6,11 @@
   onMount(() => {
     mounted = true
 
-    const onMove = (e: MouseEvent) => {
-      document.documentElement.style.setProperty('--cursor-x', `${e.clientX}px`)
-      document.documentElement.style.setProperty('--cursor-y', `${e.clientY}px`)
+    const onMove = (event: MouseEvent) => {
+      document.documentElement.style.setProperty('--cursor-x', `${event.clientX}px`)
+      document.documentElement.style.setProperty('--cursor-y', `${event.clientY}px`)
     }
+
     window.addEventListener('mousemove', onMove, { passive: true })
 
     return () => {
@@ -18,122 +19,169 @@
   })
 </script>
 
-<style>
-  :global(:root) {
-  }
+<div class="bg-root" class:bg-mounted={mounted} aria-hidden="true">
+  <div class="bg-gradient" />
+  <div class="bg-aurora aurora-a" />
+  <div class="bg-aurora aurora-b" />
+  <div class="bg-aurora aurora-c" />
+  <div class="bg-rings" />
+  <div class="bg-grid" />
+  <div class="bg-spotlight" />
+  <div class="bg-scanline" />
+  <div class="bg-noise" />
+</div>
 
+<style>
   .bg-root {
     position: fixed;
     inset: 0;
     z-index: -1;
     overflow: hidden;
-    background: var(--canvas);
-    transition: background 0.3s ease;
+    background:
+      radial-gradient(circle at top center, rgba(53, 212, 255, 0.05), transparent 28%),
+      linear-gradient(180deg, #edf3fb 0%, #e6ecf7 44%, #edf3fb 100%);
+    transition: background 300ms ease;
   }
 
-  /* ── Hero radial glow — very subtle emerald tinted ── */
-  .hero-glow {
-    position: absolute;
-    top: -30%;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 1200px;
-    height: 800px;
-    border-radius: 50%;
-    opacity: 0;
-    filter: blur(120px);
-    transition: opacity 0.6s ease;
-    pointer-events: none;
+  :global(.dark) .bg-root {
+    background:
+      radial-gradient(circle at top center, rgba(53, 212, 255, 0.08), transparent 28%),
+      linear-gradient(180deg, #05070d 0%, #070b13 44%, #05070d 100%);
   }
 
-  :global(.dark) .hero-glow {
-    opacity: 1;
-    background: radial-gradient(
-      ellipse 70% 60% at 50% 40%,
-      rgba(16,185,129,0.04) 0%,
-      rgba(59,130,246,0.02) 30%,
-      transparent 70%
-    );
-  }
-
-  /* ── Grid overlay — subtle dot matrix ── */
-  .grid-overlay {
+  .bg-gradient,
+  .bg-grid,
+  .bg-rings,
+  .bg-spotlight,
+  .bg-noise,
+  .bg-scanline,
+  .bg-aurora {
     position: absolute;
     inset: 0;
-    opacity: 0;
     pointer-events: none;
-    background-image:
-      linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px);
-    background-size: 64px 64px;
-    mask-image: radial-gradient(ellipse 90% 60% at 50% 0%, black 20%, transparent 70%);
-    -webkit-mask-image: radial-gradient(ellipse 90% 60% at 50% 0%, black 20%, transparent 70%);
-    transition: opacity 0.4s ease;
   }
 
-  :global(.dark) .grid-overlay {
+  .bg-gradient {
+    background:
+      radial-gradient(circle at 15% 20%, rgba(53, 212, 255, 0.14), transparent 30%),
+      radial-gradient(circle at 82% 12%, rgba(135, 140, 255, 0.12), transparent 24%),
+      radial-gradient(circle at 50% 84%, rgba(74, 222, 179, 0.08), transparent 22%);
+    opacity: 0.9;
+  }
+
+  :global(.dark) .bg-gradient {
     opacity: 1;
   }
 
-  /* ── Ambient floating glow orbs ── */
-  .ambient-orb {
-    position: absolute;
-    border-radius: 50%;
+  .bg-aurora {
     filter: blur(100px);
-    pointer-events: none;
+    opacity: 0.32;
+    transform-origin: center;
+  }
+
+  .aurora-a {
+    inset: auto auto 12% -12%;
+    width: 34rem;
+    height: 34rem;
+    background: rgba(53, 212, 255, 0.22);
+    animation: driftA 24s ease-in-out infinite;
+  }
+
+  .aurora-b {
+    inset: -10% -6% auto auto;
+    width: 30rem;
+    height: 30rem;
+    background: rgba(135, 140, 255, 0.16);
+    animation: driftB 30s ease-in-out infinite;
+  }
+
+  .aurora-c {
+    inset: auto 18% -18% auto;
+    width: 24rem;
+    height: 24rem;
+    background: rgba(74, 222, 179, 0.14);
+    animation: driftC 20s ease-in-out infinite;
+  }
+
+  .bg-rings {
+    background:
+      radial-gradient(circle at 50% 8%, rgba(255, 255, 255, 0.18) 0, rgba(255, 255, 255, 0.04) 10%, transparent 11%),
+      radial-gradient(circle at 50% 8%, rgba(255, 255, 255, 0.08) 0, rgba(255, 255, 255, 0.02) 18%, transparent 19%);
+    opacity: 0.18;
+    transform: scale(1.5);
+  }
+
+  :global(.dark) .bg-rings {
+    opacity: 0.28;
+  }
+
+  .bg-grid {
+    background-image:
+      linear-gradient(rgba(9, 17, 31, 0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(9, 17, 31, 0.05) 1px, transparent 1px);
+    background-size: 72px 72px;
+    mask-image: radial-gradient(circle at 50% 12%, black 18%, transparent 72%);
+    -webkit-mask-image: radial-gradient(circle at 50% 12%, black 18%, transparent 72%);
+    opacity: 0.28;
+  }
+
+  :global(.dark) .bg-grid {
+    background-image:
+      linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    opacity: 1;
+  }
+
+  .bg-spotlight {
+    width: 34rem;
+    height: 34rem;
+    border-radius: 999px;
+    background: radial-gradient(circle, rgba(53, 212, 255, 0.14) 0%, rgba(53, 212, 255, 0.06) 24%, transparent 68%);
+    transform: translate(calc(var(--cursor-x, 50vw) - 17rem), calc(var(--cursor-y, 30vh) - 17rem));
     opacity: 0;
-    transition: opacity 0.6s ease;
+    transition: opacity 400ms ease;
+    filter: blur(20px);
   }
 
-  :global(.dark) .ambient-orb { opacity: 1; }
-
-  .orb-1 {
-    width: 400px;
-    height: 400px;
-    top: 20%;
-    left: -5%;
-    background: rgba(16,185,129,0.015);
-    animation: orbFloat1 25s ease-in-out infinite;
+  .bg-mounted .bg-spotlight {
+    opacity: 1;
   }
 
-  .orb-2 {
-    width: 500px;
-    height: 500px;
-    top: 60%;
-    right: -10%;
-    background: rgba(59,130,246,0.01);
-    animation: orbFloat2 30s ease-in-out infinite;
+  .bg-scanline {
+    background: linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.06), transparent);
+    opacity: 0.18;
+    transform: translateY(-110%);
+    animation: scan 13s linear infinite;
   }
 
-  @keyframes orbFloat1 {
-    0%, 100% { transform: translate(0, 0); }
-    33% { transform: translate(30px, -20px); }
-    66% { transform: translate(-15px, 25px); }
+  :global(.dark) .bg-scanline {
+    opacity: 0.12;
   }
 
-  @keyframes orbFloat2 {
-    0%, 100% { transform: translate(0, 0); }
-    50% { transform: translate(-25px, -30px); }
+  .bg-noise {
+    opacity: 0.035;
+    mix-blend-mode: soft-light;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 220 220' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.72' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 220px 220px;
   }
 
-  /* ── Noise grain ── */
-  .noise {
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    opacity: 0;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-    background-size: 200px;
-    mix-blend-mode: overlay;
+  @keyframes driftA {
+    0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+    50% { transform: translate3d(12%, -8%, 0) scale(1.12); }
   }
 
-  :global(.dark) .noise { opacity: 0.03; }
+  @keyframes driftB {
+    0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+    50% { transform: translate3d(-16%, 10%, 0) scale(1.08); }
+  }
+
+  @keyframes driftC {
+    0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+    50% { transform: translate3d(8%, -14%, 0) scale(1.1); }
+  }
+
+  @keyframes scan {
+    0% { transform: translateY(-115%); }
+    100% { transform: translateY(115%); }
+  }
 </style>
-
-<div class="bg-root" aria-hidden="true">
-  <div class="hero-glow" />
-  <div class="grid-overlay" />
-  <div class="ambient-orb orb-1" />
-  <div class="ambient-orb orb-2" />
-  <div class="noise" />
-</div>
