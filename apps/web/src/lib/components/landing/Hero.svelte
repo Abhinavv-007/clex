@@ -1,878 +1,587 @@
 <script lang="ts">
   import { onMount } from 'svelte'
 
+  const statusCycle = [
+    { label: 'Classifying files', color: 'cyan' },
+    { label: 'Compressing images', color: 'green' },
+    { label: 'Merging PDFs', color: 'violet' },
+    { label: 'Negotiating route', color: 'amber' },
+    { label: 'Delivery ready', color: 'green' },
+  ]
+
   const routeModes = [
-    {
-      label: 'Direct P2P',
-      tag: 'Primary path',
-      latency: '12 ms handoff',
-      note: 'Encrypted browser-to-browser delivery with zero file relay.',
-    },
-    {
-      label: 'Local Mesh',
-      tag: 'Fast lane',
-      latency: 'LAN throughput',
-      note: 'Same-network devices stay on the shortest path for near-instant delivery.',
-    },
-    {
-      label: 'Drive Fallback',
-      tag: 'Cloud link',
-      latency: '1-click backup',
-      note: 'If a direct route is unavailable, switch to your own Drive without leaving the flow.',
-    },
+    { id: 'p2p',    label: 'Direct P2P',    desc: 'Browser-to-browser',  speed: '12ms handoff',    icon: '⟷' },
+    { id: 'lan',    label: 'Local Network', desc: 'Same-Wi-Fi speed',     speed: 'LAN throughput',  icon: '⊡' },
+    { id: 'drive',  label: 'Drive Fallback',desc: 'Encrypted cloud link', speed: '1-click backup',  icon: '↑' },
   ]
 
-  const statusBursts = [
-    'Classifying uploads',
-    'Compressing image set',
-    'Rendering share scene',
-    'Negotiating direct route',
-    'Delivery ready',
+  const commandChips = ['Compress', 'Convert', 'Merge PDF', 'DOCX→PDF', 'ZIP', 'Share']
+  const fileQueue = [
+    { name: 'hero-shot.jpg',    type: 'IMG', size: '4.8 MB → 1.4 MB', status: '-71%',  active: true  },
+    { name: 'launch-brief.pdf', type: 'PDF', size: 'Merged · 3 pages',  status: 'Ready', active: false },
+    { name: 'pricing.docx',     type: 'DOC', size: 'Converted to PDF',  status: 'Done',  active: false },
+    { name: 'assets.zip',       type: 'ZIP', size: '12 files bundled',  status: 'Done',  active: false },
   ]
-
-  const commandChips = ['Compress', 'Convert', 'Watermark', 'Merge PDF', 'Share']
-  const roomCodeChars = 'A7M2QX'.split('')
 
   let mounted = false
-  let routeIndex = 0
   let statusIndex = 0
-  let progress = 18
-  let roomReveal = 0
+  let routeIndex = 0
+  let progress = 24
+  let progressDir = 1
 
   onMount(() => {
-    const raf = requestAnimationFrame(() => {
-      mounted = true
-    })
+    requestAnimationFrame(() => { mounted = true })
 
-    const routeTimer = window.setInterval(() => {
-      routeIndex = (routeIndex + 1) % routeModes.length
-    }, 2800)
-
-    const statusTimer = window.setInterval(() => {
-      statusIndex = (statusIndex + 1) % statusBursts.length
+    const statusTimer = setInterval(() => {
+      statusIndex = (statusIndex + 1) % statusCycle.length
     }, 1800)
 
-    const progressTimer = window.setInterval(() => {
-      progress = progress > 92 ? 24 : progress + 7
-    }, 340)
+    const routeTimer = setInterval(() => {
+      routeIndex = (routeIndex + 1) % routeModes.length
+    }, 2600)
 
-    const roomTimer = window.setInterval(() => {
-      roomReveal = roomReveal >= roomCodeChars.length ? 0 : roomReveal + 1
-    }, 420)
+    const progressTimer = setInterval(() => {
+      progress += progressDir * 6
+      if (progress >= 92) progressDir = -1
+      if (progress <= 14) progressDir = 1
+    }, 320)
 
     return () => {
-      cancelAnimationFrame(raf)
-      clearInterval(routeTimer)
       clearInterval(statusTimer)
+      clearInterval(routeTimer)
       clearInterval(progressTimer)
-      clearInterval(roomTimer)
     }
   })
 
+  $: activeStatus = statusCycle[statusIndex]
   $: activeRoute = routeModes[routeIndex]
-  $: activeStatus = statusBursts[statusIndex]
 </script>
 
 <section class="hero">
+  <!-- ── COPY SIDE ─────────────────────────────────── -->
   <div class="hero-inner">
-    <div class="hero-copy">
-      <div class="hero-kicker" class:is-mounted={mounted}>
-        <span class="kicker-dot" />
-        File motion layer
+    <div class="hero-copy" class:mounted>
+
+      <!-- Eyebrow badge -->
+      <div class="hero-eyebrow">
+        <span class="eyebrow-dot" />
+        <span class="font-mono text-2xs tracking-widest uppercase text-text-3">File motion workspace</span>
       </div>
 
-      <p class="hero-brand" class:is-mounted={mounted}>clex</p>
-
-      <h1 class="hero-title" class:is-mounted={mounted}>
-        The file workspace
-        <span class="hero-title-accent">that moves like software.</span>
+      <!-- Main heading -->
+      <h1 class="hero-heading">
+        <span class="heading-line-1">Drop.</span>
+        <span class="heading-line-2">Prepare.</span>
+        <span class="heading-line-3">Share.</span>
       </h1>
 
-      <p class="hero-sub" class:is-mounted={mounted}>
-        Prepare, route, and deliver files from one browser-native surface.
-        Compression, transfer, fallback, and sharing all stay in the same
-        motion system.
+      <!-- Sub -->
+      <p class="hero-sub">
+        One browser workspace for preparing files and sending them anywhere —
+        direct P2P, same-network speed, or Google Drive. No accounts, no uploads,
+        no friction.
       </p>
 
-      <div class="hero-actions" class:is-mounted={mounted}>
-        <a href="/workspace" class="btn-primary hero-primary">Open workspace</a>
-        <a href="#features" class="btn-secondary hero-secondary">See the product flow</a>
+      <!-- CTAs -->
+      <div class="hero-actions">
+        <a href="/workspace" class="btn-accent hero-cta">
+          Open workspace
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </a>
+        <a href="/how-it-works" class="btn-secondary hero-cta">
+          See how it works
+        </a>
       </div>
 
-      <div class="hero-proof" class:is-mounted={mounted}>
-        <div class="proof-item">
-          <span class="proof-label">Browser-native</span>
-          <strong>Prepare files without uploads</strong>
+      <!-- Trust signals -->
+      <div class="hero-trust">
+        <div class="trust-item">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M7 1L9 5H13L9.5 7.5L11 12L7 9.5L3 12L4.5 7.5L1 5H5L7 1Z"
+              fill="var(--accent)" stroke="#000" stroke-width="1"/>
+          </svg>
+          No account required
         </div>
-        <div class="proof-item">
-          <span class="proof-label">Routing engine</span>
-          <strong>Direct, local, or Drive in one surface</strong>
+        <div class="trust-item">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M7 1L9 5H13L9.5 7.5L11 12L7 9.5L3 12L4.5 7.5L1 5H5L7 1Z"
+              fill="var(--accent)" stroke="#000" stroke-width="1"/>
+          </svg>
+          Files never touch our servers
         </div>
-        <div class="proof-item">
-          <span class="proof-label">Private by design</span>
-          <strong>No server storage in the transfer path</strong>
+        <div class="trust-item">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M7 1L9 5H13L9.5 7.5L11 12L7 9.5L3 12L4.5 7.5L1 5H5L7 1Z"
+              fill="var(--accent)" stroke="#000" stroke-width="1"/>
+          </svg>
+          Works offline after load
         </div>
       </div>
     </div>
 
-    <div class="hero-stage" class:is-mounted={mounted}>
+    <!-- ── PRODUCT DEMO ──────────────────────────────── -->
+    <div class="hero-stage" class:mounted>
       <div class="stage-shell">
-        <div class="stage-toolbar">
-          <div class="toolbar-dots">
-            <span />
-            <span />
-            <span />
+
+        <!-- Title bar -->
+        <div class="stage-titlebar">
+          <div class="titlebar-dots">
+            <span style="background:#FF5F57" />
+            <span style="background:#FFBD2E" />
+            <span style="background:#28C840" />
           </div>
-          <span class="toolbar-title">Clex orchestration layer</span>
-          <span class="toolbar-chip">Live demo</span>
+          <span class="font-mono text-2xs tracking-widest uppercase text-text-3">Clex Workspace</span>
+          <div class="titlebar-status">
+            <span class="status-dot" style="background:var(--{activeStatus.color})" />
+            <span class="font-mono text-2xs text-text-2">{activeStatus.label}</span>
+          </div>
         </div>
 
-        <div class="stage-layout">
-          <aside class="stage-sidebar">
-            <div class="sidebar-brand">
-              <span class="sidebar-logo">C</span>
-              <div>
-                <p>clex</p>
-                <span>Workspace OS</span>
-              </div>
+        <!-- Main area -->
+        <div class="stage-body">
+
+          <!-- Left panel: file queue -->
+          <div class="stage-panel">
+            <div class="panel-header">
+              <span class="font-mono text-2xs uppercase tracking-widest text-text-3">Queue</span>
+              <span class="badge-count">{fileQueue.length}</span>
             </div>
 
-            <div class="sidebar-nav">
-              <div class="sidebar-link sidebar-link-active">Ingest</div>
-              <div class="sidebar-link">Prepare</div>
-              <div class="sidebar-link">Share</div>
-            </div>
-
-            <div class="sidebar-meter">
-              <div class="meter-head">
-                <span>Processing load</span>
-                <strong>{progress}%</strong>
-              </div>
-              <div class="meter-track">
-                <div class="meter-fill" style={`width: ${progress}%`} />
-              </div>
-            </div>
-
-            <div class="sidebar-card">
-              <span>Queue health</span>
-              <strong>08 files ready</strong>
-              <p>Classification, conversion, and delivery are chained automatically.</p>
-            </div>
-          </aside>
-
-          <div class="stage-main">
-            <div class="stage-header">
-              <div>
-                <span class="stage-label">Live activity</span>
-                <strong>{activeStatus}</strong>
-              </div>
-              <div class="stage-pill">
-                <span class="stage-pill-dot" />
-                Syncing motion states
-              </div>
-            </div>
-
-            <div class="stage-canvas">
-              <div class="file-rail">
-                <div class="file-row file-row-active">
-                  <div class="file-icon">IMG</div>
-                  <div>
-                    <strong>hero-shot.jpg</strong>
-                    <span>4.8 MB → 1.4 MB</span>
+            <div class="file-list">
+              {#each fileQueue as file, i}
+                <div class="file-row" class:file-active={routeIndex === i % routeModes.length}>
+                  <div class="file-icon file-icon-{file.type.toLowerCase()}">{file.type}</div>
+                  <div class="file-info">
+                    <span class="file-name">{file.name}</span>
+                    <span class="file-size">{file.size}</span>
                   </div>
-                  <em>-71%</em>
+                  <span class="file-status" class:status-active={file.active}>{file.status}</span>
                 </div>
-                <div class="file-row">
-                  <div class="file-icon file-icon-pdf">PDF</div>
-                  <div>
-                    <strong>launch-brief.pdf</strong>
-                    <span>Merged and staged</span>
-                  </div>
-                  <em>Ready</em>
-                </div>
-                <div class="file-row">
-                  <div class="file-icon file-icon-doc">DOC</div>
-                  <div>
-                    <strong>pricing.docx</strong>
-                    <span>Converted to PDF</span>
-                  </div>
-                  <em>Done</em>
-                </div>
-              </div>
+              {/each}
+            </div>
 
-              <div class="preview-core">
-                <div class="preview-stack preview-stack-back" />
-                <div class="preview-stack preview-stack-mid" />
-                <div class="preview-stack preview-stack-front">
-                  <div class="preview-header">
-                    <span>Share scene</span>
-                    <strong>{activeRoute.label}</strong>
-                  </div>
-                  <div class="preview-beam">
-                    <div class="beam-node">
-                      <span class="beam-ring" />
-                      <strong>Sender</strong>
-                    </div>
-                    <div class="beam-track">
-                      <span class="beam-pulse" />
-                    </div>
-                    <div class="beam-node beam-node-alt">
-                      <span class="beam-ring" />
-                      <strong>Receiver</strong>
-                    </div>
-                  </div>
-                  <div class="preview-metrics">
-                    <div>
-                      <span>Method</span>
-                      <strong>{activeRoute.latency}</strong>
-                    </div>
-                    <div>
-                      <span>Status</span>
-                      <strong>End-to-end ready</strong>
-                    </div>
-                  </div>
-                </div>
+            <!-- Progress -->
+            <div class="panel-progress">
+              <div class="progress-label">
+                <span class="font-mono text-2xs text-text-3">Processing</span>
+                <span class="font-mono text-2xs text-text-1">{progress}%</span>
               </div>
+              <div class="progress-bar">
+                <div class="progress-fill" style="width:{progress}%" />
+              </div>
+            </div>
+          </div>
 
-              <div class="route-rail">
-                {#each routeModes as route, index}
-                  <div class="route-card" class:route-card-active={routeIndex === index}>
-                    <span>{route.label}</span>
-                    <strong>{route.tag}</strong>
-                    <p>{route.note}</p>
-                  </div>
-                {/each}
+          <!-- Right panel: transfer scene -->
+          <div class="stage-panel stage-panel-main">
+            <div class="panel-header">
+              <span class="font-mono text-2xs uppercase tracking-widest text-text-3">Transfer</span>
+              <div class="route-badge">
+                <span class="route-badge-dot" />
+                <span class="font-mono text-2xs">{activeRoute.label}</span>
               </div>
             </div>
 
+            <!-- Beam visualization -->
+            <div class="beam-scene">
+              <div class="beam-node beam-node-sender">
+                <div class="beam-ring" />
+                <span class="beam-label">Sender</span>
+              </div>
+
+              <div class="beam-track">
+                <div class="beam-line" />
+                <div class="beam-pulse" />
+                <div class="route-tag">{activeRoute.icon} {activeRoute.speed}</div>
+              </div>
+
+              <div class="beam-node beam-node-receiver">
+                <div class="beam-ring beam-ring-alt" />
+                <span class="beam-label">Receiver</span>
+              </div>
+            </div>
+
+            <!-- Route selector -->
+            <div class="route-pills">
+              {#each routeModes as route, i}
+                <button
+                  class="route-pill"
+                  class:route-pill-active={routeIndex === i}
+                  on:click={() => routeIndex = i}
+                >
+                  <span class="route-pill-dot" />
+                  {route.label}
+                </button>
+              {/each}
+            </div>
+
+            <!-- Command strip -->
             <div class="command-strip">
-              {#each commandChips as chip, index}
-                <span class="command-chip" class:command-chip-active={statusIndex === index}>{chip}</span>
+              {#each commandChips as chip, i}
+                <span class="command-chip" class:chip-active={statusIndex === i}>{chip}</span>
               {/each}
             </div>
           </div>
         </div>
       </div>
+
+      <!-- Decorative tag -->
+      <div class="stage-tag">
+        <span class="font-mono text-2xs tracking-widest uppercase">Live demo</span>
+      </div>
     </div>
   </div>
 
-  <div class="hero-marquee" aria-hidden="true">
-    <span>Micro-interactions</span>
-    <span>Product demo motion</span>
-    <span>Direct P2P routing</span>
-    <span>Landing page choreography</span>
-    <span>Browser-native processing</span>
+  <!-- ── TICKER BAR ─────────────────────────────────── -->
+  <div class="hero-ticker" aria-hidden="true">
+    <div class="ticker-track">
+      {#each Array(2) as _}
+        <span>Direct P2P Transfer</span>
+        <span class="ticker-sep">·</span>
+        <span>Local Network Speed</span>
+        <span class="ticker-sep">·</span>
+        <span>Google Drive Fallback</span>
+        <span class="ticker-sep">·</span>
+        <span>Image Compression</span>
+        <span class="ticker-sep">·</span>
+        <span>PDF Operations</span>
+        <span class="ticker-sep">·</span>
+        <span>DOCX to PDF</span>
+        <span class="ticker-sep">·</span>
+        <span>ZIP Bundling</span>
+        <span class="ticker-sep">·</span>
+        <span>No Server Storage</span>
+        <span class="ticker-sep">·</span>
+        <span>Privacy First</span>
+        <span class="ticker-sep">·</span>
+        <span>Offline Capable</span>
+        <span class="ticker-sep">·</span>
+      {/each}
+    </div>
   </div>
 </section>
 
 <style>
+  /* ── HERO LAYOUT ─────────────────────────────────── */
   .hero {
     position: relative;
-    min-height: calc(100svh - 56px);
-    padding: 112px 24px 64px;
+    min-height: 100svh;
+    padding-top: 100px;
     overflow: clip;
   }
 
   .hero-inner {
-    max-width: 1320px;
+    max-width: 1280px;
     margin: 0 auto;
+    padding: 48px 24px 80px;
     display: grid;
-    grid-template-columns: minmax(0, 0.94fr) minmax(0, 1.06fr);
-    gap: 40px;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+    gap: 48px;
     align-items: center;
   }
 
+  /* ── COPY ─────────────────────────────────────────── */
   .hero-copy {
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
-    gap: 22px;
-    position: relative;
-    z-index: 1;
+    gap: 28px;
   }
 
-  .hero-kicker,
-  .hero-brand,
-  .hero-title,
-  .hero-sub,
-  .hero-actions,
-  .hero-proof,
-  .hero-stage {
+  .hero-copy > * {
     opacity: 0;
     transform: translateY(24px);
-    transition:
-      opacity 700ms var(--ease-out),
-      transform 700ms var(--ease-out);
+    transition: opacity 700ms var(--ease-out), transform 700ms var(--ease-out);
   }
 
-  .hero-kicker.is-mounted,
-  .hero-brand.is-mounted,
-  .hero-title.is-mounted,
-  .hero-sub.is-mounted,
-  .hero-actions.is-mounted,
-  .hero-proof.is-mounted,
-  .hero-stage.is-mounted {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  .hero-copy.mounted > *:nth-child(1) { opacity: 1; transform: none; transition-delay: 0ms; }
+  .hero-copy.mounted > *:nth-child(2) { opacity: 1; transform: none; transition-delay: 80ms; }
+  .hero-copy.mounted > *:nth-child(3) { opacity: 1; transform: none; transition-delay: 160ms; }
+  .hero-copy.mounted > *:nth-child(4) { opacity: 1; transform: none; transition-delay: 240ms; }
+  .hero-copy.mounted > *:nth-child(5) { opacity: 1; transform: none; transition-delay: 320ms; }
 
-  .hero-brand.is-mounted { transition-delay: 80ms; }
-  .hero-title.is-mounted { transition-delay: 140ms; }
-  .hero-sub.is-mounted { transition-delay: 200ms; }
-  .hero-actions.is-mounted { transition-delay: 260ms; }
-  .hero-proof.is-mounted { transition-delay: 320ms; }
-  .hero-stage.is-mounted { transition-delay: 220ms; }
-
-  .hero-kicker {
+  /* ── EYEBROW ─────────────────────────────────────── */
+  .hero-eyebrow {
     display: inline-flex;
     align-items: center;
     gap: 10px;
     padding: 8px 14px;
-    border-radius: 999px;
-    border: 1px solid var(--border);
-    background: rgba(255, 255, 255, 0.04);
-    font-size: 11px;
-    font-weight: 800;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    color: var(--text-2);
+    border-radius: 8px;
+    border: 2px solid var(--border-hard);
+    background: var(--surface);
+    box-shadow: var(--shadow-sm);
+    width: fit-content;
   }
 
-  .kicker-dot {
+  .eyebrow-dot {
     width: 7px;
     height: 7px;
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.6);
-    box-shadow: 0 0 12px rgba(255, 255, 255, 0.2);
-    animation: pulseKicker 2.4s ease-in-out infinite;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: pulse-dot 2.4s ease-in-out infinite;
   }
 
-  .hero-brand {
-    margin: 0;
-    font-size: clamp(1rem, 1.5vw, 1.18rem);
-    font-weight: 800;
-    letter-spacing: 0.34em;
-    text-transform: uppercase;
-    color: rgba(244, 247, 253, 0.72);
-  }
-
-  :global(:not(.dark)) .hero-brand {
-    color: rgba(9, 17, 31, 0.46);
-  }
-
-  .hero-title {
-    margin: 0;
-    max-width: 11ch;
+  /* ── HEADING ─────────────────────────────────────── */
+  .hero-heading {
+    display: flex;
+    flex-direction: column;
     font-family: var(--font-display);
-    font-size: clamp(3.8rem, 8vw, 7rem);
-    line-height: 0.94;
-    letter-spacing: -0.06em;
+    font-size: clamp(4rem, 9vw, 7.5rem);
+    font-weight: 700;
+    line-height: 0.92;
+    letter-spacing: -0.05em;
     color: var(--text-1);
-    text-wrap: balance;
   }
 
-  .hero-title-accent {
-    display: block;
-    margin-top: 8px;
-    color: rgba(255, 255, 255, 0.4);
+  .heading-line-1 { color: var(--text-1); }
+  .heading-line-2 { color: var(--text-2); }
+
+  .heading-line-3 {
+    color: var(--accent);
+    -webkit-text-stroke: 2px var(--text-1);
+    paint-order: stroke fill;
   }
 
-  :global(:not(.dark)) .hero-title-accent {
-    color: rgba(0, 0, 0, 0.4);
+  :global(:not(.dark)) .heading-line-3 {
+    -webkit-text-stroke: 2px #000;
   }
 
+  /* ── SUB ─────────────────────────────────────────── */
   .hero-sub {
-    max-width: 34rem;
-    margin: 0;
+    max-width: 38ch;
     font-size: 17px;
     line-height: 1.72;
     color: var(--text-2);
   }
 
+  /* ── ACTIONS ─────────────────────────────────────── */
   .hero-actions {
     display: flex;
+    gap: 12px;
     flex-wrap: wrap;
-    gap: 12px;
   }
 
-  .hero-primary,
-  .hero-secondary {
-    min-width: 178px;
+  .hero-cta {
+    min-width: 160px;
+    padding: 14px 24px;
+    font-size: 15px;
   }
 
-  .hero-proof {
-    width: min(100%, 42rem);
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 12px;
+  /* ── TRUST SIGNALS ───────────────────────────────── */
+  .hero-trust {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
   }
 
-  .proof-item {
-    padding: 16px;
-    border-radius: 20px;
-    border: 1px solid var(--border);
-    background: rgba(255, 255, 255, 0.03);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-  }
-
-  :global(:not(.dark)) .proof-item {
-    background: rgba(255, 255, 255, 0.54);
-  }
-
-  .proof-item strong {
-    display: block;
-    font-size: 13px;
-    line-height: 1.5;
-    color: var(--text-1);
-  }
-
-  .proof-label {
-    display: block;
-    margin-bottom: 8px;
-    font-size: 10px;
-    font-weight: 800;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
+  .trust-item {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
     color: var(--text-3);
+    text-transform: uppercase;
   }
 
+  /* ── STAGE ───────────────────────────────────────── */
   .hero-stage {
     position: relative;
-    min-height: 720px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    opacity: 0;
+    transform: translateY(32px) scale(0.97);
+    transition: opacity 800ms var(--ease-out) 200ms, transform 800ms var(--ease-out) 200ms;
   }
 
-
+  .hero-stage.mounted {
+    opacity: 1;
+    transform: none;
+  }
 
   .stage-shell {
-    width: min(100%, 760px);
-    border-radius: 30px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02)),
-      rgba(8, 12, 21, 0.88);
-    box-shadow:
-      0 40px 120px rgba(0, 0, 0, 0.46),
-      0 0 0 1px rgba(255, 255, 255, 0.06);
+    border: 2px solid var(--border-hard);
+    border-radius: 20px;
+    background: var(--surface);
+    box-shadow: var(--shadow-xl);
     overflow: hidden;
-    transform: perspective(1800px) rotateX(8deg) rotateY(-12deg);
-    transform-style: preserve-3d;
   }
 
-  :global(:not(.dark)) .stage-shell {
-    background:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(247, 250, 255, 0.74)),
-      rgba(255, 255, 255, 0.82);
-    border-color: rgba(255, 255, 255, 0.44);
-    box-shadow:
-      0 40px 120px rgba(10, 22, 45, 0.14),
-      0 0 0 1px rgba(0, 0, 0, 0.08);
-  }
-
-  .stage-toolbar {
+  .stage-titlebar {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 18px 20px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    padding: 14px 18px;
+    border-bottom: 2px solid var(--border);
+    background: var(--surface-2);
+    gap: 12px;
   }
 
-  :global(:not(.dark)) .stage-toolbar {
-    border-bottom-color: rgba(12, 19, 34, 0.08);
-  }
-
-  .toolbar-dots {
+  .titlebar-dots {
     display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  .titlebar-dots span {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 1px solid rgba(0,0,0,0.2);
+  }
+
+  :global(.dark) .titlebar-dots span { border-color: rgba(255,255,255,0.15); }
+
+  .titlebar-status {
+    display: flex;
+    align-items: center;
     gap: 7px;
+    flex-shrink: 0;
   }
 
-  .toolbar-dots span {
-    width: 10px;
-    height: 10px;
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.18);
-  }
-
-  :global(:not(.dark)) .toolbar-dots span {
-    background: rgba(12, 19, 34, 0.14);
-  }
-
-  .toolbar-title,
-  .toolbar-chip {
-    font-size: 11px;
-    font-weight: 800;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--text-3);
-  }
-
-  .toolbar-chip {
-    padding: 7px 10px;
-    border-radius: 999px;
-    border: 1px solid rgba(255, 255, 255, 0.16);
-    color: rgba(255, 255, 255, 0.7);
-    background: rgba(255, 255, 255, 0.08);
-  }
-
-  .stage-layout {
-    display: grid;
-    grid-template-columns: 188px minmax(0, 1fr);
-    min-height: 560px;
-  }
-
-  .stage-sidebar {
-    padding: 24px 18px;
-    border-right: 1px solid rgba(255, 255, 255, 0.06);
-    background: rgba(255, 255, 255, 0.02);
-    display: flex;
-    flex-direction: column;
-    gap: 18px;
-  }
-
-  :global(:not(.dark)) .stage-sidebar {
-    border-right-color: rgba(12, 19, 34, 0.08);
-    background: rgba(12, 19, 34, 0.03);
-  }
-
-  .sidebar-brand {
-    display: flex;
-    gap: 12px;
-    align-items: center;
-  }
-
-  .sidebar-logo {
-    width: 36px;
-    height: 36px;
-    border-radius: 12px;
-    display: grid;
-    place-items: center;
-    background: #ffffff;
-    color: #000000;
-    font-weight: 900;
-  }
-
-  .sidebar-brand p,
-  .sidebar-brand span {
-    margin: 0;
-  }
-
-  .sidebar-brand p {
-    font-size: 14px;
-    font-weight: 800;
-  }
-
-  .sidebar-brand span {
-    font-size: 11px;
-    color: var(--text-3);
-  }
-
-  .sidebar-nav {
-    display: grid;
-    gap: 8px;
-  }
-
-  .sidebar-link {
-    padding: 10px 12px;
-    border-radius: 14px;
-    font-size: 13px;
-    font-weight: 700;
-    color: var(--text-2);
-    border: 1px solid transparent;
-  }
-
-  .sidebar-link-active {
-    color: var(--text-1);
-    border-color: rgba(255, 255, 255, 0.18);
-    background: rgba(255, 255, 255, 0.06);
-  }
-
-  .sidebar-meter,
-  .sidebar-card {
-    padding: 14px;
-    border-radius: 18px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    background: rgba(255, 255, 255, 0.03);
-  }
-
-  :global(:not(.dark)) .sidebar-meter,
-  :global(:not(.dark)) .sidebar-card {
-    border-color: rgba(12, 19, 34, 0.08);
-    background: rgba(255, 255, 255, 0.56);
-  }
-
-  .meter-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 10px;
-    font-size: 11px;
-    color: var(--text-3);
-  }
-
-  .meter-head strong {
-    color: var(--text-1);
-    font-size: 12px;
-  }
-
-  .meter-track {
-    height: 6px;
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.06);
-    overflow: hidden;
-  }
-
-  .meter-fill {
-    height: 100%;
-    border-radius: inherit;
-    background: linear-gradient(90deg, #333333 0%, #888888 58%, #ffffff 100%);
-    transition: width 260ms ease;
-  }
-
-  .sidebar-card strong {
-    display: block;
-    margin: 8px 0 4px;
-    font-size: 15px;
-    color: var(--text-1);
-  }
-
-  .sidebar-card p {
-    margin: 0;
-    font-size: 12px;
-    line-height: 1.6;
-    color: var(--text-2);
-  }
-
-  .stage-main {
-    padding: 24px;
-    display: flex;
-    flex-direction: column;
-    gap: 18px;
-  }
-
-  .stage-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-  }
-
-  .stage-label {
-    display: block;
-    margin-bottom: 4px;
-    font-size: 10px;
-    font-weight: 800;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    color: var(--text-3);
-  }
-
-  .stage-header strong {
-    font-size: 19px;
-    letter-spacing: -0.03em;
-    color: var(--text-1);
-  }
-
-  .stage-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 9px;
-    padding: 10px 14px;
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    font-size: 11px;
-    font-weight: 700;
-    color: var(--text-2);
-  }
-
-  .stage-pill-dot {
+  .status-dot {
     width: 7px;
     height: 7px;
-    border-radius: 999px;
-    background: var(--success);
-    box-shadow: 0 0 14px rgba(74, 222, 179, 0.46);
-    animation: pulseKicker 2.4s ease-in-out infinite;
+    border-radius: 50%;
+    animation: pulse-dot 2s ease-in-out infinite;
   }
 
-  .stage-canvas {
+  .stage-body {
     display: grid;
-    grid-template-columns: 1.02fr 1.22fr 1fr;
+    grid-template-columns: 1fr 1.4fr;
+    min-height: 480px;
+  }
+
+  /* ── PANELS ──────────────────────────────────────── */
+  .stage-panel {
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
     gap: 14px;
-    min-height: 360px;
   }
 
-  .file-rail,
-  .route-rail {
-    display: grid;
-    gap: 12px;
+  .stage-panel + .stage-panel {
+    border-left: 2px solid var(--border);
   }
 
-  .file-row,
-  .route-card {
-    padding: 14px;
-    border-radius: 20px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    background: rgba(255, 255, 255, 0.03);
-    transition:
-      transform 220ms var(--ease-out),
-      border-color 220ms ease,
-      background 220ms ease;
+  .panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
   }
 
-  :global(:not(.dark)) .file-row,
-  :global(:not(.dark)) .route-card {
-    border-color: rgba(12, 19, 34, 0.08);
-    background: rgba(255, 255, 255, 0.6);
+  .badge-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 5px;
+    background: var(--accent);
+    color: #000;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    border: 1px solid #000;
   }
 
-  .file-row-active,
-  .route-card-active {
-    transform: translateY(-2px);
-    border-color: rgba(53, 212, 255, 0.22);
-    background: rgba(53, 212, 255, 0.08);
-    box-shadow: 0 0 0 1px rgba(53, 212, 255, 0.08);
+  /* ── FILE LIST ───────────────────────────────────── */
+  .file-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1;
   }
 
   .file-row {
-    display: grid;
-    grid-template-columns: auto 1fr auto;
-    gap: 10px;
+    display: flex;
     align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1.5px solid var(--border);
+    background: var(--surface-2);
+    transition: border-color 220ms ease, background 220ms ease, transform 180ms ease, box-shadow 180ms ease;
+  }
+
+  .file-active {
+    border-color: var(--border-hard);
+    background: var(--surface);
+    box-shadow: var(--shadow-sm);
+    transform: translateX(2px);
   }
 
   .file-icon {
-    width: 38px;
-    height: 38px;
-    border-radius: 13px;
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
     display: grid;
     place-items: center;
-    font-size: 11px;
-    font-weight: 900;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: #04131d;
-    background: linear-gradient(135deg, #bff3ff 0%, #4dd6ff 100%);
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    flex-shrink: 0;
+    border: 1.5px solid #000;
   }
 
-  .file-icon-pdf {
-    background: linear-gradient(135deg, #ffe2b4 0%, #f1b464 100%);
-  }
+  .file-icon-img { background: #BFF3FF; color: #04131D; }
+  .file-icon-pdf { background: #FFE2B4; color: #3D2200; }
+  .file-icon-doc { background: #DDD6FE; color: #2D1B69; }
+  .file-icon-zip { background: #D1FAE5; color: #064E3B; }
 
-  .file-icon-doc {
-    background: linear-gradient(135deg, #c9d0ff 0%, #878cff 100%);
-  }
-
-  .file-row strong,
-  .route-card strong {
-    display: block;
-    font-size: 13px;
-    line-height: 1.35;
-    color: var(--text-1);
-  }
-
-  .file-row span,
-  .route-card span,
-  .route-card p {
-    display: block;
-    margin: 0;
-    font-size: 11px;
-    line-height: 1.5;
-    color: var(--text-2);
-  }
-
-  .file-row em {
-    font-style: normal;
-    font-size: 11px;
-    font-weight: 800;
-    color: var(--accent);
-  }
-
-  .preview-core {
-    position: relative;
-    min-height: 100%;
-    display: grid;
-    place-items: center;
-  }
-
-  .preview-stack {
-    position: absolute;
-    inset: 0;
-    border-radius: 28px;
-  }
-
-  .preview-stack-back {
-    transform: translateY(20px) scale(0.92);
-    background: rgba(53, 212, 255, 0.08);
-    filter: blur(4px);
-  }
-
-  .preview-stack-mid {
-    transform: translateY(10px) scale(0.96);
-    background: rgba(135, 140, 255, 0.08);
-    filter: blur(2px);
-  }
-
-  .preview-stack-front {
-    position: relative;
-    inset: auto;
-    width: 100%;
-    min-height: 100%;
-    padding: 18px;
-    border-radius: 28px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    background:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03)),
-      rgba(4, 9, 17, 0.92);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
-    overflow: hidden;
-  }
-
-  .preview-stack-front::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background:
-      radial-gradient(circle at 50% 30%, rgba(53, 212, 255, 0.16), transparent 30%),
-      linear-gradient(135deg, transparent, rgba(255, 255, 255, 0.06), transparent 66%);
-    pointer-events: none;
-  }
-
-  .preview-header,
-  .preview-metrics {
-    position: relative;
-    z-index: 1;
+  .file-info {
+    flex: 1;
+    min-width: 0;
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
+    flex-direction: column;
+    gap: 2px;
   }
 
-  .preview-header span,
-  .preview-metrics span {
+  .file-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-1);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .file-size {
+    font-family: var(--font-mono);
     font-size: 10px;
-    font-weight: 800;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
     color: var(--text-3);
   }
 
-  .preview-header strong,
-  .preview-metrics strong {
-    font-size: 12px;
-    color: var(--text-1);
+  .file-status {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-3);
+    flex-shrink: 0;
   }
 
-  .preview-beam {
-    position: relative;
-    z-index: 1;
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
+  .status-active { color: var(--green); }
+
+  /* ── PROGRESS ────────────────────────────────────── */
+  .panel-progress { margin-top: auto; }
+
+  .progress-label {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 6px;
+  }
+
+  /* ── BEAM SCENE ──────────────────────────────────── */
+  .beam-scene {
+    display: flex;
     align-items: center;
-    gap: 16px;
-    margin: 40px 0;
+    gap: 0;
+    padding: 28px 0;
+    flex: 1;
   }
 
   .beam-node {
@@ -880,196 +589,250 @@
     flex-direction: column;
     align-items: center;
     gap: 10px;
-    color: var(--text-1);
+    flex-shrink: 0;
   }
 
   .beam-ring {
-    width: 54px;
-    height: 54px;
-    border-radius: 999px;
-    border: 1px solid rgba(53, 212, 255, 0.24);
-    background: radial-gradient(circle, rgba(53, 212, 255, 0.22), rgba(53, 212, 255, 0.02));
-    box-shadow: inset 0 0 24px rgba(53, 212, 255, 0.14);
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    border: 2px solid var(--border-hard);
+    background: var(--surface-2);
+    box-shadow: var(--shadow-sm);
+    position: relative;
   }
 
-  .beam-node-alt .beam-ring {
-    border-color: rgba(74, 222, 179, 0.24);
-    background: radial-gradient(circle, rgba(74, 222, 179, 0.22), rgba(74, 222, 179, 0.02));
+  .beam-ring::after {
+    content: '';
+    position: absolute;
+    inset: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    opacity: 0.3;
+  }
+
+  .beam-ring-alt::after { background: var(--cyan); }
+
+  .beam-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-2);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
   }
 
   .beam-track {
+    flex: 1;
     position: relative;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    padding: 0 8px;
+  }
+
+  .beam-line {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
     height: 2px;
-    background: linear-gradient(90deg, rgba(53, 212, 255, 0.04), rgba(53, 212, 255, 0.38), rgba(74, 222, 179, 0.18));
-    overflow: hidden;
+    background: var(--border);
+    transform: translateY(-50%);
   }
 
   .beam-pulse {
     position: absolute;
-    top: -3px;
     left: 0;
-    width: 38%;
-    height: 8px;
-    border-radius: 999px;
-    background: linear-gradient(90deg, transparent, rgba(191, 243, 255, 0.92), transparent);
-    animation: beamTravel 2.8s linear infinite;
+    width: 35%;
+    height: 4px;
+    border-radius: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    animation: beam-travel 2.4s ease-in-out infinite;
+    top: 50%;
+    transform: translateY(-50%);
   }
 
-  .route-card p {
-    margin-top: 8px;
+  .route-tag {
+    position: absolute;
+    top: 4px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 700;
+    color: var(--text-3);
+    white-space: nowrap;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
   }
 
+  /* ── ROUTE PILLS ─────────────────────────────────── */
+  .route-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .route-badge-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--green);
+    animation: pulse-dot 2s ease-in-out infinite;
+  }
+
+  .route-pills {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .route-pill {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 12px;
+    border-radius: 8px;
+    border: 1.5px solid var(--border);
+    background: var(--surface-2);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-3);
+    cursor: pointer;
+    transition: all 160ms ease;
+  }
+
+  .route-pill:hover {
+    border-color: var(--border-strong);
+    color: var(--text-1);
+  }
+
+  .route-pill-active {
+    border-color: var(--border-hard);
+    background: var(--accent);
+    color: #000;
+    box-shadow: 2px 2px 0 #000;
+  }
+
+  .route-pill-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+
+  /* ── COMMAND STRIP ───────────────────────────────── */
   .command-strip {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 6px;
+    margin-top: auto;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
   }
 
   .command-chip {
-    padding: 8px 12px;
-    border-radius: 999px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    background: rgba(255, 255, 255, 0.03);
-    font-size: 11px;
-    font-weight: 800;
-    letter-spacing: 0.08em;
+    padding: 6px 11px;
+    border-radius: 6px;
+    border: 1.5px solid var(--border);
+    background: var(--surface-2);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
-    color: var(--text-2);
+    color: var(--text-3);
     transition: all 200ms ease;
   }
 
-  .command-chip-active {
-    color: var(--text-1);
-    border-color: rgba(53, 212, 255, 0.24);
-    background: rgba(53, 212, 255, 0.08);
+  .chip-active {
+    border-color: var(--border-hard);
+    background: var(--text-1);
+    color: var(--text-inv);
+    box-shadow: 2px 2px 0 var(--border-hard);
   }
 
-  .hero-marquee {
+  /* ── STAGE TAG ───────────────────────────────────── */
+  .stage-tag {
+    position: absolute;
+    top: -12px;
+    right: 24px;
+    padding: 5px 12px;
+    border-radius: 6px;
+    border: 2px solid var(--border-hard);
+    background: var(--accent);
+    color: #000;
+    box-shadow: 2px 2px 0 #000;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  /* ── TICKER ──────────────────────────────────────── */
+  .hero-ticker {
+    overflow: hidden;
+    border-top: 2px solid var(--border-hard);
+    background: var(--surface-2);
+    padding: 14px 0;
+  }
+
+  .ticker-track {
     display: flex;
-    gap: 32px;
-    padding-top: 34px;
-    margin-top: 36px;
-    border-top: 1px solid var(--border);
-    overflow: auto hidden;
-    white-space: nowrap;
+    gap: 24px;
+    width: max-content;
+    animation: ticker 30s linear infinite;
+    font-family: var(--font-mono);
     font-size: 11px;
-    font-weight: 800;
-    letter-spacing: 0.18em;
+    font-weight: 700;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
     color: var(--text-3);
-    scrollbar-width: none;
+    white-space: nowrap;
   }
 
-  .hero-marquee::-webkit-scrollbar {
-    display: none;
+  .ticker-sep {
+    color: var(--accent);
+    font-size: 14px;
   }
 
-  @keyframes pulseKicker {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.65; transform: scale(0.92); }
-  }
-
-  @keyframes orbitFloat {
-    0%, 100% { transform: translate3d(0, 0, 0); }
-    50% { transform: translate3d(16px, -18px, 0); }
-  }
-
-  @keyframes orbitFloatAlt {
-    0%, 100% { transform: translate3d(0, 0, 0); }
-    50% { transform: translate3d(-20px, 18px, 0); }
-  }
-
-  @keyframes beamTravel {
-    0% { transform: translateX(-110%); opacity: 0; }
-    20% { opacity: 1; }
-    100% { transform: translateX(320%); opacity: 0; }
-  }
-
-  @media (max-width: 1180px) {
+  /* ── RESPONSIVE ──────────────────────────────────── */
+  @media (max-width: 1100px) {
     .hero-inner {
       grid-template-columns: 1fr;
-      gap: 30px;
+      gap: 40px;
     }
 
-    .hero-copy {
-      max-width: 760px;
-    }
+    .hero-copy { max-width: 700px; }
+    .stage-shell { max-width: 680px; margin: 0 auto; }
+  }
 
-    .hero-stage {
+  @media (max-width: 760px) {
+    .hero { padding-top: 88px; }
+
+    .hero-inner { padding: 32px 18px 64px; }
+
+    .stage-body {
+      grid-template-columns: 1fr;
       min-height: auto;
-      padding-bottom: 20px;
     }
+
+    .stage-panel + .stage-panel {
+      border-left: none;
+      border-top: 2px solid var(--border);
+    }
+
+    .hero-sub { font-size: 15px; }
+
+    .hero-actions { flex-direction: column; }
+    .hero-cta { width: 100%; }
   }
 
-  @media (max-width: 900px) {
-    .hero {
-      padding-top: 96px;
-    }
-
-    .hero-proof {
-      grid-template-columns: 1fr;
-    }
-
-    .stage-shell {
-      transform: none;
-      width: 100%;
-    }
-
-    .stage-layout {
-      grid-template-columns: 1fr;
-    }
-
-    .stage-sidebar {
-      border-right: 0;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-    }
-
-    :global(:not(.dark)) .stage-sidebar {
-      border-bottom-color: rgba(12, 19, 34, 0.08);
-    }
-
-    .stage-canvas {
-      grid-template-columns: 1fr;
-    }
-  }
-
-  @media (max-width: 640px) {
-    .hero {
-      padding: 88px 18px 40px;
-    }
-
-    .hero-title {
-      font-size: clamp(3rem, 18vw, 4.2rem);
-      max-width: 8.4ch;
-    }
-
-    .hero-sub {
-      font-size: 15px;
-    }
-
-    .hero-actions {
-      width: 100%;
-      flex-direction: column;
-    }
-
-    .hero-primary,
-    .hero-secondary {
-      width: 100%;
-    }
-
-    .stage-main {
-      padding: 18px;
-    }
-
-    .stage-header {
-      flex-direction: column;
-      align-items: flex-start;
-    }
-
-    .hero-marquee {
-      gap: 22px;
-      margin-top: 26px;
-      padding-top: 24px;
+  @media (max-width: 480px) {
+    .hero-heading {
+      font-size: clamp(3.2rem, 18vw, 4.5rem);
     }
   }
 </style>

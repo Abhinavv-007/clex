@@ -1,555 +1,438 @@
 <script lang="ts">
   import { onMount } from 'svelte'
 
+  const steps = [
+    {
+      num: '01',
+      title: 'Drop your files',
+      body: 'Drag any files into the workspace. Clex instantly reads every file type, maps your queue, and surfaces the right tools — no form-filling, no upload wait.',
+      detail: 'JPEG, PNG, WebP, PDF, DOCX, ZIP, and more — auto-classified the moment they land.',
+      visual: 'drop',
+    },
+    {
+      num: '02',
+      title: 'Prepare them',
+      body: 'Compress images, merge PDFs, convert DOCX to PDF, bundle into ZIP. Tools chain together so the output of one becomes the input of the next.',
+      detail: 'Everything runs in your browser. Nothing is sent to a server during preparation.',
+      visual: 'prepare',
+    },
+    {
+      num: '03',
+      title: 'Share anywhere',
+      body: 'Clex picks the fastest route: direct browser-to-browser if possible, local network if you\'re nearby, or Google Drive as a secure fallback. One click.',
+      detail: 'Room codes, QR codes, and direct links — receiver gets a clean pull experience.',
+      visual: 'share',
+    },
+  ]
+
+  let sectionEl: HTMLElement
   let visible = false
-  let sectionEl: HTMLElement | null = null
+  let activeStep = 0
 
   onMount(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          visible = true
-          observer.disconnect()
-        }
-      },
-      { threshold: 0.16 }
+    const obs = new IntersectionObserver(
+      ([e]) => { if (e.isIntersecting) { visible = true; obs.disconnect() } },
+      { threshold: 0.1 }
     )
+    if (sectionEl) obs.observe(sectionEl)
 
-    if (sectionEl) observer.observe(sectionEl)
+    const stepTimer = setInterval(() => {
+      activeStep = (activeStep + 1) % steps.length
+    }, 3200)
 
-    return () => observer.disconnect()
+    return () => { obs.disconnect(); clearInterval(stepTimer) }
   })
 </script>
 
-<section id="how-it-works" class="orchestra" bind:this={sectionEl}>
-  <div class="orchestra-head" class:is-visible={visible}>
-    <p class="orchestra-kicker">Interface choreography</p>
-    <h2 class="orchestra-title">Every panel carries motion, status, and trust.</h2>
-    <p class="orchestra-sub">
-      The site sells the product by behaving like the product: precise, alive, and confident under interaction.
-    </p>
-  </div>
+<section id="how-it-works" class="hiw section" bind:this={sectionEl}>
+  <div class="container">
 
-  <div class="orchestra-grid" class:is-visible={visible}>
-    <article class="orchestra-main">
-      <div class="main-top">
-        <div>
-          <span class="mini-kicker">Hero product demo</span>
-          <strong>Mock app screens with live state changes</strong>
-        </div>
-        <span class="mini-pill">Always in motion</span>
+    <!-- Header -->
+    <div class="hiw-header reveal" class:is-visible={visible}>
+      <div class="section-label">
+        <span class="section-label-dot" />
+        Three steps
       </div>
+      <h2 class="hiw-title">One flow. Zero tool-switching.</h2>
+      <p class="hiw-sub">
+        Clex is built around a single idea: drop files once, prepare them in place,
+        send them in one motion. No tabs, no uploads, no handoffs.
+      </p>
+    </div>
 
-      <div class="main-display">
-        <div class="screen-shell shell-back" />
-        <div class="screen-shell shell-mid" />
-        <div class="screen-shell shell-front">
-          <div class="screen-row">
-            <span>Transfer board</span>
-            <strong>Queue synchronized</strong>
+    <!-- Steps grid -->
+    <div class="steps-grid">
+      {#each steps as step, i}
+        <div
+          class="step-card reveal"
+          class:is-visible={visible}
+          class:step-active={activeStep === i}
+          on:mouseenter={() => activeStep = i}
+          on:click={() => activeStep = i}
+          style="transition-delay: {i * 100}ms"
+          role="button"
+          tabindex="0"
+          on:keydown={(e) => e.key === 'Enter' && (activeStep = i)}
+        >
+          <div class="step-num">{step.num}</div>
+
+          <div class="step-visual step-visual-{step.visual}" />
+
+          <div class="step-content">
+            <h3 class="step-title">{step.title}</h3>
+            <p class="step-body">{step.body}</p>
+            <p class="step-detail">{step.detail}</p>
           </div>
-          <div class="screen-grid">
-            <div class="screen-cell screen-cell-wide">
-              <div class="sparkline">
-                <span />
-                <span />
-                <span />
-                <span />
-                <span />
-              </div>
-            </div>
-            <div class="screen-cell">
-              <div class="cell-pulse" />
-            </div>
-            <div class="screen-cell">
-              <div class="cell-stack">
-                <span />
-                <span />
-                <span />
-              </div>
-            </div>
-            <div class="screen-cell screen-cell-wide">
-              <div class="screen-feed">
-                <div><span />Processing hero-shot.jpg</div>
-                <div><span />Preparing room token</div>
-                <div><span />Direct path approved</div>
-              </div>
-            </div>
-          </div>
+
+          <!-- Active indicator -->
+          <div class="step-indicator" />
+        </div>
+      {/each}
+    </div>
+
+    <!-- Connector line (desktop only) -->
+    <div class="steps-connector" aria-hidden="true">
+      <div class="connector-line" />
+      <div class="connector-fill" style="width: {((activeStep + 1) / steps.length) * 100}%" />
+    </div>
+
+    <!-- Big statement block -->
+    <div class="statement-block reveal reveal-3" class:is-visible={visible}>
+      <div class="statement-left">
+        <p class="statement-quote">
+          "The entire experience — prepare, route, deliver — stays inside one browser tab. That's the product."
+        </p>
+      </div>
+      <div class="statement-right">
+        <div class="statement-metric">
+          <span class="metric-big">0</span>
+          <span class="metric-unit">server uploads</span>
+          <span class="metric-note">during P2P transfer</span>
+        </div>
+        <div class="statement-metric">
+          <span class="metric-big">3</span>
+          <span class="metric-unit">routing modes</span>
+          <span class="metric-note">smart auto-detection</span>
         </div>
       </div>
-    </article>
-
-    <article class="orchestra-side">
-      <span class="mini-kicker">Micro-interactions</span>
-      <h3>Status changes stay visible.</h3>
-      <p>Hover lifts, scanning lines, route pulses, progress sweeps, and queue highlights all reinforce the same product language.</p>
-      <div class="interaction-list">
-        <div class="interaction-item">
-          <strong>Buttons</strong>
-          <span>Soft lift, glow lock, tactile press</span>
-        </div>
-        <div class="interaction-item">
-          <strong>Cards</strong>
-          <span>Parallax hover and luminous edges</span>
-        </div>
-        <div class="interaction-item">
-          <strong>Feed states</strong>
-          <span>Animated pulses instead of dead labels</span>
-        </div>
-      </div>
-    </article>
-
-    <article class="orchestra-side">
-      <span class="mini-kicker">Motion system</span>
-      <h3>One timing curve across the site.</h3>
-      <p>Entrances, sticky transitions, chip swaps, and demo beams use the same motion grammar so the experience feels authored, not assembled.</p>
-      <div class="timing-rail">
-        <div class="timing-item timing-item-fast">
-          <strong>180ms</strong>
-          <span>micro lift</span>
-        </div>
-        <div class="timing-item timing-item-mid">
-          <strong>320ms</strong>
-          <span>state transition</span>
-        </div>
-        <div class="timing-item timing-item-slow">
-          <strong>700ms</strong>
-          <span>section reveal</span>
-        </div>
-      </div>
-    </article>
-  </div>
-
-  <div class="proof-band" class:is-visible={visible}>
-    <div class="proof-block">
-      <span>Presentation</span>
-      <strong>Poster-scale hero with live product context</strong>
     </div>
-    <div class="proof-block">
-      <span>Interaction</span>
-      <strong>Sticky storytelling and animated command surfaces</strong>
-    </div>
-    <div class="proof-block">
-      <span>Trust</span>
-      <strong>Private routing explained in the interface itself</strong>
-    </div>
+
   </div>
 </section>
 
 <style>
-  .orchestra {
-    padding: 110px 24px;
-  }
+  /* ── HEADER ─────────────────────────────────────── */
+  .hiw-header { max-width: 640px; margin-bottom: 56px; }
 
-  .orchestra-head,
-  .orchestra-grid,
-  .proof-band {
-    opacity: 0;
-    transform: translateY(24px);
-    transition: opacity 700ms var(--ease-out), transform 700ms var(--ease-out);
-  }
-
-  .orchestra-head.is-visible,
-  .orchestra-grid.is-visible,
-  .proof-band.is-visible {
-    opacity: 1;
-    transform: translateY(0);
-  }
-
-  .orchestra-grid.is-visible { transition-delay: 100ms; }
-  .proof-band.is-visible { transition-delay: 180ms; }
-
-  .orchestra-head {
-    max-width: 760px;
-    margin: 0 auto 48px;
-    text-align: center;
-  }
-
-  .orchestra-kicker,
-  .mini-kicker {
-    display: inline-block;
-    margin: 0 0 14px;
-    font-size: 11px;
-    font-weight: 800;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    color: var(--text-3);
-  }
-
-  .orchestra-title {
-    margin: 0;
+  .hiw-title {
     font-family: var(--font-display);
-    font-size: clamp(2.6rem, 5.2vw, 4.6rem);
-    line-height: 1;
-    letter-spacing: -0.05em;
-    text-wrap: balance;
-  }
-
-  .orchestra-sub {
-    max-width: 38rem;
-    margin: 18px auto 0;
-    font-size: 16px;
-    line-height: 1.72;
-    color: var(--text-2);
-  }
-
-  .orchestra-grid {
-    max-width: 1240px;
-    margin: 0 auto;
-    display: grid;
-    grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.72fr) minmax(0, 0.72fr);
-    gap: 18px;
-  }
-
-  .orchestra-main,
-  .orchestra-side,
-  .proof-band {
-    border-radius: 30px;
-    border: 1px solid var(--border);
-    background: rgba(255, 255, 255, 0.03);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-  }
-
-  :global(:not(.dark)) .orchestra-main,
-  :global(:not(.dark)) .orchestra-side,
-  :global(:not(.dark)) .proof-band {
-    background: rgba(255, 255, 255, 0.6);
-  }
-
-  .orchestra-main {
-    padding: 24px;
-    overflow: hidden;
-  }
-
-  .main-top {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 16px;
-    margin-bottom: 22px;
-  }
-
-  .main-top strong {
-    display: block;
-    max-width: 20rem;
-    font-size: 20px;
-    line-height: 1.2;
-    letter-spacing: -0.03em;
-  }
-
-  .mini-pill {
-    padding: 8px 12px;
-    border-radius: 999px;
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    background: rgba(255, 255, 255, 0.08);
-    font-size: 11px;
-    font-weight: 800;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: #ffffff;
-  }
-
-  .main-display {
-    position: relative;
-    min-height: 420px;
-    display: grid;
-    place-items: center;
-  }
-
-  .screen-shell {
-    position: absolute;
-    inset: auto;
-    width: min(100%, 440px);
-    border-radius: 28px;
-    transition: transform 240ms var(--ease-out);
-  }
-
-  .shell-back {
-    height: 320px;
-    transform: translate(-34px, 24px) rotate(-10deg);
-    background: rgba(255, 255, 255, 0.04);
-    filter: blur(4px);
-  }
-
-  .shell-mid {
-    height: 340px;
-    transform: translate(28px, -8px) rotate(8deg);
-    background: rgba(255, 255, 255, 0.06);
-    filter: blur(3px);
-  }
-
-  .shell-front {
-    position: relative;
-    width: min(100%, 520px);
-    min-height: 360px;
-    padding: 18px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02)),
-      rgba(8, 12, 21, 0.88);
-    box-shadow:
-      0 34px 90px rgba(0, 0, 0, 0.34),
-      inset 0 1px 0 rgba(255, 255, 255, 0.05);
-  }
-
-  :global(:not(.dark)) .shell-front {
-    background:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.86), rgba(255, 255, 255, 0.72)),
-      rgba(255, 255, 255, 0.84);
-  }
-
-  .screen-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
+    font-size: clamp(2.2rem, 4.5vw, 3.6rem);
+    font-weight: 700;
+    letter-spacing: -0.04em;
+    line-height: 1.05;
+    color: var(--text-1);
     margin-bottom: 16px;
   }
 
-  .screen-row span {
-    font-size: 11px;
-    font-weight: 800;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    color: var(--text-3);
-  }
-
-  .screen-row strong {
-    font-size: 14px;
-    color: var(--text-1);
-  }
-
-  .screen-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
-  }
-
-  .screen-cell {
-    min-height: 118px;
-    padding: 14px;
-    border-radius: 22px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    background: rgba(255, 255, 255, 0.03);
-  }
-
-  :global(:not(.dark)) .screen-cell {
-    border-color: rgba(12, 19, 34, 0.08);
-    background: rgba(255, 255, 255, 0.62);
-  }
-
-  .screen-cell-wide {
-    grid-column: span 2;
-  }
-
-  .sparkline {
-    height: 100%;
-    display: flex;
-    align-items: end;
-    gap: 10px;
-  }
-
-  .sparkline span {
-    flex: 1;
-    border-radius: 999px 999px 6px 6px;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.14));
-    animation: wave 2.8s ease-in-out infinite;
-  }
-
-  .sparkline span:nth-child(1) { height: 34%; }
-  .sparkline span:nth-child(2) { height: 62%; animation-delay: 0.1s; }
-  .sparkline span:nth-child(3) { height: 88%; animation-delay: 0.2s; }
-  .sparkline span:nth-child(4) { height: 52%; animation-delay: 0.3s; }
-  .sparkline span:nth-child(5) { height: 72%; animation-delay: 0.4s; }
-
-  .cell-pulse {
-    width: 74px;
-    height: 74px;
-    margin: auto;
-    border-radius: 999px;
-    background: radial-gradient(circle, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.03));
-    animation: pulseCell 2.4s ease-in-out infinite;
-  }
-
-  .cell-stack {
-    display: grid;
-    gap: 10px;
-  }
-
-  .cell-stack span {
-    height: 18px;
-    border-radius: 999px;
-    background: linear-gradient(90deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.08));
-    background-size: 200% 100%;
-    animation: shimmerRail 2.8s linear infinite;
-  }
-
-  .screen-feed {
-    display: grid;
-    gap: 10px;
-  }
-
-  .screen-feed div {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 12px;
-    color: var(--text-1);
-  }
-
-  .screen-feed span {
-    width: 7px;
-    height: 7px;
-    border-radius: 999px;
-    background: #ffffff;
-    box-shadow: 0 0 12px rgba(255, 255, 255, 0.4);
-  }
-
-  .orchestra-side {
-    padding: 24px;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-  }
-
-  .orchestra-side h3 {
-    margin: 0;
-    font-family: var(--font-display);
-    font-size: 28px;
-    line-height: 1.05;
-    letter-spacing: -0.04em;
-  }
-
-  .orchestra-side p {
-    margin: 0;
-    font-size: 14px;
-    line-height: 1.72;
+  .hiw-sub {
+    font-size: 17px;
+    line-height: 1.7;
     color: var(--text-2);
+    max-width: 52ch;
   }
 
-  .interaction-list,
-  .timing-rail {
-    display: grid;
-    gap: 12px;
-  }
-
-  .interaction-item,
-  .timing-item {
-    padding: 14px;
-    border-radius: 20px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    background: rgba(255, 255, 255, 0.03);
-  }
-
-  :global(:not(.dark)) .interaction-item,
-  :global(:not(.dark)) .timing-item {
-    border-color: rgba(12, 19, 34, 0.08);
-    background: rgba(255, 255, 255, 0.66);
-  }
-
-  .interaction-item strong,
-  .timing-item strong {
-    display: block;
-    margin-bottom: 4px;
-    font-size: 13px;
-    color: var(--text-1);
-  }
-
-  .interaction-item span,
-  .timing-item span {
-    font-size: 12px;
-    color: var(--text-2);
-  }
-
-  .timing-item-fast { border-color: rgba(255, 255, 255, 0.24); }
-  .timing-item-mid { border-color: rgba(255, 255, 255, 0.18); }
-  .timing-item-slow { border-color: rgba(255, 255, 255, 0.12); }
-
-  .proof-band {
-    max-width: 1240px;
-    margin: 18px auto 0;
-    padding: 18px;
+  /* ── STEPS GRID ──────────────────────────────────── */
+  .steps-grid {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 14px;
+    gap: 20px;
+    margin-bottom: 0;
   }
 
-  .proof-block {
-    padding: 14px 16px;
-    border-radius: 22px;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.06);
+  @media (max-width: 900px) {
+    .steps-grid { grid-template-columns: 1fr; }
   }
 
-  :global(:not(.dark)) .proof-block {
-    background: rgba(255, 255, 255, 0.68);
-    border-color: rgba(12, 19, 34, 0.08);
+  /* ── STEP CARD ───────────────────────────────────── */
+  .step-card {
+    position: relative;
+    padding: 28px 24px 24px;
+    border: 2px solid var(--border-hard);
+    border-radius: 20px;
+    background: var(--surface);
+    box-shadow: var(--shadow-md);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    overflow: hidden;
+    transition:
+      transform 200ms var(--ease-out),
+      box-shadow 200ms var(--ease-out),
+      background 200ms ease;
   }
 
-  .proof-block span {
-    display: block;
-    margin-bottom: 8px;
-    font-size: 10px;
-    font-weight: 800;
-    letter-spacing: 0.16em;
+  .step-card:hover,
+  .step-card.step-active {
+    transform: translate(-3px, -3px);
+    box-shadow: var(--shadow-xl);
+    background: var(--surface);
+  }
+
+  /* Step indicator bar at bottom */
+  .step-indicator {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--border);
+    transition: background 200ms ease;
+  }
+
+  .step-active .step-indicator { background: var(--accent); }
+
+  /* ── STEP NUMBER ─────────────────────────────────── */
+  .step-num {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
     color: var(--text-3);
+    display: flex;
+    align-items: center;
+    gap: 8px;
   }
 
-  .proof-block strong {
+  .step-num::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* ── VISUAL BLOCKS ───────────────────────────────── */
+  .step-visual {
+    width: 100%;
+    height: 140px;
+    border-radius: 12px;
+    border: 1.5px solid var(--border);
+    background: var(--surface-2);
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Drop visual — animated drop zone */
+  .step-visual-drop::before {
+    content: '⬇ Drop files here';
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-3);
+    letter-spacing: 0.06em;
+    border: 2px dashed var(--border-strong);
+    border-radius: 10px;
+    margin: 12px;
+    text-transform: uppercase;
+  }
+
+  .step-visual-drop::after {
+    content: '';
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: var(--accent);
+    border: 2px solid #000;
+    box-shadow: 2px 2px 0 #000;
+    animation: float 3s ease-in-out infinite;
+  }
+
+  /* Prepare visual — tool chips */
+  .step-visual-prepare {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 16px;
+    align-content: flex-start;
+  }
+
+  .step-visual-prepare::before,
+  .step-visual-prepare::after {
+    content: '';
+  }
+
+  /* Share visual — beam line */
+  .step-visual-share::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 16px;
+    right: 16px;
+    height: 2px;
+    background: var(--border-strong);
+    transform: translateY(-50%);
+  }
+
+  .step-visual-share::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 16px;
+    width: 30%;
+    height: 4px;
+    border-radius: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    transform: translateY(-50%);
+    animation: beam-travel 2s ease-in-out infinite;
+  }
+
+  /* ── STEP CONTENT ────────────────────────────────── */
+  .step-title {
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    color: var(--text-1);
+    margin-bottom: 10px;
+  }
+
+  .step-body {
     font-size: 14px;
+    line-height: 1.7;
+    color: var(--text-2);
+    margin-bottom: 12px;
+  }
+
+  .step-detail {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: var(--text-3);
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+  }
+
+  /* ── CONNECTOR ───────────────────────────────────── */
+  .steps-connector {
+    position: relative;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    margin: 28px 0 56px;
+    overflow: hidden;
+  }
+
+  .connector-fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    background: var(--accent);
+    border-radius: 2px;
+    transition: width 600ms var(--ease-out);
+  }
+
+  @media (max-width: 900px) {
+    .steps-connector { display: none; }
+    .steps-grid { margin-bottom: 40px; }
+  }
+
+  /* ── STATEMENT BLOCK ─────────────────────────────── */
+  .statement-block {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 0;
+    border: 2px solid var(--border-hard);
+    border-radius: 20px;
+    background: var(--surface);
+    box-shadow: var(--shadow-xl);
+    overflow: hidden;
+    margin-top: 28px;
+  }
+
+  .statement-left {
+    padding: 48px 40px;
+    border-right: 2px solid var(--border);
+    display: flex;
+    align-items: center;
+  }
+
+  .statement-quote {
+    font-family: var(--font-display);
+    font-size: clamp(1.15rem, 2vw, 1.5rem);
+    font-weight: 700;
+    letter-spacing: -0.025em;
     line-height: 1.5;
     color: var(--text-1);
   }
 
-  @keyframes wave {
-    0%, 100% { transform: scaleY(0.82); opacity: 0.8; }
-    50% { transform: scaleY(1.08); opacity: 1; }
+  .statement-right {
+    display: flex;
+    flex-direction: column;
   }
 
-  @keyframes pulseCell {
-    0%, 100% { transform: scale(0.88); opacity: 0.72; }
-    50% { transform: scale(1.06); opacity: 1; }
+  .statement-metric {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 32px;
+    gap: 4px;
+    text-align: center;
   }
 
-  @keyframes shimmerRail {
-    from { background-position: 200% 0; }
-    to { background-position: -200% 0; }
+  .statement-metric + .statement-metric {
+    border-top: 2px solid var(--border);
   }
 
-  @media (max-width: 1080px) {
-    .orchestra-grid {
-      grid-template-columns: 1fr;
-    }
-
-    .proof-band {
-      grid-template-columns: 1fr;
-    }
+  .metric-big {
+    font-family: var(--font-display);
+    font-size: clamp(3rem, 5vw, 4.5rem);
+    font-weight: 700;
+    letter-spacing: -0.05em;
+    line-height: 1;
+    color: var(--accent);
+    -webkit-text-stroke: 2px var(--text-1);
+    paint-order: stroke fill;
   }
 
-  @media (max-width: 720px) {
-    .orchestra {
-      padding: 88px 18px;
-    }
+  :global(:not(.dark)) .metric-big { -webkit-text-stroke: 2px #000; }
 
-    .orchestra-main,
-    .orchestra-side {
-      padding: 20px;
-    }
+  .metric-unit {
+    font-family: var(--font-display);
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-1);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
 
-    .main-top {
-      flex-direction: column;
-      align-items: flex-start;
-    }
+  .metric-note {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-3);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
 
-    .screen-grid {
-      grid-template-columns: 1fr;
-    }
-
-    .screen-cell-wide {
-      grid-column: span 1;
-    }
+  @media (max-width: 760px) {
+    .statement-block { grid-template-columns: 1fr; }
+    .statement-left { border-right: none; border-bottom: 2px solid var(--border); padding: 32px 24px; }
+    .statement-right { flex-direction: row; }
+    .statement-metric + .statement-metric { border-top: none; border-left: 2px solid var(--border); }
   }
 </style>

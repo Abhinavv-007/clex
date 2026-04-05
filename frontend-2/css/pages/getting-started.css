@@ -1,0 +1,109 @@
+/* ============================================
+   CLEX — Getting Started Page
+   ============================================ */
+
+.gs-hero {
+  padding: 10rem 0 var(--space-4xl);
+  background: var(--gradient-hero);
+  border-bottom: var(--border-heavy) solid var(--border-bold);
+}
+
+.gs-steps {
+  counter-reset: gs-step;
+}
+
+.gs-step {
+  display: grid;
+  grid-template-columns: 80px 1fr;
+  gap: var(--space-2xl);
+  padding: var(--space-3xl) 0;
+  border-bottom: var(--border-thick) solid var(--border-color);
+  counter-increment: gs-step;
+}
+
+.gs-step:last-child {
+  border-bottom: none;
+}
+
+.gs-step__number {
+  font-family: var(--font-display);
+  font-size: var(--text-5xl);
+  font-weight: var(--weight-bold);
+  color: var(--accent);
+  line-height: 1;
+}
+
+.gs-step__content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.gs-step__title {
+  font-size: var(--text-2xl);
+  text-transform: uppercase;
+}
+
+.gs-step__text {
+  font-size: var(--text-lg);
+  color: var(--text-secondary);
+  max-width: 55ch;
+  line-height: var(--leading-relaxed);
+}
+
+.gs-step__tip {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--accent);
+  padding: var(--space-md) var(--space-lg);
+  border-left: var(--border-thick) solid var(--accent);
+  background: var(--accent-muted);
+  margin-top: var(--space-sm);
+}
+
+/* ── Tips Grid ── */
+.tips-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-lg);
+}
+
+.tip-card {
+  padding: var(--space-xl);
+  border: var(--border-thick) solid var(--border-bold);
+  background: var(--bg-card);
+  box-shadow: var(--shadow-md) var(--shadow-color);
+  position: relative;
+  overflow: hidden;
+}
+
+.tip-card::before {
+  content: '💡';
+  position: absolute;
+  top: var(--space-md);
+  right: var(--space-md);
+  font-size: var(--text-2xl);
+  opacity: 0.3;
+}
+
+.tip-card__title {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  text-transform: uppercase;
+  margin-bottom: var(--space-sm);
+}
+
+.tip-card__text {
+  font-size: var(--text-base);
+  color: var(--text-secondary);
+}
+
+@media (max-width: 767px) {
+  .gs-step {
+    grid-template-columns: 1fr;
+    gap: var(--space-md);
+  }
+  .tips-grid {
+    grid-template-columns: 1fr;
+  }
+}

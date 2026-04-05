@@ -1,7 +1,6 @@
 <script lang="ts">
   import '../app.css'
   import Background from '$lib/components/ui/Background.svelte'
-  import Cursor from '$lib/components/ui/Cursor.svelte'
   import Toast from '$lib/components/ui/Toast.svelte'
   import Modal from '$lib/components/ui/Modal.svelte'
   import ReceiveModal from '$lib/components/sharing/ReceiveModal.svelte'
@@ -10,6 +9,9 @@
   import { onMount } from 'svelte'
   import { theme } from '$lib/theme'
   import { pickupToken } from '$transfer/gdrive'
+
+  let mobileMenuOpen = false
+  let scrolled = false
 
   function isLocalSetupHost(hostname: string): boolean {
     return (
@@ -21,128 +23,151 @@
     )
   }
 
-  function getGoogleOAuthSetupMessage(): string {
-    if (typeof window !== 'undefined' && !isLocalSetupHost(window.location.hostname)) {
-      return 'Google Drive is not configured on this live deployment. In Cloudflare Pages project "clex-web", set GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and GOOGLE_REDIRECT_URI=https://clex.in/api/auth/google/callback, then redeploy. Also add that exact redirect URI in Google Cloud Console.'
-    }
-
-    return 'Google Drive is not configured yet. Add GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and GOOGLE_REDIRECT_URI in apps/web/.env, then restart pnpm dev.'
-  }
-
   function getOAuthErrorMessage(code: string): string {
     switch (code) {
       case 'oauth_not_configured':
-        return getGoogleOAuthSetupMessage()
-      case 'oauth_denied':
-        return 'Google Drive authorization was cancelled.'
-      case 'state_mismatch':
-        return 'Google Drive auth state check failed. Please try again.'
-      case 'no_code':
-        return 'Google Drive did not return an authorization code.'
-      case 'token_exchange_failed':
-        return 'Google Drive token exchange failed. Check your Google OAuth redirect URI and client secret.'
-      case 'no_access_token':
-        return 'Google Drive did not return an access token.'
-      default:
-        return 'Google Drive auth failed. Please try again.'
+        return isLocalSetupHost(typeof window !== 'undefined' ? window.location.hostname : '')
+          ? 'Google Drive not configured. Add GOOGLE_CLIENT_ID etc. in apps/web/.env'
+          : 'Google Drive not configured on this deployment.'
+      case 'oauth_denied': return 'Google Drive authorization was cancelled.'
+      case 'state_mismatch': return 'Google Drive auth state check failed. Try again.'
+      case 'no_code': return 'Google Drive did not return an authorization code.'
+      case 'token_exchange_failed': return 'Google Drive token exchange failed.'
+      case 'no_access_token': return 'Google Drive did not return an access token.'
+      default: return 'Google Drive auth failed. Please try again.'
     }
   }
 
-  // After Google OAuth callback, pick up the token from the server-side cookie
-  onMount(async () => {
-    const params = new URLSearchParams(window.location.search)
-    const connected = params.get('gdrive') === 'connected'
-    const errorCode = params.get('error')
+  onMount(() => {
+    // Handle Google OAuth callback
+    async function handleOAuth() {
+      const params = new URLSearchParams(window.location.search)
+      const connected = params.get('gdrive') === 'connected'
+      const errorCode = params.get('error')
 
-    if (connected || errorCode) {
-      history.replaceState(null, '', window.location.pathname)
-    }
-
-    if (connected) {
-      const token = await pickupToken()
-      if (token) {
-        uiStore.toast({ type: 'success', message: 'Google Drive connected' })
-      } else {
-        uiStore.toast({ type: 'error', message: 'Google Drive auth failed — try again' })
+      if (connected || errorCode) {
+        history.replaceState(null, '', window.location.pathname)
       }
-    } else if (errorCode) {
-      uiStore.toast({ type: 'error', message: getOAuthErrorMessage(errorCode) })
+
+      if (connected) {
+        const token = await pickupToken()
+        if (token) {
+          uiStore.toast({ type: 'success', message: 'Google Drive connected' })
+        } else {
+          uiStore.toast({ type: 'error', message: 'Google Drive auth failed — try again' })
+        }
+      } else if (errorCode) {
+        uiStore.toast({ type: 'error', message: getOAuthErrorMessage(errorCode) })
+      }
     }
+    handleOAuth()
+
+    // Scroll detection for nav border
+    const handleScroll = () => { scrolled = window.scrollY > 20 }
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
   })
 
   $: isWorkspace = $page.url.pathname.startsWith('/workspace') || $page.url.pathname.startsWith('/receive')
   $: isDark = $theme === 'dark'
+  $: currentPath = $page.url.pathname
+
+  function isActive(path: string) {
+    return currentPath === path || currentPath.startsWith(path + '/')
+  }
 </script>
 
-<!-- Background -->
+<!-- Background dot grid -->
 <Background />
 
-<!-- Cursor tracking removed -->
-
-<!-- ── Navigation ─────────────────────────────────────────────────────── -->
-<header class="site-header fixed top-0 inset-x-0 z-50">
-  <div class="nav-inner">
+<!-- ── NAV ───────────────────────────────────────────────────────── -->
+<header class="site-header" class:scrolled>
+  <nav class="nav-inner">
     <!-- Logo -->
     <a href="/" class="nav-brand" aria-label="Clex home">
       <div class="logo-mark">
-        <svg viewBox="0 0 24 24" fill="none" width="16" height="16">
-          <path d="M12 2L20 7V17L12 22L4 17V7L12 2Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
-          <path d="M12 6L17 9V15L12 18L7 15V9L12 6Z" fill="currentColor" opacity="0.3"/>
+        <svg viewBox="0 0 20 20" fill="none" width="14" height="14">
+          <path d="M10 1L18 5.5V14.5L10 19L2 14.5V5.5L10 1Z"
+            stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+          <path d="M10 5L15 7.5V12.5L10 15L5 12.5V7.5L10 5Z"
+            fill="currentColor" opacity="0.35"/>
         </svg>
       </div>
-      <div class="logo-copy">
-        <span class="logo-text">clex</span>
-        <span class="logo-sub">File motion workspace</span>
-      </div>
+      <span class="logo-text">clex</span>
     </a>
 
     <!-- Center nav (desktop) -->
-    <nav class="nav-links" aria-label="Main navigation">
-      <a href="/#features" class="nav-link">Features</a>
-      <a href="/#how-it-works" class="nav-link">How it works</a>
-      <a href="/workspace" class="nav-link">Workspace</a>
-    </nav>
+    <div class="nav-links" aria-label="Main navigation">
+      <a href="/features"      class="nav-link" class:active={isActive('/features')}>Features</a>
+      <a href="/how-it-works"  class="nav-link" class:active={isActive('/how-it-works')}>How it works</a>
+      <a href="/getting-started" class="nav-link" class:active={isActive('/getting-started')}>Get started</a>
+      <a href="/faq"           class="nav-link" class:active={isActive('/faq')}>FAQ</a>
+    </div>
 
-    <!-- Right controls -->
+    <!-- Right -->
     <div class="nav-actions">
       <!-- Theme toggle -->
       <button
-        class="btn-icon theme-toggle"
+        class="btn-icon theme-btn"
         on:click={() => theme.toggle()}
         aria-label="Toggle theme"
         title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
       >
         {#if isDark}
-          <!-- Sun -->
-          <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
-            <path d="M7.5 1.5v1M7.5 12.5v1M1.5 7.5h-1M14.5 7.5h-1M3.1 3.1l-.7-.7M13.1 3.1l-.7-.7M3.1 11.9l-.7.7M13.1 11.9l-.7.7M7.5 4.5a3 3 0 100 6 3 3 0 000-6z"
-              stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <circle cx="8" cy="8" r="3" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M3.05 3.05l1.06 1.06M11.89 11.89l1.06 1.06M3.05 12.95l1.06-1.06M11.89 4.11l1.06-1.06"
+              stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
           </svg>
         {:else}
-          <!-- Moon -->
-          <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
-            <path d="M2.9 1.4A6 6 0 0013.5 8.5a6 6 0 01-8.5-8.5 6.1 6.1 0 00-2.1 1.4z"
-              stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M6 2.3A6.5 6.5 0 1013.7 10 5 5 0 016 2.3z"
+              stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
         {/if}
       </button>
 
-      <!-- Receive files button (workspace mode) -->
       {#if isWorkspace}
-        <button
-          class="btn-ghost text-xs"
-          on:click={() => uiStore.openModal('receive')}
-        >
-          Receive files
+        <button class="btn-ghost nav-action-btn" on:click={() => uiStore.openModal('receive')}>
+          Receive
         </button>
-        <a href="/" class="btn-secondary text-xs">← Home</a>
+        <a href="/" class="btn-secondary nav-action-btn">← Home</a>
       {:else}
-        <a href="/workspace" class="btn-primary text-xs">
+        <a href="/workspace" class="btn-accent nav-cta">
           Open workspace
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M3 7h8M8 4l3 3-3 3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
         </a>
       {/if}
+
+      <!-- Mobile hamburger -->
+      <button
+        class="mobile-menu-btn"
+        on:click={() => mobileMenuOpen = !mobileMenuOpen}
+        aria-label="Toggle menu"
+        aria-expanded={mobileMenuOpen}
+      >
+        <span class="hamburger" class:open={mobileMenuOpen}>
+          <span /><span /><span />
+        </span>
+      </button>
     </div>
-  </div>
+  </nav>
+
+  <!-- Mobile menu -->
+  {#if mobileMenuOpen}
+    <div class="mobile-menu">
+      <a href="/features"       class="mobile-link" on:click={() => mobileMenuOpen = false}>Features</a>
+      <a href="/how-it-works"   class="mobile-link" on:click={() => mobileMenuOpen = false}>How it works</a>
+      <a href="/getting-started" class="mobile-link" on:click={() => mobileMenuOpen = false}>Get started</a>
+      <a href="/faq"            class="mobile-link" on:click={() => mobileMenuOpen = false}>FAQ</a>
+      <div class="mobile-divider" />
+      <a href="/workspace"      class="btn-accent mobile-cta" on:click={() => mobileMenuOpen = false}>
+        Open workspace
+      </a>
+    </div>
+  {/if}
 </header>
 
 <!-- Page content -->
@@ -161,158 +186,249 @@
 </Modal>
 
 <style>
+  /* ── HEADER ──────────────────────────────────────────── */
+  .site-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    padding: 12px 20px 0;
+    transition: padding 200ms ease;
+  }
+
+  .site-header.scrolled {
+    padding: 8px 20px 0;
+  }
+
+  /* ── NAV INNER ───────────────────────────────────────── */
   .nav-inner {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 18px;
-    max-width: 1320px;
-    margin: 12px auto 0;
-    padding: 0 18px;
-    height: 62px;
-    width: calc(100% - 24px);
-    border-radius: 22px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    background: rgba(7, 10, 17, 0.58);
-    backdrop-filter: blur(24px) saturate(1.25);
-    -webkit-backdrop-filter: blur(24px) saturate(1.25);
-    box-shadow:
-      0 18px 50px rgba(0, 0, 0, 0.24),
-      inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    gap: 16px;
+    max-width: 1280px;
+    margin: 0 auto;
+    height: 60px;
+    padding: 0 20px;
+    border-radius: 14px;
+    background: var(--surface);
+    border: 2px solid var(--border-hard);
+    box-shadow: var(--shadow-md);
+    transition: box-shadow 200ms ease, border-color 200ms ease;
   }
 
   :global(:not(.dark)) .nav-inner {
-    background: rgba(255, 255, 255, 0.72);
-    border-color: rgba(255, 255, 255, 0.44);
-    box-shadow:
-      0 18px 48px rgba(10, 22, 45, 0.12),
-      inset 0 1px 0 rgba(255, 255, 255, 0.72);
+    background: #FFFFFF;
+    border-color: #000000;
+    box-shadow: 4px 4px 0 #000000;
   }
 
-  .site-header::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(180deg, rgba(5, 7, 13, 0.42), transparent 88%);
-    pointer-events: none;
-  }
-
-  .nav-inner { position: relative; }
-
+  /* ── BRAND ───────────────────────────────────────────── */
   .nav-brand {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     text-decoration: none;
-    min-width: 0;
+    flex-shrink: 0;
   }
 
   .logo-mark {
-    width: 36px;
-    height: 36px;
-    border-radius: 14px;
-    background: #ffffff;
-    color: #000000;
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    background: var(--text-1);
+    color: var(--text-inv);
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 16px 32px rgba(255, 255, 255, 0.1);
-    transition: transform 180ms var(--ease-out), box-shadow 180ms ease;
+    border: 1.5px solid var(--border-hard);
+    box-shadow: var(--shadow-sm);
+    flex-shrink: 0;
+    transition: transform 150ms ease, box-shadow 150ms ease;
   }
 
   .nav-brand:hover .logo-mark {
-    transform: translateY(-1px);
-    box-shadow: 0 18px 36px rgba(255, 255, 255, 0.15);
-  }
-
-  .logo-copy {
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
+    transform: translate(-1px, -1px);
+    box-shadow: var(--shadow-md);
   }
 
   .logo-text {
     font-family: var(--font-display);
-    font-size: 16px;
+    font-size: 20px;
     font-weight: 700;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.04em;
     color: var(--text-1);
+    line-height: 1;
   }
 
-  .logo-sub {
-    font-size: 11px;
-    color: var(--text-3);
-    line-height: 1.2;
-    white-space: nowrap;
-  }
-
+  /* ── CENTER NAV ──────────────────────────────────────── */
   .nav-links {
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 6px;
-    border-radius: 999px;
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    background: rgba(255, 255, 255, 0.03);
-  }
-
-  :global(:not(.dark)) .nav-links {
-    border-color: rgba(12, 19, 34, 0.08);
-    background: rgba(12, 19, 34, 0.03);
-  }
-
-  @media (max-width: 760px) {
-    .nav-links { display: none; }
+    gap: 4px;
   }
 
   .nav-link {
-    font-size: 12px;
-    font-weight: 800;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
+    font-family: var(--font-display);
+    font-size: 13px;
+    font-weight: 600;
     color: var(--text-2);
-    padding: 10px 14px;
-    border-radius: 999px;
+    padding: 8px 14px;
+    border-radius: 8px;
+    border: 1.5px solid transparent;
     text-decoration: none;
-    transition: color 180ms ease, background 180ms ease, border-color 180ms ease;
-    border: 1px solid transparent;
+    transition: color 150ms ease, background 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
+    white-space: nowrap;
   }
 
   .nav-link:hover {
     color: var(--text-1);
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.2);
+    background: var(--raised);
+    border-color: var(--border);
   }
 
-  :global(:not(.dark)) .nav-link:hover {
-    background: rgba(255, 255, 255, 0.68);
+  .nav-link.active {
+    color: var(--text-1);
+    background: var(--surface-2);
+    border-color: var(--border-hard);
+    box-shadow: 2px 2px 0 var(--border-hard);
   }
 
+  @media (max-width: 900px) {
+    .nav-links { display: none; }
+  }
+
+  /* ── RIGHT ACTIONS ───────────────────────────────────── */
   .nav-actions {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     flex-shrink: 0;
   }
 
-  .theme-toggle {
+  .theme-btn {
     width: 38px;
     height: 38px;
-    padding: 0;
+    border-radius: 8px;
+    border: 1.5px solid var(--border);
+    color: var(--text-2);
+    background: transparent;
     display: flex;
     align-items: center;
     justify-content: center;
+    cursor: pointer;
+    transition: color 150ms ease, border-color 150ms ease, background 150ms ease;
   }
 
-  @media (max-width: 760px) {
-    .nav-inner {
-      margin-top: 10px;
-      padding: 0 12px;
-      width: calc(100% - 16px);
-    }
+  .theme-btn:hover {
+    color: var(--text-1);
+    border-color: var(--border-strong);
+    background: var(--raised);
+  }
 
-    .logo-sub {
-      display: none;
-    }
+  .nav-action-btn {
+    font-size: 13px;
+    padding: 9px 16px;
+  }
+
+  .nav-cta {
+    font-size: 13px;
+    padding: 9px 16px;
+  }
+
+  /* ── MOBILE MENU BUTTON ─────────────────────────────── */
+  .mobile-menu-btn {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 8px;
+    border: 1.5px solid var(--border-hard);
+    background: transparent;
+    cursor: pointer;
+    box-shadow: 2px 2px 0 var(--border-hard);
+    transition: transform 150ms ease, box-shadow 150ms ease;
+  }
+
+  .mobile-menu-btn:hover {
+    transform: translate(-1px, -1px);
+    box-shadow: 3px 3px 0 var(--border-hard);
+  }
+
+  @media (max-width: 900px) {
+    .mobile-menu-btn { display: flex; }
+  }
+
+  .hamburger {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    width: 18px;
+  }
+
+  .hamburger span {
+    display: block;
+    height: 2px;
+    background: var(--text-1);
+    border-radius: 1px;
+    transition: transform 200ms ease, opacity 200ms ease;
+  }
+
+  .hamburger.open span:nth-child(1) { transform: translateY(6px) rotate(45deg); }
+  .hamburger.open span:nth-child(2) { opacity: 0; }
+  .hamburger.open span:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
+
+  /* ── MOBILE DROPDOWN ─────────────────────────────────── */
+  .mobile-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 20px;
+    right: 20px;
+    max-width: 1280px;
+    margin: 0 auto;
+    background: var(--surface);
+    border: 2px solid var(--border-hard);
+    box-shadow: 6px 6px 0 var(--border-hard);
+    border-radius: 14px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    animation: fadeUp 200ms var(--ease-out) both;
+  }
+
+  .mobile-link {
+    font-family: var(--font-display);
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-1);
+    padding: 12px 16px;
+    border-radius: 10px;
+    text-decoration: none;
+    transition: background 150ms ease;
+  }
+
+  .mobile-link:hover { background: var(--raised); }
+
+  .mobile-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 8px 0;
+  }
+
+  .mobile-cta {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 14px;
+    margin-top: 4px;
+    text-decoration: none;
+    font-size: 15px;
+  }
+
+  @media (min-width: 901px) {
+    .mobile-menu { display: none; }
   }
 </style>

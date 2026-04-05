@@ -1,0 +1,201 @@
+/* ============================================
+   CLEX — Features Page Styles
+   ============================================ */
+
+.features-hero {
+  padding: 10rem 0 var(--space-4xl);
+  background: var(--gradient-hero);
+  border-bottom: var(--border-heavy) solid var(--border-bold);
+}
+
+.features-hero__title {
+  max-width: 14ch;
+}
+
+.features-hero__subtitle {
+  max-width: 50ch;
+  margin-top: var(--space-lg);
+}
+
+/* ── Feature System Cards ── */
+.feature-system {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  border: var(--border-thick) solid var(--border-bold);
+}
+
+.feature-system__card {
+  padding: var(--space-3xl);
+  border-right: var(--border-thick) solid var(--border-bold);
+  border-bottom: var(--border-thick) solid var(--border-bold);
+  background: var(--bg-card);
+  position: relative;
+  transition: all var(--duration-normal);
+  overflow: hidden;
+}
+
+.feature-system__card:nth-child(2n) {
+  border-right: none;
+}
+
+.feature-system__card:nth-last-child(-n+2) {
+  border-bottom: none;
+}
+
+.feature-system__card:hover {
+  background: var(--bg-card-hover);
+}
+
+.feature-system__card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 0;
+  background: var(--accent);
+  transition: height var(--duration-slow) var(--ease-out);
+}
+
+.feature-system__card:hover::before {
+  height: 100%;
+}
+
+.feature-system__icon {
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent);
+  border: var(--border-medium) solid #0a0a0a;
+  box-shadow: 3px 3px 0px #0a0a0a;
+  margin-bottom: var(--space-xl);
+  font-size: var(--text-2xl);
+}
+
+.feature-system__title {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: var(--weight-bold);
+  text-transform: uppercase;
+  margin-bottom: var(--space-md);
+}
+
+.feature-system__desc {
+  font-size: var(--text-base);
+  color: var(--text-secondary);
+  line-height: var(--leading-relaxed);
+  margin-bottom: var(--space-lg);
+}
+
+.feature-system__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}
+
+/* ── Delivery System ── */
+.delivery-system {
+  background: var(--bg-secondary);
+  border-top: var(--border-heavy) solid var(--border-bold);
+  border-bottom: var(--border-heavy) solid var(--border-bold);
+}
+
+.delivery-flow {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr auto 1fr;
+  align-items: start;
+  gap: var(--space-xl);
+}
+
+.delivery-flow__node {
+  padding: var(--space-2xl);
+  border: var(--border-thick) solid var(--border-bold);
+  background: var(--bg-card);
+  box-shadow: var(--shadow-md) var(--shadow-color);
+  text-align: center;
+}
+
+.delivery-flow__arrow {
+  font-size: var(--text-3xl);
+  color: var(--accent);
+  align-self: center;
+  font-weight: var(--weight-bold);
+}
+
+.delivery-flow__node-title {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  text-transform: uppercase;
+  margin-bottom: var(--space-sm);
+}
+
+.delivery-flow__node-desc {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+/* ── Chaining Visual ── */
+.chaining {
+  position: relative;
+}
+
+.chain-flow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  overflow-x: auto;
+  padding: var(--space-xl) 0;
+  -webkit-overflow-scrolling: touch;
+}
+
+.chain-flow__step {
+  flex-shrink: 0;
+  padding: var(--space-lg) var(--space-xl);
+  border: var(--border-medium) solid var(--border-bold);
+  background: var(--bg-card);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  text-transform: uppercase;
+  text-align: center;
+  min-width: 160px;
+  box-shadow: var(--shadow-sm) var(--shadow-color);
+}
+
+.chain-flow__step--active {
+  border-color: var(--accent);
+  box-shadow: var(--shadow-sm) var(--accent);
+  background: var(--accent-muted);
+}
+
+.chain-flow__connector {
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-xl);
+  color: var(--accent);
+}
+
+@media (max-width: 899px) {
+  .feature-system {
+    grid-template-columns: 1fr;
+  }
+  .feature-system__card {
+    border-right: none;
+  }
+  .feature-system__card:nth-last-child(-n+2) {
+    border-bottom: var(--border-thick) solid var(--border-bold);
+  }
+  .feature-system__card:last-child {
+    border-bottom: none;
+  }
+  .delivery-flow {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+  .delivery-flow__arrow {
+    transform: rotate(90deg);
+    justify-self: center;
+  }
+}
