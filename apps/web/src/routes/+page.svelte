@@ -7,8 +7,8 @@
 </script>
 
 <svelte:head>
-  <title>Clex — Smart File Workspace</title>
-  <meta name="description" content="Prepare and share files the smart way. P2P transfer, local network sharing, and Google Drive — all in one premium workspace." />
+  <title>Clex — Motion-Grade File Workspace</title>
+  <meta name="description" content="A premium browser-native workspace for file preparation and sharing. Direct P2P, local routing, and Drive fallback in one polished flow." />
 </svelte:head>
 
 <Hero />
