@@ -1,0 +1,146 @@
+/* ============================================
+   CLEX — Animation Classes
+   For use with GSAP ScrollTrigger
+   ============================================ */
+
+/* ── Base reveal state (hidden before GSAP triggers) ── */
+.reveal {
+  opacity: 0;
+  transform: translateY(40px);
+  will-change: transform, opacity;
+}
+
+.reveal-left {
+  opacity: 0;
+  transform: translateX(-60px);
+  will-change: transform, opacity;
+}
+
+.reveal-right {
+  opacity: 0;
+  transform: translateX(60px);
+  will-change: transform, opacity;
+}
+
+.reveal-scale {
+  opacity: 0;
+  transform: scale(0.9);
+  will-change: transform, opacity;
+}
+
+.reveal-clip {
+  clip-path: inset(100% 0 0 0);
+  will-change: clip-path;
+}
+
+/* ── CSS-only micro-animations ── */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: var(--shadow-md) var(--accent), 0 0 0 0 rgba(200, 255, 0, 0);
+  }
+  50% {
+    box-shadow: var(--shadow-md) var(--accent), 0 0 30px 8px rgba(200, 255, 0, 0.15);
+  }
+}
+
+@keyframes scan-line {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
+
+@keyframes border-draw {
+  0% { clip-path: polygon(0 0, 0 0, 0 0, 0 0); }
+  25% { clip-path: polygon(0 0, 100% 0, 100% 0, 0 0); }
+  50% { clip-path: polygon(0 0, 100% 0, 100% 100%, 100% 100%); }
+  75% { clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%); }
+  100% { clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%); }
+}
+
+@keyframes typing-cursor {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+@keyframes slide-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes rotate-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+  20%, 40%, 60%, 80% { transform: translateX(4px); }
+}
+
+/* ── Utility animation classes ── */
+.animate-float {
+  animation: float 4s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 3s ease-in-out infinite;
+}
+
+.animate-typing-cursor::after {
+  content: '▊';
+  animation: typing-cursor 1s step-end infinite;
+  color: var(--accent);
+  margin-left: 2px;
+}
+
+.animate-rotate {
+  animation: rotate-slow 20s linear infinite;
+}
+
+/* ── Hover interactions ── */
+.hover-lift {
+  transition: transform var(--duration-normal) var(--ease-out),
+              box-shadow var(--duration-normal) var(--ease-out);
+}
+
+.hover-lift:hover {
+  transform: translate(-4px, -4px);
+  box-shadow: var(--shadow-lg) var(--shadow-color);
+}
+
+.hover-accent {
+  transition: border-color var(--duration-fast) var(--ease-out),
+              box-shadow var(--duration-fast) var(--ease-out);
+}
+
+.hover-accent:hover {
+  border-color: var(--accent);
+  box-shadow: var(--shadow-md) var(--accent);
+}
+
+.hover-scale {
+  transition: transform var(--duration-normal) var(--ease-out);
+}
+
+.hover-scale:hover {
+  transform: scale(1.03);
+}
+
+/* ── Stagger delay utilities ── */
+.delay-1 { transition-delay: 0.05s; }
+.delay-2 { transition-delay: 0.1s; }
+.delay-3 { transition-delay: 0.15s; }
+.delay-4 { transition-delay: 0.2s; }
+.delay-5 { transition-delay: 0.25s; }
+.delay-6 { transition-delay: 0.3s; }

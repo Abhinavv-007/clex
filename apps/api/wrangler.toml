@@ -1,0 +1,17 @@
+name = "clex-api"
+main = "src/index.ts"
+compatibility_date = "2024-05-29"
+compatibility_flags = ["nodejs_compat"]
+workers_dev = true
+
+[vars]
+ALLOWED_ORIGIN = "*"
+FRONTEND_BASE_URL = "http://localhost:3000"
+GOOGLE_DRIVE_SCOPE = "https://www.googleapis.com/auth/drive.file"
+
+[env.production]
+name = "clex-api-prod"
+
+[env.production.vars]
+ALLOWED_ORIGIN = "https://clex.in, https://www.clex.in"
+FRONTEND_BASE_URL = "https://clex.in"

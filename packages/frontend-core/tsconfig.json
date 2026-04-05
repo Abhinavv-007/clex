@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "baseUrl": ".",
+    "checkJs": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "paths": {
+      "$components": ["./src/lib/components"],
+      "$components/*": ["./src/lib/components/*"],
+      "$stores": ["./src/lib/stores"],
+      "$stores/*": ["./src/lib/stores/*"],
+      "$tools": ["./src/lib/tools"],
+      "$tools/*": ["./src/lib/tools/*"],
+      "$transfer": ["./src/lib/transfer"],
+      "$transfer/*": ["./src/lib/transfer/*"],
+      "$utils": ["./src/lib/utils"],
+      "$utils/*": ["./src/lib/utils/*"]
+    },
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "sourceMap": true,
+    "strict": true,
+    "target": "ES2020",
+    "types": ["svelte", "vite/client"]
+  },
+  "include": ["src/**/*.d.ts", "src/**/*.ts", "src/**/*.js", "src/**/*.svelte", "vite.config.ts"]
+}

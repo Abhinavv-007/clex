@@ -102,9 +102,10 @@
     flex-direction: column;
     gap: 12px;
     padding: 14px;
-    border-radius: 16px;
-    border: 1px dashed var(--border);
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--surface-2);
+    border: 2px dashed var(--border-hard);
+    border-radius: 12px;
+    box-shadow: 3px 3px 0 var(--border-hard);
   }
 
   .sp-empty-state p {
@@ -125,9 +126,10 @@
     grid-template-columns: repeat(3, 1fr);
     gap: 4px;
     padding: 4px;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    border-radius: 10px;
+    background: var(--surface-2);
+    border: 2px solid var(--border-hard);
+    box-shadow: 2px 2px 0 var(--border-hard);
+    border-radius: 12px;
   }
 
   .sp-tab {
@@ -136,21 +138,21 @@
     align-items: center;
     gap: 2px;
     padding: 7px 4px;
-    border-radius: 7px;
-    border: 1px solid transparent;
+    border-radius: 8px;
+    border: 2px solid transparent;
     background: transparent;
     cursor: pointer;
     transition: all 0.15s ease;
   }
 
   .sp-tab:hover:not(.sp-tab-active) {
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--surface);
   }
 
   .sp-tab-active {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.1);
-    box-shadow: 0 1px 6px rgba(0,0,0,0.3);
+    background: var(--surface);
+    border-color: var(--border-hard);
+    box-shadow: 2px 2px 0 var(--border-hard);
   }
 
   .sp-tab-label {
@@ -230,9 +232,7 @@
       position: sticky;
       top: 0;
       z-index: 2;
-      background: color-mix(in srgb, var(--surface-solid) 72%, transparent);
-      backdrop-filter: blur(18px);
-      -webkit-backdrop-filter: blur(18px);
+      background: var(--surface);
     }
 
     .sp-content {

@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Terms of Service — Clex</title>
+  <meta name="description" content="Terms of Service for Clex. Understand the terms and conditions of using the Clex file workspace.">
+  <script>
+    (() => {
+      try {
+        const theme = localStorage.getItem('clex-theme') === 'light' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', theme);
+        document.documentElement.classList.toggle('dark', theme === 'dark');
+        document.documentElement.style.colorScheme = theme;
+      } catch {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        document.documentElement.classList.add('dark');
+        document.documentElement.style.colorScheme = 'dark';
+      }
+    })();
+  </script>
+
+  <link rel="stylesheet" href="/css/reset.css">
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/animations.css">
+  <link rel="stylesheet" href="/css/pages/home.css">
+  <link rel="stylesheet" href="/css/pages/legal.css">
+
+  <script type="module" src="/js/main.js"></script>
+</head>
+<body data-page="terms">
+
+  <!-- ═══ Navigation ═══ -->
+  <nav class="nav" id="main-nav">
+    <div class="nav__inner">
+      <a href="/" class="nav__logo">clex<span class="nav__logo-dot"></span></a>
+      <div class="nav__links">
+        <a href="/features" class="nav__link" data-page="features">Features</a>
+        <a href="/how-it-works" class="nav__link" data-page="how-it-works">How It Works</a>
+        <a href="/getting-started" class="nav__link" data-page="getting-started">Get Started</a>
+        <a href="/faq" class="nav__link" data-page="faq">FAQ</a>
+      </div>
+      <div class="nav__actions">
+        <button class="nav__theme-toggle" id="theme-toggle" aria-label="Toggle theme">☀</button>
+        <a href="/workspace" class="btn btn--primary btn--small desktop-only">Open Workspace →</a>
+      </div>
+      <button class="nav__hamburger" id="nav-hamburger" aria-label="Toggle menu">
+        <span class="nav__hamburger-line"></span>
+        <span class="nav__hamburger-line"></span>
+        <span class="nav__hamburger-line"></span>
+      </button>
+    </div>
+  </nav>
+  <div class="nav__mobile-menu" id="nav-mobile-menu">
+    <a href="/" class="nav__mobile-link">Home</a>
+    <a href="/features" class="nav__mobile-link">Features</a>
+    <a href="/how-it-works" class="nav__mobile-link">How It Works</a>
+    <a href="/getting-started" class="nav__mobile-link">Get Started</a>
+    <a href="/faq" class="nav__mobile-link">FAQ</a>
+    <a href="/workspace" class="nav__mobile-link" style="color: var(--accent);">Open Workspace →</a>
+  </div>
+
+  <!-- ═══ Hero ═══ -->
+  <section class="legal-hero">
+    <div class="container">
+      <span class="page-hero__label reveal">Legal</span>
+      <h1 class="page-hero__title reveal">Terms of Service</h1>
+      <div class="legal-hero__meta page-hero__meta reveal">Last updated: April 5, 2025</div>
+    </div>
+  </section>
+
+  <!-- ═══ Key Highlights ═══ -->
+  <section class="section">
+    <div class="container">
+      <div class="legal-highlights stagger-group">
+        <div class="legal-highlight">
+          <div class="legal-highlight__icon">✓</div>
+          <h3 class="legal-highlight__title">Free to Use</h3>
+          <p class="legal-highlight__text">Clex's core features are free — file processing, P2P transfer, local network transfer</p>
+        </div>
+        <div class="legal-highlight">
+          <div class="legal-highlight__icon">⚖</div>
+          <h3 class="legal-highlight__title">Your Responsibility</h3>
+          <p class="legal-highlight__text">You're responsible for the content you share. Don't use Clex for illegal activity.</p>
+        </div>
+        <div class="legal-highlight">
+          <div class="legal-highlight__icon">🔄</div>
+          <h3 class="legal-highlight__title">No Guarantees</h3>
+          <p class="legal-highlight__text">Service is provided as-is. We'll do our best, but we can't guarantee 100% uptime.</p>
+        </div>
+      </div>
+
+      <!-- ═══ Legal Content ═══ -->
+      <div class="legal-content">
+
+        <div class="legal-section reveal">
+          <div class="legal-section__number">Section 01</div>
+          <h2 class="legal-section__title">Acceptance of Terms</h2>
+          <p class="legal-section__text">
+            By using Clex ("the Service"), you agree to these Terms of Service. If you don't agree, please don't use the Service. These terms apply to all users of clex.in and any related applications.
+          </p>
+        </div>
+
+        <div class="legal-section reveal">
+          <div class="legal-section__number">Section 02</div>
+          <h2 class="legal-section__title">Description of Service</h2>
+          <p class="legal-section__text">
+            Clex is a browser-based file workspace that provides:
+          </p>
+          <ul class="legal-section__list">
+            <li>File preparation tools (image compression, PDF operations, DOCX to PDF conversion, ZIP bundling)</li>
+            <li>File sharing via direct P2P transfer (WebRTC)</li>
+            <li>File sharing via local network transfer</li>
+            <li>File sharing via Google Drive as a fallback mechanism</li>
+          </ul>
+          <p class="legal-section__text">
+            All file processing occurs in your browser. For P2P and local network transfers, files are not stored on our servers. For Google Drive transfers, files are stored in your personal Google Drive account.
+          </p>
+        </div>
+
+        <div class="legal-section reveal">
+          <div class="legal-section__number">Section 03</div>
+          <h2 class="legal-section__title">User Responsibilities</h2>
+          <p class="legal-section__text">
+            When using Clex, you agree to:
+          </p>
+          <ul class="legal-section__list">
+            <li>Use the Service only for lawful purposes</li>
+            <li>Not transmit any content that violates applicable laws or third-party rights</li>
+            <li>Not attempt to interfere with, compromise, or disrupt the Service</li>
+            <li>Not use the Service to distribute malware, viruses, or other harmful software</li>
+            <li>Not misuse the signaling server or attempt to overload the infrastructure</li>
+            <li>Accept responsibility for all content you process, share, or transfer through the Service</li>
+          </ul>
+        </div>
+
+        <div class="legal-section reveal">
+          <div class="legal-section__number">Section 04</div>
+          <h2 class="legal-section__title">Intellectual Property</h2>
+          <p class="legal-section__text">
+            The Clex brand, design, code, and interface are the intellectual property of Clex and its creators. You may not copy, modify, or redistribute the Service's code or design without explicit permission.
+          </p>
+          <p class="legal-section__text">
+            Your files remain your property at all times. Clex does not claim any ownership or license over files you process or transfer through the Service.
+          </p>
+        </div>
+
+        <div class="legal-section reveal">
+          <div class="legal-section__number">Section 05</div>
+          <h2 class="legal-section__title">Third-Party Services</h2>
+          <p class="legal-section__text">
+            When you use Google Drive as a transfer method, you are also subject to Google's Terms of Service and Privacy Policy. Clex is not responsible for Google's handling of your data once it's uploaded to your Drive account.
+          </p>
+        </div>
+
+        <div class="legal-section reveal">
+          <div class="legal-section__number">Section 06</div>
+          <h2 class="legal-section__title">Disclaimer of Warranties</h2>
+          <p class="legal-section__text">
+            The Service is provided <strong>"as is"</strong> and <strong>"as available"</strong> without warranties of any kind, either express or implied. We do not guarantee that:
+          </p>
+          <ul class="legal-section__list">
+            <li>The Service will be uninterrupted or error-free</li>
+            <li>File transfers will always succeed</li>
+            <li>P2P connections will always be possible</li>
+            <li>File processing results will be perfectly accurate</li>
+          </ul>
+          <p class="legal-section__text">
+            We'll do our best to keep things working well, but the nature of browser-based P2P means some scenarios (strict firewalls, certain network configurations) may prevent direct transfers.
+          </p>
+        </div>
+
+        <div class="legal-section reveal">
+          <div class="legal-section__number">Section 07</div>
+          <h2 class="legal-section__title">Limitation of Liability</h2>
+          <p class="legal-section__text">
+            To the maximum extent permitted by law, Clex and its creators shall not be liable for any indirect, incidental, special, consequential, or punitive damages, including but not limited to loss of data, lost profits, or business interruption arising from your use of the Service.
+          </p>
+        </div>
+
+        <div class="legal-section reveal">
+          <div class="legal-section__number">Section 08</div>
+          <h2 class="legal-section__title">Termination</h2>
+          <p class="legal-section__text">
+            We reserve the right to restrict or terminate access to the Service at any time if we believe you are violating these terms or using the Service in a way that could harm other users or the infrastructure.
+          </p>
+        </div>
+
+        <div class="legal-section reveal">
+          <div class="legal-section__number">Section 09</div>
+          <h2 class="legal-section__title">Changes to Terms</h2>
+          <p class="legal-section__text">
+            We may update these Terms from time to time. Changes will be posted on this page with an updated effective date. Your continued use of the Service after changes constitutes acceptance of the updated Terms.
+          </p>
+        </div>
+
+        <div class="legal-section reveal">
+          <div class="legal-section__number">Section 10</div>
+          <h2 class="legal-section__title">Contact</h2>
+          <p class="legal-section__text">
+            Questions about these Terms? Contact us at <a href="mailto:hello@clex.in" style="color: var(--accent); border-bottom: 1px solid var(--accent);">hello@clex.in</a>.
+          </p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ Footer ═══ -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer__grid">
+        <div class="footer__brand">
+          <div class="footer__logo">clex<span class="nav__logo-dot"></span></div>
+          <p class="footer__desc">One workspace. Drop files, prepare them, share them.</p>
+        </div>
+        <div class="footer__col">
+          <h4 class="footer__col-title">Product</h4>
+          <nav class="footer__links">
+            <a href="/features" class="footer__link">Features</a>
+            <a href="/how-it-works" class="footer__link">How It Works</a>
+            <a href="/workspace" class="footer__link">Workspace</a>
+            <a href="/getting-started" class="footer__link">Get Started</a>
+          </nav>
+        </div>
+        <div class="footer__col">
+          <h4 class="footer__col-title">Support</h4>
+          <nav class="footer__links">
+            <a href="/faq" class="footer__link">FAQ</a>
+            <a href="mailto:hello@clex.in" class="footer__link">Contact</a>
+          </nav>
+        </div>
+        <div class="footer__col">
+          <h4 class="footer__col-title">Legal</h4>
+          <nav class="footer__links">
+            <a href="/privacy" class="footer__link">Privacy Policy</a>
+            <a href="/terms" class="footer__link">Terms of Service</a>
+          </nav>
+        </div>
+      </div>
+      <div class="footer__bottom">
+        <span class="footer__copyright">© 2025 Clex. All rights reserved.</span>
+        <div class="footer__legal">
+          <a href="/privacy" class="footer__legal-link">Privacy</a>
+          <a href="/terms" class="footer__legal-link">Terms</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>

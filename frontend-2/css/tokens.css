@@ -1,0 +1,193 @@
+/* ============================================
+   CLEX — Design Tokens
+   Neo-Brutalist Design System
+   ============================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+:root {
+  /* ── Typography ── */
+  --font-display: 'Space Mono', 'Courier New', monospace;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'Space Mono', 'Courier New', monospace;
+
+  /* ── Font Sizes ── */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 2rem;
+  --text-4xl: 2.5rem;
+  --text-5xl: 3.5rem;
+  --text-6xl: 4.5rem;
+  --text-7xl: 6rem;
+  --text-8xl: 8rem;
+
+  /* ── Font Weights ── */
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+  --weight-extrabold: 800;
+  --weight-black: 900;
+
+  /* ── Line Heights ── */
+  --leading-none: 1;
+  --leading-tight: 1.1;
+  --leading-snug: 1.25;
+  --leading-normal: 1.6;
+  --leading-relaxed: 1.75;
+
+  /* ── Letter Spacing ── */
+  --tracking-tight: -0.03em;
+  --tracking-normal: 0;
+  --tracking-wide: 0.05em;
+  --tracking-wider: 0.1em;
+  --tracking-widest: 0.2em;
+
+  /* ── Spacing ── */
+  --space-xs: 0.25rem;
+  --space-sm: 0.5rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2rem;
+  --space-2xl: 3rem;
+  --space-3xl: 4rem;
+  --space-4xl: 6rem;
+  --space-5xl: 8rem;
+  --space-6xl: 10rem;
+
+  /* ── Section Spacing ── */
+  --section-padding: 7.5rem;
+  --section-padding-tablet: 5rem;
+  --section-padding-mobile: 3.75rem;
+
+  /* ── Container ── */
+  --container-max: 1280px;
+  --container-narrow: 900px;
+  --container-wide: 1440px;
+  --container-padding: 2rem;
+
+  /* ── Neo-Brutalist Borders & Shadows ── */
+  --border-thin: 2px;
+  --border-medium: 3px;
+  --border-thick: 4px;
+  --border-heavy: 5px;
+
+  --shadow-sm: 3px 3px 0px;
+  --shadow-md: 5px 5px 0px;
+  --shadow-lg: 8px 8px 0px;
+  --shadow-xl: 12px 12px 0px;
+
+  --shadow-hover-sm: 5px 5px 0px;
+  --shadow-hover-md: 8px 8px 0px;
+  --shadow-hover-lg: 12px 12px 0px;
+
+  /* ── Border Radius (minimal for neo-brutalist) ── */
+  --radius-none: 0;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-full: 9999px;
+
+  /* ── Transitions ── */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --duration-fast: 150ms;
+  --duration-normal: 300ms;
+  --duration-slow: 500ms;
+
+  /* ── Z-Index Scale ── */
+  --z-base: 1;
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-overlay: 300;
+  --z-modal: 400;
+  --z-toast: 500;
+  --z-max: 9999;
+}
+
+/* ── Dark Theme (Default) ── */
+[data-theme="dark"], :root {
+  --bg-primary: #0a0a0a;
+  --bg-secondary: #111111;
+  --bg-tertiary: #1a1a1a;
+  --bg-card: #141414;
+  --bg-card-hover: #1e1e1e;
+  --bg-elevated: #1a1a1a;
+  --bg-input: #111111;
+
+  --text-primary: #f0f0e8;
+  --text-secondary: #999999;
+  --text-tertiary: #666666;
+  --text-inverse: #0a0a0a;
+
+  --accent: #c8ff00;
+  --accent-hover: #d4ff33;
+  --accent-muted: rgba(200, 255, 0, 0.15);
+  --accent-secondary: #ff3d00;
+  --accent-secondary-hover: #ff5722;
+  --accent-tertiary: #00d4ff;
+
+  --border-color: #2a2a2a;
+  --border-bold: #f0f0e8;
+  --border-accent: var(--accent);
+  --border-subtle: #1e1e1e;
+
+  --shadow-color: #000000;
+  --shadow-accent: var(--accent);
+
+  --surface-glass: rgba(20, 20, 20, 0.8);
+  --surface-overlay: rgba(0, 0, 0, 0.6);
+
+  --scrollbar-track: #111111;
+  --scrollbar-thumb: #333333;
+
+  --gradient-hero: linear-gradient(135deg, #0a0a0a 0%, #141414 50%, #0f0f0f 100%);
+  --gradient-accent: linear-gradient(135deg, var(--accent) 0%, #a8e600 100%);
+  --gradient-card: linear-gradient(180deg, #1a1a1a 0%, #141414 100%);
+}
+
+/* ── Light Theme ── */
+[data-theme="light"] {
+  --bg-primary: #f5f0e8;
+  --bg-secondary: #ebe5d9;
+  --bg-tertiary: #e0d9cc;
+  --bg-card: #ffffff;
+  --bg-card-hover: #fafaf5;
+  --bg-elevated: #ffffff;
+  --bg-input: #f5f0e8;
+
+  --text-primary: #0a0a0a;
+  --text-secondary: #555555;
+  --text-tertiary: #888888;
+  --text-inverse: #f0f0e8;
+
+  --accent: #baef00;
+  --accent-hover: #a8d600;
+  --accent-muted: rgba(186, 239, 0, 0.2);
+  --accent-secondary: #ff3d00;
+  --accent-secondary-hover: #e63600;
+  --accent-tertiary: #0099cc;
+
+  --border-color: #d0c9ba;
+  --border-bold: #0a0a0a;
+  --border-accent: var(--accent);
+  --border-subtle: #e0d9cc;
+
+  --shadow-color: #0a0a0a;
+  --shadow-accent: var(--accent);
+
+  --surface-glass: rgba(255, 255, 255, 0.8);
+  --surface-overlay: rgba(245, 240, 232, 0.6);
+
+  --scrollbar-track: #ebe5d9;
+  --scrollbar-thumb: #c0b9aa;
+
+  --gradient-hero: linear-gradient(135deg, #f5f0e8 0%, #ebe5d9 50%, #f0ebe0 100%);
+  --gradient-accent: linear-gradient(135deg, var(--accent) 0%, #9ccc00 100%);
+  --gradient-card: linear-gradient(180deg, #ffffff 0%, #fafaf5 100%);
+}

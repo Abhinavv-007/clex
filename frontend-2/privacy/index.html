@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy — Clex</title>
+  <meta name="description" content="Clex's privacy policy. We don't store your files on our servers during P2P transfers. No tracking, no accounts required, privacy-first architecture.">
+  <script>
+    (() => {
+      try {
+        const theme = localStorage.getItem('clex-theme') === 'light' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', theme);
+        document.documentElement.classList.toggle('dark', theme === 'dark');
+        document.documentElement.style.colorScheme = theme;
+      } catch {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        document.documentElement.classList.add('dark');
+        document.documentElement.style.colorScheme = 'dark';
+      }
+    })();
+  </script>
+
+  <link rel="stylesheet" href="/css/reset.css">
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/animations.css">
+  <link rel="stylesheet" href="/css/pages/home.css">
+  <link rel="stylesheet" href="/css/pages/legal.css">
+
+  <script type="module" src="/js/main.js"></script>
+</head>
+<body data-page="privacy">
+
+  <!-- ═══ Navigation ═══ -->
+  <nav class="nav" id="main-nav">
+    <div class="nav__inner">
+      <a href="/" class="nav__logo">clex<span class="nav__logo-dot"></span></a>
+      <div class="nav__links">
+        <a href="/features" class="nav__link" data-page="features">Features</a>
+        <a href="/how-it-works" class="nav__link" data-page="how-it-works">How It Works</a>
+        <a href="/getting-started" class="nav__link" data-page="getting-started">Get Started</a>
+        <a href="/faq" class="nav__link" data-page="faq">FAQ</a>
+      </div>
+      <div class="nav__actions">
+        <button class="nav__theme-toggle" id="theme-toggle" aria-label="Toggle theme">☀</button>
+        <a href="/workspace" class="btn btn--primary btn--small desktop-only">Open Workspace →</a>
+      </div>
+      <button class="nav__hamburger" id="nav-hamburger" aria-label="Toggle menu">
+        <span class="nav__hamburger-line"></span>
+        <span class="nav__hamburger-line"></span>
+        <span class="nav__hamburger-line"></span>
+      </button>
+    </div>
+  </nav>
+  <div class="nav__mobile-menu" id="nav-mobile-menu">
+    <a href="/" class="nav__mobile-link">Home</a>
+    <a href="/features" class="nav__mobile-link">Features</a>
+    <a href="/how-it-works" class="nav__mobile-link">How It Works</a>
+    <a href="/getting-started" class="nav__mobile-link">Get Started</a>
+    <a href="/faq" class="nav__mobile-link">FAQ</a>
+    <a href="/workspace" class="nav__mobile-link" style="color: var(--accent);">Open Workspace →</a>
+  </div>
+
+  <!-- ═══ Hero ═══ -->
+  <section class="legal-hero">
+    <div class="container">
+      <span class="page-hero__label reveal">Legal</span>
+      <h1 class="page-hero__title reveal">Privacy Policy</h1>
+      <div class="legal-hero__meta page-hero__meta reveal">Last updated: April 5, 2025</div>
+    </div>
+  </section>
+
+  <!-- ═══ Key Highlights ═══ -->
+  <section class="section">
+    <div class="container">
+      <div class="legal-highlights stagger-group">
+        <div class="legal-highlight">
+          <div class="legal-highlight__icon">🔒</div>
+          <h3 class="legal-highlight__title">No File Storage</h3>
+          <p class="legal-highlight__text">P2P and local transfers never store files on our servers</p>
+        </div>
+        <div class="legal-highlight">
+          <div class="legal-highlight__icon">👤</div>
+          <h3 class="legal-highlight__title">No Account Required</h3>
+          <p class="legal-highlight__text">Use Clex's core features without creating any account</p>
+        </div>
+        <div class="legal-highlight">
+          <div class="legal-highlight__icon">📊</div>
+          <h3 class="legal-highlight__title">Minimal Analytics</h3>
+          <p class="legal-highlight__text">We collect only what's needed to keep the service running</p>
+        </div>
+      </div>
+
+      <!-- ═══ Legal Content ═══ -->
+      <div class="legal-content">
+
+        <div class="legal-section reveal">
+          <div class="legal-section__number">Section 01</div>
+          <h2 class="legal-section__title">Overview</h2>
+          <p class="legal-section__text">
+            Clex ("we", "us", "our") is a browser-based file workspace that helps users prepare and share files. This Privacy Policy explains how we collect, use, and protect information when you use our service at clex.in.
+          </p>
+          <p class="legal-section__text">
+            Our core design principle is privacy-first. For direct P2P and local network transfers, your files never leave your browser and are never stored on our servers. We believe your files are your business.
+          </p>
+        </div>
+
+        <div class="legal-section reveal">
+          <div class="legal-section__number">Section 02</div>
+          <h2 class="legal-section__title">What We Don't Collect</h2>
+          <p class="legal-section__text">Let's start with what we <strong>don't</strong> do. This is the important part:</p>
+          <ul class="legal-section__list">
+            <li>We do not store your files on any Clex server during P2P or local transfers</li>
+            <li>We do not read, scan, analyze, or inspect the content of your files</li>
+            <li>We do not require you to create an account for core file transfer functionality</li>
+            <li>We do not sell or share personal data with third parties for advertising</li>
+            <li>We do not use tracking cookies for behavioral advertising</li>
+            <li>We do not retain file metadata after your transfer session ends</li>
+          </ul>
+        </div>
+
+        <div class="legal-section reveal">
+          <div class="legal-section__number">Section 03</div>
+          <h2 class="legal-section__title">What We Do Collect</h2>
+          <p class="legal-section__text">To keep the service running and improve the experience, we may collect:</p>
+          <ul class="legal-section__list">
+            <li><strong>Signaling data:</strong> Temporary session identifiers used to establish P2P connections. These are ephemeral and discarded after the connection is established.</li>
+            <li><strong>Basic analytics:</strong> Page views, feature usage counts, and error reports — anonymized and aggregated. We use this to understand which features are used and fix bugs.</li>
+            <li><strong>Google Account data (Drive transfers only):</strong> When you choose to use Google Drive as a fallback, we request access to your Google Drive to upload files. We do not store your Google credentials — authentication is handled by Google's OAuth flow.</li>
+          </ul>
+        </div>
+
+        <div class="legal-section reveal">
+          <div class="legal-section__number">Section 04</div>
+          <h2 class="legal-section__title">How P2P Transfer Works (Privacy Perspective)</h2>
+          <p class="legal-section__text">
+            When you share files via P2P, Clex uses <strong>WebRTC</strong> to create a direct browser-to-browser connection. Here's what happens:
+          </p>
+          <ul class="legal-section__list">
+            <li>A lightweight signaling server helps the two browsers discover each other (this is the only server involvement)</li>
+            <li>The signaling server sees only connection metadata (session IDs, network information) — never file content</li>
+            <li>Once the P2P connection is established, the signaling server is no longer involved</li>
+            <li>File data travels directly from browser to browser, encrypted via DTLS</li>
+            <li>When the transfer completes or either browser tab closes, the data is gone</li>
+          </ul>
+        </div>
+
+        <div class="legal-section reveal">
+          <div class="legal-section__number">Section 05</div>
+          <h2 class="legal-section__title">Google Drive Transfers</h2>
+          <p class="legal-section__text">
+            When you choose to use Google Drive as a fallback transfer method:
+          </p>
+          <ul class="legal-section__list">
+            <li>Files are uploaded to <strong>your personal Google Drive account</strong>, not to any Clex-controlled storage</li>
+            <li>We use Google's OAuth 2.0 for authentication — we never see or store your Google password</li>
+            <li>We request only the permissions needed to upload files to your Drive</li>
+            <li>File management (deletion, sharing settings) is under your control in Google Drive</li>
+            <li>Google's own privacy policy applies to data stored in your Drive</li>
+          </ul>
+        </div>
+
+        <div class="legal-section reveal">
+          <div class="legal-section__number">Section 06</div>
+          <h2 class="legal-section__title">File Processing Privacy</h2>
+          <p class="legal-section__text">
+            All file processing tools (image compression, PDF operations, DOCX conversion, ZIP bundling) run <strong>entirely in your browser</strong>. Your files are processed using client-side JavaScript and never sent to any server for processing. This is by design — it's core to our privacy architecture.
+          </p>
+        </div>
+
+        <div class="legal-section reveal">
+          <div class="legal-section__number">Section 07</div>
+          <h2 class="legal-section__title">Cookies & Local Storage</h2>
+          <p class="legal-section__text">
+            We use browser local storage to save your preferences (theme, settings). We do not use cookies for tracking or advertising. No third-party tracking scripts are loaded.
+          </p>
+        </div>
+
+        <div class="legal-section reveal">
+          <div class="legal-section__number">Section 08</div>
+          <h2 class="legal-section__title">Changes to This Policy</h2>
+          <p class="legal-section__text">
+            We may update this policy from time to time. Changes will be reflected on this page with an updated "Last updated" date. Significant changes will be communicated through the application.
+          </p>
+        </div>
+
+        <div class="legal-section reveal">
+          <div class="legal-section__number">Section 09</div>
+          <h2 class="legal-section__title">Contact</h2>
+          <p class="legal-section__text">
+            Questions about this privacy policy? Contact us at <a href="mailto:hello@clex.in" style="color: var(--accent); border-bottom: 1px solid var(--accent);">hello@clex.in</a>.
+          </p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ Footer ═══ -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer__grid">
+        <div class="footer__brand">
+          <div class="footer__logo">clex<span class="nav__logo-dot"></span></div>
+          <p class="footer__desc">One workspace. Drop files, prepare them, share them.</p>
+        </div>
+        <div class="footer__col">
+          <h4 class="footer__col-title">Product</h4>
+          <nav class="footer__links">
+            <a href="/features" class="footer__link">Features</a>
+            <a href="/how-it-works" class="footer__link">How It Works</a>
+            <a href="/workspace" class="footer__link">Workspace</a>
+            <a href="/getting-started" class="footer__link">Get Started</a>
+          </nav>
+        </div>
+        <div class="footer__col">
+          <h4 class="footer__col-title">Support</h4>
+          <nav class="footer__links">
+            <a href="/faq" class="footer__link">FAQ</a>
+            <a href="mailto:hello@clex.in" class="footer__link">Contact</a>
+          </nav>
+        </div>
+        <div class="footer__col">
+          <h4 class="footer__col-title">Legal</h4>
+          <nav class="footer__links">
+            <a href="/privacy" class="footer__link">Privacy Policy</a>
+            <a href="/terms" class="footer__link">Terms of Service</a>
+          </nav>
+        </div>
+      </div>
+      <div class="footer__bottom">
+        <span class="footer__copyright">© 2025 Clex. All rights reserved.</span>
+        <div class="footer__legal">
+          <a href="/privacy" class="footer__legal-link">Privacy</a>
+          <a href="/terms" class="footer__legal-link">Terms</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>

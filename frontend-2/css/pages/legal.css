@@ -1,0 +1,136 @@
+/* ============================================
+   CLEX — Legal Pages (Privacy & Terms)
+   ============================================ */
+
+.legal-hero {
+  padding: 10rem 0 var(--space-3xl);
+  background: var(--gradient-hero);
+  border-bottom: var(--border-heavy) solid var(--border-bold);
+}
+
+.legal-hero__meta {
+  font-family: var(--font-mono);
+  font-size: clamp(1rem, 1.35vw, 1.2rem);
+  color: var(--text-tertiary);
+  margin-top: var(--space-lg);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+}
+
+/* ── Key Highlights ── */
+.legal-highlights {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0;
+  border: var(--border-thick) solid var(--border-bold);
+  margin-bottom: var(--space-4xl);
+}
+
+.legal-highlight {
+  padding: var(--space-2xl);
+  border-right: var(--border-thick) solid var(--border-bold);
+  text-align: center;
+}
+
+.legal-highlight:last-child {
+  border-right: none;
+}
+
+.legal-highlight__icon {
+  font-size: var(--text-3xl);
+  margin-bottom: var(--space-md);
+}
+
+.legal-highlight__title {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+  margin-bottom: var(--space-sm);
+  font-weight: var(--weight-bold);
+}
+
+.legal-highlight__text {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+/* ── Legal Content ── */
+.legal-content {
+  max-width: var(--container-narrow);
+  margin: 0 auto;
+}
+
+.legal-section {
+  margin-bottom: var(--space-3xl);
+  padding-bottom: var(--space-3xl);
+  border-bottom: var(--border-medium) solid var(--border-color);
+}
+
+.legal-section:last-child {
+  border-bottom: none;
+}
+
+.legal-section__number {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-widest);
+  margin-bottom: var(--space-sm);
+}
+
+.legal-section__title {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 3.5vw, 2.9rem);
+  text-transform: uppercase;
+  margin-bottom: var(--space-lg);
+  line-height: 0.96;
+  letter-spacing: -0.035em;
+}
+
+.legal-section__text {
+  font-size: var(--text-base);
+  color: var(--text-secondary);
+  line-height: var(--leading-relaxed);
+  margin-bottom: var(--space-md);
+}
+
+.legal-section__text:last-child {
+  margin-bottom: 0;
+}
+
+.legal-section__list {
+  padding-left: var(--space-xl);
+  margin-bottom: var(--space-md);
+}
+
+.legal-section__list li {
+  font-size: var(--text-base);
+  color: var(--text-secondary);
+  line-height: var(--leading-relaxed);
+  margin-bottom: var(--space-sm);
+  position: relative;
+  padding-left: var(--space-md);
+}
+
+.legal-section__list li::before {
+  content: '→';
+  position: absolute;
+  left: calc(var(--space-md) * -1);
+  color: var(--accent);
+  font-weight: var(--weight-bold);
+}
+
+@media (max-width: 767px) {
+  .legal-highlights {
+    grid-template-columns: 1fr;
+  }
+  .legal-highlight {
+    border-right: none;
+    border-bottom: var(--border-thick) solid var(--border-bold);
+  }
+  .legal-highlight:last-child {
+    border-bottom: none;
+  }
+}

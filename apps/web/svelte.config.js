@@ -12,11 +12,11 @@ const config = {
       },
     }),
     alias: {
-      $components: 'src/lib/components',
-      $stores: 'src/lib/stores',
-      $transfer: 'src/lib/transfer',
-      $tools: 'src/lib/tools',
-      $utils: 'src/lib/utils',
+      $components: '../../packages/frontend-core/src/lib/components',
+      $stores: '../../packages/frontend-core/src/lib/stores',
+      $transfer: '../../packages/frontend-core/src/lib/transfer',
+      $tools: '../../packages/frontend-core/src/lib/tools',
+      $utils: '../../packages/frontend-core/src/lib/utils',
     },
   },
 }

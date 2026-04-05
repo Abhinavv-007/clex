@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clex — Drop. Prepare. Share. One workspace for all your files.</title>
+  <meta name="description" content="Clex is a smart file workspace. Drop files, prepare them with built-in tools, and share them through the fastest route — direct P2P, local network, or Google Drive. No accounts, no server storage, privacy-first.">
+  <meta name="keywords" content="file sharing, P2P transfer, WebRTC, file workspace, PDF tools, image compression, privacy">
+  <script>
+    (() => {
+      try {
+        const theme = localStorage.getItem('clex-theme') === 'light' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', theme);
+        document.documentElement.classList.toggle('dark', theme === 'dark');
+        document.documentElement.style.colorScheme = theme;
+      } catch {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        document.documentElement.classList.add('dark');
+        document.documentElement.style.colorScheme = 'dark';
+      }
+    })();
+  </script>
+
+  <link rel="stylesheet" href="/css/reset.css">
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/animations.css">
+  <link rel="stylesheet" href="/css/pages/home.css">
+
+  <script type="module" src="/js/main.js"></script>
+</head>
+<body data-page="home">
+
+  <!-- ═══ Navigation ═══ -->
+  <nav class="nav" id="main-nav">
+    <div class="nav__inner">
+      <a href="/" class="nav__logo">
+        clex<span class="nav__logo-dot"></span>
+      </a>
+      <div class="nav__links">
+        <a href="/features" class="nav__link" data-page="features">Features</a>
+        <a href="/how-it-works" class="nav__link" data-page="how-it-works">How It Works</a>
+        <a href="/getting-started" class="nav__link" data-page="getting-started">Get Started</a>
+        <a href="/faq" class="nav__link" data-page="faq">FAQ</a>
+      </div>
+      <div class="nav__actions">
+        <button class="nav__theme-toggle" id="theme-toggle" aria-label="Toggle theme">☀</button>
+        <a href="/workspace" class="btn btn--primary btn--small desktop-only">Open Workspace →</a>
+      </div>
+      <button class="nav__hamburger" id="nav-hamburger" aria-label="Toggle menu">
+        <span class="nav__hamburger-line"></span>
+        <span class="nav__hamburger-line"></span>
+        <span class="nav__hamburger-line"></span>
+      </button>
+    </div>
+  </nav>
+
+  <div class="nav__mobile-menu" id="nav-mobile-menu">
+    <a href="/" class="nav__mobile-link">Home</a>
+    <a href="/features" class="nav__mobile-link">Features</a>
+    <a href="/how-it-works" class="nav__mobile-link">How It Works</a>
+    <a href="/getting-started" class="nav__mobile-link">Get Started</a>
+    <a href="/faq" class="nav__mobile-link">FAQ</a>
+    <a href="/workspace" class="nav__mobile-link" style="color: var(--accent);">Open Workspace →</a>
+  </div>
+
+  <!-- ═══ Hero Section ═══ -->
+  <section class="hero" id="hero">
+    <div class="container">
+      <div class="hero__grid">
+        <div class="hero__content">
+          <div class="hero__badge">
+            <span class="badge badge--accent">
+              <span class="badge__dot"></span>
+              Privacy-First File Movement
+            </span>
+          </div>
+
+          <h1 class="hero__title">
+            <span class="hero__title-line">Drop.</span>
+            <span class="hero__title-line">Prepare.</span>
+            <span class="hero__title-line hero__title-accent">Share.</span>
+          </h1>
+
+          <p class="hero__subtitle lead">
+            One browser-based workspace to prepare and deliver files — with direct P2P transfer, smart tools, and zero server storage.
+          </p>
+
+          <div class="hero__actions">
+            <a href="/workspace" class="btn btn--primary btn--large">Open Workspace →</a>
+            <a href="/how-it-works" class="btn btn--large">See How It Works</a>
+          </div>
+        </div>
+
+        <div class="hero__visual">
+          <div id="hero-workspace-island" class="reveal-right"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ Marquee Strip ═══ -->
+  <div class="banner" style="padding: var(--space-xl) 0;">
+    <div class="marquee">
+      <div class="marquee__track">
+        <span class="marquee__item">WebRTC P2P</span>
+        <span class="marquee__item">Local Network</span>
+        <span class="marquee__item">Google Drive</span>
+        <span class="marquee__item">Image Tools</span>
+        <span class="marquee__item">PDF Operations</span>
+        <span class="marquee__item">DOCX → PDF</span>
+        <span class="marquee__item">ZIP Bundle</span>
+        <span class="marquee__item">Offline Ready</span>
+        <span class="marquee__item">WebRTC P2P</span>
+        <span class="marquee__item">Local Network</span>
+        <span class="marquee__item">Google Drive</span>
+        <span class="marquee__item">Image Tools</span>
+        <span class="marquee__item">PDF Operations</span>
+        <span class="marquee__item">DOCX → PDF</span>
+        <span class="marquee__item">ZIP Bundle</span>
+        <span class="marquee__item">Offline Ready</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ Product Story: 3-Step Flow ═══ -->
+  <section class="section" id="product-story">
+    <div class="container">
+      <div class="section__header text-center reveal">
+        <span class="section__label">The Flow</span>
+        <h2 class="section__title">One Workspace.<br>Three Moves.</h2>
+        <p class="section__subtitle mx-auto">
+          Stop bouncing between apps. Clex connects preparation and delivery into a single, continuous motion.
+        </p>
+      </div>
+
+      <div class="grid grid-3 gap-xl stagger-group">
+        <div class="card card--accent hover-lift">
+          <span class="card__number">01</span>
+          <div class="card__icon">↓</div>
+          <h3 class="card__title">Drop</h3>
+          <p class="card__text">
+            Drag files into your workspace. Images, PDFs, documents, anything. No signup, no upload to servers.
+          </p>
+        </div>
+
+        <div class="card card--accent hover-lift">
+          <span class="card__number">02</span>
+          <div class="card__icon">⚡</div>
+          <h3 class="card__title">Prepare</h3>
+          <p class="card__text">
+            Compress images, merge PDFs, convert DOCX to PDF, bundle into ZIP. Chain tools together, one after another.
+          </p>
+        </div>
+
+        <div class="card card--accent hover-lift">
+          <span class="card__number">03</span>
+          <div class="card__icon">→</div>
+          <h3 class="card__title">Share</h3>
+          <p class="card__text">
+            Clex finds the fastest route. Direct P2P when possible, local network for speed, Drive as a fallback. You stay in control.
+          </p>
+        </div>
+      </div>
+
+      <div class="story-microapps">
+        <div class="story-microapps__header reveal">
+          <span class="story-microapps__eyebrow">Interactive Windows</span>
+          <p class="story-microapps__copy">
+            The same windowed micro-apps drive the full product flow: drop in, prepare in place, then choose the fastest route out.
+          </p>
+        </div>
+
+        <div class="story-microapps__grid stagger-group">
+          <div id="home-drop-island" class="story-microapps__item reveal"></div>
+          <div id="home-tools-island" class="story-microapps__item reveal"></div>
+          <div id="home-route-island" class="story-microapps__item reveal"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ Statement Banner ═══ -->
+  <div class="banner banner--dark reveal-scale">
+    <div class="container">
+      <p class="banner__text">
+        Your files never touch our servers.<br>
+        <span style="color: var(--accent);">That's the point.</span>
+      </p>
+    </div>
+  </div>
+
+  <!-- ═══ Routing Panel ═══ -->
+  <section class="section routing" id="routing">
+    <div class="container">
+      <div class="section__header text-center reveal">
+        <span class="section__label">Smart Routing</span>
+        <h2 class="section__title">Three Paths.<br>One Decision Engine.</h2>
+        <p class="section__subtitle mx-auto">
+          Clex detects your network, finds the other device, and picks the fastest route — or lets you choose.
+        </p>
+      </div>
+    </div>
+
+    <div class="container--wide" style="max-width: var(--container-wide); margin: 0 auto; padding: 0 var(--container-padding);">
+      <div class="routing-mock-container reveal">
+        <div id="routing-engine-island" style="max-width: 800px; margin: 0 auto 4rem;"></div>
+      </div>
+
+      <div class="routing__grid stagger-group">
+        <div class="routing__method routing__method--primary">
+          <div class="routing__method-badge">
+            <span class="badge badge--accent">
+              <span class="routing__status-dot routing__status-dot--active"></span>
+              Primary
+            </span>
+          </div>
+          <h3 class="routing__method-title">Direct P2P</h3>
+          <p class="routing__method-desc">
+            Browser-to-browser transfer via WebRTC. Files go straight from you to them. No server in between.
+          </p>
+          <div class="routing__method-stats">
+            <div class="routing__method-stat">
+              <span>Protocol</span>
+              <span class="routing__method-stat-value">WebRTC</span>
+            </div>
+            <div class="routing__method-stat">
+              <span>Server Storage</span>
+              <span class="routing__method-stat-value">None</span>
+            </div>
+            <div class="routing__method-stat">
+              <span>Account</span>
+              <span class="routing__method-stat-value">Not Required</span>
+            </div>
+            <div class="routing__method-stat">
+              <span>Privacy</span>
+              <span class="routing__method-stat-value">Maximum</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="routing__method">
+          <div class="routing__method-badge">
+            <span class="badge badge--outline">
+              <span class="routing__status-dot routing__status-dot--ready"></span>
+              Speed Boost
+            </span>
+          </div>
+          <h3 class="routing__method-title">Local Network</h3>
+          <p class="routing__method-desc">
+            Same Wi-Fi? Same network? Clex detects it and transfers at local speed. Blazing fast for large files.
+          </p>
+          <div class="routing__method-stats">
+            <div class="routing__method-stat">
+              <span>Protocol</span>
+              <span class="routing__method-stat-value">Local TCP</span>
+            </div>
+            <div class="routing__method-stat">
+              <span>Speed</span>
+              <span class="routing__method-stat-value">LAN Speed</span>
+            </div>
+            <div class="routing__method-stat">
+              <span>Requirement</span>
+              <span class="routing__method-stat-value">Same Network</span>
+            </div>
+            <div class="routing__method-stat">
+              <span>Ideal For</span>
+              <span class="routing__method-stat-value">Large Files</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="routing__method">
+          <div class="routing__method-badge">
+            <span class="badge badge--outline">
+              <span class="routing__status-dot routing__status-dot--fallback"></span>
+              Fallback
+            </span>
+          </div>
+          <h3 class="routing__method-title">Google Drive</h3>
+          <p class="routing__method-desc">
+            When direct isn't possible, Clex uses Google Drive as a secure relay. Encrypted, temporary, under your control.
+          </p>
+          <div class="routing__method-stats">
+            <div class="routing__method-stat">
+              <span>Protocol</span>
+              <span class="routing__method-stat-value">Google APIs</span>
+            </div>
+            <div class="routing__method-stat">
+              <span>Encryption</span>
+              <span class="routing__method-stat-value">Google TLS</span>
+            </div>
+            <div class="routing__method-stat">
+              <span>Account</span>
+              <span class="routing__method-stat-value">Google Auth</span>
+            </div>
+            <div class="routing__method-stat">
+              <span>Storage</span>
+              <span class="routing__method-stat-value">Your Drive</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ Features Grid ═══ -->
+  <section class="section" id="features-preview">
+    <div class="container">
+      <div class="section__header text-center reveal">
+        <span class="section__label">Built-In Tools</span>
+        <h2 class="section__title">Prepare Files Without<br>Leaving the Tab.</h2>
+      </div>
+    </div>
+
+    <div class="container--wide" style="max-width: var(--container-wide); margin: 0 auto; padding: 0 var(--container-padding);">
+      <div class="features-grid stagger-group">
+        <div class="card">
+          <div class="card__icon">🖼</div>
+          <h3 class="card__title">Image Tools</h3>
+          <p class="card__text">Compress, resize, convert between formats. JPEG, PNG, WebP, SVG — all in-browser.</p>
+        </div>
+        <div class="card">
+          <div class="card__icon">📄</div>
+          <h3 class="card__title">PDF Operations</h3>
+          <p class="card__text">Merge pages, split documents, extract sections, export — full PDF control without leaving Clex.</p>
+        </div>
+        <div class="card">
+          <div class="card__icon">🔄</div>
+          <h3 class="card__title">DOCX → PDF</h3>
+          <p class="card__text">Drop a Word document, get a PDF. Clean conversion, instant result, no external service.</p>
+        </div>
+        <div class="card">
+          <div class="card__icon">📦</div>
+          <h3 class="card__title">ZIP Bundling</h3>
+          <p class="card__text">Select multiple files, bundle them into a single ZIP archive for clean, organized delivery.</p>
+        </div>
+        <div class="card">
+          <div class="card__icon">⛓</div>
+          <h3 class="card__title">Smart Chaining</h3>
+          <p class="card__text">Compress an image, then merge into a PDF, then ZIP it — operations chain together naturally.</p>
+        </div>
+        <div class="card">
+          <div class="card__icon">📡</div>
+          <h3 class="card__title">Offline Ready</h3>
+          <p class="card__text">Once loaded, Clex works without internet. Process files locally, share when you're back online.</p>
+        </div>
+      </div>
+
+      <div class="features-preview__demo reveal">
+        <div class="features-preview__demo-header">
+          <span class="features-preview__demo-eyebrow">Chain Tools</span>
+          <p class="features-preview__demo-copy">
+            Compress, convert, bundle, then share without leaving the workspace.
+          </p>
+        </div>
+        <div id="home-chain-flow-island" class="features-preview__demo-flow"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ Trust Strip ═══ -->
+  <section class="section section--tight trust" id="trust">
+    <div class="container">
+      <h2 class="reveal" style="font-size: var(--text-3xl); margin-bottom: var(--space-md);">
+        Built Different.
+      </h2>
+      <p class="section__subtitle mx-auto reveal" style="margin-bottom: var(--space-2xl);">
+        Clex is designed around the idea that your files are yours, and they should move fast.
+      </p>
+      <div class="trust__items stagger-group">
+        <div class="trust__item hover-lift">
+          <span class="trust__icon">🔒</span>
+          No Server Storage
+        </div>
+        <div class="trust__item hover-lift">
+          <span class="trust__icon">👤</span>
+          No Account Required
+        </div>
+        <div class="trust__item hover-lift">
+          <span class="trust__icon">📡</span>
+          Offline Capable
+        </div>
+        <div class="trust__item hover-lift">
+          <span class="trust__icon">⚡</span>
+          Local Speed
+        </div>
+        <div class="trust__item hover-lift">
+          <span class="trust__icon">🌐</span>
+          Browser-Based
+        </div>
+        <div class="trust__item hover-lift">
+          <span class="trust__icon">🔓</span>
+          Open Architecture
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ Final CTA ═══ -->
+  <section class="cta-strip">
+    <div class="container">
+      <h2 class="cta-strip__title reveal">
+        Ready to Move Files<br>
+        <span style="color: var(--accent);">The Right Way?</span>
+      </h2>
+      <p class="cta-strip__text reveal">
+        No signup. No install. Just open Clex and start dropping files. It's that simple.
+      </p>
+      <div class="reveal">
+        <a href="/workspace" class="btn btn--primary btn--large">Open Workspace →</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ Footer ═══ -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer__grid">
+        <div class="footer__brand">
+          <div class="footer__logo">
+            clex<span class="nav__logo-dot"></span>
+          </div>
+          <p class="footer__desc">
+            One workspace. Drop files, prepare them, share them. No friction, no accounts, no server storage. Just fast, private file movement.
+          </p>
+          <div class="flex gap-sm">
+            <span class="badge badge--outline"><span class="badge__dot"></span> Online</span>
+          </div>
+        </div>
+        <div class="footer__col">
+          <h4 class="footer__col-title">Product</h4>
+          <nav class="footer__links">
+            <a href="/features" class="footer__link">Features</a>
+            <a href="/how-it-works" class="footer__link">How It Works</a>
+            <a href="/workspace" class="footer__link">Workspace</a>
+            <a href="/getting-started" class="footer__link">Get Started</a>
+          </nav>
+        </div>
+        <div class="footer__col">
+          <h4 class="footer__col-title">Support</h4>
+          <nav class="footer__links">
+            <a href="/faq" class="footer__link">FAQ</a>
+            <a href="/getting-started" class="footer__link">Onboarding</a>
+            <a href="mailto:hello@clex.in" class="footer__link">Contact</a>
+          </nav>
+        </div>
+        <div class="footer__col">
+          <h4 class="footer__col-title">Legal</h4>
+          <nav class="footer__links">
+            <a href="/privacy" class="footer__link">Privacy Policy</a>
+            <a href="/terms" class="footer__link">Terms of Service</a>
+          </nav>
+        </div>
+      </div>
+      <div class="footer__bottom">
+        <span class="footer__copyright">© 2025 Clex. All rights reserved.</span>
+        <div class="footer__legal">
+          <a href="/privacy" class="footer__legal-link">Privacy</a>
+          <a href="/terms" class="footer__legal-link">Terms</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>

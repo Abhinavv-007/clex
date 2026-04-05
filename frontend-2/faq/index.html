@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FAQ — Clex | Frequently Asked Questions</title>
+  <meta name="description" content="Answers to common questions about Clex: transfer methods, privacy, file storage, speed, browser support, offline usage, Google Drive fallback, and file handling.">
+  <script>
+    (() => {
+      try {
+        const theme = localStorage.getItem('clex-theme') === 'light' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', theme);
+        document.documentElement.classList.toggle('dark', theme === 'dark');
+        document.documentElement.style.colorScheme = theme;
+      } catch {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        document.documentElement.classList.add('dark');
+        document.documentElement.style.colorScheme = 'dark';
+      }
+    })();
+  </script>
+
+  <link rel="stylesheet" href="/css/reset.css">
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/animations.css">
+  <link rel="stylesheet" href="/css/pages/home.css">
+  <link rel="stylesheet" href="/css/pages/faq.css">
+
+  <script type="module" src="/js/main.js"></script>
+</head>
+<body data-page="faq">
+
+  <!-- ═══ Navigation ═══ -->
+  <nav class="nav" id="main-nav">
+    <div class="nav__inner">
+      <a href="/" class="nav__logo">clex<span class="nav__logo-dot"></span></a>
+      <div class="nav__links">
+        <a href="/features" class="nav__link" data-page="features">Features</a>
+        <a href="/how-it-works" class="nav__link" data-page="how-it-works">How It Works</a>
+        <a href="/getting-started" class="nav__link" data-page="getting-started">Get Started</a>
+        <a href="/faq" class="nav__link" data-page="faq">FAQ</a>
+      </div>
+      <div class="nav__actions">
+        <button class="nav__theme-toggle" id="theme-toggle" aria-label="Toggle theme">☀</button>
+        <a href="/workspace" class="btn btn--primary btn--small desktop-only">Open Workspace →</a>
+      </div>
+      <button class="nav__hamburger" id="nav-hamburger" aria-label="Toggle menu">
+        <span class="nav__hamburger-line"></span>
+        <span class="nav__hamburger-line"></span>
+        <span class="nav__hamburger-line"></span>
+      </button>
+    </div>
+  </nav>
+  <div class="nav__mobile-menu" id="nav-mobile-menu">
+    <a href="/" class="nav__mobile-link">Home</a>
+    <a href="/features" class="nav__mobile-link">Features</a>
+    <a href="/how-it-works" class="nav__mobile-link">How It Works</a>
+    <a href="/getting-started" class="nav__mobile-link">Get Started</a>
+    <a href="/faq" class="nav__mobile-link">FAQ</a>
+    <a href="/workspace" class="nav__mobile-link" style="color: var(--accent);">Open Workspace →</a>
+  </div>
+
+  <!-- ═══ Hero ═══ -->
+  <section class="faq-hero">
+    <div class="container">
+      <span class="page-hero__label reveal">Support</span>
+      <h1 class="page-hero__title reveal">Frequently<br>Asked Questions.</h1>
+      <p class="page-hero__subtitle reveal">
+        Everything you need to know about how Clex handles your files, transfers, and privacy.
+      </p>
+    </div>
+  </section>
+
+  <!-- ═══ FAQ Content ═══ -->
+  <section class="section">
+    <div class="container container--narrow">
+
+      <!-- Transfer Methods -->
+      <div class="faq-section reveal">
+        <h2 class="faq-section__title">Transfer Methods</h2>
+        <div class="accordion">
+          <div class="accordion__item">
+            <button class="accordion__trigger" aria-expanded="false">
+              How does P2P transfer work?
+              <span class="accordion__icon">+</span>
+            </button>
+            <div class="accordion__content">
+              <div class="accordion__body faq-answer">
+                <p>Clex uses <strong>WebRTC</strong> to establish a direct browser-to-browser connection. When you share files, Clex creates a unique session and uses a lightweight signaling server to help the two browsers find each other. Once connected, the files stream <strong>directly</strong> from your browser to the recipient's browser. No server stores or relays the actual file data.</p>
+              </div>
+            </div>
+          </div>
+          <div class="accordion__item">
+            <button class="accordion__trigger" aria-expanded="false">
+              What is local network transfer?
+              <span class="accordion__icon">+</span>
+            </button>
+            <div class="accordion__content">
+              <div class="accordion__body faq-answer">
+                <p>When both devices are on the <strong>same Wi-Fi network</strong>, Clex can detect this and transfer files over the local network instead of routing through the internet. This gives you <strong>LAN-speed transfers</strong> — ideal for large files, video, or batch transfers between your own devices.</p>
+              </div>
+            </div>
+          </div>
+          <div class="accordion__item">
+            <button class="accordion__trigger" aria-expanded="false">
+              When does Google Drive get used?
+              <span class="accordion__icon">+</span>
+            </button>
+            <div class="accordion__content">
+              <div class="accordion__body faq-answer">
+                <p>Google Drive is a <strong>fallback option</strong>. It's used when direct P2P or local network transfer isn't possible — for example, when devices are on restrictive networks or behind strict NATs. When you choose Drive, the file uploads to <strong>your Google Drive account</strong>, not to Clex's servers. The recipient gets a secure link to download from your Drive.</p>
+              </div>
+            </div>
+          </div>
+          <div class="accordion__item">
+            <button class="accordion__trigger" aria-expanded="false">
+              Do both browsers need to be open for P2P?
+              <span class="accordion__icon">+</span>
+            </button>
+            <div class="accordion__content">
+              <div class="accordion__body faq-answer">
+                <p><strong>Yes.</strong> For P2P and local network transfers, both sender and receiver need to keep their browser tabs open until the transfer completes. If either tab closes, the transfer stops. For asynchronous transfers (where the recipient isn't online yet), use the <strong>Google Drive fallback</strong>.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Privacy -->
+      <div class="faq-section reveal">
+        <h2 class="faq-section__title">Privacy & Security</h2>
+        <div class="accordion">
+          <div class="accordion__item">
+            <button class="accordion__trigger" aria-expanded="false">
+              Are my files stored on Clex servers?
+              <span class="accordion__icon">+</span>
+            </button>
+            <div class="accordion__content">
+              <div class="accordion__body faq-answer">
+                <p><strong>No.</strong> During P2P and local network transfers, your files are <strong>never</strong> stored on any Clex server. They exist only in the sender's and receiver's browsers during the transfer. The only server involvement is a lightweight signaling server that helps the two browsers find each other — <strong>it never sees or stores file data</strong>.</p>
+              </div>
+            </div>
+          </div>
+          <div class="accordion__item">
+            <button class="accordion__trigger" aria-expanded="false">
+              Do I need an account?
+              <span class="accordion__icon">+</span>
+            </button>
+            <div class="accordion__content">
+              <div class="accordion__body faq-answer">
+                <p><strong>No account is required</strong> for P2P or local network transfers. Just open Clex and go. The only time authentication is needed is when you choose to use <strong>Google Drive as a fallback</strong>, which requires signing in with your Google account to upload files to your personal Drive.</p>
+              </div>
+            </div>
+          </div>
+          <div class="accordion__item">
+            <button class="accordion__trigger" aria-expanded="false">
+              Is the transfer encrypted?
+              <span class="accordion__icon">+</span>
+            </button>
+            <div class="accordion__content">
+              <div class="accordion__body faq-answer">
+                <p>WebRTC connections are <strong>encrypted by default</strong> using DTLS (Datagram Transport Layer Security). This means your P2P transfers are encrypted end-to-end between browsers. Google Drive transfers use <strong>Google's TLS encryption</strong>.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Speed & Performance -->
+      <div class="faq-section reveal">
+        <h2 class="faq-section__title">Speed & Performance</h2>
+        <div class="accordion">
+          <div class="accordion__item">
+            <button class="accordion__trigger" aria-expanded="false">
+              How fast are transfers?
+              <span class="accordion__icon">+</span>
+            </button>
+            <div class="accordion__content">
+              <div class="accordion__body faq-answer">
+                <p>P2P transfers run at the speed of your internet connection — there's no server bottleneck. <strong>Local network transfers</strong> are even faster since they use your Wi-Fi's LAN speed (often 100+ Mbps). Google Drive speed depends on your upload bandwidth and Google's infrastructure.</p>
+              </div>
+            </div>
+          </div>
+          <div class="accordion__item">
+            <button class="accordion__trigger" aria-expanded="false">
+              Is there a file size limit?
+              <span class="accordion__icon">+</span>
+            </button>
+            <div class="accordion__content">
+              <div class="accordion__body faq-answer">
+                <p>For P2P and local transfers, the limit is <strong>your browser's available RAM</strong>. Most modern browsers handle files up to several GB comfortably. For Google Drive, limits depend on your <strong>Drive storage quota</strong> (15 GB free tier). Extremely large files may work better with local network transfer.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Browser Support -->
+      <div class="faq-section reveal">
+        <h2 class="faq-section__title">Browser Support</h2>
+        <div class="accordion">
+          <div class="accordion__item">
+            <button class="accordion__trigger" aria-expanded="false">
+              Which browsers does Clex support?
+              <span class="accordion__icon">+</span>
+            </button>
+            <div class="accordion__content">
+              <div class="accordion__body faq-answer">
+                <p>Clex works in all modern browsers with WebRTC support: <strong>Chrome 80+</strong>, <strong>Firefox 78+</strong>, <strong>Safari 14+</strong>, <strong>Edge 80+</strong>, and their mobile equivalents. For the best experience, use the latest version of Chrome or Firefox.</p>
+              </div>
+            </div>
+          </div>
+          <div class="accordion__item">
+            <button class="accordion__trigger" aria-expanded="false">
+              Does it work on mobile?
+              <span class="accordion__icon">+</span>
+            </button>
+            <div class="accordion__content">
+              <div class="accordion__body faq-answer">
+                <p><strong>Yes.</strong> Clex is fully responsive and works on mobile browsers. You can drop files, use preparation tools, and share — all from your phone or tablet. The interface adapts to smaller screens while keeping full functionality.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Offline Usage -->
+      <div class="faq-section reveal">
+        <h2 class="faq-section__title">Offline Usage</h2>
+        <div class="accordion">
+          <div class="accordion__item">
+            <button class="accordion__trigger" aria-expanded="false">
+              Can I use Clex offline?
+              <span class="accordion__icon">+</span>
+            </button>
+            <div class="accordion__content">
+              <div class="accordion__body faq-answer">
+                <p><strong>Partially.</strong> After Clex loads in your browser for the first time, the <strong>preparation tools work offline</strong>. You can compress images, merge PDFs, convert documents, and bundle ZIPs without internet. Sharing requires a connection (since it needs to reach the other device), but you can prepare everything offline and share when you reconnect.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- File Handling -->
+      <div class="faq-section reveal">
+        <h2 class="faq-section__title">File Handling</h2>
+        <div class="accordion">
+          <div class="accordion__item">
+            <button class="accordion__trigger" aria-expanded="false">
+              What file types can I process?
+              <span class="accordion__icon">+</span>
+            </button>
+            <div class="accordion__content">
+              <div class="accordion__body faq-answer">
+                <p>Clex supports <strong>image compression and conversion</strong> (JPEG, PNG, WebP), <strong>PDF operations</strong> (merge, split, extract, export), <strong>DOCX to PDF conversion</strong>, and <strong>ZIP bundling</strong> for any file types. You can share any file type through the transfer system, even if Clex doesn't have specific preparation tools for it.</p>
+              </div>
+            </div>
+          </div>
+          <div class="accordion__item">
+            <button class="accordion__trigger" aria-expanded="false">
+              What happens to my files after transfer?
+              <span class="accordion__icon">+</span>
+            </button>
+            <div class="accordion__content">
+              <div class="accordion__body faq-answer">
+                <p>For P2P and local transfers: <strong>nothing</strong>. The files existed only in browser memory during the transfer. When you close the tab, they're gone from Clex entirely. For Google Drive transfers, the file remains in <strong>your Google Drive</strong> until you delete it — Clex doesn't manage or retain it.</p>
+              </div>
+            </div>
+          </div>
+          <div class="accordion__item">
+            <button class="accordion__trigger" aria-expanded="false">
+              Can I process files without sharing them?
+              <span class="accordion__icon">+</span>
+            </button>
+            <div class="accordion__content">
+              <div class="accordion__body faq-answer">
+                <p><strong>Absolutely.</strong> You can use Clex purely as a file preparation tool. Drop files, compress images, merge PDFs, convert formats, and download the results — all without ever touching the sharing features. It works as a standalone utility.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ═══ Still have questions? ═══ -->
+  <section class="cta-strip">
+    <div class="container">
+      <h2 class="cta-strip__title reveal">
+        Still have questions?
+      </h2>
+      <p class="cta-strip__text reveal">
+        Reach out and we'll get back to you.
+      </p>
+      <div class="reveal" style="display: flex; gap: var(--space-md); justify-content: center; flex-wrap: wrap;">
+        <a href="mailto:hello@clex.in" class="btn">Contact Us →</a>
+        <a href="/workspace" class="btn btn--primary">Open Workspace →</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ Footer ═══ -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer__grid">
+        <div class="footer__brand">
+          <div class="footer__logo">clex<span class="nav__logo-dot"></span></div>
+          <p class="footer__desc">One workspace. Drop files, prepare them, share them.</p>
+        </div>
+        <div class="footer__col">
+          <h4 class="footer__col-title">Product</h4>
+          <nav class="footer__links">
+            <a href="/features" class="footer__link">Features</a>
+            <a href="/how-it-works" class="footer__link">How It Works</a>
+            <a href="/workspace" class="footer__link">Workspace</a>
+            <a href="/getting-started" class="footer__link">Get Started</a>
+          </nav>
+        </div>
+        <div class="footer__col">
+          <h4 class="footer__col-title">Support</h4>
+          <nav class="footer__links">
+            <a href="/faq" class="footer__link">FAQ</a>
+            <a href="mailto:hello@clex.in" class="footer__link">Contact</a>
+          </nav>
+        </div>
+        <div class="footer__col">
+          <h4 class="footer__col-title">Legal</h4>
+          <nav class="footer__links">
+            <a href="/privacy" class="footer__link">Privacy Policy</a>
+            <a href="/terms" class="footer__link">Terms of Service</a>
+          </nav>
+        </div>
+      </div>
+      <div class="footer__bottom">
+        <span class="footer__copyright">© 2025 Clex. All rights reserved.</span>
+        <div class="footer__legal">
+          <a href="/privacy" class="footer__legal-link">Privacy</a>
+          <a href="/terms" class="footer__legal-link">Terms</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>

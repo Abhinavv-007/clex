@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>How It Works — Clex | Drop, Prepare, Share</title>
+  <meta name="description" content="Three steps: drop files into your workspace, prepare them with built-in tools, and share through the fastest route. See how Clex connects preparation to delivery.">
+  <script>
+    (() => {
+      try {
+        const theme = localStorage.getItem('clex-theme') === 'light' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', theme);
+        document.documentElement.classList.toggle('dark', theme === 'dark');
+        document.documentElement.style.colorScheme = theme;
+      } catch {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        document.documentElement.classList.add('dark');
+        document.documentElement.style.colorScheme = 'dark';
+      }
+    })();
+  </script>
+
+  <link rel="stylesheet" href="/css/reset.css">
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/animations.css">
+  <link rel="stylesheet" href="/css/pages/home.css">
+  <link rel="stylesheet" href="/css/pages/how-it-works.css">
+
+  <script type="module" src="/js/main.js"></script>
+</head>
+<body data-page="how-it-works">
+
+  <!-- ═══ Navigation ═══ -->
+  <nav class="nav" id="main-nav">
+    <div class="nav__inner">
+      <a href="/" class="nav__logo">clex<span class="nav__logo-dot"></span></a>
+      <div class="nav__links">
+        <a href="/features" class="nav__link" data-page="features">Features</a>
+        <a href="/how-it-works" class="nav__link" data-page="how-it-works">How It Works</a>
+        <a href="/getting-started" class="nav__link" data-page="getting-started">Get Started</a>
+        <a href="/faq" class="nav__link" data-page="faq">FAQ</a>
+      </div>
+      <div class="nav__actions">
+        <button class="nav__theme-toggle" id="theme-toggle" aria-label="Toggle theme">☀</button>
+        <a href="/workspace" class="btn btn--primary btn--small desktop-only">Open Workspace →</a>
+      </div>
+      <button class="nav__hamburger" id="nav-hamburger" aria-label="Toggle menu">
+        <span class="nav__hamburger-line"></span>
+        <span class="nav__hamburger-line"></span>
+        <span class="nav__hamburger-line"></span>
+      </button>
+    </div>
+  </nav>
+  <div class="nav__mobile-menu" id="nav-mobile-menu">
+    <a href="/" class="nav__mobile-link">Home</a>
+    <a href="/features" class="nav__mobile-link">Features</a>
+    <a href="/how-it-works" class="nav__mobile-link">How It Works</a>
+    <a href="/getting-started" class="nav__mobile-link">Get Started</a>
+    <a href="/faq" class="nav__mobile-link">FAQ</a>
+    <a href="/workspace" class="nav__mobile-link" style="color: var(--accent);">Open Workspace →</a>
+  </div>
+
+  <!-- ═══ Hero ═══ -->
+  <section class="hiw-hero">
+    <div class="container">
+      <span class="page-hero__label reveal">The Process</span>
+      <h1 class="page-hero__title reveal">Three Steps.<br>Zero Friction.</h1>
+      <p class="page-hero__subtitle reveal">
+        Clex connects preparation and delivery into a single flow. Here's exactly how it works, from first drop to final delivery.
+      </p>
+    </div>
+  </section>
+
+  <!-- ═══ Giant Step 1: DROP ═══ -->
+  <section class="section">
+    <div class="container">
+      <div class="giant-steps">
+
+        <div class="giant-step">
+          <div class="giant-step__content">
+            <div class="giant-step__number">01</div>
+            <h2 class="giant-step__title">Drop Your Files</h2>
+            <p class="giant-step__text">
+              Open Clex in your browser. Drag files in — images, PDFs, documents, anything. They stay in your browser's memory. Nothing gets uploaded to any server.
+            </p>
+            <div class="giant-step__tags">
+              <span class="badge badge--outline">Drag & Drop</span>
+              <span class="badge badge--outline">Click to Browse</span>
+              <span class="badge badge--outline">Paste from Clipboard</span>
+            </div>
+          </div>
+          <div id="hiw-drop-island"></div>
+        </div>
+
+        <!-- ═══ Giant Step 2: PREPARE ═══ -->
+        <div class="giant-step">
+          <div class="giant-step__content">
+            <div class="giant-step__number">02</div>
+            <h2 class="giant-step__title">Prepare & Transform</h2>
+            <p class="giant-step__text">
+              Use built-in tools to process your files before sharing. Compress images, merge PDFs, convert DOCX to PDF, bundle into ZIP. Chain operations together — one flows into the next.
+            </p>
+            <div class="giant-step__tags">
+              <span class="badge badge--outline">Compress</span>
+              <span class="badge badge--outline">Merge</span>
+              <span class="badge badge--outline">Convert</span>
+              <span class="badge badge--outline">Split</span>
+              <span class="badge badge--outline">ZIP</span>
+              <span class="badge badge--outline">Chain</span>
+            </div>
+          </div>
+          <div id="hiw-tools-island"></div>
+        </div>
+
+        <!-- ═══ Giant Step 3: SHARE ═══ -->
+        <div class="giant-step">
+          <div class="giant-step__content">
+            <div class="giant-step__number">03</div>
+            <h2 class="giant-step__title">Share & Deliver</h2>
+            <p class="giant-step__text">
+              Hit share. Clex scans the network, detects available routes, and picks the fastest path. Direct P2P is always tried first. Local network for same-Wi-Fi speed. Google Drive when direct isn't possible.
+            </p>
+            <div class="giant-step__tags">
+              <span class="badge badge--accent">P2P Default</span>
+              <span class="badge badge--outline">Local Network</span>
+              <span class="badge badge--outline">Drive Fallback</span>
+            </div>
+          </div>
+          <div id="hiw-route-island"></div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ Banner ═══ -->
+  <div class="banner reveal-scale">
+    <div class="container">
+      <p class="banner__text">Files go from A → B.<br>Nothing in between.</p>
+    </div>
+  </div>
+
+  <!-- ═══ Edge Cases ═══ -->
+  <section class="section">
+    <div class="container">
+      <div class="section__header text-center reveal">
+        <span class="section__label">What If...?</span>
+        <h2 class="section__title page-section__title">Clex Handles<br>the Edge Cases.</h2>
+      </div>
+
+      <div class="grid grid-2 gap-xl stagger-group">
+        <div class="card hover-lift">
+          <h3 class="card__title">What if I'm offline?</h3>
+          <p class="card__text">
+            After Clex loads once, the preparation tools work completely offline. Compress images, merge PDFs, convert documents — all without internet. Share when you reconnect.
+          </p>
+        </div>
+        <div class="card hover-lift">
+          <h3 class="card__title">What about large files?</h3>
+          <p class="card__text">
+            Local network transfer handles large files at LAN speed. For remote transfers, P2P streams chunks progressively. Drive has Google's file limits for the fallback path.
+          </p>
+        </div>
+        <div class="card hover-lift">
+          <h3 class="card__title">What if P2P fails?</h3>
+          <p class="card__text">
+            Clex automatically detects when direct P2P can't establish. It offers local network or Google Drive as alternatives. You choose — Clex never switches without asking.
+          </p>
+        </div>
+        <div class="card hover-lift">
+          <h3 class="card__title">What browsers work?</h3>
+          <p class="card__text">
+            Chrome, Firefox, Safari, Edge — any modern browser with WebRTC support. Mobile browsers work too. Clex adapts the interface to your screen size automatically.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ CTA ═══ -->
+  <section class="cta-strip">
+    <div class="container">
+      <h2 class="cta-strip__title reveal">
+        Simple enough?<br><span style="color: var(--accent);">Try it now.</span>
+      </h2>
+      <p class="cta-strip__text reveal">
+        No download, no install, no signup. Just open and drop.
+      </p>
+      <div class="reveal">
+        <a href="/workspace" class="btn btn--primary btn--large">Open Workspace →</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ Footer ═══ -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer__grid">
+        <div class="footer__brand">
+          <div class="footer__logo">clex<span class="nav__logo-dot"></span></div>
+          <p class="footer__desc">One workspace. Drop files, prepare them, share them.</p>
+        </div>
+        <div class="footer__col">
+          <h4 class="footer__col-title">Product</h4>
+          <nav class="footer__links">
+            <a href="/features" class="footer__link">Features</a>
+            <a href="/how-it-works" class="footer__link">How It Works</a>
+            <a href="/workspace" class="footer__link">Workspace</a>
+            <a href="/getting-started" class="footer__link">Get Started</a>
+          </nav>
+        </div>
+        <div class="footer__col">
+          <h4 class="footer__col-title">Support</h4>
+          <nav class="footer__links">
+            <a href="/faq" class="footer__link">FAQ</a>
+            <a href="mailto:hello@clex.in" class="footer__link">Contact</a>
+          </nav>
+        </div>
+        <div class="footer__col">
+          <h4 class="footer__col-title">Legal</h4>
+          <nav class="footer__links">
+            <a href="/privacy" class="footer__link">Privacy Policy</a>
+            <a href="/terms" class="footer__link">Terms of Service</a>
+          </nav>
+        </div>
+      </div>
+      <div class="footer__bottom">
+        <span class="footer__copyright">© 2025 Clex. All rights reserved.</span>
+        <div class="footer__legal">
+          <a href="/privacy" class="footer__legal-link">Privacy</a>
+          <a href="/terms" class="footer__legal-link">Terms</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>
