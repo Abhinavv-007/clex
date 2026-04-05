@@ -1,0 +1,127 @@
+<script lang="ts">
+  import { filesStore, hasFiles } from '$stores/files'
+  import FileCard from './FileCard.svelte'
+  import FileDropzone from './FileDropzone.svelte'
+  import { flip } from 'svelte/animate'
+  import { slide } from 'svelte/transition'
+  import { formatBytes } from '$utils/format'
+
+  $: totalSize = $filesStore.reduce((sum, f) => sum + f.size, 0)
+</script>
+
+<div class="fl-root">
+  <!-- Header -->
+  <div class="fl-header">
+    <div>
+      <h2 class="fl-title">Files</h2>
+      {#if $hasFiles}
+        <p class="fl-meta">
+          {$filesStore.length} file{$filesStore.length !== 1 ? 's' : ''} · {formatBytes(totalSize)}
+        </p>
+      {/if}
+    </div>
+    {#if $hasFiles}
+      <button class="fl-clear-btn" on:click={() => filesStore.clear()}>
+        Clear
+      </button>
+    {/if}
+  </div>
+
+  <!-- Dropzone -->
+  <FileDropzone />
+
+  <!-- File list -->
+  {#if $hasFiles}
+    <div class="fl-list">
+      {#each $filesStore as entry (entry.id)}
+        <div
+          animate:flip={{ duration: 220 }}
+          in:slide={{ duration: 180 }}
+          out:slide={{ duration: 140 }}
+        >
+          <FileCard {entry} />
+        </div>
+      {/each}
+    </div>
+  {:else}
+    <div class="fl-empty">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+        <path d="M9 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V9l-6-6z" stroke="currentColor" stroke-width="1.4"/>
+        <path d="M9 3v6h6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+      </svg>
+      <p>No files yet</p>
+    </div>
+  {/if}
+</div>
+
+<style>
+  .fl-root {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .fl-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .fl-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-1);
+    letter-spacing: -0.01em;
+  }
+
+  .fl-meta {
+    font-size: 11px;
+    color: var(--text-3);
+    margin-top: 2px;
+  }
+
+  .fl-clear-btn {
+    font-size: 12px;
+    color: var(--text-3);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: background 0.15s, color 0.15s;
+  }
+
+  .fl-clear-btn:hover {
+    background: var(--raised);
+    color: #ef4444;
+  }
+
+  .fl-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: calc(100vh - 380px);
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-strong) transparent;
+    padding-right: 2px;
+  }
+
+  .fl-list::-webkit-scrollbar { width: 4px; }
+  .fl-list::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 2px; }
+
+  .fl-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 24px;
+    color: var(--text-3);
+    font-size: 12px;
+  }
+
+  .fl-empty svg {
+    opacity: 0.3;
+  }
+</style>

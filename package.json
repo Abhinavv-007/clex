@@ -1,0 +1,23 @@
+{
+  "name": "clex-all-in-one",
+  "private": true,
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "svelte-preprocess",
+      "workerd",
+      "sharp"
+    ]
+  },
+  "scripts": {
+    "dev": "pnpm --filter web dev",
+    "dev:signal": "pnpm --filter signaling dev",
+    "build": "pnpm --filter signaling build && pnpm --filter web build",
+    "preview": "pnpm --filter web preview",
+    "typecheck": "pnpm -r typecheck"
+  },
+  "engines": {
+    "node": ">=20",
+    "pnpm": ">=9"
+  }
+}
