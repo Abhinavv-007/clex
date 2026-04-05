@@ -5,7 +5,7 @@ import { defineConfig } from 'vite';
 
 const rootDir = dirname(fileURLToPath(import.meta.url));
 const r = (/** @type {string} */ value) => resolve(rootDir, value);
-const slashlessRouteMap = new Map([
+const devSlashlessRouteMap = new Map([
   ['/', '/index.html'],
   ['/features', '/features/index.html'],
   ['/how-it-works', '/how-it-works/index.html'],
@@ -15,6 +15,18 @@ const slashlessRouteMap = new Map([
   ['/faq', '/faq/index.html'],
   ['/privacy', '/privacy/index.html'],
   ['/terms', '/terms/index.html'],
+]);
+
+const previewSlashlessRouteMap = new Map([
+  ['/', '/index.html'],
+  ['/features', '/features'],
+  ['/how-it-works', '/how-it-works'],
+  ['/workspace', '/workspace'],
+  ['/receive', '/receive'],
+  ['/getting-started', '/getting-started'],
+  ['/faq', '/faq'],
+  ['/privacy', '/privacy'],
+  ['/terms', '/terms'],
 ]);
 
 /**
@@ -28,7 +40,7 @@ function normalizePathname(pathname) {
 /**
  * @returns {(req: import('node:http').IncomingMessage, res: import('node:http').ServerResponse, next: (err?: unknown) => void) => void}
  */
-function createRouteRewriteMiddleware() {
+function createRouteRewriteMiddleware(routeMap) {
   return (req, _res, next) => {
     if (!req.url || (req.method !== 'GET' && req.method !== 'HEAD')) {
       next();
@@ -37,9 +49,9 @@ function createRouteRewriteMiddleware() {
 
     const url = new URL(req.url, 'http://localhost');
     const pathname = normalizePathname(url.pathname);
-    const entry = slashlessRouteMap.get(pathname);
+    const entry = routeMap.get(pathname);
 
-    if (!entry || pathname === url.pathname && url.pathname.endsWith('.html')) {
+    if (!entry || entry === url.pathname || pathname === url.pathname && url.pathname.endsWith('.html')) {
       next();
       return;
     }
@@ -56,10 +68,10 @@ function slashlessRoutesPlugin() {
   return /** @type {import('vite').Plugin} */ ({
     name: 'slashless-directory-routes',
     configureServer(server) {
-      server.middlewares.use(createRouteRewriteMiddleware());
+      server.middlewares.use(createRouteRewriteMiddleware(devSlashlessRouteMap));
     },
     configurePreviewServer(server) {
-      server.middlewares.use(createRouteRewriteMiddleware());
+      server.middlewares.use(createRouteRewriteMiddleware(previewSlashlessRouteMap));
     },
   });
 }

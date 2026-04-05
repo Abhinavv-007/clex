@@ -11,7 +11,13 @@ GOOGLE_DRIVE_SCOPE = "https://www.googleapis.com/auth/drive.file"
 
 [env.production]
 name = "clex-api-prod"
+routes = [
+  { pattern = "clex.in/api/*", zone_name = "clex.in" },
+  { pattern = "www.clex.in/api/*", zone_name = "clex.in" }
+]
 
 [env.production.vars]
 ALLOWED_ORIGIN = "https://clex.in, https://www.clex.in"
 FRONTEND_BASE_URL = "https://clex.in"
+GOOGLE_REDIRECT_URI = "https://clex.in/api/auth/google/callback"
+GOOGLE_DRIVE_SCOPE = "https://www.googleapis.com/auth/drive.file"
