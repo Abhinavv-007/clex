@@ -23,6 +23,7 @@ type SignalingListener = (event: SignalingEvent) => void
 
 const SIGNALING_HEALTH_TIMEOUT_MS = 2_500
 const DEFAULT_SIGNALING_PORT = '8787'
+const LIVE_SIGNALING_HOST = 'clex-signaling-prod.abhnv.workers.dev'
 
 function isLocalHostname(hostname: string): boolean {
   return (
@@ -34,18 +35,29 @@ function isLocalHostname(hostname: string): boolean {
   )
 }
 
+function getDefaultHostedSignalingUrl(protocol: 'ws:' | 'wss:', hostname: string): string | null {
+  const normalized = hostname.toLowerCase().replace(/^www\./, '')
+  if (normalized === 'clex.in') {
+    return `${protocol}//${LIVE_SIGNALING_HOST}`
+  }
+
+  return null
+}
+
 export function getSignalingBaseUrl(configuredUrl?: string): string {
   if (typeof window === 'undefined') {
     return configuredUrl ?? `ws://localhost:${DEFAULT_SIGNALING_PORT}`
   }
 
   const fallbackProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-  const fallbackUrl = `${fallbackProtocol}//${window.location.hostname}:${DEFAULT_SIGNALING_PORT}`
+  const pageHostname = window.location.hostname
+  const fallbackUrl =
+    getDefaultHostedSignalingUrl(fallbackProtocol, pageHostname) ??
+    `${fallbackProtocol}//${pageHostname}:${DEFAULT_SIGNALING_PORT}`
   if (!configuredUrl) return fallbackUrl
 
   try {
     const resolved = new URL(configuredUrl)
-    const pageHostname = window.location.hostname
 
     if (isLocalHostname(pageHostname) && isLocalHostname(resolved.hostname) && resolved.hostname !== pageHostname) {
       resolved.hostname = pageHostname

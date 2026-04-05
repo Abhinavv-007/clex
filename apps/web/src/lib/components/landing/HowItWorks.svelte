@@ -242,13 +242,13 @@
   .mini-pill {
     padding: 8px 12px;
     border-radius: 999px;
-    border: 1px solid rgba(53, 212, 255, 0.18);
-    background: rgba(53, 212, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    background: rgba(255, 255, 255, 0.08);
     font-size: 11px;
     font-weight: 800;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: var(--accent);
+    color: #ffffff;
   }
 
   .main-display {
@@ -269,14 +269,14 @@
   .shell-back {
     height: 320px;
     transform: translate(-34px, 24px) rotate(-10deg);
-    background: rgba(135, 140, 255, 0.12);
+    background: rgba(255, 255, 255, 0.04);
     filter: blur(4px);
   }
 
   .shell-mid {
     height: 340px;
     transform: translate(28px, -8px) rotate(8deg);
-    background: rgba(53, 212, 255, 0.1);
+    background: rgba(255, 255, 255, 0.06);
     filter: blur(3px);
   }
 
@@ -354,7 +354,7 @@
   .sparkline span {
     flex: 1;
     border-radius: 999px 999px 6px 6px;
-    background: linear-gradient(180deg, rgba(191, 243, 255, 0.92), rgba(33, 187, 255, 0.34));
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.14));
     animation: wave 2.8s ease-in-out infinite;
   }
 
@@ -369,7 +369,7 @@
     height: 74px;
     margin: auto;
     border-radius: 999px;
-    background: radial-gradient(circle, rgba(53, 212, 255, 0.4), rgba(53, 212, 255, 0.06));
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.03));
     animation: pulseCell 2.4s ease-in-out infinite;
   }
 
@@ -381,7 +381,7 @@
   .cell-stack span {
     height: 18px;
     border-radius: 999px;
-    background: linear-gradient(90deg, rgba(255, 255, 255, 0.12), rgba(53, 212, 255, 0.3), rgba(255, 255, 255, 0.12));
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.08));
     background-size: 200% 100%;
     animation: shimmerRail 2.8s linear infinite;
   }
@@ -403,8 +403,8 @@
     width: 7px;
     height: 7px;
     border-radius: 999px;
-    background: var(--success);
-    box-shadow: 0 0 12px rgba(74, 222, 179, 0.46);
+    background: #ffffff;
+    box-shadow: 0 0 12px rgba(255, 255, 255, 0.4);
   }
 
   .orchestra-side {
@@ -463,9 +463,9 @@
     color: var(--text-2);
   }
 
-  .timing-item-fast { border-color: rgba(53, 212, 255, 0.18); }
-  .timing-item-mid { border-color: rgba(135, 140, 255, 0.18); }
-  .timing-item-slow { border-color: rgba(74, 222, 179, 0.18); }
+  .timing-item-fast { border-color: rgba(255, 255, 255, 0.24); }
+  .timing-item-mid { border-color: rgba(255, 255, 255, 0.18); }
+  .timing-item-slow { border-color: rgba(255, 255, 255, 0.12); }
 
   .proof-band {
     max-width: 1240px;

@@ -2,6 +2,7 @@ name = "clex-signaling"
 main = "src/index.ts"
 compatibility_date = "2024-05-29"
 compatibility_flags = ["nodejs_compat"]
+workers_dev = true
 
 [durable_objects]
 bindings = [
@@ -18,5 +19,18 @@ ALLOWED_ORIGIN = "*"
 [env.production]
 name = "clex-signaling-prod"
 
+[env.production.durable_objects]
+bindings = [
+  { name = "ROOMS", class_name = "Room" }
+]
+
+[[env.production.migrations]]
+tag = "v1"
+new_sqlite_classes = ["Room"]
+
 [env.production.vars]
 ALLOWED_ORIGIN = "https://clex.in, https://www.clex.in"
+
+[[env.production.routes]]
+pattern = "signal.clex.in"
+custom_domain = true

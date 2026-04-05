@@ -155,13 +155,13 @@
 
   .route-column:hover {
     transform: translateY(-4px);
-    border-color: rgba(53, 212, 255, 0.18);
+    border-color: rgba(255, 255, 255, 0.25);
     box-shadow: 0 28px 70px rgba(0, 0, 0, 0.16);
   }
 
   .route-column-featured {
-    border-color: rgba(53, 212, 255, 0.18);
-    box-shadow: 0 22px 60px rgba(53, 212, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.18);
+    box-shadow: 0 22px 60px rgba(255, 255, 255, 0.08);
   }
 
   .route-column-top span {
@@ -213,8 +213,8 @@
     width: 7px;
     height: 7px;
     border-radius: 999px;
-    background: var(--accent);
-    box-shadow: 0 0 14px rgba(53, 212, 255, 0.4);
+    background: rgba(255, 255, 255, 0.7);
+    box-shadow: 0 0 14px rgba(255, 255, 255, 0.3);
     flex-shrink: 0;
   }
 

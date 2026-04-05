@@ -163,7 +163,7 @@
 
 <style>
   .story {
-    padding: 120px 24px 40px;
+    padding: 80px 24px 40px;
   }
 
   .story-head {
@@ -246,15 +246,15 @@
   }
 
   .stage-frame[data-state='0'] {
-    border-color: rgba(53, 212, 255, 0.16);
+    border-color: rgba(255, 255, 255, 0.16);
   }
 
   .stage-frame[data-state='1'] {
-    border-color: rgba(135, 140, 255, 0.16);
+    border-color: rgba(255, 255, 255, 0.2);
   }
 
   .stage-frame[data-state='2'] {
-    border-color: rgba(74, 222, 179, 0.16);
+    border-color: rgba(255, 255, 255, 0.24);
   }
 
   .stage-frame-top {
@@ -305,7 +305,7 @@
   .stage-frame[data-state='1'] .panel-prepare,
   .stage-frame[data-state='2'] .panel-deliver {
     transform: translateY(-6px);
-    border-color: rgba(53, 212, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.3);
     box-shadow: 0 18px 36px rgba(0, 0, 0, 0.16);
   }
 
@@ -366,8 +366,8 @@
   }
 
   .panel-row-hot {
-    border-color: rgba(53, 212, 255, 0.18);
-    background: rgba(53, 212, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.25);
+    background: rgba(255, 255, 255, 0.08);
   }
 
   .prepare-core {
@@ -403,14 +403,14 @@
 
   .prepare-node-active {
     color: var(--text-1);
-    border-color: rgba(53, 212, 255, 0.2);
-    background: rgba(53, 212, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.08);
   }
 
   .prepare-link {
     width: 2px;
     height: 32px;
-    background: linear-gradient(180deg, rgba(53, 212, 255, 0.08), rgba(53, 212, 255, 0.38), rgba(53, 212, 255, 0.08));
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.38), rgba(255, 255, 255, 0.08));
   }
 
   .prepare-meter {
@@ -434,7 +434,7 @@
     height: 100%;
     width: 72%;
     border-radius: inherit;
-    background: linear-gradient(90deg, #bff3ff 0%, #5bd8ff 56%, #21bbff 100%);
+    background: linear-gradient(90deg, #333333 0%, #aaaaaa 56%, #ffffff 100%);
     animation: sweep 3.2s ease-in-out infinite;
   }
 
@@ -456,8 +456,8 @@
   }
 
   .deliver-card-active {
-    border-color: rgba(74, 222, 179, 0.2);
-    background: rgba(74, 222, 179, 0.08);
+    border-color: rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.08);
   }
 
   .story-copy {
@@ -484,8 +484,8 @@
 
   .story-beat-active {
     transform: translateY(-4px);
-    border-color: rgba(53, 212, 255, 0.16);
-    background: rgba(53, 212, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.22);
+    background: rgba(255, 255, 255, 0.05);
   }
 
   .beat-label {

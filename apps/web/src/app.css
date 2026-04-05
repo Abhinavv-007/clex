@@ -21,10 +21,10 @@
   --text-3: #8690a8;
   --text-inv: #f7fbff;
 
-  --accent: #35d4ff;
-  --accent-strong: #14b8ff;
-  --accent-soft: rgba(53, 212, 255, 0.14);
-  --accent-glow: rgba(53, 212, 255, 0.28);
+  --accent: #ffffff;
+  --accent-strong: #ffffff;
+  --accent-soft: rgba(255, 255, 255, 0.1);
+  --accent-glow: rgba(255, 255, 255, 0.15);
 
   --success: #4adeb3;
   --amber: #f1b464;
@@ -54,8 +54,8 @@
   --text-3: #66708a;
   --text-inv: #031018;
 
-  --accent-soft: rgba(53, 212, 255, 0.12);
-  --accent-glow: rgba(53, 212, 255, 0.34);
+  --accent-soft: rgba(255, 255, 255, 0.1);
+  --accent-glow: rgba(255, 255, 255, 0.15);
 
   color-scheme: dark;
 }
@@ -156,17 +156,17 @@ main {
 
   .glass-panel-hover:hover {
     transform: translateY(-3px);
-    border-color: rgba(53, 212, 255, 0.24);
+    border-color: rgba(255, 255, 255, 0.4);
     box-shadow:
       0 32px 100px rgba(6, 14, 28, 0.18),
-      0 0 0 1px rgba(53, 212, 255, 0.1),
+      0 0 0 1px rgba(255, 255, 255, 0.2),
       inset 0 1px 0 rgba(255, 255, 255, 0.8);
   }
 
   .dark .glass-panel-hover:hover {
     box-shadow:
       0 38px 110px rgba(0, 0, 0, 0.5),
-      0 0 0 1px rgba(53, 212, 255, 0.14),
+      0 0 0 1px rgba(255, 255, 255, 0.15),
       inset 0 1px 0 rgba(255, 255, 255, 0.08);
   }
 
@@ -212,18 +212,18 @@ main {
 
   .btn-primary {
     @apply btn;
-    color: #04131d;
+    color: #000000;
     border: 1px solid rgba(255, 255, 255, 0.25);
-    background: linear-gradient(135deg, #bff3ff 0%, #5bd8ff 46%, #21bbff 100%);
+    background: #ffffff;
     box-shadow:
-      0 14px 38px rgba(33, 187, 255, 0.28),
+      0 14px 38px rgba(255, 255, 255, 0.15),
       inset 0 1px 0 rgba(255, 255, 255, 0.55);
   }
 
   .btn-primary:hover {
     transform: translateY(-1px);
     box-shadow:
-      0 18px 44px rgba(33, 187, 255, 0.34),
+      0 18px 44px rgba(255, 255, 255, 0.2),
       0 0 0 1px rgba(255, 255, 255, 0.14),
       inset 0 1px 0 rgba(255, 255, 255, 0.55);
   }
@@ -240,7 +240,7 @@ main {
 
   .btn-secondary:hover {
     transform: translateY(-1px);
-    border-color: rgba(53, 212, 255, 0.18);
+    border-color: rgba(255, 255, 255, 0.3);
     background: rgba(255, 255, 255, 0.56);
   }
 
@@ -253,7 +253,7 @@ main {
 
   .dark .btn-secondary:hover {
     background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(53, 212, 255, 0.16);
+    border-color: rgba(255, 255, 255, 0.2);
   }
 
   .btn-ghost {
@@ -293,9 +293,9 @@ main {
 
   .badge-blue {
     @apply badge;
-    color: var(--accent-strong);
-    border-color: rgba(53, 212, 255, 0.22);
-    background: rgba(53, 212, 255, 0.1);
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.22);
+    background: rgba(255, 255, 255, 0.1);
   }
 
   .badge-cyan {
@@ -353,8 +353,8 @@ main {
 
   .input:focus {
     outline: none;
-    border-color: rgba(53, 212, 255, 0.26);
-    box-shadow: 0 0 0 4px rgba(53, 212, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.4);
+    box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.1);
   }
 
   .input-code {
@@ -401,7 +401,7 @@ main {
   .progress-fill {
     height: 100%;
     border-radius: 999px;
-    background: linear-gradient(90deg, #bff3ff 0%, #4fd6ff 50%, #1db9ff 100%);
+    background: linear-gradient(90deg, #dddddd 0%, #ffffff 100%);
     transition: width 240ms ease;
   }
 
@@ -493,7 +493,7 @@ main {
   justify-content: center;
   pointer-events: none;
   background: rgba(5, 7, 13, 0.4);
-  border: 2px dashed rgba(83, 213, 255, 0.38);
+  border: 2px dashed rgba(255, 255, 255, 0.38);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
 }

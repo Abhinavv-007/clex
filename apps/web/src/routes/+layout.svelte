@@ -11,10 +11,28 @@
   import { theme } from '$lib/theme'
   import { pickupToken } from '$transfer/gdrive'
 
+  function isLocalSetupHost(hostname: string): boolean {
+    return (
+      hostname === 'localhost' ||
+      hostname === '127.0.0.1' ||
+      hostname.startsWith('10.') ||
+      hostname.startsWith('192.168.') ||
+      /^172\.(1[6-9]|2\d|3[0-1])\./.test(hostname)
+    )
+  }
+
+  function getGoogleOAuthSetupMessage(): string {
+    if (typeof window !== 'undefined' && !isLocalSetupHost(window.location.hostname)) {
+      return 'Google Drive is not configured on this live deployment. In Cloudflare Pages project "clex-web", set GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and GOOGLE_REDIRECT_URI=https://clex.in/api/auth/google/callback, then redeploy. Also add that exact redirect URI in Google Cloud Console.'
+    }
+
+    return 'Google Drive is not configured yet. Add GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and GOOGLE_REDIRECT_URI in apps/web/.env, then restart pnpm dev.'
+  }
+
   function getOAuthErrorMessage(code: string): string {
     switch (code) {
       case 'oauth_not_configured':
-        return 'Google Drive is not configured yet. Add GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and GOOGLE_REDIRECT_URI in apps/web/.env, then restart pnpm dev.'
+        return getGoogleOAuthSetupMessage()
       case 'oauth_denied':
         return 'Google Drive authorization was cancelled.'
       case 'state_mismatch':
@@ -59,8 +77,7 @@
 <!-- Background -->
 <Background />
 
-<!-- Cursor -->
-<Cursor />
+<!-- Cursor tracking removed -->
 
 <!-- ── Navigation ─────────────────────────────────────────────────────── -->
 <header class="site-header fixed top-0 inset-x-0 z-50">
@@ -194,18 +211,18 @@
     width: 36px;
     height: 36px;
     border-radius: 14px;
-    background: linear-gradient(135deg, #bff3ff 0%, #24bcff 100%);
-    color: #04131d;
+    background: #ffffff;
+    color: #000000;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 16px 32px rgba(33, 187, 255, 0.22);
+    box-shadow: 0 16px 32px rgba(255, 255, 255, 0.1);
     transition: transform 180ms var(--ease-out), box-shadow 180ms ease;
   }
 
   .nav-brand:hover .logo-mark {
     transform: translateY(-1px);
-    box-shadow: 0 18px 36px rgba(33, 187, 255, 0.3);
+    box-shadow: 0 18px 36px rgba(255, 255, 255, 0.15);
   }
 
   .logo-copy {
@@ -264,7 +281,7 @@
   .nav-link:hover {
     color: var(--text-1);
     background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(53, 212, 255, 0.14);
+    border-color: rgba(255, 255, 255, 0.2);
   }
 
   :global(:not(.dark)) .nav-link:hover {

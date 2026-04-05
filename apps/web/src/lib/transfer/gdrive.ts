@@ -38,6 +38,24 @@ interface GoogleOAuthStatusResponse {
   missing: string[]
 }
 
+function isLocalSetupHost(hostname: string): boolean {
+  return (
+    hostname === 'localhost' ||
+    hostname === '127.0.0.1' ||
+    hostname.startsWith('10.') ||
+    hostname.startsWith('192.168.') ||
+    /^172\.(1[6-9]|2\d|3[0-1])\./.test(hostname)
+  )
+}
+
+function getGoogleOAuthSetupMessage(): string {
+  if (typeof window !== 'undefined' && !isLocalSetupHost(window.location.hostname)) {
+    return 'Google Drive is not configured on this live deployment. In Cloudflare Pages project "clex-web", set GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and GOOGLE_REDIRECT_URI=https://clex.in/api/auth/google/callback, then redeploy. Also add that exact redirect URI in Google Cloud Console.'
+  }
+
+  return 'Google Drive is not configured yet. Add GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and GOOGLE_REDIRECT_URI to apps/web/.env, then restart pnpm dev.'
+}
+
 export async function uploadToDrive(
   blob: Blob,
   fileName: string,
@@ -151,9 +169,7 @@ async function ensureGoogleOAuthConfigured(): Promise<void> {
 
   const data = (await resp.json()) as GoogleOAuthStatusResponse
   if (!data.configured) {
-    throw new Error(
-      'Google Drive is not configured yet. Add GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and GOOGLE_REDIRECT_URI to apps/web/.env, then restart pnpm dev.'
-    )
+    throw new Error(getGoogleOAuthSetupMessage())
   }
 }
 

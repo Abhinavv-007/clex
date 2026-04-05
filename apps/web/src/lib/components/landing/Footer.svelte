@@ -85,9 +85,9 @@
     margin: 0 auto 18px;
     padding: 34px;
     border-radius: 36px;
-    border: 1px solid rgba(53, 212, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.18);
     background:
-      radial-gradient(circle at top right, rgba(53, 212, 255, 0.14), transparent 26%),
+      radial-gradient(circle at top right, rgba(255, 255, 255, 0.14), transparent 26%),
       linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02)),
       rgba(7, 10, 17, 0.88);
     box-shadow: 0 34px 90px rgba(0, 0, 0, 0.32);
@@ -96,7 +96,7 @@
 
   :global(:not(.dark)) .footer-cta {
     background:
-      radial-gradient(circle at top right, rgba(53, 212, 255, 0.14), transparent 26%),
+      radial-gradient(circle at top right, rgba(255, 255, 255, 0.14), transparent 26%),
       linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0.74)),
       rgba(255, 255, 255, 0.82);
     box-shadow: 0 28px 80px rgba(10, 22, 45, 0.12);
@@ -113,7 +113,7 @@
 
   .footer-cta h2 {
     margin: 0 auto;
-    max-width: 15ch;
+    max-width: 32ch;
     font-family: var(--font-display);
     font-size: clamp(2.5rem, 5.6vw, 5rem);
     line-height: 0.98;
@@ -152,10 +152,10 @@
     border-radius: 14px;
     display: grid;
     place-items: center;
-    background: linear-gradient(135deg, #bff3ff 0%, #24bcff 100%);
-    color: #04131d;
+    background: #ffffff;
+    color: #000000;
     font-weight: 900;
-    box-shadow: 0 16px 32px rgba(33, 187, 255, 0.22);
+    box-shadow: 0 16px 32px rgba(255, 255, 255, 0.22);
   }
 
   .footer-brand strong {
@@ -224,8 +224,8 @@
     width: 7px;
     height: 7px;
     border-radius: 999px;
-    background: var(--success);
-    box-shadow: 0 0 14px rgba(74, 222, 179, 0.44);
+    background: #ffffff;
+    box-shadow: 0 0 14px rgba(255, 255, 255, 0.44);
   }
 
   .footer-copy small {

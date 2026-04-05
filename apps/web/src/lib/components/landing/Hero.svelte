@@ -74,8 +74,6 @@
 </script>
 
 <section class="hero">
-  <div class="hero-sheen" aria-hidden="true" />
-
   <div class="hero-inner">
     <div class="hero-copy">
       <div class="hero-kicker" class:is-mounted={mounted}>
@@ -118,23 +116,6 @@
     </div>
 
     <div class="hero-stage" class:is-mounted={mounted}>
-      <div class="stage-orbit orbit-a" aria-hidden="true" />
-      <div class="stage-orbit orbit-b" aria-hidden="true" />
-
-      <div class="stage-note stage-note-top">
-        <span class="note-label">Live route</span>
-        <strong>{activeRoute.tag}</strong>
-      </div>
-
-      <div class="stage-note stage-note-bottom">
-        <span class="note-label">Share room</span>
-        <strong>
-          {#each roomCodeChars as char, index}
-            <span class="room-char" class:room-char-live={index < roomReveal}>{index < roomReveal ? char : '·'}</span>
-          {/each}
-        </strong>
-      </div>
-
       <div class="stage-shell">
         <div class="stage-toolbar">
           <div class="toolbar-dots">
@@ -292,16 +273,6 @@
     overflow: clip;
   }
 
-  .hero-sheen {
-    position: absolute;
-    inset: 0;
-    background:
-      radial-gradient(circle at 15% 18%, rgba(53, 212, 255, 0.14), transparent 22%),
-      radial-gradient(circle at 84% 12%, rgba(135, 140, 255, 0.12), transparent 22%),
-      linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.02), transparent);
-    pointer-events: none;
-  }
-
   .hero-inner {
     max-width: 1320px;
     margin: 0 auto;
@@ -371,8 +342,8 @@
     width: 7px;
     height: 7px;
     border-radius: 999px;
-    background: var(--accent);
-    box-shadow: 0 0 18px rgba(53, 212, 255, 0.65);
+    background: rgba(255, 255, 255, 0.6);
+    box-shadow: 0 0 12px rgba(255, 255, 255, 0.2);
     animation: pulseKicker 2.4s ease-in-out infinite;
   }
 
@@ -403,16 +374,11 @@
   .hero-title-accent {
     display: block;
     margin-top: 8px;
-    background: linear-gradient(135deg, #f4f7fd 10%, #86e8ff 50%, #59c6ff 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
+    color: rgba(255, 255, 255, 0.4);
   }
 
   :global(:not(.dark)) .hero-title-accent {
-    background: linear-gradient(135deg, #09111f 0%, #1888bb 54%, #5a78ff 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
+    color: rgba(0, 0, 0, 0.4);
   }
 
   .hero-sub {
@@ -479,83 +445,7 @@
     justify-content: center;
   }
 
-  .stage-orbit {
-    position: absolute;
-    border-radius: 999px;
-    filter: blur(8px);
-    opacity: 0.8;
-  }
 
-  .orbit-a {
-    inset: 10% auto auto 4%;
-    width: 180px;
-    height: 180px;
-    border: 1px solid rgba(53, 212, 255, 0.16);
-    animation: orbitFloat 16s ease-in-out infinite;
-  }
-
-  .orbit-b {
-    inset: auto 8% 9% auto;
-    width: 220px;
-    height: 220px;
-    border: 1px solid rgba(135, 140, 255, 0.16);
-    animation: orbitFloatAlt 18s ease-in-out infinite;
-  }
-
-  .stage-note {
-    position: absolute;
-    z-index: 2;
-    padding: 12px 14px;
-    border-radius: 18px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background: rgba(6, 10, 17, 0.72);
-    backdrop-filter: blur(18px);
-    -webkit-backdrop-filter: blur(18px);
-    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.3);
-  }
-
-  :global(:not(.dark)) .stage-note {
-    background: rgba(255, 255, 255, 0.8);
-    border-color: rgba(255, 255, 255, 0.46);
-  }
-
-  .stage-note-top {
-    top: 10%;
-    right: 2%;
-  }
-
-  .stage-note-bottom {
-    left: 0;
-    bottom: 14%;
-  }
-
-  .note-label {
-    display: block;
-    margin-bottom: 4px;
-    font-size: 10px;
-    font-weight: 800;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--text-3);
-  }
-
-  .stage-note strong {
-    display: flex;
-    gap: 6px;
-    font-size: 13px;
-    color: var(--text-1);
-  }
-
-  .room-char {
-    min-width: 0.8em;
-    color: var(--text-3);
-    transition: color 180ms ease, text-shadow 180ms ease;
-  }
-
-  .room-char-live {
-    color: var(--text-1);
-    text-shadow: 0 0 18px rgba(53, 212, 255, 0.35);
-  }
 
   .stage-shell {
     width: min(100%, 760px);
@@ -566,7 +456,7 @@
       rgba(8, 12, 21, 0.88);
     box-shadow:
       0 40px 120px rgba(0, 0, 0, 0.46),
-      0 0 0 1px rgba(53, 212, 255, 0.06);
+      0 0 0 1px rgba(255, 255, 255, 0.06);
     overflow: hidden;
     transform: perspective(1800px) rotateX(8deg) rotateY(-12deg);
     transform-style: preserve-3d;
@@ -579,7 +469,7 @@
     border-color: rgba(255, 255, 255, 0.44);
     box-shadow:
       0 40px 120px rgba(10, 22, 45, 0.14),
-      0 0 0 1px rgba(53, 212, 255, 0.08);
+      0 0 0 1px rgba(0, 0, 0, 0.08);
   }
 
   .stage-toolbar {
@@ -622,9 +512,9 @@
   .toolbar-chip {
     padding: 7px 10px;
     border-radius: 999px;
-    border: 1px solid rgba(53, 212, 255, 0.16);
-    color: var(--accent);
-    background: rgba(53, 212, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    color: rgba(255, 255, 255, 0.7);
+    background: rgba(255, 255, 255, 0.08);
   }
 
   .stage-layout {
@@ -659,8 +549,8 @@
     border-radius: 12px;
     display: grid;
     place-items: center;
-    background: linear-gradient(135deg, #bff3ff 0%, #24bcff 100%);
-    color: #04131d;
+    background: #ffffff;
+    color: #000000;
     font-weight: 900;
   }
 
@@ -695,8 +585,8 @@
 
   .sidebar-link-active {
     color: var(--text-1);
-    border-color: rgba(53, 212, 255, 0.18);
-    background: rgba(53, 212, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.18);
+    background: rgba(255, 255, 255, 0.06);
   }
 
   .sidebar-meter,
@@ -737,7 +627,7 @@
   .meter-fill {
     height: 100%;
     border-radius: inherit;
-    background: linear-gradient(90deg, #bff3ff 0%, #53d8ff 58%, #21bbff 100%);
+    background: linear-gradient(90deg, #333333 0%, #888888 58%, #ffffff 100%);
     transition: width 260ms ease;
   }
 
@@ -1123,10 +1013,6 @@
     .stage-shell {
       transform: none;
       width: 100%;
-    }
-
-    .stage-note {
-      display: none;
     }
 
     .stage-layout {
