@@ -10,6 +10,7 @@
     "typecheck": "svelte-check --tsconfig ./tsconfig.json"
   },
   "dependencies": {
+    "@clex/frontend-core": "workspace:*",
     "browser-image-compression": "^2.0.2",
     "html2canvas": "^1.4.1",
     "jspdf": "^2.5.1",

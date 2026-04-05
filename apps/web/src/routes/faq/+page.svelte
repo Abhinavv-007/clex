@@ -1,207 +1,202 @@
 <script lang="ts">
   import Footer from '$components/landing/Footer.svelte'
+  import { onMount } from 'svelte'
+
+  let activeKey: string | null = null
+  let heroVisible = false
+  let heroEl: HTMLElement
+
+  function toggle(key: string) {
+    activeKey = activeKey === key ? null : key
+  }
+
+  function isOpen(key: string) {
+    return activeKey === key
+  }
 
   const faqGroups = [
     {
-      label: 'Transfer & Privacy',
+      id: 'transfer-methods',
+      label: 'Transfer Methods',
       faqs: [
         {
-          q: 'Do my files go through Clex servers?',
-          a: "During direct P2P transfer, your files never touch Clex servers. The signaling server handles WebRTC connection negotiation only — it sees connection requests, not file bytes. For Google Drive transfers, files go directly to your own Google account. Clex never stores them.",
+          q: 'How does P2P transfer work?',
+          a: 'Clex uses <strong>WebRTC</strong> to establish a direct browser-to-browser connection. Clex creates a unique session and uses a lightweight signaling server to help the two browsers find each other. Once connected, the files stream <strong>directly</strong> from your browser to the recipient\'s browser. No server stores or relays the actual file data.',
         },
         {
-          q: 'Is the P2P transfer encrypted?',
-          a: 'Yes. WebRTC data channels are encrypted using DTLS-SRTP by default, which is a browser-enforced standard. The connection is established via HTTPS signaling, and file bytes are transferred over the encrypted data channel.',
+          q: 'What is local network transfer?',
+          a: 'When both devices are on the <strong>same Wi-Fi network</strong>, Clex can detect this and transfer files over the local network instead of routing through the internet. This gives you <strong>LAN-speed transfers</strong> — ideal for large files, video, or batch transfers between your own devices.',
+        },
+        {
+          q: 'When does Google Drive get used?',
+          a: 'Google Drive is a <strong>fallback option</strong>. It\'s used when direct P2P or local network transfer isn\'t possible — for example, when devices are on restrictive networks or behind strict NATs. When you choose Drive, the file uploads to <strong>your Google Drive account</strong>, not to Clex\'s servers.',
+        },
+        {
+          q: 'Do both browsers need to be open for P2P?',
+          a: '<strong>Yes.</strong> For P2P and local network transfers, both sender and receiver need to keep their browser tabs open until the transfer completes. If either tab closes, the transfer stops. For asynchronous transfers, use the <strong>Google Drive fallback</strong>.',
+        },
+      ],
+    },
+    {
+      id: 'privacy-security',
+      label: 'Privacy & Security',
+      faqs: [
+        {
+          q: 'Are my files stored on Clex servers?',
+          a: '<strong>No.</strong> During P2P and local network transfers, your files are <strong>never</strong> stored on any Clex server. They exist only in the sender\'s and receiver\'s browsers during the transfer. The signaling server never sees or stores file data.',
+        },
+        {
+          q: 'Do I need an account?',
+          a: '<strong>No account is required</strong> for P2P or local network transfers. Just open Clex and go. The only time authentication is needed is when you choose <strong>Google Drive as a fallback</strong>, which requires signing into your Google account.',
+        },
+        {
+          q: 'Is the transfer encrypted?',
+          a: 'WebRTC connections are <strong>encrypted by default</strong> using DTLS (Datagram Transport Layer Security). Your P2P transfers are encrypted end-to-end between browsers. Google Drive transfers use <strong>Google\'s TLS encryption</strong>.',
         },
         {
           q: 'What happens to my Google OAuth token?',
-          a: 'Your Google OAuth token is stored in your browser\'s sessionStorage only. It is never sent to or stored on Clex servers. It expires when you close your browser tab. The token is scoped to file creation and listing only.',
-        },
-        {
-          q: 'Can Clex see my files?',
-          a: 'No. All file processing (compression, conversion, PDF operations) runs in your browser. During P2P transfer, files go browser-to-browser. During Drive transfer, files go to your Google account. At no point does Clex access, store, or read your file contents.',
-        },
-        {
-          q: 'What does the signaling server do exactly?',
-          a: "The signaling server's only job is to relay WebRTC handshake messages (ICE candidates and session descriptions) between the sender and receiver browsers. It handles connection setup, not data transfer. Think of it as a matchmaking service — it introduces the browsers, then steps aside.",
+          a: 'Your Google OAuth token is stored in your browser\'s <strong>sessionStorage only</strong>. It is never sent to or stored on Clex servers. It expires when you close your browser tab.',
         },
       ],
     },
     {
-      label: 'Transfer speed & routing',
+      id: 'speed-performance',
+      label: 'Speed & Performance',
       faqs: [
         {
-          q: 'How fast is direct P2P transfer?',
-          a: "Speed depends on your internet connection, not Clex's servers — because files go browser-to-browser. On a typical broadband connection, you can expect 10–50 Mbps. On the same local network, speeds approach your LAN throughput (100–1000 Mbps).",
-        },
-        {
-          q: 'What is local network routing?',
-          a: "If sender and receiver are on the same Wi-Fi or wired network, Clex detects it and establishes a direct local connection. Files never leave your network. This gives you near-LAN-speed transfer for large files between devices on the same network.",
-        },
-        {
-          q: 'When should I use Google Drive instead of P2P?',
-          a: "Use P2P when both parties are online simultaneously. Use Google Drive when: (1) you need to send a link the receiver can download later, (2) firewalls block WebRTC, or (3) the receiver is on a restricted network. Drive always works as a reliable fallback.",
+          q: 'How fast are transfers?',
+          a: 'P2P transfers run at the speed of your internet connection — there\'s no server bottleneck. <strong>Local network transfers</strong> are even faster since they use your Wi-Fi\'s LAN speed (often 100+ Mbps). Google Drive speed depends on your upload bandwidth.',
         },
         {
           q: 'Is there a file size limit?',
-          a: "For P2P transfer, there is no Clex-imposed limit — the limit is your browser's memory and the stability of the WebRTC connection. For Google Drive, limits are set by Google's API quotas. For file operations (compression, conversion), the limit depends on your browser and device RAM.",
+          a: 'For P2P and local transfers, the limit is <strong>your browser\'s available RAM</strong>. Most modern browsers handle files up to several GB comfortably. For Google Drive, limits depend on your <strong>Drive storage quota</strong> (15 GB free tier).',
         },
       ],
     },
     {
-      label: 'File tools',
-      faqs: [
-        {
-          q: 'Does compression run on Clex servers?',
-          a: 'No. Image compression uses browser-image-compression and the Canvas API. PDF operations use pdf-lib. DOCX conversion uses Mammoth. All of these run entirely in your browser — no server round-trips, no upload, no wait.',
-        },
-        {
-          q: 'What file types does Clex support?',
-          a: 'For transfer: any file type. For tools: images (JPEG, PNG, WebP), PDFs, DOCX, and any file for ZIP bundling. Format conversion supports JPEG, PNG, WebP output. PDF tools support merge, split, page extraction, and PDF-to-image export.',
-        },
-        {
-          q: 'Can I compress multiple images at once?',
-          a: 'Yes. Drop multiple images and the batch compression tool processes all of them in parallel. Each image gets its own progress indicator and download option.',
-        },
-        {
-          q: 'Does DOCX to PDF preserve formatting?',
-          a: "Clex uses Mammoth for DOCX parsing, which supports headings, paragraphs, bold/italic text, and lists with good fidelity. Complex layouts with embedded objects or custom fonts may not render perfectly — for production-critical formatting, verify the output before sending.",
-        },
-      ],
-    },
-    {
-      label: 'Browser & offline support',
+      id: 'browser-support',
+      label: 'Browser Support',
       faqs: [
         {
           q: 'Which browsers does Clex support?',
-          a: 'Chrome 88+, Firefox 87+, Edge 88+, and Safari 15+. WebRTC P2P transfer requires a browser with RTCPeerConnection support. File tools (compression, PDF, conversion) work in any modern browser including mobile.',
+          a: 'Clex works in all modern browsers with WebRTC support: <strong>Chrome 88+</strong>, <strong>Firefox 87+</strong>, <strong>Safari 15+</strong>, <strong>Edge 88+</strong>, and their mobile equivalents.',
         },
         {
-          q: 'Does Clex work on mobile?',
-          a: 'Yes. The workspace is responsive and usable on mobile. File tool operations work well on mobile browsers. P2P transfer on iOS may have some limitations due to Safari\'s WebRTC implementation — Google Drive is the recommended transfer method on iOS.',
-        },
-        {
-          q: 'Can I use Clex without internet?',
-          a: "After the first page load, all file preparation tools (compression, conversion, PDF operations) work offline. Transfer features require internet: P2P needs the signaling server to establish the connection, and Drive needs Google's API.",
+          q: 'Does it work on mobile?',
+          a: '<strong>Yes.</strong> Clex is fully responsive and works on mobile browsers. You can drop files, use preparation tools, and share — all from your phone or tablet.',
         },
         {
           q: 'Do I need to install anything?',
-          a: 'No. Clex is a web app — open it in any browser and it works immediately. No extension, no desktop app, no plugin required.',
+          a: 'No. Clex is a web app — open it in any browser and it works immediately. <strong>No extension, no desktop app, no plugin required.</strong>',
         },
       ],
     },
     {
-      label: 'Accounts & Google Drive',
+      id: 'file-handling',
+      label: 'File Handling',
       faqs: [
         {
-          q: 'Do I need an account to use Clex?',
-          a: 'No account is needed for P2P file transfer or any file tool operations. You only need a Google account if you choose to use Google Drive as the transfer method.',
+          q: 'What file types can I process?',
+          a: 'Clex supports <strong>image compression and conversion</strong> (JPEG, PNG, WebP), <strong>PDF operations</strong> (merge, split, extract, export), <strong>DOCX to PDF conversion</strong>, and <strong>ZIP bundling</strong> for any file types.',
         },
         {
-          q: 'How does Google Drive authorization work?',
-          a: "Clicking 'Connect Google Drive' opens a standard Google OAuth consent screen. You grant Clex permission to create and list files on your Drive. The authorization token is stored in your browser's sessionStorage only — it's never sent to or persisted on Clex servers.",
+          q: 'What happens to my files after transfer?',
+          a: 'For P2P and local transfers: <strong>nothing</strong>. The files existed only in browser memory during the transfer. When you close the tab, they\'re gone from Clex entirely. For Google Drive transfers, the file remains in <strong>your Google Drive</strong>.',
         },
         {
-          q: "Can I revoke Clex's access to my Google Drive?",
-          a: "Yes. Go to myaccount.google.com/permissions, find Clex, and revoke access. The token in your browser will also expire naturally when you close the tab.",
-        },
-        {
-          q: 'Are Drive files deleted automatically?',
-          a: "Clex doesn't automatically delete files from your Drive. Files transferred via Drive remain in your Google Drive under a 'Clex Transfers' folder until you delete them manually.",
+          q: 'Can I process files without sharing them?',
+          a: '<strong>Absolutely.</strong> You can use Clex purely as a file preparation tool. Drop files, compress images, merge PDFs, convert formats, and download the results — all without ever using the sharing features.',
         },
       ],
     },
   ]
 
-  let openItems: Set<string> = new Set()
+  onMount(() => {
+    const obs = new IntersectionObserver(
+      ([e]) => { if (e.isIntersecting) { heroVisible = true; obs.disconnect() } },
+      { threshold: 0.05 }
+    )
+    if (heroEl) obs.observe(heroEl)
 
-  function toggle(key: string) {
-    if (openItems.has(key)) {
-      openItems.delete(key)
-    } else {
-      openItems.add(key)
-    }
-    openItems = new Set(openItems)
-  }
+    const revealEls = document.querySelectorAll('.reveal-scroll')
+    revealEls.forEach((el) => {
+      const io = new IntersectionObserver(([e]) => {
+        if (e.isIntersecting) {
+          ;(e.target as HTMLElement).classList.add('in-view')
+          io.disconnect()
+        }
+      }, { threshold: 0.08 })
+      io.observe(el)
+    })
 
-  function isOpen(key: string) {
-    return openItems.has(key)
-  }
+    return () => obs.disconnect()
+  })
 </script>
 
 <svelte:head>
-  <title>FAQ — Clex</title>
-  <meta name="description" content="Frequently asked questions about Clex: privacy, transfer routing, file tools, browser support, Google Drive, and more." />
+  <title>FAQ — Clex | Frequently Asked Questions</title>
+  <meta name="description" content="Answers to common questions about Clex: transfer methods, privacy, file storage, speed, browser support, and file handling." />
 </svelte:head>
 
 <!-- Hero -->
-<section class="page-hero section">
+<section class="faq-hero" bind:this={heroEl}>
   <div class="container">
-    <div class="section-label enter-1"><span class="section-label-dot" />FAQ</div>
-    <h1 class="page-title enter-2">Frequently asked questions.</h1>
-    <p class="page-sub enter-3">
-      Everything you need to know about how Clex works, how it handles your files,
-      and how to get the most out of it.
+    <span class="section-label faq-label" class:enter-done={heroVisible}>
+      <span class="section-label-dot"></span>
+      Support
+    </span>
+    <h1 class="faq-h1" class:enter-done={heroVisible}>
+      Frequently<br>Asked Questions.
+    </h1>
+    <p class="faq-lead" class:enter-done={heroVisible}>
+      Everything you need to know about how Clex handles your files, transfers, and privacy.
     </p>
   </div>
 </section>
 
-<!-- FAQ groups -->
-<section class="faq-section section">
-  <div class="container">
-    <div class="faq-layout">
+<!-- FAQ Content -->
+<section class="section faq-content-section">
+  <div class="container faq-container">
 
-      <!-- Sticky nav -->
-      <nav class="faq-sidebar">
-        {#each faqGroups as group}
-          <a href="#{group.label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}" class="faq-nav-link">
-            {group.label}
-          </a>
-        {/each}
-      </nav>
+    {#each faqGroups as group}
+      <div class="faq-group reveal-scroll" id={group.id}>
+        <h2 class="faq-group-title font-mono">{group.label}</h2>
 
-      <!-- FAQ content -->
-      <div class="faq-content">
-        {#each faqGroups as group}
-          <div class="faq-group" id={group.label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}>
-            <h2 class="group-title">{group.label}</h2>
+        <div class="accordion">
+          {#each group.faqs as faq, i}
+            <div class="accordion-item" class:accordion-item--open={isOpen(`${group.id}-${i}`)}>
+              <button
+                class="accordion-trigger font-mono"
+                aria-expanded={isOpen(`${group.id}-${i}`)}
+                on:click={() => toggle(`${group.id}-${i}`)}
+              >
+                <span class="accordion-q">{faq.q}</span>
+                <span class="accordion-icon">{isOpen(`${group.id}-${i}`) ? '×' : '+'}</span>
+              </button>
 
-            <div class="faq-items">
-              {#each group.faqs as faq, i}
-                {@const key = `${group.label}-${i}`}
-                <div class="faq-item" class:faq-open={isOpen(key)}>
-                  <button class="faq-question" on:click={() => toggle(key)}>
-                    <span>{faq.q}</span>
-                    <span class="faq-chevron" class:rotated={isOpen(key)}>▾</span>
-                  </button>
-                  {#if isOpen(key)}
-                    <div class="faq-answer">
-                      <p>{faq.a}</p>
-                    </div>
-                  {/if}
+              {#if isOpen(`${group.id}-${i}`)}
+                <div class="accordion-body faq-answer">
+                  <!-- eslint-disable-next-line svelte/no-at-html-tags -->
+                  {@html faq.a}
                 </div>
-              {/each}
+              {/if}
             </div>
-          </div>
-        {/each}
+          {/each}
+        </div>
       </div>
-    </div>
+    {/each}
+
   </div>
 </section>
 
-<!-- Still stuck -->
-<section class="contact-section section-sm">
+<!-- CTA -->
+<section class="faq-cta">
   <div class="container">
-    <div class="contact-card">
-      <div class="contact-icon">?</div>
-      <div class="contact-copy">
-        <h3>Still have a question?</h3>
-        <p>Check the getting started guide for a step-by-step walkthrough, or open the workspace and try it directly — most questions are answered by using it.</p>
-      </div>
-      <div class="contact-actions">
-        <a href="/getting-started" class="btn-accent">Getting started guide</a>
-        <a href="/workspace" class="btn-secondary">Open workspace</a>
-      </div>
+    <h2 class="faq-cta-title reveal-scroll">Still have questions?</h2>
+    <p class="faq-cta-text reveal-scroll">Reach out or just open the workspace and try it — most questions answer themselves.</p>
+    <div class="faq-cta-actions reveal-scroll">
+      <a href="mailto:hello@clex.in" class="btn-secondary">Contact Us →</a>
+      <a href="/workspace" class="btn-accent">Open Workspace →</a>
     </div>
   </div>
 </section>
@@ -209,167 +204,139 @@
 <Footer />
 
 <style>
-  .page-hero { padding-top: 140px; border-bottom: 2px solid var(--border-hard); }
-
-  .page-title {
-    font-family: var(--font-display);
-    font-size: clamp(3rem, 7vw, 5.5rem);
-    font-weight: 700;
-    letter-spacing: -0.05em;
-    line-height: 0.95;
-    color: var(--text-1);
-    margin: 12px 0 16px;
+  /* ── Scroll reveal ─────────────────────── */
+  :global(.reveal-scroll.in-view) { opacity: 1; transform: none; }
+  .reveal-scroll {
+    opacity: 0;
+    transform: translateY(32px);
+    transition: opacity 0.55s var(--ease-out), transform 0.55s var(--ease-out);
   }
 
-  .page-sub { font-size: 18px; line-height: 1.7; color: var(--text-2); max-width: 52ch; }
+  /* ── Hero entry ────────────────────────── */
+  .faq-label { opacity: 0; transform: translateY(14px); transition: opacity .45s var(--ease-out), transform .45s var(--ease-out); }
+  .faq-h1    { opacity: 0; transform: translateY(28px); transition: opacity .55s var(--ease-out) .1s, transform .55s var(--ease-out) .1s; }
+  .faq-lead  { opacity: 0; transform: translateY(18px); transition: opacity .45s var(--ease-out) .2s, transform .45s var(--ease-out) .2s; }
+  .faq-label.enter-done, .faq-h1.enter-done, .faq-lead.enter-done { opacity: 1; transform: none; }
 
-  /* ── LAYOUT ──────────────────────────────────────── */
-  .faq-layout {
-    display: grid;
-    grid-template-columns: 220px 1fr;
-    gap: 56px;
-    align-items: start;
-  }
-
-  @media (max-width: 900px) { .faq-layout { grid-template-columns: 1fr; } }
-
-  /* ── SIDEBAR ─────────────────────────────────────── */
-  .faq-sidebar {
-    position: sticky;
-    top: 100px;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    padding: 20px;
-    border: 2px solid var(--border-hard);
-    border-radius: 14px;
-    background: var(--surface);
-    box-shadow: var(--shadow-md);
-  }
-
-  @media (max-width: 900px) { .faq-sidebar { display: none; } }
-
-  .faq-nav-link {
-    display: block;
-    padding: 9px 12px;
-    border-radius: 8px;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text-2);
-    text-decoration: none;
-    transition: color 150ms ease, background 150ms ease;
-  }
-
-  .faq-nav-link:hover { color: var(--text-1); background: var(--raised); }
-
-  /* ── CONTENT ─────────────────────────────────────── */
-  .faq-content { display: flex; flex-direction: column; gap: 56px; }
-
-  .faq-group { display: flex; flex-direction: column; gap: 16px; }
-
-  .group-title {
-    font-family: var(--font-display);
-    font-size: 22px;
-    font-weight: 700;
-    letter-spacing: -0.03em;
-    color: var(--text-1);
-    padding-bottom: 14px;
+  /* ── Hero ─────────────────────────────── */
+  .faq-hero {
+    padding: 10rem 0 5rem;
+    background: var(--canvas);
     border-bottom: 2px solid var(--border-hard);
   }
-
-  .faq-items { display: flex; flex-direction: column; gap: 8px; }
-
-  .faq-item {
-    border: 2px solid var(--border-hard);
-    border-radius: 14px;
-    background: var(--surface);
-    box-shadow: var(--shadow-sm);
-    overflow: hidden;
-    transition: box-shadow 160ms ease;
+  .faq-h1 {
+    font-family: var(--font-display);
+    font-size: clamp(3rem, 7vw, 6rem);
+    font-weight: 700;
+    line-height: 0.95;
+    letter-spacing: -0.04em;
+    color: var(--text-1);
+    margin: 16px 0 20px;
+  }
+  .faq-lead {
+    font-size: clamp(16px, 2vw, 18px);
+    color: var(--text-2);
+    line-height: 1.72;
+    max-width: 50ch;
   }
 
-  .faq-item:hover { box-shadow: var(--shadow-md); }
-  .faq-open { box-shadow: var(--shadow-md); }
+  /* ── Layout ───────────────────────────── */
+  .faq-content-section { padding-bottom: 6rem; }
+  .faq-container { max-width: 840px; }
 
-  .faq-question {
+  /* ── FAQ Groups ───────────────────────── */
+  .faq-group { margin-bottom: 4rem; }
+  .faq-group-title {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    margin-bottom: 18px;
+    padding-bottom: 14px;
+    border-bottom: 3px solid var(--accent);
+    display: inline-block;
+    color: var(--text-1);
+  }
+
+  /* ── Accordion ────────────────────────── */
+  .accordion {
+    border: 2px solid var(--border-hard);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .accordion-item {
+    border-bottom: 2px solid var(--border-hard);
+    background: var(--surface);
+  }
+  .accordion-item:last-child { border-bottom: none; }
+  .accordion-item--open { background: var(--surface-2); }
+
+  .accordion-trigger {
     width: 100%;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 16px;
     padding: 18px 20px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    text-align: left;
+    cursor: pointer;
     background: transparent;
     border: none;
-    cursor: pointer;
-    text-align: left;
-    font-family: var(--font-display);
-    font-size: 15px;
-    font-weight: 700;
     color: var(--text-1);
-    transition: background 150ms ease;
+    gap: 16px;
+    transition: background 120ms ease;
   }
+  .accordion-trigger:hover { background: var(--raised); }
+  .accordion-item--open .accordion-trigger { background: var(--raised); }
 
-  .faq-question:hover { background: var(--raised); }
+  .accordion-q { flex: 1; line-height: 1.5; }
 
-  .faq-chevron {
-    font-size: 18px;
-    color: var(--text-3);
-    flex-shrink: 0;
-    transition: transform 200ms var(--ease-out);
-    line-height: 1;
+  .accordion-icon {
+    width: 22px; height: 22px;
+    display: grid; place-items: center;
+    flex-shrink: 0; font-size: 18px; font-weight: 400;
+    color: var(--text-3); line-height: 1;
+    font-family: var(--font-sans);
   }
+  .accordion-item--open .accordion-icon { color: var(--accent); }
 
-  .faq-chevron.rotated { transform: rotate(180deg); }
-
-  .faq-answer {
-    padding: 0 20px 18px;
+  .accordion-body {
+    padding: 16px 20px 22px;
     border-top: 1px solid var(--border);
-    animation: fadeUp 200ms var(--ease-out) both;
-  }
-
-  .faq-answer p {
     font-size: 14px;
-    line-height: 1.72;
     color: var(--text-2);
-    padding-top: 14px;
+    line-height: 1.78;
+    animation: bodyIn 240ms var(--ease-out) both;
   }
 
-  /* ── CONTACT ─────────────────────────────────────── */
-  .contact-section { border-top: 2px solid var(--border-hard); }
-
-  .contact-card {
-    display: flex;
-    align-items: center;
-    gap: 24px;
-    padding: 32px 36px;
-    border: 2px solid var(--border-hard);
-    border-radius: 18px;
-    background: var(--surface);
-    box-shadow: var(--shadow-lg);
-    flex-wrap: wrap;
+  @keyframes bodyIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: none; }
   }
 
-  .contact-icon {
-    width: 56px;
-    height: 56px;
-    border-radius: 14px;
-    border: 2px solid var(--border-hard);
-    background: var(--accent);
-    color: #000;
-    display: grid;
-    place-items: center;
+  .faq-answer :global(strong) { color: var(--text-1); font-weight: 700; }
+  .faq-answer :global(code) {
+    font-family: var(--font-mono); font-size: 11px; padding: 2px 6px;
+    background: var(--accent-dim); border: 1px solid var(--accent-border);
+    border-radius: 3px; color: var(--accent);
+  }
+
+  /* ── CTA ──────────────────────────────── */
+  .faq-cta {
+    padding: 5rem 0; text-align: center;
+    background: var(--surface-2);
+    border-top: 2px solid var(--border-hard);
+  }
+  .faq-cta-title {
     font-family: var(--font-display);
-    font-size: 28px;
-    font-weight: 700;
-    box-shadow: 3px 3px 0 #000;
-    flex-shrink: 0;
+    font-size: clamp(2rem, 4vw, 3.5rem); font-weight: 700;
+    letter-spacing: -0.04em; color: var(--text-1); margin-bottom: 12px;
   }
-
-  .contact-copy { flex: 1; min-width: 240px; }
-
-  .contact-copy h3 { font-family: var(--font-display); font-size: 18px; font-weight: 700; color: var(--text-1); margin-bottom: 6px; }
-
-  .contact-copy p { font-size: 14px; line-height: 1.65; color: var(--text-2); }
-
-  .contact-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+  .faq-cta-text {
+    font-size: 16px; color: var(--text-2); max-width: 42ch;
+    margin: 0 auto 28px; line-height: 1.7;
+  }
+  .faq-cta-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
 </style>

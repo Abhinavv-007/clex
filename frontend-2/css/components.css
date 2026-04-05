@@ -39,7 +39,7 @@
 
 .section__label {
   font-family: var(--font-mono);
-  font-size: var(--text-sm);
+  font-size: clamp(var(--text-sm), 0.95vw, var(--text-base));
   text-transform: uppercase;
   letter-spacing: var(--tracking-widest);
   color: var(--accent);
@@ -55,6 +55,62 @@
   font-size: var(--text-xl);
   color: var(--text-secondary);
   max-width: 55ch;
+}
+
+.page-hero__label {
+  font-family: var(--font-mono);
+  font-size: clamp(0.95rem, 1vw, 1.05rem);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-widest);
+  color: var(--accent);
+  margin-bottom: var(--space-lg);
+  display: inline-block;
+}
+
+.page-hero__title {
+  font-size: clamp(3.25rem, 7vw, 5.75rem);
+  line-height: 0.92;
+  letter-spacing: -0.055em;
+  text-transform: uppercase;
+}
+
+.page-hero__subtitle {
+  max-width: 46ch;
+  margin-top: var(--space-lg);
+  font-size: clamp(1.125rem, 1.8vw, 1.5rem);
+  line-height: var(--leading-relaxed);
+  color: var(--text-secondary);
+}
+
+.page-hero__meta {
+  margin-top: var(--space-lg);
+  font-family: var(--font-mono);
+  font-size: clamp(var(--text-sm), 1.3vw, var(--text-base));
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+}
+
+.page-section__title {
+  font-size: clamp(2.25rem, 4.4vw, 4rem);
+  line-height: 0.96;
+  letter-spacing: -0.04em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 767px) {
+  .page-hero__title {
+    font-size: clamp(2.85rem, 14vw, 4.5rem);
+    line-height: 0.94;
+  }
+
+  .page-hero__subtitle {
+    font-size: clamp(1.05rem, 4.8vw, 1.25rem);
+  }
+
+  .page-section__title {
+    font-size: clamp(1.95rem, 10vw, 3rem);
+  }
 }
 
 /* ── Buttons ── */
@@ -382,19 +438,19 @@
 .accordion__icon {
   width: 24px;
   height: 24px;
-  transition: transform var(--duration-normal) var(--ease-out);
+  transition: color var(--duration-normal) var(--ease-out);
   flex-shrink: 0;
   font-size: var(--text-xl);
 }
 
 .accordion__trigger[aria-expanded="true"] .accordion__icon {
-  transform: rotate(45deg);
+  color: var(--accent);
 }
 
 .accordion__content {
   overflow: hidden;
-  height: 0;
-  transition: height var(--duration-normal) var(--ease-out);
+  max-height: 0;
+  transition: max-height var(--duration-normal) var(--ease-out);
 }
 
 .accordion__body {

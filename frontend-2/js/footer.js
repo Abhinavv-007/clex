@@ -1,3 +1,5 @@
+import { routes } from './routes.js';
+
 /* ============================================
    CLEX — Footer Component
    ============================================ */
@@ -23,18 +25,18 @@ export function getFooterHTML() {
         <div class="footer__col">
           <h4 class="footer__col-title">Product</h4>
           <nav class="footer__links">
-            <a href="/features.html" class="footer__link">Features</a>
-            <a href="/how-it-works.html" class="footer__link">How It Works</a>
-            <a href="/workspace.html" class="footer__link">Workspace</a>
-            <a href="/getting-started.html" class="footer__link">Get Started</a>
+            <a href="${routes.features}" class="footer__link">Features</a>
+            <a href="${routes.howItWorks}" class="footer__link">How It Works</a>
+            <a href="${routes.workspace}" class="footer__link">Workspace</a>
+            <a href="${routes.gettingStarted}" class="footer__link">Get Started</a>
           </nav>
         </div>
 
         <div class="footer__col">
           <h4 class="footer__col-title">Support</h4>
           <nav class="footer__links">
-            <a href="/faq.html" class="footer__link">FAQ</a>
-            <a href="/getting-started.html" class="footer__link">Onboarding</a>
+            <a href="${routes.faq}" class="footer__link">FAQ</a>
+            <a href="${routes.gettingStarted}" class="footer__link">Onboarding</a>
             <a href="mailto:hello@clex.in" class="footer__link">Contact</a>
           </nav>
         </div>
@@ -42,8 +44,8 @@ export function getFooterHTML() {
         <div class="footer__col">
           <h4 class="footer__col-title">Legal</h4>
           <nav class="footer__links">
-            <a href="/privacy.html" class="footer__link">Privacy Policy</a>
-            <a href="/terms.html" class="footer__link">Terms of Service</a>
+            <a href="${routes.privacy}" class="footer__link">Privacy Policy</a>
+            <a href="${routes.terms}" class="footer__link">Terms of Service</a>
           </nav>
         </div>
       </div>
@@ -51,8 +53,8 @@ export function getFooterHTML() {
       <div class="footer__bottom">
         <span class="footer__copyright">© ${year} Clex. All rights reserved.</span>
         <div class="footer__legal">
-          <a href="/privacy.html" class="footer__legal-link">Privacy</a>
-          <a href="/terms.html" class="footer__legal-link">Terms</a>
+          <a href="${routes.privacy}" class="footer__legal-link">Privacy</a>
+          <a href="${routes.terms}" class="footer__legal-link">Terms</a>
         </div>
       </div>
     </div>

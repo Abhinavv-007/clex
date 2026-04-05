@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Getting Started — Clex | Your First File in 60 Seconds</title>
+  <meta name="description" content="Get started with Clex in under a minute. Step-by-step guide to dropping files, using preparation tools, and sharing through the fastest route.">
+  <script>
+    (() => {
+      try {
+        const theme = localStorage.getItem('clex-theme') === 'light' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', theme);
+        document.documentElement.classList.toggle('dark', theme === 'dark');
+        document.documentElement.style.colorScheme = theme;
+      } catch {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        document.documentElement.classList.add('dark');
+        document.documentElement.style.colorScheme = 'dark';
+      }
+    })();
+  </script>
+
+  <link rel="stylesheet" href="/css/reset.css">
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/animations.css">
+  <link rel="stylesheet" href="/css/pages/home.css">
+  <link rel="stylesheet" href="/css/pages/getting-started.css">
+
+  <script type="module" src="/js/main.js"></script>
+</head>
+<body data-page="getting-started">
+
+  <!-- ═══ Navigation ═══ -->
+  <nav class="nav" id="main-nav">
+    <div class="nav__inner">
+      <a href="/" class="nav__logo">clex<span class="nav__logo-dot"></span></a>
+      <div class="nav__links">
+        <a href="/features" class="nav__link" data-page="features">Features</a>
+        <a href="/how-it-works" class="nav__link" data-page="how-it-works">How It Works</a>
+        <a href="/getting-started" class="nav__link" data-page="getting-started">Get Started</a>
+        <a href="/faq" class="nav__link" data-page="faq">FAQ</a>
+      </div>
+      <div class="nav__actions">
+        <button class="nav__theme-toggle" id="theme-toggle" aria-label="Toggle theme">☀</button>
+        <a href="/workspace" class="btn btn--primary btn--small desktop-only">Open Workspace →</a>
+      </div>
+      <button class="nav__hamburger" id="nav-hamburger" aria-label="Toggle menu">
+        <span class="nav__hamburger-line"></span>
+        <span class="nav__hamburger-line"></span>
+        <span class="nav__hamburger-line"></span>
+      </button>
+    </div>
+  </nav>
+  <div class="nav__mobile-menu" id="nav-mobile-menu">
+    <a href="/" class="nav__mobile-link">Home</a>
+    <a href="/features" class="nav__mobile-link">Features</a>
+    <a href="/how-it-works" class="nav__mobile-link">How It Works</a>
+    <a href="/getting-started" class="nav__mobile-link">Get Started</a>
+    <a href="/faq" class="nav__mobile-link">FAQ</a>
+    <a href="/workspace" class="nav__mobile-link" style="color: var(--accent);">Open Workspace →</a>
+  </div>
+
+  <!-- ═══ Hero ═══ -->
+  <section class="gs-hero">
+    <div class="container">
+      <span class="page-hero__label reveal">Onboarding</span>
+      <h1 class="page-hero__title reveal">Your First File<br>in 60 Seconds.</h1>
+      <p class="page-hero__subtitle reveal">
+        No signup, no install, no configuration. Follow these steps and you'll be sharing files before you finish your coffee.
+      </p>
+    </div>
+  </section>
+
+  <!-- ═══ Steps ═══ -->
+  <section class="section">
+    <div class="container">
+      <div class="gs-steps">
+
+        <div class="gs-step reveal">
+          <div class="gs-step__number">1</div>
+          <div class="gs-step__content">
+            <h2 class="gs-step__title">Open the Workspace</h2>
+            <p class="gs-step__text">
+              Click "Open Workspace" from anywhere on the site, or go directly to the workspace URL. No account needed — it opens instantly in your browser.
+            </p>
+            <div class="gs-step__tip">
+              Tip: Bookmark the workspace page for instant access next time.
+            </div>
+          </div>
+        </div>
+
+        <div class="gs-step reveal">
+          <div class="gs-step__number">2</div>
+          <div class="gs-step__content">
+            <h2 class="gs-step__title">Drop Your Files</h2>
+            <p class="gs-step__text">
+              Drag files from your desktop, file explorer, or another browser tab into the workspace drop zone. You can also click the zone to browse and select files. PDFs, images, documents, ZIPs — anything goes.
+            </p>
+            <div class="gs-step__tip">
+              Tip: You can paste images directly from your clipboard with Ctrl+V / Cmd+V.
+            </div>
+          </div>
+        </div>
+
+        <div class="gs-step reveal">
+          <div class="gs-step__number">3</div>
+          <div class="gs-step__content">
+            <h2 class="gs-step__title">Prepare (Optional)</h2>
+            <p class="gs-step__text">
+              Need to compress an image? Merge PDFs? Convert DOCX to PDF? Use the built-in tools. They appear automatically based on your file types. Each operation happens in your browser — nothing gets sent anywhere.
+            </p>
+            <div class="gs-step__tip">
+              Tip: You can chain operations — compress → convert → merge → ZIP — and they flow automatically.
+            </div>
+          </div>
+        </div>
+
+        <div class="gs-step reveal">
+          <div class="gs-step__number">4</div>
+          <div class="gs-step__content">
+            <h2 class="gs-step__title">Share</h2>
+            <p class="gs-step__text">
+              Click "Share" and Clex generates a unique link. Send it to the recipient — they open it in their browser and the transfer begins. Clex automatically tries direct P2P first, then local network, then Google Drive as fallback.
+            </p>
+            <div class="gs-step__tip">
+              Tip: For P2P, both sender and receiver need to keep their browser tabs open until the transfer completes.
+            </div>
+          </div>
+        </div>
+
+        <div class="gs-step reveal">
+          <div class="gs-step__number">5</div>
+          <div class="gs-step__content">
+            <h2 class="gs-step__title">Receive (When Someone Sends to You)</h2>
+            <p class="gs-step__text">
+              Got a Clex link? Open it. The file transfer starts automatically. You'll see a progress bar and the files will download to your browser when complete. No app install, no login.
+            </p>
+            <div class="gs-step__tip">
+              Tip: You can also open the workspace and click "Receive" to enter a share code manually.
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ Pro Tips ═══ -->
+  <section class="section" style="background: var(--bg-secondary); border-top: var(--border-heavy) solid var(--border-bold);">
+    <div class="container">
+      <div class="section__header text-center reveal">
+        <span class="section__label">Power User</span>
+        <h2 class="section__title page-section__title">Tips & Tricks</h2>
+      </div>
+
+      <div class="tips-grid stagger-group">
+        <div class="tip-card hover-lift">
+          <h3 class="tip-card__title">Batch Processing</h3>
+          <p class="tip-card__text">
+            Select multiple images and compress them all at once. The tool applies the same settings to every file, saving time on repetitive work.
+          </p>
+        </div>
+        <div class="tip-card hover-lift">
+          <h3 class="tip-card__title">Chain Everything</h3>
+          <p class="tip-card__text">
+            After compressing, the output automatically becomes available for the next tool. No need to download and re-upload between operations.
+          </p>
+        </div>
+        <div class="tip-card hover-lift">
+          <h3 class="tip-card__title">Offline Mode</h3>
+          <p class="tip-card__text">
+            Once Clex loads, the preparation tools work offline. Perfect for working on a flight or in areas with spotty connection. Share when you're back online.
+          </p>
+        </div>
+        <div class="tip-card hover-lift">
+          <h3 class="tip-card__title">Local Network Speed</h3>
+          <p class="tip-card__text">
+            Transferring to someone on the same Wi-Fi? Clex detects this and uses local network transfer for maximum speed. Great for large files.
+          </p>
+        </div>
+        <div class="tip-card hover-lift">
+          <h3 class="tip-card__title">Google Drive Fallback</h3>
+          <p class="tip-card__text">
+            When direct transfer isn't possible (different networks, NAT issues), Clex can use Google Drive as a secure relay. Files go to your Drive, not Clex's servers.
+          </p>
+        </div>
+        <div class="tip-card hover-lift">
+          <h3 class="tip-card__title">No Data Retention</h3>
+          <p class="tip-card__text">
+            For P2P and local transfers, files exist only in browser memory during the transfer. When you close the tab, they're gone. Zero server-side storage.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ FAQ Teaser ═══ -->
+  <section class="section section--tight text-center">
+    <div class="container">
+      <h2 class="page-section__title reveal">
+        Got questions?
+      </h2>
+      <p class="reveal" style="color: var(--text-secondary); margin: var(--space-md) auto var(--space-xl); max-width: 40ch;">
+        Check the FAQ for answers about privacy, transfer methods, file limits, and more.
+      </p>
+      <div class="reveal">
+        <a href="/faq" class="btn">Read the FAQ →</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ CTA ═══ -->
+  <section class="cta-strip">
+    <div class="container">
+      <h2 class="cta-strip__title reveal">
+        Ready?<br><span style="color: var(--accent);">Let's go.</span>
+      </h2>
+      <div class="reveal" style="margin-top: var(--space-xl);">
+        <a href="/workspace" class="btn btn--primary btn--large">Open Workspace →</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ Footer ═══ -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer__grid">
+        <div class="footer__brand">
+          <div class="footer__logo">clex<span class="nav__logo-dot"></span></div>
+          <p class="footer__desc">One workspace. Drop files, prepare them, share them.</p>
+        </div>
+        <div class="footer__col">
+          <h4 class="footer__col-title">Product</h4>
+          <nav class="footer__links">
+            <a href="/features" class="footer__link">Features</a>
+            <a href="/how-it-works" class="footer__link">How It Works</a>
+            <a href="/workspace" class="footer__link">Workspace</a>
+            <a href="/getting-started" class="footer__link">Get Started</a>
+          </nav>
+        </div>
+        <div class="footer__col">
+          <h4 class="footer__col-title">Support</h4>
+          <nav class="footer__links">
+            <a href="/faq" class="footer__link">FAQ</a>
+            <a href="mailto:hello@clex.in" class="footer__link">Contact</a>
+          </nav>
+        </div>
+        <div class="footer__col">
+          <h4 class="footer__col-title">Legal</h4>
+          <nav class="footer__links">
+            <a href="/privacy" class="footer__link">Privacy Policy</a>
+            <a href="/terms" class="footer__link">Terms of Service</a>
+          </nav>
+        </div>
+      </div>
+      <div class="footer__bottom">
+        <span class="footer__copyright">© 2025 Clex. All rights reserved.</span>
+        <div class="footer__legal">
+          <a href="/privacy" class="footer__legal-link">Privacy</a>
+          <a href="/terms" class="footer__legal-link">Terms</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>

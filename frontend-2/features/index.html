@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Features — Clex | Everything Connects</title>
+  <meta name="description" content="Explore Clex's complete feature set: image compression, PDF operations, DOCX conversion, ZIP bundling, smart chaining, and three transfer routes — all in one workspace.">
+  <script>
+    (() => {
+      try {
+        const theme = localStorage.getItem('clex-theme') === 'light' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', theme);
+        document.documentElement.classList.toggle('dark', theme === 'dark');
+        document.documentElement.style.colorScheme = theme;
+      } catch {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        document.documentElement.classList.add('dark');
+        document.documentElement.style.colorScheme = 'dark';
+      }
+    })();
+  </script>
+
+  <link rel="stylesheet" href="/css/reset.css">
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/animations.css">
+  <link rel="stylesheet" href="/css/pages/home.css">
+  <link rel="stylesheet" href="/css/pages/features.css">
+
+  <script type="module" src="/js/main.js"></script>
+</head>
+<body data-page="features">
+
+  <!-- ═══ Navigation ═══ -->
+  <nav class="nav" id="main-nav">
+    <div class="nav__inner">
+      <a href="/" class="nav__logo">clex<span class="nav__logo-dot"></span></a>
+      <div class="nav__links">
+        <a href="/features" class="nav__link" data-page="features">Features</a>
+        <a href="/how-it-works" class="nav__link" data-page="how-it-works">How It Works</a>
+        <a href="/getting-started" class="nav__link" data-page="getting-started">Get Started</a>
+        <a href="/faq" class="nav__link" data-page="faq">FAQ</a>
+      </div>
+      <div class="nav__actions">
+        <button class="nav__theme-toggle" id="theme-toggle" aria-label="Toggle theme">☀</button>
+        <a href="/workspace" class="btn btn--primary btn--small desktop-only">Open Workspace →</a>
+      </div>
+      <button class="nav__hamburger" id="nav-hamburger" aria-label="Toggle menu">
+        <span class="nav__hamburger-line"></span>
+        <span class="nav__hamburger-line"></span>
+        <span class="nav__hamburger-line"></span>
+      </button>
+    </div>
+  </nav>
+  <div class="nav__mobile-menu" id="nav-mobile-menu">
+    <a href="/" class="nav__mobile-link">Home</a>
+    <a href="/features" class="nav__mobile-link">Features</a>
+    <a href="/how-it-works" class="nav__mobile-link">How It Works</a>
+    <a href="/getting-started" class="nav__mobile-link">Get Started</a>
+    <a href="/faq" class="nav__mobile-link">FAQ</a>
+    <a href="/workspace" class="nav__mobile-link" style="color: var(--accent);">Open Workspace →</a>
+  </div>
+
+  <!-- ═══ Hero ═══ -->
+  <section class="features-hero">
+    <div class="container">
+      <span class="page-hero__label reveal">Feature System</span>
+      <h1 class="features-hero__title page-hero__title reveal">Everything<br>Connects.</h1>
+      <p class="features-hero__subtitle page-hero__subtitle reveal">
+        Clex isn't a list of separate tools. It's a system where preparation flows into delivery — every feature feeds the next.
+      </p>
+    </div>
+  </section>
+
+  <!-- ═══ Preparation Tools ═══ -->
+  <section class="section" id="preparation">
+    <div class="container">
+      <div class="section__header reveal">
+        <span class="section__label">Preparation</span>
+        <h2 class="section__title page-section__title">Transform Files<br>Before They Move.</h2>
+        <p class="section__subtitle">
+          Built-in tools that process everything inside your browser. Nothing gets uploaded to a server.
+        </p>
+      </div>
+    </div>
+
+    <div class="container--wide" style="max-width: var(--container-wide); margin: 0 auto; padding: 0 var(--container-padding);">
+      
+      <!-- Statement strip -->
+      <div id="features-statement" class="features-statement">
+        <div class="statement-inner">
+          <div class="statement-col">
+            <span class="stat-num">12+</span>
+            <span class="stat-label">File formats</span>
+          </div>
+          <div class="statement-divider"></div>
+          <div class="statement-col">
+            <span class="stat-num">3</span>
+            <span class="stat-label">Transfer routes</span>
+          </div>
+          <div class="statement-divider"></div>
+          <div class="statement-col">
+            <span class="stat-num">0</span>
+            <span class="stat-label">Server uploads (P2P)</span>
+          </div>
+          <div class="statement-divider"></div>
+          <div class="statement-col">
+            <span class="stat-num">100%</span>
+            <span class="stat-label">Client-side processing</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tool grid -->
+      <div class="tools-grid stagger-group" id="features-tool-grid">
+        <!-- Injected via JS or manually copied here -->
+        <article class="tool-card" style="--card-color: #22D3EE; transition-delay: 0ms;">
+          <div class="card-top">
+            <div class="tool-icon-wrap"><span class="tool-icon">⇩</span></div>
+            <span class="tool-tag" style="color: var(--card-color); border-color: var(--card-color); background: color-mix(in srgb, var(--card-color) 12%, transparent)">Images</span>
+          </div>
+          <h3 class="tool-title">Image Compression</h3>
+          <p class="tool-desc">Reduce image size by up to 90% while preserving visual quality. JPEG, PNG, WebP supported.</p>
+          <div class="tool-metric">
+            <span class="metric-dot" style="background: var(--card-color)"></span>
+            <span class="metric-text">Up to 90% smaller</span>
+          </div>
+        </article>
+
+        <article class="tool-card" style="--card-color: #9B7FFF; transition-delay: 60ms;">
+          <div class="card-top">
+            <div class="tool-icon-wrap"><span class="tool-icon">⇄</span></div>
+            <span class="tool-tag" style="color: var(--card-color); border-color: var(--card-color); background: color-mix(in srgb, var(--card-color) 12%, transparent)">Convert</span>
+          </div>
+          <h3 class="tool-title">Format Conversion</h3>
+          <p class="tool-desc">Convert between image formats instantly in the browser. No uploads, no waiting.</p>
+          <div class="tool-metric">
+            <span class="metric-dot" style="background: var(--card-color)"></span>
+            <span class="metric-text">8 formats supported</span>
+          </div>
+        </article>
+
+        <article class="tool-card" style="--card-color: #FFAA00; transition-delay: 120ms;">
+          <div class="card-top">
+            <div class="tool-icon-wrap"><span class="tool-icon">⊕</span></div>
+            <span class="tool-tag" style="color: var(--card-color); border-color: var(--card-color); background: color-mix(in srgb, var(--card-color) 12%, transparent)">PDF</span>
+          </div>
+          <h3 class="tool-title">PDF Merge</h3>
+          <p class="tool-desc">Combine multiple PDFs into one. Drag to reorder pages before merging.</p>
+          <div class="tool-metric">
+            <span class="metric-dot" style="background: var(--card-color)"></span>
+            <span class="metric-text">Unlimited pages</span>
+          </div>
+        </article>
+
+        <article class="tool-card" style="--card-color: #FFAA00; transition-delay: 180ms;">
+          <div class="card-top">
+            <div class="tool-icon-wrap"><span class="tool-icon">⊗</span></div>
+            <span class="tool-tag" style="color: var(--card-color); border-color: var(--card-color); background: color-mix(in srgb, var(--card-color) 12%, transparent)">PDF</span>
+          </div>
+          <h3 class="tool-title">PDF Split & Extract</h3>
+          <p class="tool-desc">Pull specific pages from a PDF or split a large file into individual documents.</p>
+          <div class="tool-metric">
+            <span class="metric-dot" style="background: var(--card-color)"></span>
+            <span class="metric-text">Page-level precision</span>
+          </div>
+        </article>
+
+        <article class="tool-card" style="--card-color: #9B7FFF; transition-delay: 0ms;">
+          <div class="card-top">
+            <div class="tool-icon-wrap"><span class="tool-icon">⬡</span></div>
+            <span class="tool-tag" style="color: var(--card-color); border-color: var(--card-color); background: color-mix(in srgb, var(--card-color) 12%, transparent)">Convert</span>
+          </div>
+          <h3 class="tool-title">DOCX → PDF</h3>
+          <p class="tool-desc">Convert Word documents to PDF in seconds. Runs entirely in your browser.</p>
+          <div class="tool-metric">
+            <span class="metric-dot" style="background: var(--card-color)"></span>
+            <span class="metric-text">100% client-side</span>
+          </div>
+        </article>
+
+        <article class="tool-card" style="--card-color: #00E570; transition-delay: 60ms;">
+          <div class="card-top">
+            <div class="tool-icon-wrap"><span class="tool-icon">⊞</span></div>
+            <span class="tool-tag" style="color: var(--card-color); border-color: var(--card-color); background: color-mix(in srgb, var(--card-color) 12%, transparent)">Archive</span>
+          </div>
+          <h3 class="tool-title">ZIP Bundling</h3>
+          <p class="tool-desc">Bundle any set of files into a ZIP archive for clean, single-package delivery.</p>
+          <div class="tool-metric">
+            <span class="metric-dot" style="background: var(--card-color)"></span>
+            <span class="metric-text">Any file type</span>
+          </div>
+        </article>
+
+        <article class="tool-card" style="--card-color: #FF4466; transition-delay: 120ms;">
+          <div class="card-top">
+            <div class="tool-icon-wrap"><span class="tool-icon">⟳</span></div>
+            <span class="tool-tag" style="color: var(--card-color); border-color: var(--card-color); background: color-mix(in srgb, var(--card-color) 12%, transparent)">System</span>
+          </div>
+          <h3 class="tool-title">Smart Tool Chaining</h3>
+          <p class="tool-desc">Compress an image, convert it, then share it — all in one continuous flow.</p>
+          <div class="tool-metric">
+            <span class="metric-dot" style="background: var(--card-color)"></span>
+            <span class="metric-text">Zero context switches</span>
+          </div>
+        </article>
+
+        <article class="tool-card" style="--card-color: #22D3EE; transition-delay: 180ms;">
+          <div class="card-top">
+            <div class="tool-icon-wrap"><span class="tool-icon">⟷</span></div>
+            <span class="tool-tag" style="color: var(--card-color); border-color: var(--card-color); background: color-mix(in srgb, var(--card-color) 12%, transparent)">Transfer</span>
+          </div>
+          <h3 class="tool-title">Direct P2P Transfer</h3>
+          <p class="tool-desc">Send files browser-to-browser via WebRTC. No relay, no server storage.</p>
+          <div class="tool-metric">
+            <span class="metric-dot" style="background: var(--card-color)"></span>
+            <span class="metric-text">End-to-end encrypted</span>
+          </div>
+        </article>
+
+        <article class="tool-card" style="--card-color: #00E570; transition-delay: 0ms;">
+          <div class="card-top">
+            <div class="tool-icon-wrap"><span class="tool-icon">⊡</span></div>
+            <span class="tool-tag" style="color: var(--card-color); border-color: var(--card-color); background: color-mix(in srgb, var(--card-color) 12%, transparent)">Transfer</span>
+          </div>
+          <h3 class="tool-title">Local Network Routing</h3>
+          <p class="tool-desc">Detected on the same Wi-Fi? Files route locally for near-instant delivery.</p>
+          <div class="tool-metric">
+            <span class="metric-dot" style="background: var(--card-color)"></span>
+            <span class="metric-text">LAN speed</span>
+          </div>
+        </article>
+
+        <article class="tool-card" style="--card-color: #9B7FFF; transition-delay: 60ms;">
+          <div class="card-top">
+            <div class="tool-icon-wrap"><span class="tool-icon">↑</span></div>
+            <span class="tool-tag" style="color: var(--card-color); border-color: var(--card-color); background: color-mix(in srgb, var(--card-color) 12%, transparent)">Cloud</span>
+          </div>
+          <h3 class="tool-title">Google Drive Fallback</h3>
+          <p class="tool-desc">When direct transfer isn't possible, upload to your own Drive and share the link.</p>
+          <div class="tool-metric">
+            <span class="metric-dot" style="background: var(--card-color)"></span>
+            <span class="metric-text">Your storage, your control</span>
+          </div>
+        </article>
+
+        <article class="tool-card" style="--card-color: #FFAA00; transition-delay: 120ms;">
+          <div class="card-top">
+            <div class="tool-icon-wrap"><span class="tool-icon">⬡</span></div>
+            <span class="tool-tag" style="color: var(--card-color); border-color: var(--card-color); background: color-mix(in srgb, var(--card-color) 12%, transparent)">Share</span>
+          </div>
+          <h3 class="tool-title">QR Code Sharing</h3>
+          <p class="tool-desc">Generate a QR code from any share link. Point and receive — no typing required.</p>
+          <div class="tool-metric">
+            <span class="metric-dot" style="background: var(--card-color)"></span>
+            <span class="metric-text">Instant mobile handoff</span>
+          </div>
+        </article>
+
+        <article class="tool-card" style="--card-color: #00E570; transition-delay: 180ms;">
+          <div class="card-top">
+            <div class="tool-icon-wrap"><span class="tool-icon">◎</span></div>
+            <span class="tool-tag" style="color: var(--card-color); border-color: var(--card-color); background: color-mix(in srgb, var(--card-color) 12%, transparent)">System</span>
+          </div>
+          <h3 class="tool-title">Offline Capable</h3>
+          <p class="tool-desc">All file operations work offline after the first load. Reliable anywhere.</p>
+          <div class="tool-metric">
+            <span class="metric-dot" style="background: var(--card-color)"></span>
+            <span class="metric-text">Works without internet</span>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ Connector Banner ═══ -->
+  <div class="banner reveal-scale">
+    <div class="container">
+      <p class="banner__text">Prepare ——→ Deliver</p>
+    </div>
+  </div>
+
+  <!-- ═══ Delivery System ═══ -->
+  <section class="section delivery-system" id="delivery">
+    <div class="container">
+      <div class="section__header text-center reveal">
+        <span class="section__label">Delivery</span>
+        <h2 class="section__title page-section__title">Three Routes.<br>One Smart Decision.</h2>
+        <p class="section__subtitle mx-auto">
+          Once your files are prepared, Clex routes them through the best available path. Direct is always preferred.
+        </p>
+      </div>
+
+      <div class="delivery-flow reveal">
+        <div class="delivery-flow__node">
+          <div class="delivery-flow__node-title">Your Browser</div>
+          <div class="delivery-flow__node-desc">Files ready in workspace</div>
+        </div>
+        <div class="delivery-flow__arrow">→</div>
+        <div class="delivery-flow__node" style="border-color: var(--accent); box-shadow: var(--shadow-md) var(--accent);">
+          <div class="delivery-flow__node-title" style="color: var(--accent);">Clex Router</div>
+          <div class="delivery-flow__node-desc">Detects best path</div>
+        </div>
+        <div class="delivery-flow__arrow">→</div>
+        <div class="delivery-flow__node">
+          <div class="delivery-flow__node-title">Recipient</div>
+          <div class="delivery-flow__node-desc">Opens link in browser</div>
+        </div>
+      </div>
+
+      <!-- Transfer Comparison -->
+      <div style="margin-top: var(--space-4xl);">
+        <div class="container--narrow" style="max-width: var(--container-narrow); margin: 0 auto;">
+          <table class="compare-table reveal">
+            <thead>
+              <tr>
+                <th>Feature</th>
+                <th>Direct P2P</th>
+                <th>Local Network</th>
+                <th>Google Drive</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Protocol</strong></td>
+                <td>WebRTC</td>
+                <td>Local TCP</td>
+                <td>Google APIs</td>
+              </tr>
+              <tr>
+                <td><strong>Server Storage</strong></td>
+                <td><span class="check"></span> None</td>
+                <td><span class="check"></span> None</td>
+                <td>Your Drive</td>
+              </tr>
+              <tr>
+                <td><strong>Account</strong></td>
+                <td><span class="check"></span> Not needed</td>
+                <td><span class="check"></span> Not needed</td>
+                <td>Google Auth</td>
+              </tr>
+              <tr>
+                <td><strong>Speed</strong></td>
+                <td>Fast</td>
+                <td><span style="color:var(--accent);font-weight:bold;">Fastest</span></td>
+                <td>Varies</td>
+              </tr>
+              <tr>
+                <td><strong>File Limit</strong></td>
+                <td>Browser RAM</td>
+                <td>Browser RAM</td>
+                <td>15 GB (free tier)</td>
+              </tr>
+              <tr>
+                <td><strong>Privacy</strong></td>
+                <td><span style="color:var(--accent);font-weight:bold;">Maximum</span></td>
+                <td><span style="color:var(--accent);font-weight:bold;">Maximum</span></td>
+                <td>Google TLS</td>
+              </tr>
+              <tr>
+                <td><strong>When to Use</strong></td>
+                <td>Default — always try first</td>
+                <td>Same Wi-Fi, big files</td>
+                <td>Fallback, async delivery</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ Chaining Demo ═══ -->
+  <section class="section chaining" id="chaining">
+    <div class="container">
+      <div class="section__header reveal">
+        <span class="section__label">Tool Chaining</span>
+        <h2 class="section__title page-section__title">One Thing Leads<br>to the Next.</h2>
+        <p class="section__subtitle">
+          Clex connects operations so your workflow flows naturally. No re-upload, no copy-paste between tools.
+        </p>
+      </div>
+
+      <div id="chain-flow-island" class="reveal"></div>
+    </div>
+  </section>
+
+  <!-- ═══ Privacy Block ═══ -->
+  <section class="section section--tight" id="privacy-block">
+    <div class="container text-center">
+      <div class="reveal">
+        <span class="section__label">Privacy Architecture</span>
+        <h2 style="font-size: var(--text-3xl); margin-bottom: var(--space-xl);">
+          Zero Knowledge by Design.
+        </h2>
+      </div>
+      <div class="grid grid-3 gap-xl stagger-group" style="margin-top: var(--space-xl);">
+        <div class="card hover-lift">
+          <h3 class="card__title">No File Storage</h3>
+          <p class="card__text">
+            During P2P and local transfers, files exist only in the sender's and receiver's browsers. Clex's servers never see them.
+          </p>
+        </div>
+        <div class="card hover-lift">
+          <h3 class="card__title">No Account System</h3>
+          <p class="card__text">
+            P2P transfers need no login. No email, no password, no profile. Open a link and go. Google auth is only needed for Drive fallback.
+          </p>
+        </div>
+        <div class="card hover-lift">
+          <h3 class="card__title">Offline Capable</h3>
+          <p class="card__text">
+            After first load, Clex's preparation tools work without internet. Process files locally, then share when you're back online.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ CTA ═══ -->
+  <section class="cta-strip">
+    <div class="container">
+      <h2 class="cta-strip__title reveal">See it in action.</h2>
+      <p class="cta-strip__text reveal">
+        Open the workspace And drop your first file. No setup needed.
+      </p>
+      <div class="reveal">
+        <a href="/workspace" class="btn btn--primary btn--large">Open Workspace →</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ Footer ═══ -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer__grid">
+        <div class="footer__brand">
+          <div class="footer__logo">clex<span class="nav__logo-dot"></span></div>
+          <p class="footer__desc">One workspace. Drop files, prepare them, share them. No friction, no accounts, no server storage.</p>
+        </div>
+        <div class="footer__col">
+          <h4 class="footer__col-title">Product</h4>
+          <nav class="footer__links">
+            <a href="/features" class="footer__link">Features</a>
+            <a href="/how-it-works" class="footer__link">How It Works</a>
+            <a href="/workspace" class="footer__link">Workspace</a>
+            <a href="/getting-started" class="footer__link">Get Started</a>
+          </nav>
+        </div>
+        <div class="footer__col">
+          <h4 class="footer__col-title">Support</h4>
+          <nav class="footer__links">
+            <a href="/faq" class="footer__link">FAQ</a>
+            <a href="mailto:hello@clex.in" class="footer__link">Contact</a>
+          </nav>
+        </div>
+        <div class="footer__col">
+          <h4 class="footer__col-title">Legal</h4>
+          <nav class="footer__links">
+            <a href="/privacy" class="footer__link">Privacy Policy</a>
+            <a href="/terms" class="footer__link">Terms of Service</a>
+          </nav>
+        </div>
+      </div>
+      <div class="footer__bottom">
+        <span class="footer__copyright">© 2025 Clex. All rights reserved.</span>
+        <div class="footer__legal">
+          <a href="/privacy" class="footer__legal-link">Privacy</a>
+          <a href="/terms" class="footer__legal-link">Terms</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>

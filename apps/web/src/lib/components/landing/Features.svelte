@@ -238,12 +238,6 @@
 
   .title-accent {
     color: var(--accent);
-    -webkit-text-stroke: 2px var(--text-1);
-    paint-order: stroke fill;
-  }
-
-  :global(:not(.dark)) .title-accent {
-    -webkit-text-stroke: 2px #000;
   }
 
   .features-sub {
@@ -311,25 +305,24 @@
   /* ── TOOL GRID ───────────────────────────────────── */
   .tools-grid {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 16px;
-    margin-bottom: 56px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 20px;
+    margin-bottom: 64px;
   }
 
-  @media (max-width: 1100px) { .tools-grid { grid-template-columns: repeat(3, 1fr); } }
-  @media (max-width: 760px)  { .tools-grid { grid-template-columns: repeat(2, 1fr); } }
-  @media (max-width: 480px)  { .tools-grid { grid-template-columns: 1fr; } }
+  @media (max-width: 1100px) { .tools-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 760px)  { .tools-grid { grid-template-columns: 1fr; } }
 
   /* ── TOOL CARD ───────────────────────────────────── */
   .tool-card {
-    padding: 22px;
+    padding: 32px 28px;
     border: 2px solid var(--border-hard);
     border-radius: 16px;
     background: var(--surface);
     box-shadow: var(--shadow-md);
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 16px;
     opacity: 0;
     transform: translateY(24px);
     transition:
@@ -358,9 +351,9 @@
   }
 
   .tool-icon-wrap {
-    width: 44px;
-    height: 44px;
-    border-radius: 10px;
+    width: 56px;
+    height: 56px;
+    border-radius: 12px;
     border: 2px solid var(--border-hard);
     background: var(--surface-2);
     box-shadow: var(--shadow-sm);
@@ -369,7 +362,7 @@
   }
 
   .tool-icon {
-    font-size: 20px;
+    font-size: 28px;
     line-height: 1;
   }
 
@@ -386,7 +379,7 @@
 
   .tool-title {
     font-family: var(--font-display);
-    font-size: 15px;
+    font-size: 20px;
     font-weight: 700;
     letter-spacing: -0.02em;
     color: var(--text-1);
@@ -394,7 +387,7 @@
   }
 
   .tool-desc {
-    font-size: 13px;
+    font-size: 15px;
     line-height: 1.65;
     color: var(--text-2);
     flex: 1;

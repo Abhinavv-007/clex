@@ -6,6 +6,20 @@
   <title>Clex — Drop. Prepare. Share. One workspace for all your files.</title>
   <meta name="description" content="Clex is a smart file workspace. Drop files, prepare them with built-in tools, and share them through the fastest route — direct P2P, local network, or Google Drive. No accounts, no server storage, privacy-first.">
   <meta name="keywords" content="file sharing, P2P transfer, WebRTC, file workspace, PDF tools, image compression, privacy">
+  <script>
+    (() => {
+      try {
+        const theme = localStorage.getItem('clex-theme') === 'light' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', theme);
+        document.documentElement.classList.toggle('dark', theme === 'dark');
+        document.documentElement.style.colorScheme = theme;
+      } catch {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        document.documentElement.classList.add('dark');
+        document.documentElement.style.colorScheme = 'dark';
+      }
+    })();
+  </script>
 
   <link rel="stylesheet" href="/css/reset.css">
   <link rel="stylesheet" href="/css/tokens.css">
@@ -26,14 +40,14 @@
         clex<span class="nav__logo-dot"></span>
       </a>
       <div class="nav__links">
-        <a href="/features.html" class="nav__link" data-page="features">Features</a>
-        <a href="/how-it-works.html" class="nav__link" data-page="how-it-works">How It Works</a>
-        <a href="/getting-started.html" class="nav__link" data-page="getting-started">Get Started</a>
-        <a href="/faq.html" class="nav__link" data-page="faq">FAQ</a>
+        <a href="/features" class="nav__link" data-page="features">Features</a>
+        <a href="/how-it-works" class="nav__link" data-page="how-it-works">How It Works</a>
+        <a href="/getting-started" class="nav__link" data-page="getting-started">Get Started</a>
+        <a href="/faq" class="nav__link" data-page="faq">FAQ</a>
       </div>
       <div class="nav__actions">
         <button class="nav__theme-toggle" id="theme-toggle" aria-label="Toggle theme">☀</button>
-        <a href="/workspace.html" class="btn btn--primary btn--small desktop-only">Open Workspace →</a>
+        <a href="/workspace" class="btn btn--primary btn--small desktop-only">Open Workspace →</a>
       </div>
       <button class="nav__hamburger" id="nav-hamburger" aria-label="Toggle menu">
         <span class="nav__hamburger-line"></span>
@@ -45,11 +59,11 @@
 
   <div class="nav__mobile-menu" id="nav-mobile-menu">
     <a href="/" class="nav__mobile-link">Home</a>
-    <a href="/features.html" class="nav__mobile-link">Features</a>
-    <a href="/how-it-works.html" class="nav__mobile-link">How It Works</a>
-    <a href="/getting-started.html" class="nav__mobile-link">Get Started</a>
-    <a href="/faq.html" class="nav__mobile-link">FAQ</a>
-    <a href="/workspace.html" class="nav__mobile-link" style="color: var(--accent);">Open Workspace →</a>
+    <a href="/features" class="nav__mobile-link">Features</a>
+    <a href="/how-it-works" class="nav__mobile-link">How It Works</a>
+    <a href="/getting-started" class="nav__mobile-link">Get Started</a>
+    <a href="/faq" class="nav__mobile-link">FAQ</a>
+    <a href="/workspace" class="nav__mobile-link" style="color: var(--accent);">Open Workspace →</a>
   </div>
 
   <!-- ═══ Hero Section ═══ -->
@@ -75,59 +89,13 @@
           </p>
 
           <div class="hero__actions">
-            <a href="/workspace.html" class="btn btn--primary btn--large">Open Workspace →</a>
-            <a href="/how-it-works.html" class="btn btn--large">See How It Works</a>
+            <a href="/workspace" class="btn btn--primary btn--large">Open Workspace →</a>
+            <a href="/how-it-works" class="btn btn--large">See How It Works</a>
           </div>
         </div>
 
         <div class="hero__visual">
-          <div class="workspace-mock reveal-right">
-            <div class="workspace-mock__titlebar">
-              <div class="workspace-mock__dots">
-                <span class="workspace-mock__dot workspace-mock__dot--red"></span>
-                <span class="workspace-mock__dot workspace-mock__dot--yellow"></span>
-                <span class="workspace-mock__dot workspace-mock__dot--green"></span>
-              </div>
-              <span class="workspace-mock__title">clex workspace</span>
-              <span class="badge badge--outline" style="font-size:0.65rem; padding: 0.2rem 0.5rem;">
-                <span class="badge__dot"></span> Ready
-              </span>
-            </div>
-            <div class="workspace-mock__body">
-              <div class="workspace-mock__dropzone">
-                <div class="workspace-mock__dropzone-text">↓ Drop files here or click to browse</div>
-              </div>
-
-              <div class="workspace-mock__files">
-                <div class="workspace-mock__file">
-                  <span class="workspace-mock__file-icon">◆</span>
-                  <span class="workspace-mock__file-name">presentation.pdf</span>
-                  <span class="workspace-mock__file-size">2.4 MB</span>
-                  <span class="workspace-mock__file-status">ready</span>
-                </div>
-                <div class="workspace-mock__file">
-                  <span class="workspace-mock__file-icon">◆</span>
-                  <span class="workspace-mock__file-name">photo-final.jpg</span>
-                  <span class="workspace-mock__file-size">4.1 MB</span>
-                  <span class="workspace-mock__file-status">compressing...</span>
-                </div>
-                <div class="workspace-mock__file">
-                  <span class="workspace-mock__file-icon">◆</span>
-                  <span class="workspace-mock__file-name">report.docx</span>
-                  <span class="workspace-mock__file-size">890 KB</span>
-                  <span class="workspace-mock__file-status">→ pdf</span>
-                </div>
-              </div>
-
-              <div class="workspace-mock__toolbar">
-                <span class="workspace-mock__tool">Compress</span>
-                <span class="workspace-mock__tool">Merge PDF</span>
-                <span class="workspace-mock__tool">Convert</span>
-                <span class="workspace-mock__tool">ZIP</span>
-                <span class="workspace-mock__tool">Share →</span>
-              </div>
-            </div>
-          </div>
+          <div id="hero-workspace-island" class="reveal-right"></div>
         </div>
       </div>
     </div>
@@ -196,6 +164,21 @@
           </p>
         </div>
       </div>
+
+      <div class="story-microapps">
+        <div class="story-microapps__header reveal">
+          <span class="story-microapps__eyebrow">Interactive Windows</span>
+          <p class="story-microapps__copy">
+            The same windowed micro-apps drive the full product flow: drop in, prepare in place, then choose the fastest route out.
+          </p>
+        </div>
+
+        <div class="story-microapps__grid stagger-group">
+          <div id="home-drop-island" class="story-microapps__item reveal"></div>
+          <div id="home-tools-island" class="story-microapps__item reveal"></div>
+          <div id="home-route-island" class="story-microapps__item reveal"></div>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -221,7 +204,11 @@
       </div>
     </div>
 
-    <div class="container--wide" style="max-width: var(--container-wide); margin: 0 auto; padding: 0;">
+    <div class="container--wide" style="max-width: var(--container-wide); margin: 0 auto; padding: 0 var(--container-padding);">
+      <div class="routing-mock-container reveal">
+        <div id="routing-engine-island" style="max-width: 800px; margin: 0 auto 4rem;"></div>
+      </div>
+
       <div class="routing__grid stagger-group">
         <div class="routing__method routing__method--primary">
           <div class="routing__method-badge">
@@ -361,6 +348,16 @@
           <p class="card__text">Once loaded, Clex works without internet. Process files locally, share when you're back online.</p>
         </div>
       </div>
+
+      <div class="features-preview__demo reveal">
+        <div class="features-preview__demo-header">
+          <span class="features-preview__demo-eyebrow">Chain Tools</span>
+          <p class="features-preview__demo-copy">
+            Compress, convert, bundle, then share without leaving the workspace.
+          </p>
+        </div>
+        <div id="home-chain-flow-island" class="features-preview__demo-flow"></div>
+      </div>
     </div>
   </section>
 
@@ -413,7 +410,7 @@
         No signup. No install. Just open Clex and start dropping files. It's that simple.
       </p>
       <div class="reveal">
-        <a href="/workspace.html" class="btn btn--primary btn--large">Open Workspace →</a>
+        <a href="/workspace" class="btn btn--primary btn--large">Open Workspace →</a>
       </div>
     </div>
   </section>
@@ -436,33 +433,33 @@
         <div class="footer__col">
           <h4 class="footer__col-title">Product</h4>
           <nav class="footer__links">
-            <a href="/features.html" class="footer__link">Features</a>
-            <a href="/how-it-works.html" class="footer__link">How It Works</a>
-            <a href="/workspace.html" class="footer__link">Workspace</a>
-            <a href="/getting-started.html" class="footer__link">Get Started</a>
+            <a href="/features" class="footer__link">Features</a>
+            <a href="/how-it-works" class="footer__link">How It Works</a>
+            <a href="/workspace" class="footer__link">Workspace</a>
+            <a href="/getting-started" class="footer__link">Get Started</a>
           </nav>
         </div>
         <div class="footer__col">
           <h4 class="footer__col-title">Support</h4>
           <nav class="footer__links">
-            <a href="/faq.html" class="footer__link">FAQ</a>
-            <a href="/getting-started.html" class="footer__link">Onboarding</a>
+            <a href="/faq" class="footer__link">FAQ</a>
+            <a href="/getting-started" class="footer__link">Onboarding</a>
             <a href="mailto:hello@clex.in" class="footer__link">Contact</a>
           </nav>
         </div>
         <div class="footer__col">
           <h4 class="footer__col-title">Legal</h4>
           <nav class="footer__links">
-            <a href="/privacy.html" class="footer__link">Privacy Policy</a>
-            <a href="/terms.html" class="footer__link">Terms of Service</a>
+            <a href="/privacy" class="footer__link">Privacy Policy</a>
+            <a href="/terms" class="footer__link">Terms of Service</a>
           </nav>
         </div>
       </div>
       <div class="footer__bottom">
         <span class="footer__copyright">© 2025 Clex. All rights reserved.</span>
         <div class="footer__legal">
-          <a href="/privacy.html" class="footer__legal-link">Privacy</a>
-          <a href="/terms.html" class="footer__legal-link">Terms</a>
+          <a href="/privacy" class="footer__legal-link">Privacy</a>
+          <a href="/terms" class="footer__legal-link">Terms</a>
         </div>
       </div>
     </div>

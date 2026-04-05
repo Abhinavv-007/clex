@@ -40,8 +40,10 @@
 }
 
 .gs-step__title {
-  font-size: var(--text-2xl);
+  font-size: clamp(2rem, 3.2vw, 3rem);
   text-transform: uppercase;
+  line-height: 0.96;
+  letter-spacing: -0.035em;
 }
 
 .gs-step__text {
@@ -88,9 +90,10 @@
 
 .tip-card__title {
   font-family: var(--font-display);
-  font-size: var(--text-lg);
+  font-size: clamp(1.45rem, 2.1vw, 2rem);
   text-transform: uppercase;
   margin-bottom: var(--space-sm);
+  line-height: 1;
 }
 
 .tip-card__text {

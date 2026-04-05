@@ -1,248 +1,177 @@
 <script lang="ts">
   import { onMount } from 'svelte'
+  import DropZoneMock from '$components/mocks/DropZoneMock.svelte'
+  import RouteSelectionMock from '$components/mocks/RouteSelectionMock.svelte'
+  import ToolChainMock from '$components/mocks/ToolChainMock.svelte'
+  import WindowChrome from '$components/mocks/WindowChrome.svelte'
   import Footer from '$components/landing/Footer.svelte'
 
-  const phases = [
-    {
-      num: '01',
-      title: 'Drop your files',
-      subtitle: 'The workspace responds immediately.',
-      body: [
-        'Drag and drop any file — or click to browse. Clex reads every file type instantly and builds a working queue without requiring you to specify anything first.',
-        'JPEG, PNG, WebP, PDF, DOCX, ZIP — all classified automatically. The interface adapts to what you dropped, surfacing the right preparation tools for that file type.',
-      ],
-      details: [
-        { label: 'Supported types', value: '12+ formats auto-classified' },
-        { label: 'Upload to server?', value: 'Never — all processing is local' },
-        { label: 'File size limit', value: 'No limit for P2P transfer' },
-      ],
-      visual: '01',
-    },
-    {
-      num: '02',
-      title: 'Prepare them',
-      subtitle: 'Tools chain together without friction.',
-      body: [
-        'Use the tool panel to compress, convert, merge, split, or bundle your files. Each operation runs entirely in your browser — no upload, no wait, no server round-trip.',
-        'When you finish one operation, Clex suggests the next logical step. Compress an image, and it offers to convert it. Convert a DOCX, and it offers to share or ZIP it.',
-      ],
-      details: [
-        { label: 'Processing location', value: 'Your browser, 100%' },
-        { label: 'Tool chaining', value: 'Automatic suggestions' },
-        { label: 'Formats', value: 'Images · PDFs · Docs · Archives' },
-      ],
-      visual: '02',
-    },
-    {
-      num: '03',
-      title: 'Route and share',
-      subtitle: 'Clex picks the fastest path. You stay in control.',
-      body: [
-        'Click Share and Clex detects the best route: direct WebRTC if a receiver is on the other end, local network if you\'re on the same Wi-Fi, or Google Drive if you need a link.',
-        'The receiver gets a clean pull experience — a room code, a QR scan, or a Drive link. They don\'t need Clex installed. Any modern browser works.',
-      ],
-      details: [
-        { label: 'Primary route', value: 'Direct P2P via WebRTC' },
-        { label: 'Fast lane', value: 'Local network (same Wi-Fi)' },
-        { label: 'Fallback', value: 'Google Drive link' },
-        { label: 'Receiver needs?', value: 'Just a browser' },
-      ],
-      visual: '03',
-    },
-  ]
-
-  let visible = false
-  let sectionEl: HTMLElement
+  let heroVisible = false
+  let heroEl: HTMLElement
 
   onMount(() => {
     const obs = new IntersectionObserver(
-      ([e]) => { if (e.isIntersecting) { visible = true; obs.disconnect() } },
+      ([e]) => { if (e.isIntersecting) { heroVisible = true; obs.disconnect() } },
       { threshold: 0.05 }
     )
-    if (sectionEl) obs.observe(sectionEl)
+    if (heroEl) obs.observe(heroEl)
+
+    const revealEls = document.querySelectorAll('.reveal-scroll')
+    revealEls.forEach((el) => {
+      const io = new IntersectionObserver(([e]) => {
+        if (e.isIntersecting) {
+          ;(e.target as HTMLElement).classList.add('in-view')
+          io.disconnect()
+        }
+      }, { threshold: 0.1 })
+      io.observe(el)
+    })
+
     return () => obs.disconnect()
   })
+
+  const steps = [
+    {
+      num: '01',
+      title: 'Drop Your Files',
+      text: "Open Clex in your browser. Drag files in — images, PDFs, documents, anything. They stay in your browser's memory. Nothing gets uploaded to any server.",
+      tags: ['Drag & Drop', 'Click to Browse', 'Paste from Clipboard'],
+      visual: 'drop',
+      flip: false,
+    },
+    {
+      num: '02',
+      title: 'Prepare & Transform',
+      text: 'Use built-in tools to process your files before sharing. Compress images, merge PDFs, convert DOCX to PDF, bundle into ZIP. Chain operations together — one flows into the next.',
+      tags: ['Compress', 'Merge', 'Convert', 'Split', 'ZIP', 'Chain'],
+      visual: 'tools',
+      flip: true,
+    },
+    {
+      num: '03',
+      title: 'Share & Deliver',
+      text: "Hit share. Clex scans the network, detects available routes, and picks the fastest path. Direct P2P is always tried first. Local network for same-Wi-Fi speed. Google Drive when direct isn't possible.",
+      tags: ['P2P Default', 'Local Network', 'Drive Fallback'],
+      visual: 'share',
+      flip: false,
+    },
+  ]
+
+  const edgeCases = [
+    {
+      title: "What if I'm offline?",
+      text: 'After Clex loads once, the preparation tools work completely offline. Compress images, merge PDFs, convert documents — all without internet. Share when you reconnect.',
+    },
+    {
+      title: 'What about large files?',
+      text: "Local network transfer handles large files at LAN speed. For remote transfers, P2P streams chunks progressively. Drive has Google's file limits for the fallback path.",
+    },
+    {
+      title: "What if P2P fails?",
+      text: "Clex automatically detects when direct P2P can't establish. It offers local network or Google Drive as alternatives. You choose — Clex never switches without asking.",
+    },
+    {
+      title: 'What browsers work?',
+      text: 'Chrome, Firefox, Safari, Edge — any modern browser with WebRTC support. Mobile browsers work too. Clex adapts the interface to your screen size automatically.',
+    },
+  ]
 </script>
 
 <svelte:head>
-  <title>How it works — Clex</title>
-  <meta name="description" content="Three steps: drop files, prepare them in your browser, then share via direct P2P, local network, or Google Drive. No uploads, no accounts." />
+  <title>How It Works — Clex | Drop, Prepare, Share</title>
+  <meta name="description" content="Three steps: drop files into your workspace, prepare them with built-in tools, and share through the fastest route. See how Clex connects preparation to delivery." />
 </svelte:head>
 
-<section class="page-hero section" bind:this={sectionEl}>
+<!-- Hero -->
+<section class="hiw-hero" bind:this={heroEl}>
   <div class="container">
-    <div class="reveal" class:is-visible={visible}>
-      <div class="section-label enter-1"><span class="section-label-dot" />Three steps</div>
-      <h1 class="page-title enter-2">How Clex works.</h1>
-      <p class="page-sub enter-3">
-        Drop. Prepare. Share. The entire workflow happens in one browser tab —
-        no accounts, no server uploads, no context switches.
-      </p>
-    </div>
+    <span class="section-label hiw-label" class:enter-done={heroVisible}>
+      <span class="section-label-dot"></span>
+      The Process
+    </span>
+    <h1 class="hiw-h1" class:enter-done={heroVisible}>
+      Three Steps.<br>Zero Friction.
+    </h1>
+    <p class="hiw-lead" class:enter-done={heroVisible}>
+      Clex connects preparation and delivery into a single flow. Here's exactly how it works, from first drop to final delivery.
+    </p>
   </div>
 </section>
 
-<!-- Phase timeline -->
-<section class="phases section">
+<!-- Giant Steps -->
+<section class="giant-steps-section">
   <div class="container">
-    {#each phases as phase, i}
-      <div class="phase" class:phase-reverse={i % 2 !== 0}>
-        <!-- Step indicator -->
-        <div class="phase-num-col">
-          <div class="phase-num font-mono">{phase.num}</div>
-          {#if i < phases.length - 1}
-            <div class="phase-connector" />
-          {/if}
-        </div>
-
-        <!-- Content -->
-        <div class="phase-content">
-          <div class="phase-header">
-            <h2 class="phase-title">{phase.title}</h2>
-            <p class="phase-subtitle">{phase.subtitle}</p>
+    <div class="giant-steps">
+      {#each steps as step}
+        <div class="giant-step reveal-scroll" class:giant-step--flip={step.flip}>
+          <!-- Content side -->
+          <div class="giant-step__content">
+            <div class="gs-num font-mono">{step.num}</div>
+            <h2 class="gs-title">{step.title}</h2>
+            <p class="gs-text">{step.text}</p>
+            <div class="gs-tags">
+              {#each step.tags as tag, ti}
+                <span class="gs-badge" class:gs-badge-accent={ti === 0 && step.num === '03'}>{tag}</span>
+              {/each}
+            </div>
           </div>
 
-          <div class="phase-body">
-            {#each phase.body as para}
-              <p class="phase-para">{para}</p>
-            {/each}
-          </div>
-
-          <!-- Details table -->
-          <div class="phase-details">
-            {#each phase.details as detail}
-              <div class="detail-row">
-                <span class="detail-label font-mono">{detail.label}</span>
-                <span class="detail-value">{detail.value}</span>
-              </div>
-            {/each}
-          </div>
-        </div>
-
-        <!-- Visual -->
-        <div class="phase-visual phase-visual-{phase.visual}">
-          <div class="visual-shell">
-            {#if phase.visual === '01'}
-              <div class="visual-drop">
-                <div class="drop-zone">
-                  <div class="drop-icon">⬇</div>
-                  <p class="font-mono">Drop files here</p>
-                </div>
-                <div class="drop-files">
-                  <div class="drop-file">
-                    <span class="drop-file-icon" style="background:#BFF3FF;color:#04131D;border-color:#000">IMG</span>
-                    <span>hero.jpg · 4.8MB</span>
-                  </div>
-                  <div class="drop-file">
-                    <span class="drop-file-icon" style="background:#FFE2B4;color:#3D2200;border-color:#000">PDF</span>
-                    <span>brief.pdf · 2.1MB</span>
-                  </div>
-                  <div class="drop-file">
-                    <span class="drop-file-icon" style="background:#DDD6FE;color:#2D1B69;border-color:#000">DOC</span>
-                    <span>pricing.docx · 340KB</span>
-                  </div>
-                </div>
-              </div>
-            {:else if phase.visual === '02'}
-              <div class="visual-prepare">
-                <div class="prep-file">
-                  <span class="prep-label font-mono">hero.jpg</span>
-                  <div class="prep-bar">
-                    <div class="prep-fill" style="width: 72%" />
-                  </div>
-                  <span class="prep-result">4.8MB → 1.4MB</span>
-                </div>
-                <div class="prep-tools">
-                  <div class="prep-chip chip-active">Compress</div>
-                  <div class="prep-chip">Convert</div>
-                  <div class="prep-chip">Merge PDF</div>
-                  <div class="prep-chip">ZIP</div>
-                </div>
-                <div class="prep-chain">
-                  <span class="font-mono text-text-3" style="font-size:10px;letter-spacing:.1em;text-transform:uppercase">Next suggestion</span>
-                  <div class="chain-suggest">Convert to WebP →</div>
-                </div>
-              </div>
+          <!-- Visual panel side -->
+          <WindowChrome
+            title={step.visual === 'drop' ? 'Workspace — Drop Zone' : step.visual === 'tools' ? 'Workspace — Tools Active' : 'Workspace — Route Selection'}
+            compact={true}
+            bodyMinHeight="240px"
+          >
+            {#if step.visual === 'drop'}
+              <DropZoneMock />
+            {:else if step.visual === 'tools'}
+              <ToolChainMock />
             {:else}
-              <div class="visual-share">
-                <div class="share-code">
-                  <span class="code-label font-mono">Room code</span>
-                  <div class="code-display font-mono">A7·M2·QX</div>
-                </div>
-                <div class="share-route">
-                  <div class="route-item route-active">
-                    <span class="route-dot" style="background:var(--green)" />
-                    <span>Direct P2P</span>
-                    <span class="route-tag">12ms</span>
-                  </div>
-                  <div class="route-item">
-                    <span class="route-dot" style="background:var(--cyan)" />
-                    <span>Local network</span>
-                    <span class="route-tag">LAN</span>
-                  </div>
-                  <div class="route-item">
-                    <span class="route-dot" style="background:var(--violet)" />
-                    <span>Google Drive</span>
-                    <span class="route-tag">Fallback</span>
-                  </div>
-                </div>
-              </div>
+              <RouteSelectionMock />
             {/if}
-          </div>
+          </WindowChrome>
         </div>
-      </div>
-    {/each}
-  </div>
-</section>
-
-<!-- Privacy call-out -->
-<section class="privacy-banner section-sm">
-  <div class="container">
-    <div class="privacy-card">
-      <div class="privacy-left">
-        <h2 class="privacy-title">Privacy isn't a feature — it's the architecture.</h2>
-        <p class="privacy-body">
-          During direct P2P transfer, Clex's signaling server handles WebRTC handshaking only.
-          No file bytes pass through it. Your files go browser-to-browser.
-          For Drive transfers, files go directly to your own Google account — not ours.
-        </p>
-        <a href="/privacy" class="btn-secondary">Read the privacy policy →</a>
-      </div>
-      <div class="privacy-right">
-        <div class="privacy-stat">
-          <span class="ps-value">0</span>
-          <span class="ps-label">File bytes through Clex servers (P2P)</span>
-        </div>
-        <div class="privacy-divider" />
-        <div class="privacy-stat">
-          <span class="ps-value">100%</span>
-          <span class="ps-label">Client-side file processing</span>
-        </div>
-      </div>
+      {/each}
     </div>
   </div>
 </section>
 
-<!-- Next steps -->
-<section class="next-section section-sm">
+<!-- Banner -->
+<div class="hiw-banner reveal-scroll">
   <div class="container">
-    <h2 class="next-title">Ready to try it?</h2>
-    <div class="next-cards">
-      <a href="/workspace" class="next-card next-card-primary">
-        <span class="next-card-icon">⬡</span>
-        <strong>Open workspace</strong>
-        <p>Start dropping files now. No signup.</p>
-      </a>
-      <a href="/getting-started" class="next-card">
-        <span class="next-card-icon">◎</span>
-        <strong>Getting started guide</strong>
-        <p>Step-by-step walkthrough for first-time users.</p>
-      </a>
-      <a href="/features" class="next-card">
-        <span class="next-card-icon">⊕</span>
-        <strong>See all features</strong>
-        <p>Every tool, explained in detail.</p>
-      </a>
+    <p class="hiw-banner-text">Files go from A → B.<br>Nothing in between.</p>
+  </div>
+</div>
+
+<!-- Edge Cases -->
+<section class="section edge-section">
+  <div class="container">
+    <div class="edge-header reveal-scroll">
+      <span class="section-label" style="justify-content:flex-start;">
+        <span class="section-label-dot"></span>What If…?
+      </span>
+      <h2 class="edge-title">Clex Handles<br>the Edge Cases.</h2>
+    </div>
+    <div class="edge-grid">
+      {#each edgeCases as card}
+        <div class="edge-card reveal-scroll">
+          <h3 class="edge-card-title">{card.title}</h3>
+          <p class="edge-card-text">{card.text}</p>
+        </div>
+      {/each}
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="hiw-cta">
+  <div class="container">
+    <h2 class="hiw-cta-title reveal-scroll">
+      Simple enough?<br><span class="hiw-cta-accent">Try it now.</span>
+    </h2>
+    <p class="hiw-cta-text reveal-scroll">No download, no install, no signup. Just open and drop.</p>
+    <div class="reveal-scroll">
+      <a href="/workspace" class="btn-accent hiw-cta-btn">Open Workspace →</a>
     </div>
   </div>
 </section>
@@ -250,314 +179,170 @@
 <Footer />
 
 <style>
-  .page-hero { padding-top: 140px; border-bottom: 2px solid var(--border-hard); }
+  /* ── Scroll reveal ─────────────────────── */
+  .reveal-scroll {
+    opacity: 0;
+    transform: translateY(36px);
+    transition: opacity 0.55s var(--ease-out), transform 0.55s var(--ease-out);
+  }
+  :global(.reveal-scroll.in-view) { opacity: 1; transform: none; }
 
-  .page-title {
+  /* ── Hero entry animations ─────────────── */
+  .hiw-label { opacity: 0; transform: translateY(16px); transition: opacity .5s var(--ease-out), transform .5s var(--ease-out); }
+  .hiw-h1    { opacity: 0; transform: translateY(28px); transition: opacity .55s var(--ease-out) .1s, transform .55s var(--ease-out) .1s; }
+  .hiw-lead  { opacity: 0; transform: translateY(20px); transition: opacity .5s var(--ease-out) .2s, transform .5s var(--ease-out) .2s; }
+  .hiw-label.enter-done, .hiw-h1.enter-done, .hiw-lead.enter-done { opacity: 1; transform: none; }
+
+  /* ── Hero ─────────────────────────────── */
+  .hiw-hero {
+    padding: 10rem 0 5rem;
+    background: var(--canvas);
+    border-bottom: 2px solid var(--border-hard);
+  }
+  .hiw-h1 {
     font-family: var(--font-display);
     font-size: clamp(3rem, 7vw, 6rem);
     font-weight: 700;
-    letter-spacing: -0.05em;
     line-height: 0.95;
+    letter-spacing: -0.04em;
     color: var(--text-1);
-    margin: 12px 0 16px;
+    margin: 16px 0 20px;
+  }
+  .hiw-lead {
+    font-size: clamp(16px, 2vw, 18px);
+    color: var(--text-2);
+    line-height: 1.72;
+    max-width: 50ch;
   }
 
-  .page-sub { font-size: 18px; line-height: 1.7; color: var(--text-2); max-width: 52ch; }
+  /* ── Giant Steps ─────────────────────── */
+  .giant-steps-section { padding: 0; }
+  .giant-steps { display: flex; flex-direction: column; }
 
-  /* ── PHASES ──────────────────────────────────────── */
-  .phases { display: flex; flex-direction: column; gap: 0; }
-
-  .phase {
+  .giant-step {
     display: grid;
-    grid-template-columns: 72px 1fr 1fr;
-    gap: 40px;
-    padding-bottom: 64px;
-    border-bottom: 1px solid var(--border);
-    margin-bottom: 64px;
-    align-items: start;
-  }
-
-  .phase:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
-
-  @media (max-width: 900px) {
-    .phase { grid-template-columns: 48px 1fr; }
-    .phase-visual { display: none; }
-  }
-
-  @media (max-width: 640px) {
-    .phase { grid-template-columns: 1fr; }
-    .phase-num-col { display: flex; align-items: center; gap: 16px; }
-    .phase-connector { display: none; }
-  }
-
-  /* ── NUM COL ─────────────────────────────────────── */
-  .phase-num-col {
-    display: flex;
-    flex-direction: column;
+    grid-template-columns: 1fr 1fr;
+    gap: 5rem;
+    padding: 5rem 0;
+    border-bottom: 2px solid var(--border);
     align-items: center;
-    gap: 0;
   }
+  .giant-step:last-child { border-bottom: none; }
 
-  .phase-num {
-    width: 52px;
-    height: 52px;
-    border-radius: 12px;
-    border: 2px solid var(--border-hard);
-    background: var(--surface);
-    box-shadow: var(--shadow-sm);
-    display: grid;
-    place-items: center;
-    font-size: 14px;
+  /* Flip: move visual to left by reversing column order */
+  .giant-step--flip { direction: rtl; }
+  .giant-step--flip > * { direction: ltr; }
+
+  .gs-num {
+    font-size: clamp(5rem, 10vw, 9rem);
     font-weight: 700;
-    letter-spacing: 0.06em;
-    color: var(--text-1);
-    flex-shrink: 0;
+    line-height: 0.85;
+    color: transparent;
+    -webkit-text-stroke: 3px var(--accent);
+    margin-bottom: 24px;
+    letter-spacing: -0.01em;
+    display: block;
   }
+  :global(.dark) .gs-num { -webkit-text-stroke: 3px var(--accent); }
 
-  .phase-connector {
-    width: 2px;
-    flex: 1;
-    min-height: 80px;
-    background: var(--border);
-    margin-top: 12px;
-  }
-
-  /* ── PHASE CONTENT ───────────────────────────────── */
-  .phase-header { margin-bottom: 20px; }
-
-  .phase-title {
+  .gs-title {
     font-family: var(--font-display);
-    font-size: clamp(1.6rem, 3vw, 2.4rem);
+    font-size: clamp(1.8rem, 3.5vw, 3rem);
     font-weight: 700;
     letter-spacing: -0.03em;
     color: var(--text-1);
-    margin-bottom: 6px;
+    margin-bottom: 16px;
+    line-height: 1.05;
   }
-
-  .phase-subtitle {
+  .gs-text {
+    font-size: 16px;
+    color: var(--text-2);
+    max-width: 45ch;
+    line-height: 1.75;
+    margin-bottom: 24px;
+  }
+  .gs-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+  .gs-badge {
     font-family: var(--font-mono);
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--accent);
-  }
-
-  .phase-para { font-size: 15px; line-height: 1.72; color: var(--text-2); margin-bottom: 12px; }
-
-  .phase-details {
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-    margin-top: 24px;
-    border: 2px solid var(--border-hard);
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: var(--shadow-sm);
-  }
-
-  .detail-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-    padding: 12px 16px;
-    border-bottom: 1px solid var(--border);
-  }
-
-  .detail-row:last-child { border-bottom: none; }
-
-  .detail-label {
     font-size: 10px;
     font-weight: 700;
-    letter-spacing: 0.1em;
     text-transform: uppercase;
-    color: var(--text-3);
-  }
-
-  .detail-value { font-size: 13px; font-weight: 600; color: var(--text-1); text-align: right; }
-
-  /* ── PHASE VISUALS ───────────────────────────────── */
-  .phase-visual {
+    letter-spacing: 0.08em;
+    padding: 5px 12px;
     border: 2px solid var(--border-hard);
-    border-radius: 18px;
-    background: var(--surface-2);
-    box-shadow: var(--shadow-md);
-    overflow: hidden;
-  }
-
-  .visual-shell { padding: 24px; }
-
-  /* DROP */
-  .visual-drop { display: flex; flex-direction: column; gap: 16px; }
-
-  .drop-zone {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    padding: 28px;
-    border: 2px dashed var(--border-strong);
-    border-radius: 12px;
-    background: var(--surface);
-  }
-
-  .drop-icon { font-size: 28px; animation: float 3s ease-in-out infinite; }
-  .drop-zone p { font-family: var(--font-mono); font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-3); }
-
-  .drop-files { display: flex; flex-direction: column; gap: 8px; }
-
-  .drop-file {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 12px;
-    border: 1.5px solid var(--border-hard);
-    border-radius: 10px;
-    background: var(--surface);
+    background: transparent;
+    color: var(--text-2);
     box-shadow: 2px 2px 0 var(--border-hard);
-    font-size: 12px;
-    color: var(--text-1);
+  }
+  .gs-badge-accent { background: var(--accent); color: #000; border-color: #000; box-shadow: 2px 2px 0 #000; }
+
+  /* ── Step Visual Panel ── */
+  /* ── Banner ─────────────────────────── */
+  .hiw-banner {
+    padding: 5rem 0; text-align: center;
+    background: var(--accent); color: #000;
+    border-top: 3px solid #000; border-bottom: 3px solid #000;
+  }
+  .hiw-banner-text {
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 5vw, 4.5rem);
+    font-weight: 700; text-transform: uppercase;
+    line-height: 1.1; color: #000; letter-spacing: -0.03em;
   }
 
-  .drop-file-icon {
-    width: 30px; height: 30px; border-radius: 7px; display: grid; place-items: center;
-    font-family: var(--font-mono); font-size: 9px; font-weight: 700; flex-shrink: 0; border: 1.5px solid;
+  /* ── Edge Cases ─────────────────────── */
+  .edge-section { background: var(--canvas); }
+  .edge-header { margin-bottom: 40px; }
+  .edge-title {
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 4vw, 3.5rem);
+    font-weight: 700; letter-spacing: -0.04em;
+    color: var(--text-1); margin-top: 12px; line-height: 1.05;
   }
-
-  /* PREPARE */
-  .visual-prepare { display: flex; flex-direction: column; gap: 16px; }
-
-  .prep-file { display: flex; flex-direction: column; gap: 8px; }
-
-  .prep-label { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; color: var(--text-2); }
-
-  .prep-bar { height: 6px; border-radius: 3px; background: var(--border); overflow: hidden; border: 1px solid var(--border-hard); }
-
-  .prep-fill { height: 100%; background: var(--accent); border-radius: 3px; }
-
-  .prep-result { font-family: var(--font-mono); font-size: 10px; font-weight: 700; color: var(--green); }
-
-  .prep-tools { display: flex; flex-wrap: wrap; gap: 6px; }
-
-  .prep-chip {
-    padding: 6px 12px; border-radius: 7px; border: 1.5px solid var(--border);
-    background: var(--surface); font-family: var(--font-mono); font-size: 10px; font-weight: 700;
-    letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-3);
+  .edge-grid {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; max-width: 1100px;
   }
-
-  .chip-active {
-    background: var(--text-1); color: var(--text-inv);
-    border-color: var(--border-hard); box-shadow: 2px 2px 0 var(--border-hard);
+  .edge-card {
+    padding: 32px;
+    border: 2px solid var(--border-hard); background: var(--surface);
+    box-shadow: var(--shadow-md);
+    transition: transform 180ms ease, box-shadow 180ms ease;
   }
-
-  .prep-chain {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    padding: 12px;
-    border: 1.5px solid var(--accent-border);
-    border-radius: 10px;
-    background: var(--accent-dim);
+  .edge-card:hover { transform: translate(-3px,-3px); box-shadow: var(--shadow-lg); }
+  .edge-card-title {
+    font-family: var(--font-display); font-size: 16px; font-weight: 700;
+    text-transform: uppercase; color: var(--text-1); margin-bottom: 10px;
   }
+  .edge-card-text { font-size: 14px; color: var(--text-2); line-height: 1.7; margin: 0; }
 
-  .chain-suggest {
-    font-family: var(--font-mono); font-size: 11px; font-weight: 700; color: var(--text-1); letter-spacing: 0.04em;
+  /* ── CTA ────────────────────────────── */
+  .hiw-cta {
+    padding: 6rem 0; text-align: center;
+    background: var(--surface-2);
+    border-top: 2px solid var(--border-hard);
   }
-
-  /* SHARE */
-  .visual-share { display: flex; flex-direction: column; gap: 16px; }
-
-  .share-code { display: flex; flex-direction: column; gap: 8px; }
-
-  .code-label { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-3); }
-
-  .code-display {
-    font-size: 28px; font-weight: 700; letter-spacing: 0.2em; color: var(--text-1);
-    padding: 14px; border: 2px solid var(--border-hard); border-radius: 10px;
-    background: var(--surface); box-shadow: var(--shadow-sm); text-align: center;
+  .hiw-cta-title {
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 5vw, 4rem); font-weight: 700;
+    letter-spacing: -0.04em; line-height: 1.05;
+    color: var(--text-1); margin-bottom: 16px;
   }
-
-  .share-route { display: flex; flex-direction: column; gap: 8px; }
-
-  .route-item {
-    display: flex; align-items: center; gap: 10px; padding: 10px 14px;
-    border: 1.5px solid var(--border); border-radius: 9px;
-    font-size: 13px; font-weight: 600; color: var(--text-2);
+  .hiw-cta-accent { color: var(--accent); }
+  .hiw-cta-text {
+    font-size: 17px; color: var(--text-2); max-width: 40ch;
+    margin: 0 auto 32px; line-height: 1.7;
   }
+  .hiw-cta-btn { font-size: 15px; padding: 14px 30px; }
 
-  .route-active { border-color: var(--border-hard); background: var(--surface); box-shadow: 2px 2px 0 var(--border-hard); color: var(--text-1); }
-
-  .route-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-  .route-tag { margin-left: auto; font-family: var(--font-mono); font-size: 10px; font-weight: 700; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.08em; }
-
-  /* ── PRIVACY BANNER ──────────────────────────────── */
-  .privacy-banner { border-top: 2px solid var(--border-hard); background: var(--surface-2); }
-
-  .privacy-card {
-    display: grid; grid-template-columns: 1.4fr 1fr; gap: 0;
-    border: 2px solid var(--border-hard); border-radius: 20px;
-    overflow: hidden; box-shadow: var(--shadow-xl); background: var(--surface);
+  /* ── Responsive ─────────────────────── */
+  @media (max-width: 900px) {
+    .giant-step {
+      grid-template-columns: 1fr;
+      gap: 2.5rem; padding: 3.5rem 0;
+      direction: ltr;
+    }
+    .giant-step--flip { direction: ltr; }
+    .gs-num { font-size: 5rem; }
+    .edge-grid { grid-template-columns: 1fr; }
   }
-
-  @media (max-width: 760px) { .privacy-card { grid-template-columns: 1fr; } }
-
-  .privacy-left { padding: 40px; display: flex; flex-direction: column; gap: 20px; }
-
-  .privacy-title { font-family: var(--font-display); font-size: clamp(1.3rem, 2.5vw, 2rem); font-weight: 700; letter-spacing: -0.03em; color: var(--text-1); }
-
-  .privacy-body { font-size: 14px; line-height: 1.7; color: var(--text-2); }
-
-  .privacy-right { display: flex; flex-direction: column; border-left: 2px solid var(--border); }
-
-  @media (max-width: 760px) { .privacy-right { border-left: none; border-top: 2px solid var(--border); } }
-
-  .privacy-stat {
-    flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
-    gap: 8px; padding: 32px; text-align: center;
-  }
-
-  .privacy-divider { height: 2px; background: var(--border); }
-
-  .ps-value {
-    font-family: var(--font-display); font-size: clamp(2.5rem, 4vw, 4rem); font-weight: 700;
-    letter-spacing: -0.05em; line-height: 1; color: var(--accent);
-    -webkit-text-stroke: 2px var(--text-1); paint-order: stroke fill;
-  }
-
-  :global(:not(.dark)) .ps-value { -webkit-text-stroke: 2px #000; }
-
-  .ps-label { font-family: var(--font-mono); font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-3); max-width: 14ch; }
-
-  /* ── NEXT SECTION ────────────────────────────────── */
-  .next-section { border-top: 2px solid var(--border-hard); }
-
-  .next-title {
-    font-family: var(--font-display); font-size: clamp(1.5rem, 3vw, 2.5rem); font-weight: 700;
-    letter-spacing: -0.03em; color: var(--text-1); margin-bottom: 32px;
-  }
-
-  .next-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
-
-  @media (max-width: 760px) { .next-cards { grid-template-columns: 1fr; } }
-
-  .next-card {
-    padding: 28px 24px; border: 2px solid var(--border-hard); border-radius: 18px;
-    background: var(--surface); box-shadow: var(--shadow-md); text-decoration: none;
-    display: flex; flex-direction: column; gap: 10px;
-    transition: transform 160ms ease, box-shadow 160ms ease;
-  }
-
-  .next-card:hover { transform: translate(-2px, -2px); box-shadow: var(--shadow-lg); }
-
-  .next-card-primary { background: var(--accent); border-color: #000; box-shadow: 4px 4px 0 #000; }
-  .next-card-primary:hover { box-shadow: 6px 6px 0 #000; }
-  .next-card-primary strong, .next-card-primary p { color: #000; }
-
-  .next-card-icon { font-size: 28px; }
-
-  .next-card strong { font-family: var(--font-display); font-size: 16px; font-weight: 700; color: var(--text-1); }
-
-  .next-card p { font-size: 13px; color: var(--text-2); line-height: 1.5; }
 </style>

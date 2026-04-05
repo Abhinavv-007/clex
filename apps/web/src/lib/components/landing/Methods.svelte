@@ -82,7 +82,7 @@
       </div>
       <h2 class="methods-title">
         Three routes.<br/>
-        <span class="title-outline">One decision.</span>
+        <span class="title-accent">One decision.</span>
       </h2>
       <p class="methods-sub">
         Clex surfaces the best transfer path for your situation.
@@ -139,37 +139,37 @@
             </ul>
 
             <div class="detail-scene">
-              <div class="scene-row">
-                <div class="scene-node">
-                  <div class="node-ring"
-                    class:ring-cyan={route.id === 'lan'}
-                    class:ring-violet={route.id === 'drive'}
-                  />
-                  <span class="node-label font-mono">
-                    {route.id === 'p2p' ? 'Browser A' : route.id === 'lan' ? 'Device A' : 'Your Browser'}
-                  </span>
+              <div class="routing-diagram">
+                <!-- Sender -->
+                <div class="device-node">
+                  <div class="device-node-icon">💻</div>
+                  <div class="device-node-label font-mono">SENDER</div>
                 </div>
-                <div class="scene-beam">
-                  <div class="scene-line"
-                    class:line-cyan={route.id === 'lan'}
-                    class:line-violet={route.id === 'drive'}
-                  />
-                  <div class="scene-pulse"
-                    class:pulse-cyan={route.id === 'lan'}
-                    class:pulse-violet={route.id === 'drive'}
-                  />
-                  <div class="scene-beam-label font-mono">
-                    {route.id === 'p2p' ? 'WebRTC · Encrypted' : route.id === 'lan' ? 'Local · No internet' : 'OAuth · Your Drive'}
-                  </div>
+
+                <!-- Routes -->
+                <div class="route-lines">
+                  {#each [
+                    { id: 'p2p',   label: 'Direct P2P',   badge: 'Fastest',  color: 'var(--green)'  },
+                    { id: 'lan',   label: 'Network LAN',  badge: 'Local',    color: 'var(--cyan)'   },
+                    { id: 'drive', label: 'Google Drive', badge: 'Fallback', color: 'var(--violet)'  },
+                  ] as r}
+                    <div class="route-line" class:route-line-active={route.id === r.id} class:route-line-inactive={route.id !== r.id}>
+                      <div class="route-line-track">
+                        <div class="route-line-bar" style={route.id === r.id ? `background: ${r.color};` : ''}></div>
+                        <div class="route-line-dot" style={route.id === r.id ? `background: ${r.color}; border-color: ${r.color};` : ''}></div>
+                      </div>
+                      <div class="route-line-label">
+                        <span class="route-line-badge" style={route.id === r.id ? `color: ${r.color}; border-color: ${r.color}; background: ${r.color}15;` : ''}>{r.badge}</span>
+                        <span class="route-line-name">{r.label}</span>
+                      </div>
+                    </div>
+                  {/each}
                 </div>
-                <div class="scene-node">
-                  <div class="node-ring node-ring-alt"
-                    class:ring-cyan={route.id === 'lan'}
-                    class:ring-violet={route.id === 'drive'}
-                  />
-                  <span class="node-label font-mono">
-                    {route.id === 'p2p' ? 'Browser B' : route.id === 'lan' ? 'Device B' : 'Google Drive'}
-                  </span>
+
+                <!-- Receiver -->
+                <div class="device-node">
+                  <div class="device-node-icon">📱</div>
+                  <div class="device-node-label font-mono">RECEIVER</div>
                 </div>
               </div>
             </div>
@@ -210,7 +210,7 @@
     margin-bottom: 16px;
   }
 
-  .title-outline { color: transparent; -webkit-text-stroke: 2px var(--text-1); paint-order: stroke fill; }
+  .title-accent { color: var(--accent); }
 
   .methods-sub { font-size: 17px; line-height: 1.7; color: var(--text-2); max-width: 52ch; }
 
@@ -315,47 +315,130 @@
     border: 1.5px solid #000;
   }
 
-  .detail-scene { padding: 20px; border: 1.5px solid var(--border); border-radius: 14px; background: var(--surface-2); }
-  .scene-row { display: flex; align-items: center; height: 80px; }
-  .scene-node { display: flex; flex-direction: column; align-items: center; gap: 8px; flex-shrink: 0; }
-
-  .node-ring {
-    width: 44px; height: 44px; border-radius: 50%;
-    border: 2px solid var(--accent);
-    background: rgba(255,230,0,0.1);
+  .detail-scene {
+    padding: 28px 24px;
+    border: 2px solid var(--border);
+    border-radius: 14px;
+    background: var(--surface-2);
   }
 
-  .node-ring.ring-cyan   { border-color: var(--cyan);   background: rgba(34,211,238,0.1); }
-  .node-ring.ring-violet { border-color: var(--violet); background: rgba(155,127,255,0.1); }
-  .node-ring-alt         { border-color: var(--green);  background: rgba(0,229,112,0.1); }
-  .node-ring-alt.ring-cyan   { border-color: var(--cyan); }
-  .node-ring-alt.ring-violet { border-color: var(--violet); }
-
-  .node-label { font-family: var(--font-mono); font-size: 9px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-3); white-space: nowrap; }
-
-  .scene-beam { flex: 1; position: relative; height: 44px; padding: 0 12px; }
-
-  .scene-line {
-    position: absolute; left: 0; right: 0; height: 2px;
-    background: var(--accent); top: 50%; transform: translateY(-50%); opacity: 0.35;
+  /* ── Routing diagram ── */
+  .routing-diagram {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 20px;
   }
-  .scene-line.line-cyan   { background: var(--cyan); }
-  .scene-line.line-violet { background: var(--violet); }
 
-  .scene-pulse {
-    position: absolute; left: 0; width: 30%; height: 4px; border-radius: 2px;
-    background: linear-gradient(90deg, transparent, var(--accent), transparent);
-    top: 50%; transform: translateY(-50%);
-    animation: beam-travel 2s ease-in-out infinite;
+  .device-node {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
   }
-  .scene-pulse.pulse-cyan   { background: linear-gradient(90deg, transparent, var(--cyan),   transparent); }
-  .scene-pulse.pulse-violet { background: linear-gradient(90deg, transparent, var(--violet), transparent); }
 
-  .scene-beam-label {
-    position: absolute; top: 3px; left: 50%; transform: translateX(-50%);
-    font-family: var(--font-mono); font-size: 9px; font-weight: 700;
-    letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-3); white-space: nowrap;
+  .device-node-icon {
+    width: 48px;
+    height: 48px;
+    font-size: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid var(--border-hard);
+    background: var(--surface);
+    border-radius: 10px;
+    box-shadow: var(--shadow-sm);
   }
+
+  .device-node-label {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.10em;
+    color: var(--text-3);
+    text-transform: uppercase;
+  }
+
+  .route-lines {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .route-line {
+    display: grid;
+    grid-template-columns: 80px 1fr;
+    align-items: center;
+    gap: 12px;
+    transition: opacity 200ms ease;
+  }
+
+  .route-line-inactive {
+    opacity: 0.3;
+  }
+
+  .route-line-active {
+    opacity: 1;
+  }
+
+  .route-line-track {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    position: relative;
+  }
+
+  .route-line-bar {
+    flex: 1;
+    height: 2px;
+    background: var(--border-strong);
+    transition: background 280ms ease;
+  }
+
+  .route-line-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 2px solid var(--border-strong);
+    background: var(--surface);
+    transition: background 280ms ease, border-color 280ms ease;
+    flex-shrink: 0;
+  }
+
+  .route-line-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .route-line-badge {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 2px 7px;
+    border: 1.5px solid var(--border-strong);
+    border-radius: 4px;
+    color: var(--text-3);
+    background: transparent;
+    transition: color 280ms ease, border-color 280ms ease, background 280ms ease;
+    white-space: nowrap;
+  }
+
+  .route-line-name {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-2);
+    letter-spacing: 0.02em;
+  }
+
+  .route-line-active .route-line-name {
+    color: var(--text-1);
+  }
+  
+
 
   .privacy-strip {
     display: flex; align-items: center; gap: 20px; padding: 24px 28px;

@@ -27,7 +27,7 @@
     switch (code) {
       case 'oauth_not_configured':
         return isLocalSetupHost(typeof window !== 'undefined' ? window.location.hostname : '')
-          ? 'Google Drive not configured. Add GOOGLE_CLIENT_ID etc. in apps/web/.env'
+          ? 'Google Drive not configured. Add GOOGLE_CLIENT_ID etc. in apps/api/.dev.vars or your Worker env.'
           : 'Google Drive not configured on this deployment.'
       case 'oauth_denied': return 'Google Drive authorization was cancelled.'
       case 'state_mismatch': return 'Google Drive auth state check failed. Try again.'
@@ -218,7 +218,7 @@
     transition: box-shadow 200ms ease, border-color 200ms ease;
   }
 
-  :global(:not(.dark)) .nav-inner {
+  :global(html:not(.dark)) .nav-inner {
     background: #FFFFFF;
     border-color: #000000;
     box-shadow: 4px 4px 0 #000000;
