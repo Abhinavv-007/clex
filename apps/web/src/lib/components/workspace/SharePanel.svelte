@@ -1,12 +1,11 @@
 <script lang="ts">
+  import { hasFiles, filesStore } from '$stores/files'
   import { transferStore, type TransferMethod } from '$stores/transfer'
+  import { uiStore } from '$stores/ui'
   import DirectShare from '$components/sharing/DirectShare.svelte'
   import DriveShare from '$components/sharing/DriveShare.svelte'
 
-  let activeMethod: TransferMethod = 'webrtc'
-
   function setMethod(method: TransferMethod) {
-    activeMethod = method
     transferStore.setMethod(method)
   }
 
@@ -15,14 +14,32 @@
     { id: 'local',  label: 'Local',   desc: 'LAN' },
     { id: 'drive',  label: 'Drive',   desc: 'Cloud' },
   ]
+
+  $: activeMethod = $transferStore.method
+  $: readyCount = $filesStore.length
 </script>
 
 <div class="sp-root">
   <!-- Header -->
   <div class="sp-header">
     <h2 class="sp-title">Share</h2>
-    <p class="sp-sub">Choose how to send your files</p>
+    <p class="sp-sub">
+      {#if $hasFiles}
+        {readyCount} file{readyCount !== 1 ? 's' : ''} ready to send
+      {:else}
+        Choose how to send your files
+      {/if}
+    </p>
   </div>
+
+  {#if !$hasFiles}
+    <div class="sp-empty-state">
+      <p>Add files in the Files tab first, then come back here to send them.</p>
+      <button class="btn-secondary sp-empty-btn" on:click={() => uiStore.setPanel('files')}>
+        Go to Files
+      </button>
+    </div>
+  {/if}
 
   <!-- Method tabs -->
   <div class="sp-tabs">
@@ -39,7 +56,7 @@
   </div>
 
   <!-- Content -->
-  <div class="sp-content">
+  <div class="sp-content" class:sp-content-disabled={!$hasFiles}>
     {#if activeMethod === 'webrtc' || activeMethod === 'local'}
       <DirectShare />
     {:else if activeMethod === 'drive'}
@@ -78,6 +95,28 @@
     font-size: 12px;
     color: var(--text-3);
     margin-top: 2px;
+  }
+
+  .sp-empty-state {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 14px;
+    border-radius: 16px;
+    border: 1px dashed var(--border);
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  .sp-empty-state p {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--text-2);
+  }
+
+  .sp-empty-btn {
+    width: 100%;
+    justify-content: center;
   }
 
   /* Tabs */
@@ -138,6 +177,11 @@
     scrollbar-color: var(--border-strong) transparent;
   }
 
+  .sp-content.sp-content-disabled {
+    opacity: 0.55;
+    pointer-events: none;
+  }
+
   .sp-content::-webkit-scrollbar { width: 4px; }
   .sp-content::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 2px; }
 
@@ -175,5 +219,24 @@
   .sp-receive-btn:hover {
     background: var(--raised);
     color: var(--text-1);
+  }
+
+  @media (max-width: 767px) {
+    .sp-root {
+      gap: 14px;
+    }
+
+    .sp-tabs {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      background: color-mix(in srgb, var(--surface-solid) 72%, transparent);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+    }
+
+    .sp-content {
+      overflow: visible;
+    }
   }
 </style>

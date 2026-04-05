@@ -63,17 +63,20 @@
 <Cursor />
 
 <!-- ── Navigation ─────────────────────────────────────────────────────── -->
-<header class="fixed top-0 inset-x-0 z-50">
+<header class="site-header fixed top-0 inset-x-0 z-50">
   <div class="nav-inner">
     <!-- Logo -->
-    <a href="/" class="flex items-center gap-2 group" aria-label="Clex home">
+    <a href="/" class="nav-brand" aria-label="Clex home">
       <div class="logo-mark">
         <svg viewBox="0 0 24 24" fill="none" width="16" height="16">
           <path d="M12 2L20 7V17L12 22L4 17V7L12 2Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
           <path d="M12 6L17 9V15L12 18L7 15V9L12 6Z" fill="currentColor" opacity="0.3"/>
         </svg>
       </div>
-      <span class="logo-text">clex</span>
+      <div class="logo-copy">
+        <span class="logo-text">clex</span>
+        <span class="logo-sub">File motion workspace</span>
+      </div>
     </a>
 
     <!-- Center nav (desktop) -->
@@ -84,7 +87,7 @@
     </nav>
 
     <!-- Right controls -->
-    <div class="flex items-center gap-2">
+    <div class="nav-actions">
       <!-- Theme toggle -->
       <button
         class="btn-icon theme-toggle"
@@ -145,86 +148,154 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 24px;
-    height: 56px;
-    /* Glass blur strip */
-    background: var(--overlay);
-    backdrop-filter: blur(20px) saturate(1.2);
-    -webkit-backdrop-filter: blur(20px) saturate(1.2);
-    border-bottom: 1px solid var(--border);
+    gap: 18px;
+    max-width: 1320px;
+    margin: 12px auto 0;
+    padding: 0 18px;
+    height: 62px;
+    width: calc(100% - 24px);
+    border-radius: 22px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(7, 10, 17, 0.58);
+    backdrop-filter: blur(24px) saturate(1.25);
+    -webkit-backdrop-filter: blur(24px) saturate(1.25);
+    box-shadow:
+      0 18px 50px rgba(0, 0, 0, 0.24),
+      inset 0 1px 0 rgba(255, 255, 255, 0.04);
   }
 
-  /* Full-width blur bg behind nav */
-  header::before {
+  :global(:not(.dark)) .nav-inner {
+    background: rgba(255, 255, 255, 0.72);
+    border-color: rgba(255, 255, 255, 0.44);
+    box-shadow:
+      0 18px 48px rgba(10, 22, 45, 0.12),
+      inset 0 1px 0 rgba(255, 255, 255, 0.72);
+  }
+
+  .site-header::before {
     content: '';
     position: absolute;
     inset: 0;
-    background: var(--overlay);
-    backdrop-filter: blur(20px) saturate(1.2);
-    -webkit-backdrop-filter: blur(20px) saturate(1.2);
-    border-bottom: 1px solid var(--border);
+    background: linear-gradient(180deg, rgba(5, 7, 13, 0.42), transparent 88%);
     pointer-events: none;
   }
 
   .nav-inner { position: relative; }
 
+  .nav-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+    min-width: 0;
+  }
+
   .logo-mark {
-    width: 28px;
-    height: 28px;
-    border-radius: 8px;
-    background: var(--text-1);
-    color: var(--text-inv);
+    width: 36px;
+    height: 36px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #bff3ff 0%, #24bcff 100%);
+    color: #04131d;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: opacity 0.15s;
+    box-shadow: 0 16px 32px rgba(33, 187, 255, 0.22);
+    transition: transform 180ms var(--ease-out), box-shadow 180ms ease;
   }
 
-  .logo-mark:hover {
-    opacity: 0.8;
-    box-shadow: 0 0 12px rgba(16,185,129,0.15);
+  .nav-brand:hover .logo-mark {
+    transform: translateY(-1px);
+    box-shadow: 0 18px 36px rgba(33, 187, 255, 0.3);
+  }
+
+  .logo-copy {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
   }
 
   .logo-text {
-    font-size: 15px;
-    font-weight: 600;
+    font-family: var(--font-display);
+    font-size: 16px;
+    font-weight: 700;
     letter-spacing: -0.02em;
     color: var(--text-1);
+  }
+
+  .logo-sub {
+    font-size: 11px;
+    color: var(--text-3);
+    line-height: 1.2;
+    white-space: nowrap;
   }
 
   .nav-links {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 6px;
+    padding: 6px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    background: rgba(255, 255, 255, 0.03);
   }
 
-  @media (max-width: 640px) {
+  :global(:not(.dark)) .nav-links {
+    border-color: rgba(12, 19, 34, 0.08);
+    background: rgba(12, 19, 34, 0.03);
+  }
+
+  @media (max-width: 760px) {
     .nav-links { display: none; }
   }
 
   .nav-link {
-    font-size: 13px;
-    font-weight: 450;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
     color: var(--text-2);
-    padding: 5px 10px;
-    border-radius: 7px;
+    padding: 10px 14px;
+    border-radius: 999px;
     text-decoration: none;
-    transition: color 0.15s, background 0.15s;
+    transition: color 180ms ease, background 180ms ease, border-color 180ms ease;
+    border: 1px solid transparent;
   }
 
   .nav-link:hover {
     color: var(--text-1);
-    background: var(--raised);
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(53, 212, 255, 0.14);
+  }
+
+  :global(:not(.dark)) .nav-link:hover {
+    background: rgba(255, 255, 255, 0.68);
+  }
+
+  .nav-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
   }
 
   .theme-toggle {
-    width: 32px;
-    height: 32px;
+    width: 38px;
+    height: 38px;
     padding: 0;
     display: flex;
     align-items: center;
     justify-content: center;
+  }
+
+  @media (max-width: 760px) {
+    .nav-inner {
+      margin-top: 10px;
+      padding: 0 12px;
+      width: calc(100% - 16px);
+    }
+
+    .logo-sub {
+      display: none;
+    }
   }
 </style>

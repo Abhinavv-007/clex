@@ -95,11 +95,27 @@
         <div class="code-display">{roomCode}</div>
       </div>
 
-      <!-- QR code -->
-      <div class="ds-qr-wrap">
-        <QRCode value={receivePageUrl} size={148} />
-        <p class="ds-qr-hint">Scan to open receive page</p>
+      <div class="ds-ready-summary">
+        <span class="ds-ready-label">Ready to send</span>
+        <strong>
+          {$filesStore.length} file{$filesStore.length !== 1 ? 's' : ''}
+          {#if totalSize}
+            <span class="ds-ready-size">· {formatBytes(totalSize)}</span>
+          {/if}
+        </strong>
       </div>
+
+      <!-- Send -->
+      <button
+        class="btn-primary ds-send-btn"
+        on:click={startSend}
+        disabled={!$filesStore.length}
+      >
+        Send {$filesStore.length} file{$filesStore.length !== 1 ? 's' : ''}
+        {#if totalSize}
+          <span class="send-size">{formatBytes(totalSize)}</span>
+        {/if}
+      </button>
 
       <!-- Copy link -->
       <button class="btn-secondary ds-copy-btn" on:click={copyLink}>
@@ -117,17 +133,11 @@
         {/if}
       </button>
 
-      <!-- Send -->
-      <button
-        class="btn-primary ds-send-btn"
-        on:click={startSend}
-        disabled={!$filesStore.length}
-      >
-        Send {$filesStore.length} file{$filesStore.length !== 1 ? 's' : ''}
-        {#if totalSize}
-          <span class="send-size">{formatBytes(totalSize)}</span>
-        {/if}
-      </button>
+      <!-- QR code -->
+      <div class="ds-qr-wrap">
+        <QRCode value={receivePageUrl} size={148} />
+        <p class="ds-qr-hint">Scan to open receive page</p>
+      </div>
     </div>
 
   {:else if state === 'preparing' || state === 'waiting_peer'}
@@ -267,6 +277,37 @@
   }
 
   .ds-section { display: flex; flex-direction: column; }
+
+  .ds-ready-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 14px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+  }
+
+  .ds-ready-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-3);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .ds-ready-summary strong {
+    font-size: 13px;
+    color: var(--text-1);
+    letter-spacing: -0.01em;
+  }
+
+  .ds-ready-size {
+    color: var(--text-3);
+    font-size: 12px;
+    font-weight: 500;
+  }
 
   /* Code display */
   .code-display {
@@ -484,4 +525,35 @@
   }
 
   .error-tip strong { color: var(--text-1); }
+
+  @media (max-width: 767px) {
+    .ds-card {
+      padding: 14px;
+    }
+
+    .code-display {
+      font-size: 22px;
+      letter-spacing: 0.2em;
+      padding: 11px 12px;
+    }
+
+    .ds-ready-summary {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 6px;
+    }
+
+    .ds-send-btn {
+      min-height: 46px;
+      font-size: 14px;
+      position: sticky;
+      bottom: 0;
+      z-index: 1;
+      box-shadow: 0 14px 36px rgba(0, 0, 0, 0.18);
+    }
+
+    .ds-qr-wrap {
+      padding-top: 4px;
+    }
+  }
 </style>

@@ -1,551 +1,583 @@
 <script lang="ts">
   import { onMount } from 'svelte'
 
-  let sectionEl: HTMLElement
-  let visible = false
-  let cardEls: HTMLElement[] = []
-  let cardVisible: boolean[] = [false, false, false, false, false, false, false, false]
+  const beats = [
+    {
+      label: 'Ingest',
+      title: 'Drop files once. The interface maps the next move for you.',
+      body: 'Clex reads file types, prepares the queue, and creates a working surface that feels immediate instead of form-driven.',
+      metric: '12+ formats auto-classified',
+      chips: ['Image compression', 'PDF merge', 'DOCX conversion'],
+    },
+    {
+      label: 'Prepare',
+      title: 'Transformations stay visible while they happen.',
+      body: 'Compression, conversion, and preparation are treated like live states, not modal dead ends. Every step keeps the next action in reach.',
+      metric: 'Live processing rail',
+      chips: ['Queued previews', 'Progress choreography', 'Suggestion engine'],
+    },
+    {
+      label: 'Deliver',
+      title: 'Routing becomes part of the product story, not a hidden backend detail.',
+      body: 'Direct, local, and fallback routes are surfaced with confidence, so users always understand how a file is moving.',
+      metric: 'Direct, LAN, or Drive',
+      chips: ['Room creation', 'Fallback readiness', 'Private defaults'],
+    },
+  ]
+
+  let sectionVisible = false
+  let activeIndex = 0
+  let beatEls: HTMLElement[] = []
+  let sectionEl: HTMLElement | null = null
 
   onMount(() => {
-    // Section header reveal
-    const sectionObs = new IntersectionObserver(
-      ([e]) => { if (e.isIntersecting) { visible = true; sectionObs.disconnect() } },
-      { threshold: 0.15 }
+    const sectionObserver = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          sectionVisible = true
+          sectionObserver.disconnect()
+        }
+      },
+      { threshold: 0.12 }
     )
-    sectionObs.observe(sectionEl)
 
-    // Individual card staggered reveals
-    cardEls.forEach((el, i) => {
-      if (!el) return
-      const obs = new IntersectionObserver(
-        ([e]) => {
-          if (e.isIntersecting) {
-            setTimeout(() => { cardVisible[i] = true; cardVisible = cardVisible }, i * 80)
-            obs.disconnect()
-          }
+    if (sectionEl) sectionObserver.observe(sectionEl)
+
+    const observers = beatEls.map((el, index) => {
+      const observer = new IntersectionObserver(
+        ([entry]) => {
+          if (entry.isIntersecting) activeIndex = index
         },
-        { threshold: 0.1 }
+        {
+          threshold: 0.55,
+          rootMargin: '-12% 0px -22% 0px',
+        }
       )
-      obs.observe(el)
+
+      observer.observe(el)
+      return observer
     })
+
+    return () => {
+      sectionObserver.disconnect()
+      observers.forEach(observer => observer.disconnect())
+    }
   })
 </script>
 
-<section id="features" class="features-section" bind:this={sectionEl}>
-  <div class="features-inner">
+<section id="features" class="story" bind:this={sectionEl}>
+  <div class="story-head" class:is-visible={sectionVisible}>
+    <p class="story-kicker">Workflow system</p>
+    <h2 class="story-title">One cinematic workflow, three product states.</h2>
+    <p class="story-sub">
+      The interface is designed so upload, preparation, and delivery feel like a continuous move.
+    </p>
+  </div>
 
-    <!-- Section header -->
-    <div class="section-header" class:section-visible={visible}>
-      <p class="section-eyebrow">What it does</p>
-      <h2 class="section-headline">
-        <span class="sh-word" style="--d:0">Prepare.</span>
-        <span class="sh-word" style="--d:1">Then</span>
-        <span class="sh-word" style="--d:2">share.</span>
-        <br/>
-        <span class="sh-word sh-muted" style="--d:3">No</span>
-        <span class="sh-word sh-muted" style="--d:4">in-between.</span>
-      </h2>
-      <p class="section-sub">Every feature is connected. One workspace, one flow.</p>
+  <div class="story-grid">
+    <div class="story-stage">
+      <div class="stage-frame" data-state={activeIndex}>
+        <div class="stage-frame-top">
+          <span class="stage-mini-label">System choreography</span>
+          <strong>{beats[activeIndex].metric}</strong>
+        </div>
+
+        <div class="stage-panels">
+          <div class="panel panel-ingest">
+            <div class="panel-header">
+              <span>Upload queue</span>
+              <strong>06 live files</strong>
+            </div>
+            <div class="panel-rows">
+              <div class="panel-row panel-row-hot">
+                <span>launch-poster.png</span>
+                <em>Detected</em>
+              </div>
+              <div class="panel-row">
+                <span>sales-pack.pdf</span>
+                <em>Merged</em>
+              </div>
+              <div class="panel-row">
+                <span>pricing.docx</span>
+                <em>Ready</em>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel panel-prepare">
+            <div class="prepare-core">
+              <div class="prepare-badge">Pipeline live</div>
+              <div class="prepare-track">
+                <span class="prepare-node prepare-node-active">Compress</span>
+                <span class="prepare-link" />
+                <span class="prepare-node">Convert</span>
+                <span class="prepare-link" />
+                <span class="prepare-node">Share</span>
+              </div>
+              <div class="prepare-meter">
+                <span>Processing depth</span>
+                <div class="prepare-meter-track">
+                  <div class="prepare-meter-fill" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel panel-deliver">
+            <div class="deliver-card deliver-card-active">
+              <span>Direct P2P</span>
+              <strong>Primary route</strong>
+            </div>
+            <div class="deliver-card">
+              <span>Local lane</span>
+              <strong>Same-network boost</strong>
+            </div>
+            <div class="deliver-card">
+              <span>Drive link</span>
+              <strong>Fallback standing by</strong>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <!-- Bento grid -->
-    <div class="bento-grid">
-
-      <!-- Large: P2P -->
-      <div
-        class="bento-cell bento-large"
-        class:card-revealed={cardVisible[0]}
-        bind:this={cardEls[0]}
-      >
-        <div class="bento-icon-wrap">
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-            <circle cx="5" cy="10" r="2.5" stroke="currentColor" stroke-width="1.5"/>
-            <circle cx="15" cy="5" r="2.5" stroke="currentColor" stroke-width="1.5"/>
-            <circle cx="15" cy="15" r="2.5" stroke="currentColor" stroke-width="1.5"/>
-            <path d="M7.5 9L12.5 6M7.5 11L12.5 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-          </svg>
-        </div>
-        <h3 class="bento-title">Direct P2P transfer</h3>
-        <p class="bento-desc">Files travel browser-to-browser using WebRTC. No cloud hop, no server storage. Your data never leaves the devices.</p>
-        <!-- Beam illustration -->
-        <div class="beam-illustration" aria-hidden="true">
-          <div class="beam-device">
-            <div class="bd-screen">
-              <div class="bd-file" />
-              <div class="bd-file" style="width:70%" />
+    <div class="story-copy">
+      {#each beats as beat, index}
+        <article class="story-beat" class:story-beat-active={activeIndex === index} bind:this={beatEls[index]}>
+          <span class="beat-label">{beat.label}</span>
+          <h3>{beat.title}</h3>
+          <p>{beat.body}</p>
+          <div class="beat-foot">
+            <strong>{beat.metric}</strong>
+            <div class="beat-chips">
+              {#each beat.chips as chip}
+                <span>{chip}</span>
+              {/each}
             </div>
           </div>
-          <div class="beam-track">
-            <div class="beam-particle" />
-            <div class="beam-label">P2P · encrypted</div>
-          </div>
-          <div class="beam-device">
-            <div class="bd-screen">
-              <div class="bd-file bd-received" />
-              <div class="bd-file bd-received" style="width:55%; opacity: 0.5" />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Local network -->
-      <div
-        class="bento-cell bento-medium"
-        class:card-revealed={cardVisible[1]}
-        bind:this={cardEls[1]}
-      >
-        <div class="bento-icon-wrap">
-          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-            <path d="M9 14a1 1 0 100-2 1 1 0 000 2z" fill="currentColor"/>
-            <path d="M5.5 11.5a5 5 0 017 0" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
-            <path d="M2.5 8.5a9 9 0 0113 0" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
-          </svg>
-        </div>
-        <h3 class="bento-title">Local network speed</h3>
-        <p class="bento-desc">On the same Wi-Fi? Detected automatically. Full local speed, zero latency overhead.</p>
-        <div class="nearby-badge">
-          <span class="nearby-dot" />
-          Nearby device detected
-        </div>
-      </div>
-
-      <!-- Google Drive -->
-      <div
-        class="bento-cell bento-medium"
-        class:card-revealed={cardVisible[2]}
-        bind:this={cardEls[2]}
-      >
-        <div class="bento-icon-wrap">
-          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-            <path d="M3 13l3-6 3 6H3z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
-            <path d="M9 13l3-6 3 6H9z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
-            <path d="M6 7h6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
-          </svg>
-        </div>
-        <h3 class="bento-title">Google Drive fallback</h3>
-        <p class="bento-desc">Upload to your Drive, generate a link. Elegant cloud fallback when direct isn't possible.</p>
-      </div>
-
-      <!-- Image tools -->
-      <div
-        class="bento-cell bento-small"
-        class:card-revealed={cardVisible[3]}
-        bind:this={cardEls[3]}
-      >
-        <div class="bento-icon-wrap">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <rect x="1.5" y="1.5" width="13" height="13" rx="2.5" stroke="currentColor" stroke-width="1.3"/>
-            <circle cx="5.5" cy="5.5" r="1.2" fill="currentColor"/>
-            <path d="M2 11l3.5-3.5L8 10l2.5-2.5L14 11" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </div>
-        <h3 class="bento-title">Image tools</h3>
-        <p class="bento-desc">Compress, convert between formats (WebP, AVIF, JPEG, PNG). Client-side, instant.</p>
-      </div>
-
-      <!-- PDF tools -->
-      <div
-        class="bento-cell bento-small"
-        class:card-revealed={cardVisible[4]}
-        bind:this={cardEls[4]}
-      >
-        <div class="bento-icon-wrap">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <path d="M9.5 1.5H4a1.5 1.5 0 00-1.5 1.5v10A1.5 1.5 0 004 14.5h8a1.5 1.5 0 001.5-1.5V5.5L9.5 1.5z" stroke="currentColor" stroke-width="1.3"/>
-            <path d="M9.5 1.5v3a.5.5 0 00.5.5h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
-            <path d="M5 8.5h6M5 11h4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
-          </svg>
-        </div>
-        <h3 class="bento-title">PDF operations</h3>
-        <p class="bento-desc">Merge, split, extract pages, or export to images. No uploads.</p>
-      </div>
-
-      <!-- Smart chaining — wide -->
-      <div
-        class="bento-cell bento-wide"
-        class:card-revealed={cardVisible[5]}
-        bind:this={cardEls[5]}
-      >
-        <div class="bento-icon-wrap">
-          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-            <path d="M3 9h4l2-5 2 10 2-5h2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </div>
-        <h3 class="bento-title">Smart tool chaining</h3>
-        <p class="bento-desc">After every operation Clex suggests what to do next. Compress → Convert → Share feels like one motion, not three separate tools.</p>
-        <div class="chain-chips">
-          <span class="chain-step">Compress</span>
-          <span class="chain-arrow">→</span>
-          <span class="chain-step chain-step-active">Convert</span>
-          <span class="chain-arrow">→</span>
-          <span class="chain-step">Share</span>
-        </div>
-      </div>
-
-      <!-- Word to PDF -->
-      <div
-        class="bento-cell bento-small"
-        class:card-revealed={cardVisible[6]}
-        bind:this={cardEls[6]}
-      >
-        <div class="bento-icon-wrap">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <path d="M2 3h6l2 2h4v9H2V3z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
-            <path d="M8 9l2 2-2 2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </div>
-        <h3 class="bento-title">Word → PDF</h3>
-        <p class="bento-desc">DOCX to PDF conversion, all in the browser.</p>
-      </div>
-
-      <!-- ZIP -->
-      <div
-        class="bento-cell bento-small"
-        class:card-revealed={cardVisible[7]}
-        bind:this={cardEls[7]}
-      >
-        <div class="bento-icon-wrap">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <path d="M4 1.5h8A1.5 1.5 0 0113.5 3v10A1.5 1.5 0 0112 14.5H4A1.5 1.5 0 012.5 13V3A1.5 1.5 0 014 1.5z" stroke="currentColor" stroke-width="1.3"/>
-            <path d="M6.5 1.5v3M9.5 1.5v3M6.5 7v1.5M9.5 7v1.5M6.5 10.5V12" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
-            <rect x="5.5" y="4.5" width="5" height="2" rx=".5" stroke="currentColor" stroke-width="1.1"/>
-          </svg>
-        </div>
-        <h3 class="bento-title">ZIP bundler</h3>
-        <p class="bento-desc">Pack multiple files into a single ZIP for easy sharing.</p>
-      </div>
-
+        </article>
+      {/each}
     </div>
   </div>
 </section>
 
 <style>
-  .features-section {
-    padding: 120px 24px;
-    border-top: 1px solid var(--border);
+  .story {
+    padding: 120px 24px 40px;
   }
 
-  .features-inner {
-    max-width: 1000px;
-    margin: 0 auto;
-  }
-
-  /* ── Section header with reveal ── */
-  .section-header {
+  .story-head {
+    max-width: 760px;
+    margin: 0 auto 52px;
     text-align: center;
-    margin-bottom: 72px;
-    opacity: 0;
-    transform: translateY(28px);
-    transition: opacity 0.7s cubic-bezier(0.16,1,0.3,1), transform 0.7s cubic-bezier(0.16,1,0.3,1);
-  }
-
-  .section-header.section-visible {
-    opacity: 1;
-    transform: translateY(0);
-  }
-
-  .section-eyebrow {
-    font-size: 11px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: var(--text-3);
-    margin-bottom: 20px;
-  }
-
-  .section-headline {
-    font-family: 'Space Grotesk', 'Inter', system-ui, sans-serif;
-    font-size: clamp(2.2rem, 5.5vw, 3.8rem);
-    font-weight: 700;
-    letter-spacing: -0.035em;
-    line-height: 1.08;
-    margin-bottom: 18px;
-  }
-
-  .sh-word {
-    display: inline-block;
-    background: linear-gradient(
-      180deg,
-      rgba(190,190,195,1) 0%,
-      rgba(230,230,235,1) 50%,
-      rgba(255,255,255,1) 100%
-    );
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
-
-  :global(:not(.dark)) .sh-word {
-    background: linear-gradient(180deg, rgba(10,10,10,0.6) 0%, rgba(10,10,10,1) 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
-
-  .sh-muted {
-    opacity: 0.5;
-  }
-
-  .section-sub {
-    font-size: 15px;
-    color: var(--text-2);
-    max-width: 380px;
-    margin: 0 auto;
-    line-height: 1.65;
-  }
-
-  /* ── Bento grid ── */
-  .bento-grid {
-    display: grid;
-    grid-template-columns: repeat(6, 1fr);
-    gap: 12px;
-  }
-
-  /* Cell base */
-  .bento-cell {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 26px;
-    /* Scroll reveal */
     opacity: 0;
     transform: translateY(24px);
-    transition:
-      opacity 0.6s cubic-bezier(0.16,1,0.3,1),
-      transform 0.6s cubic-bezier(0.16,1,0.3,1),
-      border-color 0.25s ease,
-      box-shadow 0.25s ease;
+    transition: opacity 700ms var(--ease-out), transform 700ms var(--ease-out);
   }
 
-  .bento-cell.card-revealed {
+  .story-head.is-visible {
     opacity: 1;
     transform: translateY(0);
   }
 
-  :global(.dark) .bento-cell {
-    background: rgba(14,14,18,0.6);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+  .story-kicker {
+    margin: 0 0 16px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--text-3);
   }
 
-  .bento-cell:hover {
-    border-color: var(--border-strong);
-    box-shadow: 0 6px 28px rgba(0,0,0,0.08);
-    transform: translateY(-3px);
+  .story-title {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: clamp(2.8rem, 6vw, 4.8rem);
+    line-height: 0.98;
+    letter-spacing: -0.05em;
+    text-wrap: balance;
   }
 
-  :global(.dark) .bento-cell:hover {
-    box-shadow: 0 6px 32px rgba(0,0,0,0.35);
-  }
-
-  .bento-cell.card-revealed:hover {
-    transform: translateY(-3px);
-  }
-
-  /* Grid placements */
-  .bento-large  { grid-column: span 3; grid-row: span 2; }
-  .bento-medium { grid-column: span 3; }
-  .bento-wide   { grid-column: span 4; }
-  .bento-small  { grid-column: span 2; }
-
-  /* Icon */
-  .bento-icon-wrap {
-    width: 38px;
-    height: 38px;
-    border-radius: 10px;
-    background: var(--raised);
-    border: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--text-1);
-    margin-bottom: 18px;
-    transition: background 0.2s, border-color 0.2s;
-  }
-
-  .bento-cell:hover .bento-icon-wrap {
-    border-color: var(--border-strong);
-  }
-
-  .bento-title {
-    font-size: 15px;
-    font-weight: 600;
-    color: var(--text-1);
-    letter-spacing: -0.01em;
-    margin-bottom: 8px;
-  }
-
-  .bento-desc {
-    font-size: 13px;
-    color: var(--text-2);
+  .story-sub {
+    max-width: 36rem;
+    margin: 18px auto 0;
+    font-size: 16px;
     line-height: 1.7;
+    color: var(--text-2);
   }
 
-  /* ── Beam illustration ── */
-  .beam-illustration {
+  .story-grid {
+    max-width: 1280px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: minmax(0, 0.92fr) minmax(0, 0.82fr);
+    gap: 28px;
+    align-items: start;
+  }
+
+  .story-stage {
+    position: sticky;
+    top: 92px;
+  }
+
+  .stage-frame {
+    padding: 24px;
+    border-radius: 32px;
+    border: 1px solid var(--border);
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02)),
+      rgba(8, 12, 21, 0.72);
+    box-shadow:
+      0 34px 100px rgba(0, 0, 0, 0.28),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    min-height: 540px;
+    transition: box-shadow 280ms ease, border-color 280ms ease;
+  }
+
+  :global(:not(.dark)) .stage-frame {
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.84), rgba(255, 255, 255, 0.68)),
+      rgba(255, 255, 255, 0.8);
+    box-shadow:
+      0 28px 80px rgba(10, 22, 45, 0.12),
+      inset 0 1px 0 rgba(255, 255, 255, 0.74);
+  }
+
+  .stage-frame[data-state='0'] {
+    border-color: rgba(53, 212, 255, 0.16);
+  }
+
+  .stage-frame[data-state='1'] {
+    border-color: rgba(135, 140, 255, 0.16);
+  }
+
+  .stage-frame[data-state='2'] {
+    border-color: rgba(74, 222, 179, 0.16);
+  }
+
+  .stage-frame-top {
     display: flex;
     align-items: center;
-    gap: 16px;
-    margin-top: 32px;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 22px;
   }
 
-  .beam-device {
-    flex-shrink: 0;
-    width: 56px;
-    height: 42px;
-    border-radius: 7px;
-    background: var(--raised);
-    border: 1px solid var(--border);
-    padding: 7px;
+  .stage-mini-label {
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--text-3);
+  }
+
+  .stage-frame-top strong {
+    font-size: 14px;
+    color: var(--text-1);
+  }
+
+  .stage-panels {
+    min-height: 440px;
+    display: grid;
+    grid-template-columns: 1fr 1.15fr 1fr;
+    gap: 16px;
+    align-items: stretch;
+  }
+
+  .panel {
+    position: relative;
+    overflow: hidden;
+    padding: 16px;
+    border-radius: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.03);
+    transition: transform 260ms var(--ease-out), border-color 260ms ease, opacity 260ms ease;
+  }
+
+  :global(:not(.dark)) .panel {
+    border-color: rgba(12, 19, 34, 0.08);
+    background: rgba(255, 255, 255, 0.56);
+  }
+
+  .stage-frame[data-state='0'] .panel-ingest,
+  .stage-frame[data-state='1'] .panel-prepare,
+  .stage-frame[data-state='2'] .panel-deliver {
+    transform: translateY(-6px);
+    border-color: rgba(53, 212, 255, 0.2);
+    box-shadow: 0 18px 36px rgba(0, 0, 0, 0.16);
+  }
+
+  .panel-header {
     display: flex;
     flex-direction: column;
     gap: 4px;
+    margin-bottom: 18px;
   }
 
-  .bd-screen {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-  }
-
-  .bd-file {
-    height: 4px;
-    border-radius: 2px;
-    background: var(--border-strong);
-    width: 100%;
-  }
-
-  .bd-received {
-    background: var(--text-1);
-    opacity: 0.7;
-  }
-
-  .beam-track {
-    flex: 1;
-    position: relative;
-    height: 2px;
-    background: var(--border);
-    border-radius: 1px;
-    overflow: hidden;
-  }
-
-  .beam-particle {
-    position: absolute;
-    top: 0;
-    left: -30%;
-    width: 40%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, var(--text-1), transparent);
-    border-radius: 1px;
-    animation: slideBeam 2.2s ease-in-out infinite;
-  }
-
-  .beam-label {
-    position: absolute;
-    top: 8px;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 9px;
+  .panel-header span,
+  .prepare-badge,
+  .deliver-card span {
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
     color: var(--text-3);
-    white-space: nowrap;
-    font-weight: 500;
-    letter-spacing: 0.05em;
   }
 
-  @keyframes slideBeam {
-    0% { transform: translateX(-100%); opacity: 0; }
-    15% { opacity: 1; }
-    85% { opacity: 1; }
-    100% { transform: translateX(350%); opacity: 0; }
-  }
-
-  /* ── Nearby badge ── */
-  .nearby-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    margin-top: 18px;
-    padding: 5px 13px;
-    border-radius: 100px;
-    background: rgba(16,185,129,0.06);
-    border: 1px solid rgba(16,185,129,0.15);
-    font-size: 11px;
-    color: #10b981;
-    font-weight: 500;
-  }
-
-  .nearby-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: #10b981;
-    box-shadow: 0 0 8px rgba(16,185,129,0.5);
-    animation: nearbyPulse 2.5s ease-in-out infinite;
-  }
-
-  @keyframes nearbyPulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.4; }
-  }
-
-  /* ── Chain chips ── */
-  .chain-chips {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-top: 22px;
-    flex-wrap: wrap;
-  }
-
-  .chain-step {
-    padding: 5px 14px;
-    border-radius: 100px;
-    font-size: 12px;
-    font-weight: 500;
-    background: var(--raised);
-    border: 1px solid var(--border);
-    color: var(--text-2);
-    transition: all 0.25s ease;
-  }
-
-  .chain-step:hover {
-    border-color: var(--border-strong);
+  .panel-header strong,
+  .deliver-card strong {
+    font-size: 13px;
     color: var(--text-1);
   }
 
-  .chain-step-active {
-    background: var(--text-1);
-    color: var(--text-inv);
-    border-color: var(--text-1);
+  .panel-rows {
+    display: grid;
+    gap: 12px;
   }
 
-  .chain-step-active:hover {
-    color: var(--text-inv);
-    opacity: 0.9;
+  .panel-row {
+    padding: 12px;
+    border-radius: 18px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    background: rgba(255, 255, 255, 0.02);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
   }
 
-  .chain-arrow {
-    font-size: 13px;
+  :global(:not(.dark)) .panel-row {
+    border-color: rgba(12, 19, 34, 0.08);
+    background: rgba(255, 255, 255, 0.68);
+  }
+
+  .panel-row span {
+    font-size: 12px;
+    color: var(--text-1);
+  }
+
+  .panel-row em {
+    font-style: normal;
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--accent);
+  }
+
+  .panel-row-hot {
+    border-color: rgba(53, 212, 255, 0.18);
+    background: rgba(53, 212, 255, 0.08);
+  }
+
+  .prepare-core {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 18px;
+  }
+
+  .prepare-track {
+    display: grid;
+    gap: 16px;
+    align-items: center;
+    justify-items: center;
+    margin-top: auto;
+    margin-bottom: auto;
+  }
+
+  .prepare-node {
+    width: 100%;
+    padding: 14px 16px;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.03);
+    text-align: center;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-2);
+  }
+
+  .prepare-node-active {
+    color: var(--text-1);
+    border-color: rgba(53, 212, 255, 0.2);
+    background: rgba(53, 212, 255, 0.08);
+  }
+
+  .prepare-link {
+    width: 2px;
+    height: 32px;
+    background: linear-gradient(180deg, rgba(53, 212, 255, 0.08), rgba(53, 212, 255, 0.38), rgba(53, 212, 255, 0.08));
+  }
+
+  .prepare-meter {
+    display: grid;
+    gap: 10px;
+  }
+
+  .prepare-meter span {
+    font-size: 11px;
+    color: var(--text-2);
+  }
+
+  .prepare-meter-track {
+    height: 8px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+    overflow: hidden;
+  }
+
+  .prepare-meter-fill {
+    height: 100%;
+    width: 72%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #bff3ff 0%, #5bd8ff 56%, #21bbff 100%);
+    animation: sweep 3.2s ease-in-out infinite;
+  }
+
+  .panel-deliver {
+    display: grid;
+    gap: 12px;
+  }
+
+  .deliver-card {
+    padding: 14px;
+    border-radius: 18px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    background: rgba(255, 255, 255, 0.02);
+  }
+
+  :global(:not(.dark)) .deliver-card {
+    border-color: rgba(12, 19, 34, 0.08);
+    background: rgba(255, 255, 255, 0.68);
+  }
+
+  .deliver-card-active {
+    border-color: rgba(74, 222, 179, 0.2);
+    background: rgba(74, 222, 179, 0.08);
+  }
+
+  .story-copy {
+    display: grid;
+    gap: 16px;
+  }
+
+  .story-beat {
+    min-height: 68vh;
+    padding: 28px;
+    border-radius: 30px;
+    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.03);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 18px;
+    transition: border-color 220ms ease, transform 220ms var(--ease-out), background 220ms ease;
+  }
+
+  :global(:not(.dark)) .story-beat {
+    background: rgba(255, 255, 255, 0.54);
+  }
+
+  .story-beat-active {
+    transform: translateY(-4px);
+    border-color: rgba(53, 212, 255, 0.16);
+    background: rgba(53, 212, 255, 0.05);
+  }
+
+  .beat-label {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
     color: var(--text-3);
-    flex-shrink: 0;
   }
 
-  /* ── Responsive ── */
-  @media (max-width: 768px) {
-    .bento-grid { grid-template-columns: repeat(2, 1fr); }
-    .bento-large  { grid-column: span 2; grid-row: span 1; }
-    .bento-medium { grid-column: span 2; }
-    .bento-wide   { grid-column: span 2; }
-    .bento-small  { grid-column: span 1; }
-    .beam-illustration { display: none; }
+  .story-beat h3 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 3vw, 3rem);
+    line-height: 1.04;
+    letter-spacing: -0.04em;
+    text-wrap: balance;
   }
 
-  @media (max-width: 480px) {
-    .bento-grid { grid-template-columns: 1fr; }
-    .bento-large, .bento-medium, .bento-wide, .bento-small {
-      grid-column: span 1;
-      grid-row: span 1;
+  .story-beat p {
+    margin: 0;
+    max-width: 30rem;
+    font-size: 15px;
+    line-height: 1.7;
+    color: var(--text-2);
+  }
+
+  .beat-foot {
+    display: grid;
+    gap: 12px;
+  }
+
+  .beat-foot strong {
+    font-size: 15px;
+    color: var(--text-1);
+  }
+
+  .beat-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .beat-chips span {
+    padding: 8px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--raised);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--text-2);
+  }
+
+  @keyframes sweep {
+    0%, 100% { width: 58%; }
+    50% { width: 88%; }
+  }
+
+  @media (max-width: 1080px) {
+    .story-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .story-stage {
+      position: relative;
+      top: 0;
+    }
+
+    .story-beat {
+      min-height: auto;
+    }
+  }
+
+  @media (max-width: 760px) {
+    .story {
+      padding: 88px 18px 26px;
+    }
+
+    .stage-frame {
+      padding: 18px;
+      min-height: auto;
+    }
+
+    .stage-panels {
+      grid-template-columns: 1fr;
+      min-height: auto;
+    }
+
+    .story-beat {
+      padding: 22px;
     }
   }
 </style>

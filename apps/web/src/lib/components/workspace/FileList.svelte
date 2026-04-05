@@ -1,5 +1,6 @@
 <script lang="ts">
   import { filesStore, hasFiles } from '$stores/files'
+  import { uiStore } from '$stores/ui'
   import FileCard from './FileCard.svelte'
   import FileDropzone from './FileDropzone.svelte'
   import { flip } from 'svelte/animate'
@@ -42,6 +43,15 @@
           <FileCard {entry} />
         </div>
       {/each}
+    </div>
+
+    <div class="fl-mobile-actions">
+      <button class="btn-secondary fl-mobile-btn" on:click={() => uiStore.setPanel('tools')}>
+        Prepare files
+      </button>
+      <button class="btn-primary fl-mobile-btn" on:click={() => uiStore.setPanel('share')}>
+        Share / Send files
+      </button>
     </div>
   {:else}
     <div class="fl-empty">
@@ -110,6 +120,22 @@
   .fl-list::-webkit-scrollbar { width: 4px; }
   .fl-list::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 2px; }
 
+  .fl-mobile-actions {
+    display: none;
+    gap: 10px;
+    position: sticky;
+    bottom: 0;
+    padding-top: 10px;
+    margin-top: 4px;
+    background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--surface-solid) 84%, transparent) 36%);
+  }
+
+  .fl-mobile-btn {
+    flex: 1;
+    min-height: 42px;
+    justify-content: center;
+  }
+
   .fl-empty {
     display: flex;
     flex-direction: column;
@@ -129,5 +155,17 @@
     color: var(--text-2);
     opacity: 0.5;
     margin-bottom: 4px;
+  }
+
+  @media (max-width: 767px) {
+    .fl-list {
+      max-height: none;
+      overflow: visible;
+      padding-right: 0;
+    }
+
+    .fl-mobile-actions {
+      display: flex;
+    }
   }
 </style>
