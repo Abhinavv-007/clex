@@ -2,30 +2,50 @@
  * Clex Vault Worker
  *
  * Routes:
- *   POST   /vault/api/secret          — create view-once secret
- *   GET    /vault/api/secret/:id      — fetch encrypted payload (marks as opened)
- *   GET    /vault/api/secret/:id/status — sender status poll (opened timestamp)
- *   POST   /vault/api/files           — get signed upload URL
- *   GET    /vault/api/files/:key      — download encrypted file
- *   DELETE /vault/api/files/:key      — delete file
- *   GET    /vault/api/files           — list user's files
- *   POST   /vault/api/pairing/offer   — device A stores pairing offer with 8-digit code
- *   GET    /vault/api/pairing/:code   — device B fetches offer by code
- *   DELETE /vault/api/pairing/:code   — delete code after use
- *   GET    /vault/api/health          — health check
+ *   POST   /vault/api/secret                    — create view-once secret
+ *   GET    /vault/api/secret/:id                — fetch encrypted payload (marks as opened)
+ *   GET    /vault/api/secret/:id/status         — sender status poll
+ *   POST   /vault/api/files                     — upload file (proxied to Supabase Storage)
+ *   GET    /vault/api/files                     — list user's files
+ *   GET    /vault/api/files/:id                 — get signed download URL (1h expiry)
+ *   DELETE /vault/api/files/:id                 — delete file
+ *   DELETE /vault/api/subscription/:subId/files — delete all files for a subscription
+ *   POST   /vault/api/pairing/offer             — device A stores pairing offer
+ *   GET    /vault/api/pairing/:code             — device B fetches offer by code
+ *   POST   /vault/api/pairing/:code/answer      — device B posts answer
+ *   GET    /vault/api/pairing/:code/answer      — device A polls for answer
+ *   DELETE /vault/api/pairing/:code             — clean up after pairing
+ *   GET    /vault/api/health                    — health check
+ *
+ * Cron (every hour):
+ *   Queries pending_deletions where delete_at <= now(), deletes from Supabase,
+ *   removes from D1 attachments + pending_deletions.
  */
 
 export interface Env {
+  // KV
   VAULT_SECRETS: KVNamespace
   VAULT_TOKENS: KVNamespace
   VAULT_SIGNALS: KVNamespace
-  VAULT_FILES: R2Bucket | undefined  // optional until R2 is enabled on the account
+  UPLOAD_QUOTA: KVNamespace      // daily upload quota tracking
+  // D1
   DB: D1Database
+  // Supabase
+  SUPABASE_URL: string
+  SUPABASE_ANON_KEY: string
+  SUPABASE_SERVICE_ROLE_KEY: string
+  // Config
   ALLOWED_ORIGIN: string
   MAX_SECRET_SIZE: string
-  MAX_FILE_SIZE: string
-  STORAGE_QUOTA_BYTES: string
 }
+
+// ── Constants ─────────────────────────────────────────────────────────────────
+
+const STORAGE_BUCKET = 'attachments'
+const MAX_FILE_BYTES = 10 * 1024 * 1024          // 10 MB per file
+const DAILY_QUOTA_BYTES = 100 * 1024 * 1024      // 100 MB per user per day
+const QUOTA_KV_TTL = 25 * 60 * 60               // 25 hours in seconds
+const DELETE_AFTER_MS = 24 * 60 * 60 * 1000     // 24 hours in ms
 
 // ── CORS ──────────────────────────────────────────────────────────────────────
 
@@ -39,7 +59,7 @@ function corsHeaders(origin: string, allowedStr: string): Record<string, string>
   return {
     'Access-Control-Allow-Origin': allowed,
     'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Vault-UID',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Vault-UID, X-Subscription-ID, X-Filename',
     'Access-Control-Max-Age': '86400',
     Vary: 'Origin',
   }
@@ -56,8 +76,6 @@ function err(msg: string, status = 400, cors: Record<string, string> = {}): Resp
   return json({ error: msg }, status, cors)
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
 function randomId(len = 24): string {
   const bytes = new Uint8Array(len)
   crypto.getRandomValues(bytes)
@@ -69,12 +87,99 @@ function random8Digit(): string {
   return n.toString().padStart(8, '0')
 }
 
+/** UTC date string for quota key: YYYY-MM-DD */
+function utcDate(now = Date.now()): string {
+  return new Date(now).toISOString().slice(0, 10)
+}
+
+// ── Supabase Storage helpers ──────────────────────────────────────────────────
+
+async function supabaseUpload(
+  env: Env,
+  storagePath: string,
+  body: ReadableStream | ArrayBuffer | Uint8Array,
+  contentType: string,
+): Promise<void> {
+  const res = await fetch(
+    `${env.SUPABASE_URL}/storage/v1/object/${STORAGE_BUCKET}/${storagePath}`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
+        'Content-Type': contentType,
+        'x-upsert': 'false',
+      },
+      body,
+    },
+  )
+  if (!res.ok) {
+    const text = await res.text()
+    throw new Error(`Supabase upload failed (${res.status}): ${text}`)
+  }
+}
+
+/** Returns a fully-qualified signed URL valid for expiresIn seconds (default 1 hour). */
+async function supabaseSignedUrl(
+  env: Env,
+  storagePath: string,
+  expiresIn = 3600,
+): Promise<string> {
+  const res = await fetch(
+    `${env.SUPABASE_URL}/storage/v1/object/sign/${STORAGE_BUCKET}/${storagePath}`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ expiresIn }),
+    },
+  )
+  if (!res.ok) throw new Error(`Supabase sign URL failed (${res.status})`)
+  const data = await res.json() as { signedURL: string }
+  // signedURL is a path like /storage/v1/object/sign/... — prepend origin
+  return `${env.SUPABASE_URL}${data.signedURL}`
+}
+
+/** Deletes one or more paths from the bucket. Failures are swallowed (best-effort). */
+async function supabaseDelete(env: Env, paths: string[]): Promise<void> {
+  if (paths.length === 0) return
+  await fetch(
+    `${env.SUPABASE_URL}/storage/v1/object/${STORAGE_BUCKET}`,
+    {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ prefixes: paths }),
+    },
+  ).catch(() => { /* best-effort */ })
+}
+
+// ── Daily upload quota (KV) ───────────────────────────────────────────────────
+
+async function checkAndUpdateQuota(
+  env: Env,
+  userId: string,
+  fileBytes: number,
+): Promise<{ allowed: boolean; used: number }> {
+  const key = `upload_quota:${userId}:${utcDate()}`
+  const raw = await env.UPLOAD_QUOTA.get(key)
+  const used = raw ? parseInt(raw, 10) : 0
+  if (used + fileBytes > DAILY_QUOTA_BYTES) {
+    return { allowed: false, used }
+  }
+  await env.UPLOAD_QUOTA.put(key, String(used + fileBytes), { expirationTtl: QUOTA_KV_TTL })
+  return { allowed: true, used: used + fileBytes }
+}
+
 // ── Secret Share ──────────────────────────────────────────────────────────────
 
 interface SecretRecord {
-  encryptedPayload: string   // base64 AES-GCM ciphertext (server is zero-knowledge)
-  iv: string                  // base64 IV
-  title?: string              // optional encrypted title (server zero-knowledge)
+  encryptedPayload: string
+  iv: string
+  title?: string
   createdAt: number
   expiresAt: number
   alreadyOpened: boolean
@@ -93,7 +198,6 @@ async function handleSecretCreate(req: Request, env: Env, cors: Record<string, s
 
   const validTtls = [3600, 21600, 86400, 604800]
   const ttl = validTtls.includes(ttlSeconds) ? ttlSeconds : 86400
-
   const id = randomId(16)
   const now = Date.now()
   const record: SecretRecord = {
@@ -106,35 +210,29 @@ async function handleSecretCreate(req: Request, env: Env, cors: Record<string, s
   }
 
   await env.VAULT_SECRETS.put(`secret:${id}`, JSON.stringify(record), { expirationTtl: ttl })
-
   return json({ id, expiresAt: record.expiresAt }, 201, cors)
 }
 
 async function handleSecretFetch(id: string, env: Env, cors: Record<string, string>): Promise<Response> {
   const raw = await env.VAULT_SECRETS.get(`secret:${id}`)
-  if (!raw) {
-    return json({ gone: true, reason: 'not_found' }, 410, cors)
-  }
+  if (!raw) return json({ gone: true, reason: 'not_found' }, 410, cors)
 
   const record: SecretRecord = JSON.parse(raw)
-
   if (record.alreadyOpened) {
     return json({ gone: true, reason: 'already_opened', openedAt: record.openedAt }, 410, cors)
   }
-
   if (Date.now() > record.expiresAt) {
     await env.VAULT_SECRETS.delete(`secret:${id}`)
     return json({ gone: true, reason: 'expired' }, 410, cors)
   }
 
-  // Mark as opened atomically before returning payload
   const openedAt = Date.now()
   const updated: SecretRecord = { ...record, alreadyOpened: true, openedAt }
   const remainingTtl = Math.ceil((record.expiresAt - Date.now()) / 1000)
   await env.VAULT_SECRETS.put(
     `secret:${id}`,
     JSON.stringify(updated),
-    { expirationTtl: Math.max(remainingTtl, 300) } // keep for 5 min so sender can poll status
+    { expirationTtl: Math.max(remainingTtl, 300) },
   )
 
   return json({
@@ -149,7 +247,6 @@ async function handleSecretFetch(id: string, env: Env, cors: Record<string, stri
 async function handleSecretStatus(id: string, env: Env, cors: Record<string, string>): Promise<Response> {
   const raw = await env.VAULT_SECRETS.get(`secret:${id}`)
   if (!raw) return json({ exists: false }, 200, cors)
-
   const record: SecretRecord = JSON.parse(raw)
   return json({
     exists: true,
@@ -159,154 +256,258 @@ async function handleSecretStatus(id: string, env: Env, cors: Record<string, str
   }, 200, cors)
 }
 
-// ── File Upload / Download ────────────────────────────────────────────────────
+// ── File Upload / Download (Supabase Storage) ─────────────────────────────────
 
-interface FileTokenRecord {
-  uid: string
-  r2Key: string
-  filename: string
-  sizeBytes: number
-  mimeType: string
-  expiresAt: number
-  downloadOnce: boolean
-  downloadCount: number
-}
-
+/**
+ * POST /vault/api/files
+ *
+ * Headers:
+ *   X-Vault-UID:         authenticated user id
+ *   X-Subscription-ID:  subscription / workspace id
+ *   X-Filename:         original filename (URL-encoded if needed)
+ *   Content-Type:       MIME type of the file
+ *   Content-Length:     byte size (required for quota check)
+ *
+ * Body: raw file bytes
+ *
+ * Rules enforced:
+ *   1. Content-Length > 10MB → 413
+ *   2. Daily quota (100MB/user/day) → 429
+ *   3. Upload to Supabase using service_role key
+ *   4. Insert into D1 attachments + pending_deletions
+ *   5. Update quota KV
+ */
 async function handleFileUpload(req: Request, env: Env, cors: Record<string, string>): Promise<Response> {
-  const uid = req.headers.get('X-Vault-UID')
-  if (!uid) return err('X-Vault-UID header required (must be authenticated)', 401, cors)
+  const userId = req.headers.get('X-Vault-UID')
+  if (!userId) return err('X-Vault-UID header required', 401, cors)
 
-  let meta: { filename?: string; sizeBytes?: number; mimeType?: string; ttlSeconds?: number; downloadOnce?: boolean }
-  try { meta = await req.json() } catch { return err('Invalid JSON', 400, cors) }
+  const subscriptionId = req.headers.get('X-Subscription-ID') ?? 'default'
+  const rawFilename = req.headers.get('X-Filename')
+  if (!rawFilename) return err('X-Filename header required', 400, cors)
+  const filename = decodeURIComponent(rawFilename)
 
-  const { filename, sizeBytes, mimeType, ttlSeconds = 86400, downloadOnce = false } = meta
-  if (!filename || !sizeBytes || !mimeType) return err('filename, sizeBytes, mimeType required', 400, cors)
+  const contentType = req.headers.get('Content-Type') ?? 'application/octet-stream'
+  const contentLength = req.headers.get('Content-Length')
 
-  const maxFileSize = parseInt(env.MAX_FILE_SIZE ?? '20971520')
-  if (sizeBytes > maxFileSize) return err('File exceeds 20MB limit', 413, cors)
+  // ── Rule 1: file size check ──────────────────────────────────────────────
+  if (!contentLength) return err('Content-Length header required', 411, cors)
+  const fileBytes = parseInt(contentLength, 10)
+  if (isNaN(fileBytes) || fileBytes <= 0) return err('Invalid Content-Length', 400, cors)
+  if (fileBytes > MAX_FILE_BYTES) {
+    return err(`File exceeds 10MB limit (got ${(fileBytes / 1024 / 1024).toFixed(1)}MB)`, 413, cors)
+  }
 
-  const r2Key = `vault/${uid}/${randomId(12)}/${filename}`
-  const tokenId = randomId(16)
-  const validTtls = [3600, 21600, 86400]
-  const ttl = validTtls.includes(ttlSeconds) ? ttlSeconds : 86400
-  const expiresAt = Date.now() + ttl * 1000
+  // ── Rule 2: daily quota check ────────────────────────────────────────────
+  const quota = await checkAndUpdateQuota(env, userId, fileBytes)
+  if (!quota.allowed) {
+    const usedMB = (quota.used / 1024 / 1024).toFixed(1)
+    return err(`Daily upload quota exceeded (${usedMB}MB / 100MB used today)`, 429, cors)
+  }
 
-  const record: FileTokenRecord = { uid, r2Key, filename, sizeBytes, mimeType, expiresAt, downloadOnce, downloadCount: 0 }
-  await env.VAULT_TOKENS.put(`upload:${tokenId}`, JSON.stringify(record), { expirationTtl: 300 }) // 5 min to complete upload
-
-  // Return a token the client uses to PUT directly to our worker
-  return json({ tokenId, r2Key, expiresAt }, 201, cors)
-}
-
-async function handleFileComplete(tokenId: string, req: Request, env: Env, cors: Record<string, string>): Promise<Response> {
-  const raw = await env.VAULT_TOKENS.get(`upload:${tokenId}`)
-  if (!raw) return err('Upload token not found or expired', 404, cors)
-
-  const record: FileTokenRecord = JSON.parse(raw)
+  // ── Rule 3: upload to Supabase ───────────────────────────────────────────
+  const timestamp = Date.now()
+  const storagePath = `${userId}/${subscriptionId}/${timestamp}_${filename}`
   const body = req.body
-  if (!body) return err('No file body', 400, cors)
+  if (!body) return err('Empty request body', 400, cors)
 
-  await env.VAULT_FILES!.put(record.r2Key, body, {
-    httpMetadata: { contentType: record.mimeType },
-    customMetadata: {
-      uid: record.uid,
-      filename: record.filename,
-      expiresAt: record.expiresAt.toString(),
-    },
-  })
+  try {
+    await supabaseUpload(env, storagePath, body, contentType)
+  } catch (e: unknown) {
+    // Roll back quota increment on upload failure
+    const key = `upload_quota:${userId}:${utcDate()}`
+    const raw = await env.UPLOAD_QUOTA.get(key)
+    if (raw) {
+      const current = parseInt(raw, 10) - fileBytes
+      if (current > 0) {
+        await env.UPLOAD_QUOTA.put(key, String(current), { expirationTtl: QUOTA_KV_TTL })
+      } else {
+        await env.UPLOAD_QUOTA.delete(key)
+      }
+    }
+    return err(e instanceof Error ? e.message : 'Upload failed', 502, cors)
+  }
 
-  // Move token to download token
-  const dlRecord: FileTokenRecord = { ...record, downloadCount: 0 }
-  const ttlRemaining = Math.ceil((record.expiresAt - Date.now()) / 1000)
-  await env.VAULT_TOKENS.put(`file:${record.r2Key}`, JSON.stringify(dlRecord), { expirationTtl: ttlRemaining })
-  await env.VAULT_TOKENS.delete(`upload:${tokenId}`)
+  // ── Rule 4: persist metadata in D1 ──────────────────────────────────────
+  const id = randomId(16)
+  const uploadAt = Math.floor(timestamp / 1000)
+  const deleteAt = Math.floor((timestamp + DELETE_AFTER_MS) / 1000)
 
-  // Update storage accounting in D1
-  await env.DB.prepare(`
-    INSERT INTO vault_files (id, uid, r2_key, filename, size_bytes, mime_type, expires_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
-    ON CONFLICT(id) DO NOTHING
-  `).bind(randomId(8), record.uid, record.r2Key, record.filename, record.sizeBytes, record.mimeType, Math.floor(record.expiresAt / 1000)).run()
+  await env.DB.batch([
+    env.DB.prepare(`
+      INSERT INTO attachments (id, user_id, subscription_id, storage_path, filename, size_bytes, mime_type, upload_at, delete_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(id, userId, subscriptionId, storagePath, filename, fileBytes, contentType, uploadAt, deleteAt),
 
-  return json({ ok: true, r2Key: record.r2Key, expiresAt: record.expiresAt }, 200, cors)
+    env.DB.prepare(`
+      INSERT INTO pending_deletions (id, storage_path, delete_at)
+      VALUES (?, ?, ?)
+    `).bind(id, storagePath, deleteAt),
+  ])
+
+  return json({
+    id,
+    storagePath,
+    filename,
+    sizeBytes: fileBytes,
+    mimeType: contentType,
+    uploadAt: uploadAt * 1000,
+    deleteAt: deleteAt * 1000,
+  }, 201, cors)
 }
 
-async function handleFileDownload(r2Key: string, env: Env, cors: Record<string, string>): Promise<Response> {
-  const raw = await env.VAULT_TOKENS.get(`file:${r2Key}`)
-  if (!raw) return err('File not found or expired', 404, cors)
+/**
+ * GET /vault/api/files/:id
+ *
+ * Verifies user owns the file via D1, then returns a Supabase signed URL
+ * valid for 1 hour. Client downloads directly from Supabase.
+ */
+async function handleFileDownload(fileId: string, userId: string, env: Env, cors: Record<string, string>): Promise<Response> {
+  const row = await env.DB.prepare(
+    'SELECT storage_path, filename, mime_type, delete_at FROM attachments WHERE id = ? AND user_id = ?'
+  ).bind(fileId, userId).first<{ storage_path: string; filename: string; mime_type: string; delete_at: number }>()
 
-  const record: FileTokenRecord = JSON.parse(raw)
-  if (Date.now() > record.expiresAt) {
-    await env.VAULT_FILES!.delete(record.r2Key)
-    await env.VAULT_TOKENS.delete(`file:${r2Key}`)
-    return err('File expired', 410, cors)
+  if (!row) return err('File not found or access denied', 404, cors)
+  if (Math.floor(Date.now() / 1000) > row.delete_at) {
+    return err('File has expired', 410, cors)
   }
 
-  if (record.downloadOnce && record.downloadCount > 0) {
-    return err('File already downloaded', 410, cors)
+  try {
+    const signedUrl = await supabaseSignedUrl(env, row.storage_path)
+    return json({
+      signedUrl,
+      filename: row.filename,
+      mimeType: row.mime_type,
+      expiresIn: 3600,
+    }, 200, cors)
+  } catch (e: unknown) {
+    return err(e instanceof Error ? e.message : 'Failed to generate download URL', 502, cors)
   }
-
-  const obj = await env.VAULT_FILES!.get(record.r2Key)
-  if (!obj) return err('File not found in storage', 404, cors)
-
-  // Increment download count
-  const updated: FileTokenRecord = { ...record, downloadCount: record.downloadCount + 1 }
-  const ttlRemaining = Math.ceil((record.expiresAt - Date.now()) / 1000)
-  await env.VAULT_TOKENS.put(`file:${r2Key}`, JSON.stringify(updated), { expirationTtl: ttlRemaining })
-
-  // If download-once, delete after serving
-  if (record.downloadOnce) {
-    await env.VAULT_FILES!.delete(record.r2Key)
-    await env.VAULT_TOKENS.delete(`file:${r2Key}`)
-  }
-
-  const headers = new Headers(cors)
-  headers.set('Content-Type', record.mimeType)
-  headers.set('Content-Disposition', `attachment; filename="${encodeURIComponent(record.filename)}"`)
-  headers.set('Content-Length', record.sizeBytes.toString())
-
-  return new Response(obj.body, { headers })
 }
 
-async function handleFileDelete(r2Key: string, uid: string, env: Env, cors: Record<string, string>): Promise<Response> {
-  const raw = await env.VAULT_TOKENS.get(`file:${r2Key}`)
-  if (raw) {
-    const record: FileTokenRecord = JSON.parse(raw)
-    if (record.uid !== uid) return err('Forbidden', 403, cors)
-    await env.VAULT_FILES!.delete(record.r2Key)
-    await env.VAULT_TOKENS.delete(`file:${r2Key}`)
-    await env.DB.prepare('DELETE FROM vault_files WHERE r2_key = ? AND uid = ?').bind(r2Key, uid).run()
-  }
+/**
+ * DELETE /vault/api/files/:id
+ *
+ * Deletes from Supabase Storage + D1 attachments + D1 pending_deletions.
+ */
+async function handleFileDelete(fileId: string, userId: string, env: Env, cors: Record<string, string>): Promise<Response> {
+  const row = await env.DB.prepare(
+    'SELECT storage_path FROM attachments WHERE id = ? AND user_id = ?'
+  ).bind(fileId, userId).first<{ storage_path: string }>()
+
+  if (!row) return err('File not found or access denied', 404, cors)
+
+  await supabaseDelete(env, [row.storage_path])
+  await env.DB.batch([
+    env.DB.prepare('DELETE FROM attachments WHERE id = ?').bind(fileId),
+    env.DB.prepare('DELETE FROM pending_deletions WHERE id = ?').bind(fileId),
+  ])
+
   return json({ ok: true }, 200, cors)
 }
 
-async function handleFileList(uid: string, env: Env, cors: Record<string, string>): Promise<Response> {
-  const result = await env.DB.prepare(`
-    SELECT id, r2_key, filename, size_bytes, mime_type, expires_at
-    FROM vault_files WHERE uid = ? ORDER BY expires_at DESC
-  `).bind(uid).all()
-
+/**
+ * GET /vault/api/files
+ *
+ * Lists all non-expired attachments for a user.
+ */
+async function handleFileList(userId: string, env: Env, cors: Record<string, string>): Promise<Response> {
   const now = Math.floor(Date.now() / 1000)
-  const files = (result.results ?? [])
-    .filter((f: Record<string, unknown>) => (f.expires_at as number) > now)
-    .map((f: Record<string, unknown>) => ({
-      id: f.id,
-      r2Key: f.r2_key,
-      filename: f.filename,
-      sizeBytes: f.size_bytes,
-      mimeType: f.mime_type,
-      expiresAt: (f.expires_at as number) * 1000,
-    }))
+  const result = await env.DB.prepare(`
+    SELECT id, storage_path, filename, size_bytes, mime_type, upload_at, delete_at
+    FROM attachments
+    WHERE user_id = ? AND delete_at > ?
+    ORDER BY upload_at DESC
+  `).bind(userId, now).all<{
+    id: string
+    storage_path: string
+    filename: string
+    size_bytes: number
+    mime_type: string
+    upload_at: number
+    delete_at: number
+  }>()
+
+  const files = (result.results ?? []).map(f => ({
+    id: f.id,
+    storagePath: f.storage_path,
+    filename: f.filename,
+    sizeBytes: f.size_bytes,
+    mimeType: f.mime_type,
+    uploadAt: f.upload_at * 1000,
+    deleteAt: f.delete_at * 1000,
+  }))
 
   return json({ files }, 200, cors)
 }
 
-// ── Device Pairing Signals ────────────────────────────────────────────────────
+/**
+ * DELETE /vault/api/subscription/:subId/files
+ *
+ * Immediately deletes all files associated with a subscription from
+ * Supabase Storage and removes all D1 records.
+ */
+async function handleSubscriptionDelete(
+  subId: string,
+  userId: string,
+  env: Env,
+  cors: Record<string, string>,
+): Promise<Response> {
+  const result = await env.DB.prepare(
+    'SELECT id, storage_path FROM attachments WHERE subscription_id = ? AND user_id = ?'
+  ).bind(subId, userId).all<{ id: string; storage_path: string }>()
+
+  const rows = result.results ?? []
+  if (rows.length === 0) return json({ ok: true, deleted: 0 }, 200, cors)
+
+  // Delete all from Supabase in one call
+  const paths = rows.map(r => r.storage_path)
+  await supabaseDelete(env, paths)
+
+  // Delete all D1 records in a batch
+  const ids = rows.map(r => r.id)
+  const placeholders = ids.map(() => '?').join(', ')
+  await env.DB.batch([
+    env.DB.prepare(`DELETE FROM attachments WHERE id IN (${placeholders})`).bind(...ids),
+    env.DB.prepare(`DELETE FROM pending_deletions WHERE id IN (${placeholders})`).bind(...ids),
+  ])
+
+  return json({ ok: true, deleted: rows.length }, 200, cors)
+}
+
+// ── Cron: pending deletions ───────────────────────────────────────────────────
+
+/**
+ * Runs every hour via Cron Trigger.
+ * Fetches rows from pending_deletions where delete_at <= now(),
+ * deletes each file from Supabase Storage, then cleans up D1.
+ */
+async function runPendingDeletions(env: Env): Promise<void> {
+  const now = Math.floor(Date.now() / 1000)
+
+  const result = await env.DB.prepare(
+    'SELECT id, storage_path FROM pending_deletions WHERE delete_at <= ? LIMIT 200'
+  ).bind(now).all<{ id: string; storage_path: string }>()
+
+  const rows = result.results ?? []
+  if (rows.length === 0) return
+
+  const paths = rows.map(r => r.storage_path)
+  await supabaseDelete(env, paths)
+
+  const ids = rows.map(r => r.id)
+  const placeholders = ids.map(() => '?').join(', ')
+  await env.DB.batch([
+    env.DB.prepare(`DELETE FROM pending_deletions WHERE id IN (${placeholders})`).bind(...ids),
+    env.DB.prepare(`DELETE FROM attachments WHERE id IN (${placeholders})`).bind(...ids),
+  ])
+}
+
+// ── Device Pairing ────────────────────────────────────────────────────────────
 
 interface PairingOffer {
   code: string
-  offer: string       // JSON-encoded WebRTC SDP offer + ICE candidates
-  deviceInfo: string  // JSON-encoded device name/fingerprint
+  offer: string
+  deviceInfo: string
   createdAt: number
   expiresAt: number
 }
@@ -314,7 +515,6 @@ interface PairingOffer {
 async function handlePairingOffer(req: Request, env: Env, cors: Record<string, string>): Promise<Response> {
   let body: { offer?: string; deviceInfo?: string }
   try { body = await req.json() } catch { return err('Invalid JSON', 400, cors) }
-
   if (!body.offer) return err('offer required', 400, cors)
 
   const code = random8Digit()
@@ -324,11 +524,10 @@ async function handlePairingOffer(req: Request, env: Env, cors: Record<string, s
     offer: body.offer,
     deviceInfo: body.deviceInfo ?? '{}',
     createdAt: now,
-    expiresAt: now + 300_000, // 5 minutes
+    expiresAt: now + 300_000,
   }
 
   await env.VAULT_SIGNALS.put(`pairing:${code}`, JSON.stringify(record), { expirationTtl: 300 })
-
   return json({ code, expiresAt: record.expiresAt }, 201, cors)
 }
 
@@ -341,16 +540,13 @@ async function handlePairingFetch(code: string, env: Env, cors: Record<string, s
     await env.VAULT_SIGNALS.delete(`pairing:${code}`)
     return json({ found: false, reason: 'expired' }, 404, cors)
   }
-
   return json({ found: true, offer: record.offer, deviceInfo: record.deviceInfo, expiresAt: record.expiresAt }, 200, cors)
 }
 
 async function handlePairingAnswer(code: string, req: Request, env: Env, cors: Record<string, string>): Promise<Response> {
   let body: { answer?: string }
   try { body = await req.json() } catch { return err('Invalid JSON', 400, cors) }
-
   if (!body.answer) return err('answer required', 400, cors)
-
   await env.VAULT_SIGNALS.put(`pairing-answer:${code}`, body.answer, { expirationTtl: 60 })
   return json({ ok: true }, 200, cors)
 }
@@ -367,7 +563,7 @@ async function handlePairingDelete(code: string, env: Env, cors: Record<string, 
   return json({ ok: true }, 200, cors)
 }
 
-// ── Main Fetch Handler ────────────────────────────────────────────────────────
+// ── Main Handler ──────────────────────────────────────────────────────────────
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
@@ -405,33 +601,30 @@ export default {
       return err('Method not allowed', 405, cors)
     }
 
-    // ── Files ─────────────────────────────────────────────────────────────────
-    if (path.startsWith('/vault/api/files')) {
-      if (!env.VAULT_FILES) {
-        return err('File sharing not available — R2 not configured', 503, cors)
+    // ── Files (Supabase Storage) ──────────────────────────────────────────────
+    if (path === '/vault/api/files') {
+      if (method === 'POST') return handleFileUpload(request, env, cors)
+      if (method === 'GET') {
+        const userId = request.headers.get('X-Vault-UID')
+        if (!userId) return err('X-Vault-UID required', 401, cors)
+        return handleFileList(userId, env, cors)
       }
-      if (path === '/vault/api/files' && method === 'POST') {
-        return handleFileUpload(request, env, cors)
-      }
-      if (path === '/vault/api/files' && method === 'GET') {
-        const uid = request.headers.get('X-Vault-UID')
-        if (!uid) return err('X-Vault-UID required', 401, cors)
-        return handleFileList(uid, env, cors)
-      }
-      const uploadCompleteMatch = path.match(/^\/vault\/api\/files\/upload\/([a-f0-9]+)$/)
-      if (uploadCompleteMatch && method === 'PUT') {
-        return handleFileComplete(uploadCompleteMatch[1], request, env, cors)
-      }
-      const fileKeyMatch = path.match(/^\/vault\/api\/files\/(.+)$/)
-      if (fileKeyMatch) {
-        const r2Key = decodeURIComponent(fileKeyMatch[1])
-        if (method === 'GET') return handleFileDownload(r2Key, env, cors)
-        if (method === 'DELETE') {
-          const uid = request.headers.get('X-Vault-UID')
-          if (!uid) return err('X-Vault-UID required', 401, cors)
-          return handleFileDelete(r2Key, uid, env, cors)
-        }
-      }
+    }
+
+    const fileMatch = path.match(/^\/vault\/api\/files\/([a-f0-9]+)$/)
+    if (fileMatch) {
+      const fileId = fileMatch[1]
+      const userId = request.headers.get('X-Vault-UID')
+      if (!userId) return err('X-Vault-UID required', 401, cors)
+      if (method === 'GET') return handleFileDownload(fileId, userId, env, cors)
+      if (method === 'DELETE') return handleFileDelete(fileId, userId, env, cors)
+    }
+
+    const subDeleteMatch = path.match(/^\/vault\/api\/subscription\/([^/]+)\/files$/)
+    if (subDeleteMatch && method === 'DELETE') {
+      const userId = request.headers.get('X-Vault-UID')
+      if (!userId) return err('X-Vault-UID required', 401, cors)
+      return handleSubscriptionDelete(subDeleteMatch[1], userId, env, cors)
     }
 
     // ── Device Pairing ────────────────────────────────────────────────────────
@@ -454,5 +647,10 @@ export default {
     }
 
     return err('Not found', 404, cors)
+  },
+
+  // Runs every hour — cleans up expired files from Supabase + D1
+  async scheduled(_event: ScheduledEvent, env: Env): Promise<void> {
+    await runPendingDeletions(env)
   },
 }

@@ -4,6 +4,10 @@ compatibility_date = "2024-05-29"
 compatibility_flags = ["nodejs_compat"]
 workers_dev = true
 
+# ── Cron Triggers ──────────────────────────────────────────────────────────────
+[triggers]
+crons = ["0 * * * *"]   # every hour — runs pending file deletions
+
 # ── KV Namespaces ──────────────────────────────────────────────────────────────
 [[kv_namespaces]]
 binding = "VAULT_SECRETS"
@@ -17,11 +21,9 @@ id = "eea542853aed48cb94933b5ec022e35d"
 binding = "VAULT_SIGNALS"
 id = "e50630ec62f64567be6dc57aaee809d6"
 
-# ── R2 Bucket ─────────────────────────────────────────────────────────────────
-# Uncomment after enabling R2 at dash.cloudflare.com/r2
-# [[r2_buckets]]
-# binding = "VAULT_FILES"
-# bucket_name = "vault-files"
+[[kv_namespaces]]
+binding = "UPLOAD_QUOTA"
+id = "e03c4c4e8f6c434cbb8db7b77da0860b"
 
 # ── D1 Database ───────────────────────────────────────────────────────────────
 [[d1_databases]]
@@ -32,12 +34,17 @@ database_id = "68d8ae50-6b96-46e2-85b2-4edbd4d3c0ba"
 [vars]
 ALLOWED_ORIGIN = "*"
 MAX_SECRET_SIZE = "50000"
-MAX_FILE_SIZE = "20971520"
-STORAGE_QUOTA_BYTES = "1073741824"
+# Supabase — fill in for local dev or use wrangler secret put
+SUPABASE_URL = ""
+SUPABASE_ANON_KEY = ""
+SUPABASE_SERVICE_ROLE_KEY = ""
 
 # ── Production ────────────────────────────────────────────────────────────────
 [env.production]
 name = "clex-vault-prod"
+
+[env.production.triggers]
+crons = ["0 * * * *"]
 
 [[env.production.kv_namespaces]]
 binding = "VAULT_SECRETS"
@@ -51,11 +58,9 @@ id = "eea542853aed48cb94933b5ec022e35d"
 binding = "VAULT_SIGNALS"
 id = "e50630ec62f64567be6dc57aaee809d6"
 
-# ── R2 Bucket (production) ────────────────────────────────────────────────────
-# Uncomment after enabling R2 at dash.cloudflare.com/r2
-# [[env.production.r2_buckets]]
-# binding = "VAULT_FILES"
-# bucket_name = "vault-files"
+[[env.production.kv_namespaces]]
+binding = "UPLOAD_QUOTA"
+id = "e03c4c4e8f6c434cbb8db7b77da0860b"
 
 [[env.production.d1_databases]]
 binding = "DB"
@@ -69,5 +74,8 @@ zone_name = "clex.in"
 [env.production.vars]
 ALLOWED_ORIGIN = "https://clex.in, https://www.clex.in"
 MAX_SECRET_SIZE = "50000"
-MAX_FILE_SIZE = "20971520"
-STORAGE_QUOTA_BYTES = "1073741824"
+# Production Supabase secrets — set via: wrangler secret put SUPABASE_URL --env production
+# (do NOT commit real values here)
+SUPABASE_URL = ""
+SUPABASE_ANON_KEY = ""
+SUPABASE_SERVICE_ROLE_KEY = ""
