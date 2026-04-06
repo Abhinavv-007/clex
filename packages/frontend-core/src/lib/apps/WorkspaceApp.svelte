@@ -41,7 +41,7 @@
 
     <div class="ws-grid">
       <aside class="ws-col ws-col-files">
-        <FileList {receiveBasePath} {receivePathFormat} />
+        <FileList />
       </aside>
 
       <section class="ws-col">
@@ -56,7 +56,7 @@
     <div class="ws-mobile-panel">
       <div class="ws-col">
         {#if activePanel === 'files'}
-          <FileList {receiveBasePath} {receivePathFormat} />
+          <FileList />
         {:else if activePanel === 'tools'}
           <ToolChain />
         {:else}

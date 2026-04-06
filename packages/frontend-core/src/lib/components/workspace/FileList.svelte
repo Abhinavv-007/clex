@@ -1,20 +1,13 @@
 <script lang="ts">
   import { filesStore, hasFiles } from '$stores/files'
-  import { transferStore } from '$stores/transfer'
   import { uiStore } from '$stores/ui'
-  import { siteRoutes } from '$utils'
-  import ReceiveAccessCard from '$components/sharing/ReceiveAccessCard.svelte'
   import FileCard from './FileCard.svelte'
   import FileDropzone from './FileDropzone.svelte'
   import { flip } from 'svelte/animate'
   import { slide } from 'svelte/transition'
   import { formatBytes } from '$utils/format'
 
-  export let receiveBasePath = siteRoutes.receive
-  export let receivePathFormat: 'segment' | 'query' = 'segment'
-
   $: totalSize = $filesStore.reduce((sum, f) => sum + f.size, 0)
-  $: showReceiveAccess = $transferStore.method !== 'drive'
 </script>
 
 <div class="fl-root">
@@ -64,12 +57,6 @@
     </div>
   </section>
 
-  {#if showReceiveAccess}
-    <section class="fl-panel fl-panel--receive fl-receive-access">
-      <ReceiveAccessCard {receiveBasePath} {receivePathFormat} size={168} />
-    </section>
-  {/if}
-
   {#if $hasFiles}
     <div class="fl-mobile-actions">
       <button class="btn-secondary fl-mobile-btn" on:click={() => uiStore.setPanel('tools')}>
@@ -105,10 +92,6 @@
     display: flex;
     flex-direction: column;
     min-height: 0;
-  }
-
-  .fl-panel--receive {
-    flex: 0 0 auto;
   }
 
   .fl-header {
@@ -226,11 +209,6 @@
     .fl-panel {
       padding: 12px;
     }
-
-    .fl-receive-access {
-      display: none;
-    }
-
     .fl-mobile-actions {
       display: flex;
     }
