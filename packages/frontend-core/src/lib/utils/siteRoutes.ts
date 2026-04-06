@@ -1,6 +1,7 @@
 export interface SiteRoutes {
   home: string
   features: string
+  vault: string
   howItWorks: string
   gettingStarted: string
   faq: string
@@ -14,6 +15,7 @@ export interface SiteRoutes {
 export const siteRoutes: SiteRoutes = Object.freeze({
   home: '/',
   features: '/features',
+  vault: '/vault',
   howItWorks: '/how-it-works',
   gettingStarted: '/getting-started',
   faq: '/faq',

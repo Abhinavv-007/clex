@@ -24,6 +24,7 @@ export function getFooterHTML() {
           <h4 class="footer__col-title">Product</h4>
           <nav class="footer__links">
             <a href="${routes.features}" class="footer__link">Features</a>
+            <a href="${routes.vault}" class="footer__link">Vault</a>
             <a href="${routes.howItWorks}" class="footer__link">How It Works</a>
             <a href="${routes.workspace}" class="footer__link">Workspace</a>
             <a href="${routes.chain}" class="footer__link">Chain</a>

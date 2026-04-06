@@ -61,7 +61,9 @@ export function getNavHTML(activePage = '') {
 
       <div class="nav__links">
         <a href="${routes.features}" class="nav__link" data-page="features">Features</a>
+        <a href="${routes.vault}" class="nav__link" data-page="vault">Vault</a>
         <a href="${routes.howItWorks}" class="nav__link" data-page="how-it-works">How It Works</a>
+        <a href="${routes.chain}" class="nav__link" data-page="chain">Chain</a>
         <a href="${routes.gettingStarted}" class="nav__link" data-page="getting-started">Get Started</a>
         <a href="${routes.faq}" class="nav__link" data-page="faq">FAQ</a>
       </div>
@@ -82,7 +84,9 @@ export function getNavHTML(activePage = '') {
   <div class="nav__mobile-menu" id="nav-mobile-menu">
     <a href="${routes.home}" class="nav__mobile-link">Home</a>
     <a href="${routes.features}" class="nav__mobile-link">Features</a>
+    <a href="${routes.vault}" class="nav__mobile-link">Vault</a>
     <a href="${routes.howItWorks}" class="nav__mobile-link">How It Works</a>
+    <a href="${routes.chain}" class="nav__mobile-link">Chain</a>
     <a href="${routes.gettingStarted}" class="nav__mobile-link">Get Started</a>
     <a href="${routes.faq}" class="nav__mobile-link">FAQ</a>
     <a href="${routes.workspace}" class="nav__mobile-link" style="color: var(--accent-text);">Open Workspace →</a>

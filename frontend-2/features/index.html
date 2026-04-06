@@ -6,7 +6,7 @@
   <link rel="icon" type="image/png" href="/brand/clex-logo.png">
   <link rel="apple-touch-icon" href="/brand/clex-logo.png">
   <title>Features — Clex | Everything Connects</title>
-  <meta name="description" content="Explore Clex's complete feature set: image compression, PDF operations, DOCX conversion, ZIP bundling, smart chaining, and three transfer routes — all in one workspace.">
+  <meta name="description" content="Explore Clex's complete feature set: image compression, PDF operations, PDF to Image, DOCX conversion, Vault notes and secret sharing, smart chaining, and three transfer routes in one workspace.">
   <script>
     (() => {
       try {
@@ -44,6 +44,7 @@
       </a>
       <div class="nav__links">
         <a href="/features" class="nav__link" data-page="features">Features</a>
+        <a href="/vault" class="nav__link" data-page="vault">Vault</a>
         <a href="/how-it-works" class="nav__link" data-page="how-it-works">How It Works</a>
         <a href="/chain" class="nav__link" data-page="chain">Chain</a>
         <a href="/getting-started" class="nav__link" data-page="getting-started">Get Started</a>
@@ -63,6 +64,7 @@
   <div class="nav__mobile-menu" id="nav-mobile-menu">
     <a href="/" class="nav__mobile-link">Home</a>
     <a href="/features" class="nav__mobile-link">Features</a>
+    <a href="/vault" class="nav__mobile-link">Vault</a>
     <a href="/how-it-works" class="nav__mobile-link">How It Works</a>
     <a href="/chain" class="nav__mobile-link">Chain</a>
     <a href="/getting-started" class="nav__mobile-link">Get Started</a>
@@ -172,6 +174,19 @@
           <div class="tool-metric">
             <span class="metric-dot" style="background: var(--card-color)"></span>
             <span class="metric-text">Page-level precision</span>
+          </div>
+        </article>
+
+        <article class="tool-card" style="--card-color: #FFAA00; transition-delay: 0ms;">
+          <div class="card-top">
+            <div class="tool-icon-wrap"><span class="tool-icon">🖼</span></div>
+            <span class="tool-tag" style="color: var(--card-color); border-color: var(--card-color); background: color-mix(in srgb, var(--card-color) 12%, transparent)">PDF</span>
+          </div>
+          <h3 class="tool-title">PDF → Image</h3>
+          <p class="tool-desc">Export PDF pages as image files for previews, approvals, social posts, and lighter delivery flows.</p>
+          <div class="tool-metric">
+            <span class="metric-dot" style="background: var(--card-color)"></span>
+            <span class="metric-text">Page previews on demand</span>
           </div>
         </article>
 
@@ -288,6 +303,46 @@
       <p class="banner__text">Prepare ——→ Deliver</p>
     </div>
   </div>
+
+  <section class="section vault-spotlight" id="vault-spotlight">
+    <div class="container">
+      <div class="vault-spotlight__shell reveal">
+        <div class="vault-spotlight__copy">
+          <span class="section__label">Vault</span>
+          <h2 class="page-section__title vault-spotlight__title">Encrypted notes, secrets, and expiring private handoffs.</h2>
+          <p class="vault-spotlight__text">
+            Vault extends Clex beyond transfer. It stores encrypted notes locally, keeps working offline, syncs paired devices peer-to-peer when available, supports optional Google-backed access recovery, and generates one-time secrets plus expiring file links.
+          </p>
+
+          <div class="vault-spotlight__meta">
+            <span class="vault-spotlight__meta-item">Offline-first notes</span>
+            <span class="vault-spotlight__meta-item">Paired-device sync</span>
+            <span class="vault-spotlight__meta-item">Secret and file shares</span>
+          </div>
+
+          <div class="vault-spotlight__actions">
+            <a href="/vault" class="btn btn--primary">Explore Vault →</a>
+            <a href="/workspace" class="btn btn--ghost">Open Workspace</a>
+          </div>
+        </div>
+
+        <div class="vault-spotlight__stack">
+          <div class="vault-spotlight__note">
+            <strong>Notes</strong>
+            <p>Create encrypted notes and folders, search them instantly, and keep the primary copy on your own device.</p>
+          </div>
+          <div class="vault-spotlight__note">
+            <strong>Sync</strong>
+            <p>Pair another device, verify the fingerprint, and let Vault sync peer-to-peer when the network is available.</p>
+          </div>
+          <div class="vault-spotlight__note">
+            <strong>Share</strong>
+            <p>Send one-time secret links or private file downloads that expire automatically instead of leaving data sitting around.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
 
   <!-- ═══ Delivery System ═══ -->
   <section class="section delivery-system" id="delivery">
@@ -431,10 +486,11 @@
     <div class="container">
       <h2 class="cta-strip__title reveal">See it in action</h2>
       <p class="cta-strip__text reveal">
-        Open the workspace And drop your first file. No setup needed.
+        Open the workspace and drop your first file. No setup needed.
       </p>
-      <div class="reveal">
+      <div class="vault-spotlight__actions reveal">
         <a href="/workspace" class="btn btn--primary btn--large">Open Workspace →</a>
+        <a href="/vault" class="btn btn--large">Explore Vault</a>
       </div>
     </div>
   </section>
@@ -454,6 +510,7 @@
           <h4 class="footer__col-title">Product</h4>
           <nav class="footer__links">
             <a href="/features" class="footer__link">Features</a>
+            <a href="/vault" class="footer__link">Vault</a>
             <a href="/how-it-works" class="footer__link">How It Works</a>
             <a href="/workspace" class="footer__link">Workspace</a>
             <a href="/chain" class="footer__link">Chain</a>

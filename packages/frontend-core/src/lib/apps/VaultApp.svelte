@@ -11,7 +11,6 @@
    */
   import { onMount, onDestroy } from 'svelte'
   import { fade } from 'svelte/transition'
-  import Cursor from '$components/ui/Cursor.svelte'
   import VaultSidebar from '$components/vault/VaultSidebar.svelte'
   import VaultEditor from '$components/vault/VaultEditor.svelte'
   import VaultInfoPanel from '$components/vault/VaultInfoPanel.svelte'
@@ -122,7 +121,6 @@
   $: infoPanelCollapsed = $ui.infoPanelCollapsed
 </script>
 
-<Cursor />
 <Toast />
 
 {#if loading}
