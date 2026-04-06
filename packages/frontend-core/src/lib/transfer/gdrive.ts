@@ -1,4 +1,7 @@
-import { transferStore } from '$stores/transfer'
+import { get } from 'svelte/store'
+import { filesStore, type ProcessedFile } from '$stores/files'
+import { transferStore, type TransferMethod } from '$stores/transfer'
+import { uiStore } from '$stores/ui'
 
 const DRIVE_FILES_URL = 'https://www.googleapis.com/drive/v3/files'
 const DRIVE_UPLOAD_URL = 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart'
@@ -8,6 +11,10 @@ const DRIVE_FOLDER_MIME = 'application/vnd.google-apps.folder'
 const DRIVE_ROOT_FOLDER_NAME = 'Glex sharing'
 
 const TOKEN_KEY = 'clex_gdrive_token'
+const DRIVE_AUTH_DB_NAME = 'clex_drive_auth'
+const DRIVE_AUTH_STORE_NAME = 'workspace_state'
+const DRIVE_AUTH_STATE_KEY = 'pending_google_drive_auth'
+const PICKUP_RETRY_DELAYS_MS = [0, 150, 350, 700]
 
 function getApiBaseUrl(): string {
   const configured = (import.meta.env.PUBLIC_API_BASE_URL as string | undefined)?.trim()
@@ -15,19 +22,50 @@ function getApiBaseUrl(): string {
   return ''
 }
 
-// ─── Token management (sessionStorage only — tab-scoped, not persistent) ────
+type PersistedDriveEntry = {
+  id: string
+  file: File
+  name: string
+  size: number
+  type: string
+  processed?: Omit<ProcessedFile, 'url'>
+}
+
+type PersistedDriveAuthState = {
+  files: PersistedDriveEntry[]
+  method: TransferMethod
+}
+
+function getSessionStorage(): Storage | null {
+  try {
+    return typeof sessionStorage === 'undefined' ? null : sessionStorage
+  } catch {
+    return null
+  }
+}
+
+function getLocalStorage(): Storage | null {
+  try {
+    return typeof localStorage === 'undefined' ? null : localStorage
+  } catch {
+    return null
+  }
+}
+
+// ─── Token management ────────────────────────────────────────────────────────
 
 export function getStoredToken(): string | null {
-  if (typeof sessionStorage === 'undefined') return null
-  return sessionStorage.getItem(TOKEN_KEY)
+  return getSessionStorage()?.getItem(TOKEN_KEY) ?? getLocalStorage()?.getItem(TOKEN_KEY) ?? null
 }
 
 export function storeToken(token: string): void {
-  sessionStorage.setItem(TOKEN_KEY, token)
+  getSessionStorage()?.setItem(TOKEN_KEY, token)
+  getLocalStorage()?.setItem(TOKEN_KEY, token)
 }
 
 export function clearToken(): void {
-  sessionStorage.removeItem(TOKEN_KEY)
+  getSessionStorage()?.removeItem(TOKEN_KEY)
+  getLocalStorage()?.removeItem(TOKEN_KEY)
 }
 
 export function hasToken(): boolean {
@@ -115,17 +153,31 @@ export async function uploadToDrive(
 // Calls the one-time pickup endpoint that reads + deletes the httpOnly cookie.
 
 export async function pickupToken(): Promise<string | null> {
-  try {
-    const resp = await fetch(`${getApiBaseUrl()}/api/auth/gdrive/token`, { credentials: 'include' })
-    if (!resp.ok) return null
-    const data = (await resp.json()) as { token: string | null }
-    if (data.token) {
-      storeToken(data.token)
-      return data.token
+  for (const delayMs of PICKUP_RETRY_DELAYS_MS) {
+    if (delayMs > 0) {
+      await delay(delayMs)
     }
-  } catch {
-    // Silently fail — token stays null
+
+    try {
+      const resp = await fetch(`${getApiBaseUrl()}/api/auth/gdrive/token`, { credentials: 'include' })
+      if (!resp.ok) continue
+      const data = (await resp.json()) as { token: string | null }
+      if (data.token) {
+        storeToken(data.token)
+        await restorePendingDriveAuthState()
+        return data.token
+      }
+    } catch {
+      // retry
+    }
   }
+
+  const existingToken = getStoredToken()
+  if (existingToken) {
+    await restorePendingDriveAuthState()
+    return existingToken
+  }
+
   return null
 }
 
@@ -145,6 +197,7 @@ async function ensureGoogleOAuthConfigured(): Promise<void> {
 
 export async function initiateGoogleAuth(): Promise<void> {
   await ensureGoogleOAuthConfigured()
+  await persistPendingDriveAuthState()
   const apiBase = getApiBaseUrl()
   const returnTo = typeof window !== 'undefined' ? window.location.origin : ''
   const authUrl = new URL(`${apiBase}/api/auth/google`, typeof window !== 'undefined' ? window.location.origin : 'http://localhost')
@@ -152,6 +205,138 @@ export async function initiateGoogleAuth(): Promise<void> {
     authUrl.searchParams.set('return_to', returnTo)
   }
   window.location.href = authUrl.toString()
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms))
+}
+
+function canUseIndexedDb(): boolean {
+  return typeof indexedDB !== 'undefined'
+}
+
+async function openDriveAuthDb(): Promise<IDBDatabase | null> {
+  if (!canUseIndexedDb()) return null
+
+  return await new Promise((resolve, reject) => {
+    const request = indexedDB.open(DRIVE_AUTH_DB_NAME, 1)
+
+    request.onupgradeneeded = () => {
+      const db = request.result
+      if (!db.objectStoreNames.contains(DRIVE_AUTH_STORE_NAME)) {
+        db.createObjectStore(DRIVE_AUTH_STORE_NAME)
+      }
+    }
+
+    request.onsuccess = () => resolve(request.result)
+    request.onerror = () => reject(request.error ?? new Error('Could not open Drive auth database'))
+  })
+}
+
+async function writeDriveAuthState(state: PersistedDriveAuthState): Promise<void> {
+  const db = await openDriveAuthDb()
+  if (!db) return
+
+  await new Promise<void>((resolve, reject) => {
+    const tx = db.transaction(DRIVE_AUTH_STORE_NAME, 'readwrite')
+    tx.objectStore(DRIVE_AUTH_STORE_NAME).put(state, DRIVE_AUTH_STATE_KEY)
+    tx.oncomplete = () => resolve()
+    tx.onerror = () => reject(tx.error ?? new Error('Could not store Drive auth state'))
+  })
+
+  db.close()
+}
+
+async function readDriveAuthState(): Promise<PersistedDriveAuthState | null> {
+  const db = await openDriveAuthDb()
+  if (!db) return null
+
+  const result = await new Promise<PersistedDriveAuthState | null>((resolve, reject) => {
+    const tx = db.transaction(DRIVE_AUTH_STORE_NAME, 'readonly')
+    const request = tx.objectStore(DRIVE_AUTH_STORE_NAME).get(DRIVE_AUTH_STATE_KEY)
+    request.onsuccess = () => resolve((request.result as PersistedDriveAuthState | undefined) ?? null)
+    request.onerror = () => reject(request.error ?? new Error('Could not read Drive auth state'))
+  })
+
+  db.close()
+  return result
+}
+
+async function clearDriveAuthState(): Promise<void> {
+  const db = await openDriveAuthDb()
+  if (!db) return
+
+  await new Promise<void>((resolve, reject) => {
+    const tx = db.transaction(DRIVE_AUTH_STORE_NAME, 'readwrite')
+    tx.objectStore(DRIVE_AUTH_STORE_NAME).delete(DRIVE_AUTH_STATE_KEY)
+    tx.oncomplete = () => resolve()
+    tx.onerror = () => reject(tx.error ?? new Error('Could not clear Drive auth state'))
+  })
+
+  db.close()
+}
+
+async function persistPendingDriveAuthState(): Promise<void> {
+  const currentFiles = get(filesStore)
+  if (currentFiles.length === 0) return
+
+  const snapshot: PersistedDriveAuthState = {
+    files: currentFiles.map(entry => ({
+      id: entry.id,
+      file: entry.file,
+      name: entry.name,
+      size: entry.size,
+      type: entry.type,
+      processed: entry.processed
+        ? {
+            blob: entry.processed.blob,
+            name: entry.processed.name,
+            type: entry.processed.type,
+            operation: entry.processed.operation,
+          }
+        : undefined,
+    })),
+    method: 'drive',
+  }
+
+  try {
+    await writeDriveAuthState(snapshot)
+  } catch (error) {
+    console.warn('Could not persist Drive auth state before redirect.', error)
+  }
+}
+
+async function restorePendingDriveAuthState(): Promise<void> {
+  let pendingState: PersistedDriveAuthState | null = null
+
+  try {
+    pendingState = await readDriveAuthState()
+  } catch (error) {
+    console.warn('Could not read pending Drive auth state.', error)
+    return
+  }
+
+  if (!pendingState || pendingState.files.length === 0) return
+
+  filesStore.hydrate(
+    pendingState.files.map(entry => ({
+      id: entry.id,
+      file: entry.file,
+      name: entry.name,
+      size: entry.size,
+      type: entry.type,
+      processed: entry.processed,
+    }))
+  )
+
+  transferStore.setMethod(pendingState.method)
+  uiStore.setPanel('share')
+
+  try {
+    await clearDriveAuthState()
+  } catch (error) {
+    console.warn('Could not clear restored Drive auth state.', error)
+  }
 }
 
 function escapeDriveQueryValue(value: string): string {

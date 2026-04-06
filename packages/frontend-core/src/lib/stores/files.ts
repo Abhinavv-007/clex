@@ -21,6 +21,13 @@ export interface FileEntry {
 function createFilesStore() {
   const { subscribe, update, set } = writable<FileEntry[]>([])
 
+  function releaseEntries(entries: FileEntry[]) {
+    entries.forEach(e => {
+      if (e.previewUrl) URL.revokeObjectURL(e.previewUrl)
+      if (e.processed?.url) URL.revokeObjectURL(e.processed.url)
+    })
+  }
+
   function createEntry(file: File): FileEntry {
     const id = crypto.randomUUID()
     const entry: FileEntry = {
@@ -35,6 +42,31 @@ function createFilesStore() {
       entry.previewUrl = URL.createObjectURL(file)
     }
     return entry
+  }
+
+  function hydrateEntry(entry: Omit<FileEntry, 'previewUrl' | 'processed'> & {
+    processed?: Omit<ProcessedFile, 'url'>
+  }): FileEntry {
+    const next: FileEntry = {
+      id: entry.id,
+      file: entry.file,
+      name: entry.name,
+      size: entry.size,
+      type: entry.type,
+    }
+
+    if (entry.file.type.startsWith('image/')) {
+      next.previewUrl = URL.createObjectURL(entry.file)
+    }
+
+    if (entry.processed) {
+      next.processed = {
+        ...entry.processed,
+        url: URL.createObjectURL(entry.processed.blob),
+      }
+    }
+
+    return next
   }
 
   return {
@@ -64,11 +96,16 @@ function createFilesStore() {
     },
     clear() {
       update(entries => {
-        entries.forEach(e => {
-          if (e.previewUrl) URL.revokeObjectURL(e.previewUrl)
-          if (e.processed?.url) URL.revokeObjectURL(e.processed.url)
-        })
+        releaseEntries(entries)
         return []
+      })
+    },
+    hydrate(entries: Array<Omit<FileEntry, 'previewUrl' | 'processed'> & {
+      processed?: Omit<ProcessedFile, 'url'>
+    }>) {
+      update(current => {
+        releaseEntries(current)
+        return entries.map(hydrateEntry)
       })
     },
     reset() {
