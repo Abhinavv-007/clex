@@ -24,6 +24,18 @@ importers:
         specifier: ^3.60.3
         version: 3.114.17(@cloudflare/workers-types@4.20260404.1)
 
+  apps/chain:
+    devDependencies:
+      '@cloudflare/workers-types':
+        specifier: ^4.20240529.0
+        version: 4.20260404.1
+      typescript:
+        specifier: ^5.4.5
+        version: 5.9.3
+      wrangler:
+        specifier: ^3.60.3
+        version: 3.114.17(@cloudflare/workers-types@4.20260404.1)
+
   apps/signaling:
     devDependencies:
       '@cloudflare/workers-types':

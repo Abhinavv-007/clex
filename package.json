@@ -10,12 +10,13 @@
     ]
   },
   "scripts": {
-    "dev": "pnpm -r --parallel --stream --filter @clex/signaling --filter @clex/api --filter @clex/web --filter @clex/frontend dev",
+    "dev": "pnpm -r --parallel --stream --filter @clex/signaling --filter @clex/api --filter @clex/chain --filter @clex/web --filter @clex/frontend dev",
     "dev:web": "pnpm --filter @clex/web dev",
     "dev:signal": "pnpm --filter @clex/signaling dev",
     "dev:frontend": "pnpm --filter @clex/frontend dev",
     "dev:api": "pnpm --filter @clex/api dev",
-    "build": "pnpm --filter @clex/frontend-core build && pnpm --filter @clex/signaling build && pnpm --filter @clex/api build && pnpm --filter @clex/frontend build && pnpm --filter @clex/web build",
+    "dev:chain": "pnpm --filter @clex/chain dev",
+    "build": "pnpm --filter @clex/frontend-core build && pnpm --filter @clex/signaling build && pnpm --filter @clex/api build && pnpm --filter @clex/chain build && pnpm --filter @clex/frontend build && pnpm --filter @clex/web build",
     "preview": "pnpm --filter web preview",
     "typecheck": "pnpm -r typecheck",
     "test": "vitest run"

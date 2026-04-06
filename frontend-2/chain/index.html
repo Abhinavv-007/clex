@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/png" href="/brand/clex-logo.png">
+  <link rel="apple-touch-icon" href="/brand/clex-logo.png">
+  <title>Clex Chain — Public Transfer Ledger</title>
+  <meta name="description" content="A public, privacy-first audit ledger for Clex transfers. Every session is hash-chained and publicly verifiable. No filenames, no file contents — only anonymous transfer metadata.">
+  <meta name="keywords" content="clex, chain, audit ledger, transfer log, privacy, WebRTC, P2P">
+  <script>
+    (() => {
+      try {
+        const theme = localStorage.getItem('clex-theme') === 'light' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', theme);
+        document.documentElement.classList.toggle('dark', theme === 'dark');
+        document.documentElement.style.colorScheme = theme;
+      } catch {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        document.documentElement.classList.add('dark');
+        document.documentElement.style.colorScheme = 'dark';
+      }
+    })();
+  </script>
+
+  <link rel="stylesheet" href="/css/reset.css">
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/animations.css">
+  <link rel="stylesheet" href="/css/pages/chain.css">
+
+  <script type="module" src="/js/main.js"></script>
+</head>
+<body data-page="chain">
+
+  <!-- ═══ Navigation ═══ -->
+  <nav class="nav" id="main-nav">
+    <div class="nav__inner">
+      <a href="/" class="nav__logo" aria-label="Clex home">
+        <img src="/brand/clex-logo.png" alt="" class="nav__logo-image">
+        <span class="nav__logo-wordmark">Clex</span>
+      </a>
+      <div class="nav__links">
+        <a href="/features" class="nav__link" data-page="features">Features</a>
+        <a href="/how-it-works" class="nav__link" data-page="how-it-works">How It Works</a>
+        <a href="/chain" class="nav__link nav__link--active" data-page="chain">Chain</a>
+        <a href="/getting-started" class="nav__link" data-page="getting-started">Get Started</a>
+        <a href="/faq" class="nav__link" data-page="faq">FAQ</a>
+      </div>
+      <div class="nav__actions">
+        <button class="nav__theme-toggle" id="theme-toggle" aria-label="Toggle theme">☀</button>
+        <a href="/workspace" class="btn btn--primary btn--small desktop-only">Open Workspace →</a>
+      </div>
+      <button class="nav__hamburger" id="nav-hamburger" aria-label="Toggle menu">
+        <span class="nav__hamburger-line"></span>
+        <span class="nav__hamburger-line"></span>
+        <span class="nav__hamburger-line"></span>
+      </button>
+    </div>
+  </nav>
+
+  <div class="nav__mobile-menu" id="nav-mobile-menu">
+    <a href="/" class="nav__mobile-link">Home</a>
+    <a href="/features" class="nav__mobile-link">Features</a>
+    <a href="/how-it-works" class="nav__mobile-link">How It Works</a>
+    <a href="/chain" class="nav__mobile-link" style="color: var(--accent-text);">Chain</a>
+    <a href="/getting-started" class="nav__mobile-link">Get Started</a>
+    <a href="/faq" class="nav__mobile-link">FAQ</a>
+    <a href="/workspace" class="nav__mobile-link" style="color: var(--accent-text);">Open Workspace →</a>
+  </div>
+
+  <!-- ═══ Hero ═══ -->
+  <section class="chain-hero">
+    <div class="container">
+      <div class="chain-hero__inner">
+        <div class="chain-hero__content">
+          <div class="chain-hero__badge-row">
+            <span class="section__label">
+              <span class="badge__dot"></span>
+              Public Ledger
+            </span>
+          </div>
+
+          <h1 class="chain-hero__title">
+            <span>Transfer</span><br>
+            <span class="chain-hero__title-accent">Chain</span>
+          </h1>
+
+          <p class="chain-hero__sub">
+            Every Clex transfer is logged to a public, hash-chained ledger.
+            No filenames. No file contents. Just anonymous session metadata —
+            verifiable by anyone.
+          </p>
+
+          <div class="chain-hero__meta">
+            <span class="chain-hero__pill">Append-Only</span>
+            <span class="chain-hero__pill">SHA-256 Chained</span>
+            <span class="chain-hero__pill">No PII</span>
+            <span class="chain-hero__pill">Cloudflare D1</span>
+          </div>
+        </div>
+
+        <div class="chain-hero__side">
+          <div class="chain-trust">
+            <div class="chain-trust__item">No filenames stored</div>
+            <div class="chain-trust__item">No file contents stored</div>
+            <div class="chain-trust__item">No IP addresses logged</div>
+            <div class="chain-trust__item">Chain ID generated locally</div>
+            <div class="chain-trust__item">Publicly verifiable hashes</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ How Chain Works ═══ -->
+  <div class="chain-how">
+    <div class="container">
+      <div class="chain-how__grid">
+        <div class="chain-how__item reveal">
+          <span class="chain-how__num">01</span>
+          <h3 class="chain-how__title">Local ID</h3>
+          <p class="chain-how__text">
+            Your browser generates a random 32-hex chain ID and stores it locally.
+            No server involvement. No fingerprinting.
+          </p>
+        </div>
+        <div class="chain-how__item reveal">
+          <span class="chain-how__num">02</span>
+          <h3 class="chain-how__title">Session Log</h3>
+          <p class="chain-how__text">
+            Each transfer creates a ledger entry with route, file types, sizes,
+            and SHA-256 hashes. Never filenames or contents.
+          </p>
+        </div>
+        <div class="chain-how__item reveal">
+          <span class="chain-how__num">03</span>
+          <h3 class="chain-how__title">Hash Chain</h3>
+          <p class="chain-how__text">
+            Each record includes the hash of the previous record, creating
+            a tamper-evident, append-only chain backed by a Durable Object.
+          </p>
+        </div>
+        <div class="chain-how__item reveal">
+          <span class="chain-how__num">04</span>
+          <h3 class="chain-how__title">Public View</h3>
+          <p class="chain-how__text">
+            Anyone can browse the full ledger here — transfer routes, durations,
+            file categories, and status timelines.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ Live Explorer ═══ -->
+  <section class="chain-explorer">
+    <div class="container">
+      <div class="chain-explorer__header">
+        <h2 class="chain-explorer__title reveal">Live Ledger</h2>
+        <span class="chain-explorer__refresh-note">Auto-refreshes every 30s</span>
+      </div>
+
+      <div id="chain-explorer-island"></div>
+    </div>
+  </section>
+
+  <!-- ═══ CTA ═══ -->
+  <section class="cta-strip">
+    <div class="container">
+      <h2 class="cta-strip__title reveal">
+        Your Transfer.<br>
+        <span style="color: var(--accent-text);">On the Chain.</span>
+      </h2>
+      <p class="cta-strip__text reveal">
+        Open the workspace, drop files, and send — your session will appear here automatically.
+      </p>
+      <div class="reveal">
+        <a href="/workspace" class="btn btn--primary btn--large">Open Workspace →</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ Footer ═══ -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer__grid">
+        <div class="footer__brand">
+          <div class="footer__logo" aria-label="Clex">
+            <img src="/brand/clex-logo.png" alt="" class="footer__logo-image">
+            <span class="footer__logo-wordmark">Clex</span>
+          </div>
+          <p class="footer__desc">
+            One workspace. Drop files, prepare them, share them. No friction, no accounts, no server storage. Just fast, private file movement.
+          </p>
+
+          <div class="footer__creator">
+            <span class="footer__creator-label">A Project by Abhinav</span>
+            <p class="footer__creator-text">Privacy first disposable email. Your inbox, your control.</p>
+
+            <div class="footer__creator-links">
+              <a href="mailto:abhnv@abhnv.in" class="footer__creator-link">
+                <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
+                  <path d="M2 3.5h11v8H2z" stroke="currentColor" stroke-width="1.4" rx="1.2"/>
+                  <path d="M2.5 4l5 4 5-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span>abhnv@abhnv.in</span>
+              </a>
+              <a href="https://abhnv.in" target="_blank" rel="noopener noreferrer" class="footer__creator-link">
+                <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
+                  <circle cx="7.5" cy="7.5" r="5.5" stroke="currentColor" stroke-width="1.3"/>
+                  <path d="M2.75 7.5h9.5M7.5 2.25c1.32 1.43 2.1 3.28 2.1 5.25s-.78 3.82-2.1 5.25M7.5 2.25c-1.32 1.43-2.1 3.28-2.1 5.25s.78 3.82 2.1 5.25" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+                </svg>
+                <span>abhnv.in</span>
+              </a>
+            </div>
+          </div>
+        </div>
+        <div class="footer__col">
+          <h4 class="footer__col-title">Product</h4>
+          <nav class="footer__links">
+            <a href="/features" class="footer__link">Features</a>
+            <a href="/how-it-works" class="footer__link">How It Works</a>
+            <a href="/workspace" class="footer__link">Workspace</a>
+            <a href="/chain" class="footer__link">Chain</a>
+          </nav>
+        </div>
+        <div class="footer__col">
+          <h4 class="footer__col-title">Support</h4>
+          <nav class="footer__links">
+            <a href="/faq" class="footer__link">FAQ</a>
+            <a href="/getting-started" class="footer__link">Onboarding</a>
+            <a href="mailto:hello@clex.in" class="footer__link">Contact</a>
+          </nav>
+        </div>
+        <div class="footer__col">
+          <h4 class="footer__col-title">Legal</h4>
+          <nav class="footer__links">
+            <a href="/privacy" class="footer__link">Privacy Policy</a>
+            <a href="/terms" class="footer__link">Terms of Service</a>
+          </nav>
+        </div>
+      </div>
+      <div class="footer__bottom">
+        <span class="footer__copyright">© 2025 Clex. All rights reserved.</span>
+        <div class="footer__legal">
+          <a href="/privacy" class="footer__legal-link">Privacy</a>
+          <a href="/terms" class="footer__legal-link">Terms</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>

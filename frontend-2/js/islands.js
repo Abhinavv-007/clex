@@ -64,6 +64,7 @@ export async function initIslands() {
       receiveBasePath: routes.receive,
       receivePathFormat: 'query',
       receiveEntryHref: routes.receive,
+      chainApiUrl: import.meta.env.PUBLIC_CHAIN_URL || 'http://localhost:8789',
     });
     return;
   }
@@ -74,5 +75,14 @@ export async function initIslands() {
       homeHref: routes.home,
       backHref: routes.workspace,
     });
+    return;
+  }
+
+  if (page === 'chain') {
+    const [{ ChainExplorerApp }] = await Promise.all([import('@clex/frontend-core')]);
+    mount(ChainExplorerApp, document.getElementById('chain-explorer-island'), {
+      chainApiUrl: import.meta.env.PUBLIC_CHAIN_URL || 'http://localhost:8789',
+    });
+    return;
   }
 }

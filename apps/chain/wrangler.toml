@@ -1,0 +1,53 @@
+name = "clex-chain"
+main = "src/index.ts"
+compatibility_date = "2024-05-29"
+compatibility_flags = ["nodejs_compat"]
+workers_dev = true
+
+[durable_objects]
+bindings = [
+  { name = "LEDGER", class_name = "ChainLedger" }
+]
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["ChainLedger"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "clex-chain"
+database_id = "local-chain-db"
+
+[vars]
+ALLOWED_ORIGIN = "*"
+
+# ── Production ────────────────────────────────────────────────────────────────
+[env.production]
+name = "clex-chain-prod"
+
+[env.production.durable_objects]
+bindings = [
+  { name = "LEDGER", class_name = "ChainLedger" }
+]
+
+[[env.production.migrations]]
+tag = "v1"
+new_sqlite_classes = ["ChainLedger"]
+
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "clex-chain"
+# After running: wrangler d1 create clex-chain
+# Replace with the real database_id from the output
+database_id = "REPLACE_WITH_D1_DATABASE_ID"
+
+[[env.production.routes]]
+pattern = "clex.in/chain/*"
+zone_name = "clex.in"
+
+[[env.production.routes]]
+pattern = "www.clex.in/chain/*"
+zone_name = "clex.in"
+
+[env.production.vars]
+ALLOWED_ORIGIN = "https://clex.in, https://www.clex.in"

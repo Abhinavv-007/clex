@@ -17,6 +17,7 @@ const config = {
       $transfer: '../../packages/frontend-core/src/lib/transfer',
       $tools: '../../packages/frontend-core/src/lib/tools',
       $utils: '../../packages/frontend-core/src/lib/utils',
+      $chain: '../../packages/frontend-core/src/lib/chain',
     },
   },
 }

@@ -1,5 +1,7 @@
 export { generateRoomCode, isValidRoomCode } from './crypto'
 
+export { getChainId, peekChainId, formatChainId } from './chainId'
+
 export {
   fileBadgeClass,
   getExtLabel,

@@ -17,7 +17,9 @@
       "$transfer": ["./src/lib/transfer"],
       "$transfer/*": ["./src/lib/transfer/*"],
       "$utils": ["./src/lib/utils"],
-      "$utils/*": ["./src/lib/utils/*"]
+      "$utils/*": ["./src/lib/utils/*"],
+      "$chain": ["./src/lib/chain"],
+      "$chain/*": ["./src/lib/chain/*"]
     },
     "resolveJsonModule": true,
     "skipLibCheck": true,

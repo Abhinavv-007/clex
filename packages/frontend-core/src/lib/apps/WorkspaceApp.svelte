@@ -1,16 +1,31 @@
 <script lang="ts">
+  import { onMount, onDestroy } from 'svelte'
   import { uiStore } from '$stores/ui'
   import { siteRoutes } from '$utils'
   import FileList from '$components/workspace/FileList.svelte'
   import ToolChain from '$components/workspace/ToolChain.svelte'
   import SharePanel from '$components/workspace/SharePanel.svelte'
   import ReceiveAccessCard from '$components/sharing/ReceiveAccessCard.svelte'
+  import { initChainInstrumentation, createChainClient } from '$chain/instrument'
 
   export let receiveBasePath = siteRoutes.receive
   export let receivePathFormat: 'segment' | 'query' = 'segment'
   export let receiveEntryHref = siteRoutes.receive
+  /** Chain API base URL — pass from the mounting script (reads import.meta.env there). */
+  export let chainApiUrl = 'http://localhost:8789'
 
   $: activePanel = $uiStore.activePanel
+
+  let unsubChain: (() => void) | undefined
+
+  onMount(() => {
+    const client = createChainClient(chainApiUrl)
+    unsubChain = initChainInstrumentation(client)
+  })
+
+  onDestroy(() => {
+    unsubChain?.()
+  })
 
   const panels: { id: 'files' | 'tools' | 'share'; label: string }[] = [
     { id: 'files', label: 'Files' },
