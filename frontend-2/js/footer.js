@@ -11,8 +11,9 @@ export function getFooterHTML() {
     <div class="container">
       <div class="footer__grid">
         <div class="footer__brand">
-          <div class="footer__logo">
-            clex<span class="nav__logo-dot"></span>
+          <div class="footer__logo" aria-label="Clex">
+            <img src="/brand/clex-logo.png" alt="" class="footer__logo-image">
+            <span class="footer__logo-wordmark">Clex</span>
           </div>
           <p class="footer__desc">
             One workspace. Drop files, prepare them, share them. No friction, no accounts, no server storage. Just fast, private file movement.

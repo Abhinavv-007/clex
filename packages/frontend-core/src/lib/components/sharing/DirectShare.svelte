@@ -228,7 +228,7 @@
 </div>
 
 <style>
-  .ds-root { display: flex; flex-direction: column; gap: 0; }
+  .ds-root { display: flex; flex-direction: column; gap: 0; min-width: 0; }
 
   .ds-card {
     background: rgba(255, 255, 255, 0.015);
@@ -238,6 +238,7 @@
     display: flex;
     flex-direction: column;
     gap: 12px;
+    min-width: 0;
   }
 
   .ds-card-center {
@@ -354,6 +355,7 @@
     font-size: 13px;
     padding: 9px 16px;
     justify-content: center;
+    white-space: normal;
   }
 
   .ds-send-btn {
@@ -364,6 +366,7 @@
     justify-content: center;
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
     background: var(--text-1);
     color: var(--text-inv);
     border: 1px solid transparent;
@@ -490,6 +493,7 @@
   .transferring-header {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: 8px;
     font-size: 13px;
     font-weight: 500;
@@ -559,10 +563,16 @@
       bottom: 0;
       z-index: 1;
       box-shadow: 0 14px 36px rgba(0, 0, 0, 0.18);
+      flex-wrap: wrap;
     }
 
     .ds-qr-wrap {
       padding-top: 4px;
+    }
+
+    .ds-copy-btn,
+    .ds-cancel-btn {
+      white-space: normal;
     }
   }
 </style>

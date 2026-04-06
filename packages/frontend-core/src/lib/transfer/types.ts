@@ -31,7 +31,11 @@ export interface RTCConfig {
   iceServers: RTCIceServer[]
 }
 
-export function getDefaultRTCConfig(): RTCConfig {
+export function getRTCConfig(profile: TransferProfile = 'webrtc'): RTCConfig {
+  if (profile === 'local') {
+    return { iceServers: [] }
+  }
+
   const raw =
     typeof window !== 'undefined'
       ? (import.meta.env.PUBLIC_STUN_SERVERS as string | undefined)

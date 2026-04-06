@@ -38,6 +38,7 @@ function normalizePathname(pathname) {
 }
 
 /**
+ * @param {Map<string, string>} routeMap
  * @returns {(req: import('node:http').IncomingMessage, res: import('node:http').ServerResponse, next: (err?: unknown) => void) => void}
  */
 function createRouteRewriteMiddleware(routeMap) {

@@ -78,7 +78,6 @@ export default {
       authUrl.searchParams.set('scope', env.GOOGLE_DRIVE_SCOPE ?? 'https://www.googleapis.com/auth/drive.file')
       authUrl.searchParams.set('state', state)
       authUrl.searchParams.set('access_type', 'online')
-      authUrl.searchParams.set('prompt', 'consent')
 
       return redirect(authUrl.toString(), headers)
     }

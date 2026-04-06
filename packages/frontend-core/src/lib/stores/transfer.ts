@@ -13,6 +13,14 @@ export type TransferState =
 
 export type TransferMethod = 'webrtc' | 'local' | 'drive'
 
+export interface ReceivedFile {
+  id: string
+  name: string
+  type: string
+  size: number
+  blob: Blob
+}
+
 export interface TransferStore {
   state: TransferState
   method: TransferMethod
@@ -26,6 +34,7 @@ export interface TransferStore {
   diagnosticCode: string | null
   error: string | null
   driveLink: string | null
+  receivedFiles: ReceivedFile[]
 }
 
 function makeInitial(): TransferStore {
@@ -42,6 +51,7 @@ function makeInitial(): TransferStore {
     diagnosticCode: null,
     error: null,
     driveLink: null,
+    receivedFiles: [],
   }
 }
 
@@ -62,6 +72,8 @@ function createTransferStore() {
         nearby: false,
         connectionKind: 'unknown',
         diagnosticCode: null,
+        driveLink: null,
+        receivedFiles: [],
       }))
     },
     setRoomCode(roomCode: string) {
@@ -92,7 +104,19 @@ function createTransferStore() {
       }))
     },
     setDriveLink(driveLink: string) {
-      update(s => ({ ...s, state: 'complete', driveLink }))
+      update(s => ({ ...s, state: 'complete', driveLink, receivedFiles: [] }))
+    },
+    addReceivedFile(file: ReceivedFile) {
+      update(s => ({
+        ...s,
+        receivedFiles: [
+          ...s.receivedFiles.filter(entry => entry.id !== file.id),
+          file,
+        ],
+      }))
+    },
+    clearReceivedFiles() {
+      update(s => ({ ...s, receivedFiles: [] }))
     },
     reset() {
       set(makeInitial())

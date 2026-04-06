@@ -1,8 +1,11 @@
 import { transferStore } from '$stores/transfer'
 
+const DRIVE_FILES_URL = 'https://www.googleapis.com/drive/v3/files'
 const DRIVE_UPLOAD_URL = 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart'
 const DRIVE_FILE_URL = (id: string) => `https://www.googleapis.com/drive/v3/files/${id}`
 const DRIVE_PERMISSIONS_URL = (id: string) => `${DRIVE_FILE_URL(id)}/permissions`
+const DRIVE_FOLDER_MIME = 'application/vnd.google-apps.folder'
+const DRIVE_ROOT_FOLDER_NAME = 'Glex sharing'
 
 const TOKEN_KEY = 'clex_gdrive_token'
 
@@ -37,6 +40,7 @@ export interface UploadResult {
   fileId: string
   webViewLink: string
   directLink: string
+  folderName?: string
 }
 
 interface GoogleOAuthStatusResponse {
@@ -63,87 +67,47 @@ function getGoogleOAuthSetupMessage(): string {
 }
 
 export async function uploadToDrive(
-  blob: Blob,
-  fileName: string,
+  items: Array<{ blob: Blob; name: string; type?: string }>,
   accessToken: string,
   onProgress?: (pct: number) => void
 ): Promise<UploadResult> {
-  // Build multipart body — metadata + file
-  const metadata = JSON.stringify({ name: fileName, mimeType: blob.type || 'application/octet-stream' })
-  const boundary = `clex_${Date.now()}`
-  const body = new Blob(
-    [
-      `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${metadata}\r\n`,
-      `--${boundary}\r\nContent-Type: ${blob.type || 'application/octet-stream'}\r\n\r\n`,
-      blob,
-      `\r\n--${boundary}--`,
-    ],
-    { type: `multipart/related; boundary=${boundary}` }
-  )
-
-  // Use XMLHttpRequest for upload progress support
-  const fileId = await new Promise<string>((resolve, reject) => {
-    const xhr = new XMLHttpRequest()
-    xhr.open('POST', DRIVE_UPLOAD_URL)
-    xhr.setRequestHeader('Authorization', `Bearer ${accessToken}`)
-    xhr.setRequestHeader('Content-Type', `multipart/related; boundary=${boundary}`)
-
-    xhr.upload.onprogress = e => {
-      if (e.lengthComputable) {
-        onProgress?.(Math.round((e.loaded / e.total) * 80)) // 0–80% for upload
-      }
-    }
-
-    xhr.onload = () => {
-      if (xhr.status >= 200 && xhr.status < 300) {
-        try {
-          const data = JSON.parse(xhr.responseText) as { id: string }
-          resolve(data.id)
-        } catch {
-          reject(new Error('Invalid Drive API response'))
-        }
-      } else {
-        reject(new Error(`Drive upload failed: ${xhr.status} ${xhr.statusText}`))
-      }
-    }
-
-    xhr.onerror = () => reject(new Error('Drive upload network error'))
-    xhr.send(body)
-  })
-
-  onProgress?.(85)
-
-  // Make file publicly readable (anyone with link)
-  const permResp = await fetch(DRIVE_PERMISSIONS_URL(fileId), {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ role: 'reader', type: 'anyone' }),
-  })
-
-  if (!permResp.ok) {
-    console.warn('Could not set public permissions:', permResp.status)
+  if (items.length === 0) {
+    throw new Error('No files selected for Google Drive upload')
   }
 
-  onProgress?.(92)
+  onProgress?.(4)
+  const rootFolderId = await ensureDriveRootFolder(accessToken)
+  onProgress?.(10)
 
-  // Fetch the share link
-  const fileResp = await fetch(`${DRIVE_FILE_URL(fileId)}?fields=webViewLink,webContentLink`, {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  })
+  const folderName = getDriveSessionFolderName()
+  const sessionFolderId = await createFolder(folderName, accessToken, rootFolderId)
+  onProgress?.(16)
 
-  if (!fileResp.ok) throw new Error(`Failed to get file info: ${fileResp.status}`)
+  const totalBytes = items.reduce((sum, item) => sum + item.blob.size, 0) || 1
+  let uploadedBytes = 0
 
-  const fileData = (await fileResp.json()) as { webViewLink: string; webContentLink?: string }
+  for (const item of items) {
+    await uploadFileToFolder(item, accessToken, sessionFolderId, (loaded) => {
+      const pct = Math.round(16 + ((uploadedBytes + loaded) / totalBytes) * 68)
+      onProgress?.(Math.min(84, pct))
+    })
+    uploadedBytes += item.blob.size
+    const pct = Math.round(16 + (uploadedBytes / totalBytes) * 68)
+    onProgress?.(Math.min(84, pct))
+  }
+
+  onProgress?.(88)
+  await setAnyoneWithLinkPermission(sessionFolderId, accessToken)
 
   onProgress?.(100)
 
+  const folderLink = `https://drive.google.com/drive/folders/${sessionFolderId}`
+
   return {
-    fileId,
-    webViewLink: fileData.webViewLink,
-    directLink: fileData.webContentLink ?? fileData.webViewLink,
+    fileId: sessionFolderId,
+    webViewLink: folderLink,
+    directLink: folderLink,
+    folderName,
   }
 }
 
@@ -188,4 +152,137 @@ export async function initiateGoogleAuth(): Promise<void> {
     authUrl.searchParams.set('return_to', returnTo)
   }
   window.location.href = authUrl.toString()
+}
+
+function escapeDriveQueryValue(value: string): string {
+  return value.replace(/\\/g, '\\\\').replace(/'/g, "\\'")
+}
+
+function getDriveSessionFolderName(date = new Date()): string {
+  const pad = (value: number) => String(value).padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}-${pad(date.getMinutes())}-${pad(date.getSeconds())}`
+}
+
+async function ensureDriveRootFolder(accessToken: string): Promise<string> {
+  const existingFolderId = await findFolderIdByName(DRIVE_ROOT_FOLDER_NAME, accessToken)
+  if (existingFolderId) return existingFolderId
+  return createFolder(DRIVE_ROOT_FOLDER_NAME, accessToken)
+}
+
+async function findFolderIdByName(name: string, accessToken: string, parentId?: string): Promise<string | null> {
+  const url = new URL(DRIVE_FILES_URL)
+  const queryParts = [
+    `name='${escapeDriveQueryValue(name)}'`,
+    `mimeType='${DRIVE_FOLDER_MIME}'`,
+    'trashed=false',
+  ]
+
+  if (parentId) {
+    queryParts.push(`'${escapeDriveQueryValue(parentId)}' in parents`)
+  }
+
+  url.searchParams.set('q', queryParts.join(' and '))
+  url.searchParams.set('fields', 'files(id,name)')
+  url.searchParams.set('pageSize', '1')
+  url.searchParams.set('spaces', 'drive')
+
+  const response = await fetch(url.toString(), {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  })
+
+  if (!response.ok) {
+    throw new Error(`Drive folder lookup failed: ${response.status} ${response.statusText}`)
+  }
+
+  const data = (await response.json()) as { files?: Array<{ id: string }> }
+  return data.files?.[0]?.id ?? null
+}
+
+async function createFolder(name: string, accessToken: string, parentId?: string): Promise<string> {
+  const response = await fetch(DRIVE_FILES_URL, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      name,
+      mimeType: DRIVE_FOLDER_MIME,
+      ...(parentId ? { parents: [parentId] } : {}),
+    }),
+  })
+
+  if (!response.ok) {
+    throw new Error(`Drive folder creation failed: ${response.status} ${response.statusText}`)
+  }
+
+  const data = (await response.json()) as { id: string }
+  return data.id
+}
+
+async function uploadFileToFolder(
+  item: { blob: Blob; name: string; type?: string },
+  accessToken: string,
+  parentId: string,
+  onProgress?: (loaded: number) => void
+): Promise<string> {
+  const metadata = JSON.stringify({
+    name: item.name,
+    mimeType: item.blob.type || item.type || 'application/octet-stream',
+    parents: [parentId],
+  })
+  const boundary = `clex_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
+  const body = new Blob(
+    [
+      `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${metadata}\r\n`,
+      `--${boundary}\r\nContent-Type: ${item.blob.type || item.type || 'application/octet-stream'}\r\n\r\n`,
+      item.blob,
+      `\r\n--${boundary}--`,
+    ],
+    { type: `multipart/related; boundary=${boundary}` }
+  )
+
+  return new Promise<string>((resolve, reject) => {
+    const xhr = new XMLHttpRequest()
+    xhr.open('POST', DRIVE_UPLOAD_URL)
+    xhr.setRequestHeader('Authorization', `Bearer ${accessToken}`)
+    xhr.setRequestHeader('Content-Type', `multipart/related; boundary=${boundary}`)
+
+    xhr.upload.onprogress = event => {
+      if (event.lengthComputable) {
+        onProgress?.(event.loaded)
+      }
+    }
+
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          const data = JSON.parse(xhr.responseText) as { id: string }
+          resolve(data.id)
+        } catch {
+          reject(new Error('Invalid Drive API response'))
+        }
+      } else {
+        reject(new Error(`Drive upload failed: ${xhr.status} ${xhr.statusText}`))
+      }
+    }
+
+    xhr.onerror = () => reject(new Error('Drive upload network error'))
+    xhr.send(body)
+  })
+}
+
+async function setAnyoneWithLinkPermission(itemId: string, accessToken: string): Promise<void> {
+  const response = await fetch(DRIVE_PERMISSIONS_URL(itemId), {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ role: 'reader', type: 'anyone' }),
+  })
+
+  if (!response.ok) {
+    throw new Error(`Drive permission update failed: ${response.status} ${response.statusText}`)
+  }
 }

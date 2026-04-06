@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { classifyConnectionKind, normalizeStunServerUrls } from './network'
+import { getRTCConfig } from './types'
 
 describe('transfer network helpers', () => {
   it('normalizes and deduplicates configured STUN servers', () => {
@@ -40,5 +41,9 @@ describe('transfer network helpers', () => {
         remoteCandidateType: 'relay',
       })
     ).toBe('unknown')
+  })
+
+  it('uses host-only ICE config for local transfers', () => {
+    expect(getRTCConfig('local')).toEqual({ iceServers: [] })
   })
 })

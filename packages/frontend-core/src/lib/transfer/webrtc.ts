@@ -5,7 +5,7 @@ import { SignalingClient } from './signaling'
 import {
   CHUNK_SIZE,
   DC_LABEL,
-  getDefaultRTCConfig,
+  getRTCConfig,
   type ConnectionKind,
   type DCControlMessage,
   type IceCandidatePayload,
@@ -16,7 +16,7 @@ import {
 const BUFFER_HIGH_WATERMARK = 1 * 1024 * 1024 // 1 MB — stop sending
 const BUFFER_DRAIN_INTERVAL = 20 // ms poll interval while waiting for drain
 const PROFILE_CONNECT_TIMEOUT_MS: Record<TransferProfile, number> = {
-  local: 8_000,
+  local: 15_000,
   webrtc: 20_000,
 }
 const CONNECTION_KIND_RETRY_ATTEMPTS = 6
@@ -76,6 +76,7 @@ export class WebRTCTransfer {
   // ─── Public API ────────────────────────────────────────────────────────────
 
   async initSender(files: TransferFile[]): Promise<void> {
+    transferStore.clearReceivedFiles()
     this.sendQueue = files
     transferStore.setState('preparing')
     transferStore.setConnectionKind('unknown')
@@ -91,6 +92,7 @@ export class WebRTCTransfer {
   }
 
   async initReceiver(): Promise<void> {
+    transferStore.clearReceivedFiles()
     transferStore.setState('preparing')
     transferStore.setConnectionKind('unknown')
     transferStore.setDiagnosticCode(null)
@@ -131,7 +133,7 @@ export class WebRTCTransfer {
   // ─── RTCPeerConnection setup ───────────────────────────────────────────────
 
   private setupPC(): void {
-    this.pc = new RTCPeerConnection(getDefaultRTCConfig())
+    this.pc = new RTCPeerConnection(getRTCConfig(this.profile))
 
     this.pc.onicecandidate = ({ candidate }) => {
       if (candidate) {
@@ -232,7 +234,7 @@ export class WebRTCTransfer {
     this.logDiagnostic('datachannel_open')
 
     const connectionKind = await this.evaluateConnectionKind(true)
-    if (this.profile === 'local' && connectionKind !== 'lan') {
+    if (this.profile === 'local' && connectionKind === 'internet') {
       this.failTransfer(
         'Local mode requires both devices to stay on the same Wi-Fi network. Switch to Direct or Drive instead.',
         'local_mode_non_lan'
@@ -326,10 +328,20 @@ export class WebRTCTransfer {
     if (!meta) return
 
     const blob = new Blob(buffers, { type: meta.type || 'application/octet-stream' })
+    transferStore.addReceivedFile({
+      id: fileId,
+      name: meta.name,
+      type: meta.type,
+      size: meta.totalSize,
+      blob,
+    })
+
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
     a.download = meta.name
+    a.style.display = 'none'
+    a.rel = 'noopener'
     document.body.appendChild(a)
     a.click()
     setTimeout(() => {

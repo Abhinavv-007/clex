@@ -3,8 +3,9 @@
   import { transferStore } from '$stores/transfer'
   import { getSignalingBaseUrl } from '$transfer/signaling'
   import { WebRTCTransfer } from '$transfer/webrtc'
+  import { zipFiles } from '$tools/zip'
   import { isValidRoomCode } from '$utils/crypto'
-  import { siteRoutes } from '$utils'
+  import { formatBytes, saveBlobWithSystemFallback, siteRoutes, truncateName, triggerBlobDownload } from '$utils'
   import type { TransferProfile } from '$transfer/types'
   import TransferProgress from '$components/sharing/TransferProgress.svelte'
 
@@ -20,11 +21,13 @@
   let error = ''
   let transfer: WebRTCTransfer | null = null
   let autoConnecting = false
+  let saving = false
 
   $: state = $transferStore.state
   $: inputError = code.length > 0 && code.length < 6 ? 'Code must be 6 characters' : ''
   $: nearby = $transferStore.nearby
   $: normalizedCode = code.trim().toUpperCase()
+  $: receivedFiles = $transferStore.receivedFiles
 
   onMount(() => {
     if (typeof window === 'undefined') return
@@ -92,6 +95,49 @@
       window.history.replaceState({}, '', url.pathname)
     }
   }
+
+  async function saveReceivedFile(index: number) {
+    const file = receivedFiles[index]
+    if (!file) return
+
+    saving = true
+    try {
+      await saveBlobWithSystemFallback(file.blob, file.name, file.type)
+    } finally {
+      saving = false
+    }
+  }
+
+  async function saveAllReceivedFiles() {
+    if (receivedFiles.length === 0) return
+
+    saving = true
+    try {
+      if (receivedFiles.length === 1) {
+        await saveBlobWithSystemFallback(receivedFiles[0].blob, receivedFiles[0].name, receivedFiles[0].type)
+        return
+      }
+
+      const archiveName = `${normalizedCode || 'clex-transfer'}.zip`
+      const zipBlob = await zipFiles(
+        receivedFiles.map(file => ({
+          blob: file.blob,
+          name: file.name,
+        })),
+        archiveName
+      )
+
+      await saveBlobWithSystemFallback(zipBlob, archiveName, 'application/zip')
+    } finally {
+      saving = false
+    }
+  }
+
+  function downloadReceivedFile(index: number) {
+    const file = receivedFiles[index]
+    if (!file) return
+    triggerBlobDownload(file.blob, file.name)
+  }
 </script>
 
 <div class="receive-shell">
@@ -133,7 +179,7 @@
           <div>
             <input
               type="text"
-              class="input-glass receive-input text-center font-mono text-3xl tracking-[0.4em] uppercase py-4"
+              class="receive-input text-center font-mono uppercase"
               placeholder="XXXXXX"
               maxlength="6"
               bind:value={code}
@@ -165,7 +211,7 @@
           </div>
 
           <button
-            class="btn-primary w-full flex items-center justify-center gap-2 py-3.5"
+            class="btn-primary receive-primary"
             on:click={() => connect()}
             disabled={normalizedCode.length !== 6}
           >
@@ -212,7 +258,7 @@
             <span class="receive-transfer-icon">📥</span>
             <div>
               <p class="receive-state-title">Receiving files…</p>
-              <p class="receive-state-sub">Files will download automatically when complete</p>
+              <p class="receive-state-sub">We'll try to save automatically when complete, and manual save controls will stay available</p>
             </div>
           </div>
           <TransferProgress />
@@ -223,11 +269,41 @@
           <div class="receive-complete-icon">✓</div>
           <div>
             <p class="receive-complete-title">Files received!</p>
-            <p class="receive-state-sub">Check your downloads folder</p>
+            <p class="receive-state-sub">
+              Your browser may have saved the files automatically. If not, use the save controls below.
+            </p>
           </div>
+          {#if receivedFiles.length > 0}
+            <div class="receive-save-panel">
+              <button class="btn-primary receive-save-primary" on:click={saveAllReceivedFiles} disabled={saving}>
+                {#if saving}
+                  Preparing…
+                {:else if receivedFiles.length === 1}
+                  Save file
+                {:else}
+                  Save all as ZIP
+                {/if}
+              </button>
+
+              {#if receivedFiles.length > 1}
+                <div class="receive-file-actions">
+                  {#each receivedFiles as file, index}
+                    <button class="btn-secondary receive-file-btn" on:click={() => saveReceivedFile(index)} disabled={saving}>
+                      <span>{truncateName(file.name, 28)}</span>
+                      <span class="receive-file-size">{formatBytes(file.size)}</span>
+                    </button>
+                  {/each}
+                </div>
+              {:else}
+                <button class="btn-secondary receive-file-btn" on:click={() => downloadReceivedFile(0)} disabled={saving}>
+                  Download again
+                </button>
+              {/if}
+            </div>
+          {/if}
           <div class="receive-actions">
             <button class="btn-secondary" on:click={reset}>Receive more</button>
-            <a href={homeHref} class="btn-primary">Home</a>
+            <a href={homeHref} class="btn-secondary">Home</a>
           </div>
         </div>
       {/if}
@@ -245,12 +321,17 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 96px 24px 40px;
+    padding:
+      calc(96px + env(safe-area-inset-top, 0px))
+      calc(16px + env(safe-area-inset-right, 0px))
+      calc(40px + env(safe-area-inset-bottom, 0px))
+      calc(16px + env(safe-area-inset-left, 0px));
   }
 
   .receive-card-wrap {
     width: 100%;
-    max-width: 420px;
+    max-width: min(420px, 100%);
+    min-width: 0;
   }
 
   .receive-head {
@@ -310,6 +391,8 @@
 
   .receive-card {
     padding: 24px;
+    width: 100%;
+    min-width: 0;
   }
 
   .receive-form,
@@ -326,6 +409,15 @@
 
   .receive-input {
     width: 100%;
+    display: block;
+    padding: 16px 18px;
+    border: 2px solid var(--border-hard);
+    border-radius: 16px;
+    background: var(--surface-2);
+    box-shadow: 3px 3px 0 var(--border-hard);
+    color: var(--text-1);
+    font-size: 1.875rem;
+    letter-spacing: 0.4em;
   }
 
   .receive-error {
@@ -367,6 +459,13 @@
   .receive-secondary {
     width: 100%;
     justify-content: center;
+  }
+
+  .receive-primary {
+    width: 100%;
+    justify-content: center;
+    gap: 8px;
+    padding: 14px 18px;
   }
 
   .receive-wait-icon {
@@ -456,6 +555,38 @@
     width: 100%;
   }
 
+  .receive-save-panel {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .receive-save-primary {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .receive-file-actions {
+    display: grid;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .receive-file-btn {
+    width: 100%;
+    justify-content: space-between;
+    gap: 12px;
+    text-align: left;
+    white-space: normal;
+  }
+
+  .receive-file-size {
+    color: var(--text-3);
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+
   .receive-actions :global(.btn-primary),
   .receive-actions :global(.btn-secondary) {
     flex: 1;
@@ -470,6 +601,73 @@
   .receive-footer a {
     font-size: 12px;
     color: var(--text-3);
+  }
+
+  @media (max-width: 767px) {
+    .receive-shell {
+      align-items: flex-start;
+      padding-top: calc(88px + env(safe-area-inset-top, 0px));
+    }
+
+    .receive-card {
+      padding: 18px;
+      box-shadow: 3px 3px 0 var(--border-hard);
+    }
+
+    .receive-head-icon {
+      width: 72px;
+      height: 72px;
+      font-size: 36px;
+    }
+
+    .receive-input {
+      font-size: 1.625rem;
+      letter-spacing: 0.24em;
+      padding: 14px 16px;
+    }
+
+    .receive-transfer-head {
+      align-items: flex-start;
+    }
+
+    .receive-actions {
+      flex-direction: column;
+    }
+  }
+
+  @media (max-width: 420px) {
+    .receive-title {
+      font-size: 24px;
+    }
+
+    .receive-sub {
+      font-size: 13px;
+    }
+
+    .receive-mode-switch {
+      gap: 4px;
+      padding: 3px;
+    }
+
+    .receive-mode-btn {
+      padding: 9px 10px;
+      font-size: 14px;
+    }
+
+    .receive-state-title {
+      font-size: 15px;
+    }
+
+    .receive-state-sub,
+    .receive-error {
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .receive-file-btn {
+      flex-direction: column;
+      align-items: flex-start;
+    }
   }
 
   @keyframes spinSlow {

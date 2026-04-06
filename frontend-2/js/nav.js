@@ -54,8 +54,9 @@ export function getNavHTML(activePage = '') {
   return `
   <nav class="nav" id="main-nav">
     <div class="nav__inner">
-      <a href="${routes.home}" class="nav__logo">
-        clex<span class="nav__logo-dot"></span>
+      <a href="${routes.home}" class="nav__logo" aria-label="Clex home">
+        <img src="/brand/clex-logo.png" alt="" class="nav__logo-image">
+        <span class="nav__logo-wordmark">Clex</span>
       </a>
 
       <div class="nav__links">

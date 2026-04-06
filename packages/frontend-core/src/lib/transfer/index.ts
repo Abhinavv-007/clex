@@ -20,7 +20,7 @@ export type {
 export {
   CHUNK_SIZE,
   DC_LABEL,
-  getDefaultRTCConfig,
+  getRTCConfig,
 } from './types'
 export type {
   ConnectionKind,

@@ -37,6 +37,19 @@
     </p>
   </div>
 
+  <div class="sp-receive sp-receive--featured">
+    <div class="sp-receive-copy">
+      <span class="sp-receive-label">Receiving files?</span>
+      <p class="sp-receive-text">Open the receive screen and enter the room code to start downloading.</p>
+    </div>
+    <a href={receiveEntryHref} class="btn-accent sp-receive-btn sp-receive-btn--featured">
+      Enter room code
+      <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
+        <path d="M2 5.5h7M6 2.5l3 3-3 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </a>
+  </div>
+
   {#if !$hasFiles}
     <div class="sp-empty-state">
       <p>Add files in the Files tab first, then come back here to send them.</p>
@@ -68,17 +81,6 @@
       <DriveShare />
     {/if}
   </div>
-
-  <!-- Receive divider -->
-  <div class="sp-receive">
-    <span class="sp-receive-label">Receiving files?</span>
-    <a href={receiveEntryHref} class="btn-secondary sp-receive-btn">
-      Enter room code
-      <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
-        <path d="M2 5.5h7M6 2.5l3 3-3 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-    </a>
-  </div>
 </div>
 
 <style>
@@ -87,6 +89,7 @@
     flex-direction: column;
     gap: 16px;
     height: 100%;
+    min-width: 0;
   }
 
   .sp-title {
@@ -135,6 +138,7 @@
     border: 2px solid var(--border-hard);
     box-shadow: 2px 2px 0 var(--border-hard);
     border-radius: 12px;
+    min-width: 0;
   }
 
   .sp-tab {
@@ -182,6 +186,7 @@
     overflow-y: auto;
     scrollbar-width: thin;
     scrollbar-color: var(--border-strong) transparent;
+    min-width: 0;
   }
 
   .sp-content.sp-content-disabled {
@@ -194,17 +199,18 @@
 
   /* Receive footer */
   .sp-receive {
-    padding-top: 12px;
-    border-top: 1px solid var(--border);
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 10px;
+    min-width: 0;
   }
 
   .sp-receive-label {
-    font-size: 11px;
-    color: var(--text-3);
-    text-align: center;
+    font-size: 12px;
+    color: var(--text-2);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 700;
   }
 
   .sp-receive-btn {
@@ -223,7 +229,40 @@
     background: transparent;
   }
 
-  .sp-receive-btn:hover {
+  .sp-receive--featured {
+    padding: 14px;
+    border: 2px solid var(--border-hard);
+    box-shadow: 3px 3px 0 var(--border-hard);
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+  }
+
+  .sp-receive-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .sp-receive-text {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.55;
+    color: var(--text-2);
+  }
+
+  .sp-receive-btn--featured {
+    background: var(--accent);
+    color: #0a0a0a;
+    border-color: #0a0a0a;
+    font-weight: 700;
+  }
+
+  .sp-receive-btn--featured:hover {
+    background: var(--accent-hover);
+    color: #0a0a0a;
+  }
+
+  .sp-receive-btn:hover:not(.sp-receive-btn--featured) {
     background: var(--raised);
     color: var(--text-1);
   }
@@ -242,6 +281,14 @@
 
     .sp-content {
       overflow: visible;
+    }
+
+    .sp-receive--featured {
+      padding: 12px;
+    }
+
+    .sp-receive-btn {
+      white-space: normal;
     }
   }
 </style>

@@ -9,6 +9,7 @@
   let uploadProgress = 0
   let uploading = false
   let uploadedLink = ''
+  let uploadedFolderName = ''
   let error = ''
   let tokenPresent = false
 
@@ -44,24 +45,17 @@
     error = ''
 
     try {
-      let blob: Blob
-      let name: string
-
-      if (files.length === 1) {
-        const f = files[0]
-        blob = f.processed?.blob ?? f.file
-        name = f.processed?.name ?? f.name
-      } else {
-        const { zipFiles } = await import('$tools/zip')
-        blob = await zipFiles(
-          files.map(f => ({ blob: f.processed?.blob ?? f.file, name: f.processed?.name ?? f.name })),
-          'clex-upload.zip'
-        )
-        name = 'clex-upload.zip'
-      }
-
-      const result = await uploadToDrive(blob, name, token, p => { uploadProgress = p })
+      const result = await uploadToDrive(
+        files.map(f => ({
+          blob: f.processed?.blob ?? f.file,
+          name: f.processed?.name ?? f.name,
+          type: f.processed?.blob?.type ?? f.type,
+        })),
+        token,
+        p => { uploadProgress = p }
+      )
       uploadedLink = result.webViewLink
+      uploadedFolderName = result.folderName ?? 'Glex sharing'
       transferStore.setDriveLink(result.webViewLink)
       uiStore.toast({ type: 'success', message: 'Uploaded to Google Drive' })
 
@@ -84,6 +78,7 @@
 
   function reset() {
     uploadedLink = ''
+    uploadedFolderName = ''
     uploadProgress = 0
     error = ''
     transferStore.reset()
@@ -102,7 +97,7 @@
         </svg>
       </div>
       <p class="dv-state-title">Uploaded to Drive</p>
-      <p class="dv-state-sub">Your file is ready to share</p>
+      <p class="dv-state-sub">{uploadedFolderName} is ready to share</p>
 
       <div class="dv-link-box">{uploadedLink}</div>
 
@@ -170,14 +165,15 @@
         </div>
         <div>
           <p class="dv-ready-title">Google Drive</p>
-          <p class="dv-ready-sub">Upload & get a shareable link</p>
+          <p class="dv-ready-sub">Upload into a dated Glex sharing folder</p>
         </div>
       </div>
 
       {#if !tokenPresent}
         <div class="dv-notice">
           Connect your Google account once. Clex only gets
-          <strong>drive.file</strong> access — only files it creates.
+          <strong>drive.file</strong> access and uploads shares into your
+          <strong>Glex sharing</strong> folder.
         </div>
       {/if}
 

@@ -48,6 +48,12 @@
 }
 
 .section__title {
+  font-family: var(--font-display);
+  font-size: clamp(2.8rem, 5.4vw, 5rem);
+  font-weight: var(--weight-bold);
+  line-height: 0.9;
+  letter-spacing: -0.06em;
+  text-transform: uppercase;
   margin-bottom: var(--space-lg);
 }
 
@@ -68,9 +74,11 @@
 }
 
 .page-hero__title {
-  font-size: clamp(3.25rem, 7vw, 5.75rem);
-  line-height: 0.92;
-  letter-spacing: -0.055em;
+  font-family: var(--font-display);
+  font-size: clamp(3.6rem, 7vw, 6.2rem);
+  font-weight: var(--weight-bold);
+  line-height: 0.9;
+  letter-spacing: -0.06em;
   text-transform: uppercase;
 }
 
@@ -92,16 +100,23 @@
 }
 
 .page-section__title {
-  font-size: clamp(2.25rem, 4.4vw, 4rem);
-  line-height: 0.96;
-  letter-spacing: -0.04em;
+  font-family: var(--font-display);
+  font-size: clamp(2.5rem, 4.8vw, 4.5rem);
+  font-weight: var(--weight-bold);
+  line-height: 0.92;
+  letter-spacing: -0.05em;
   text-transform: uppercase;
 }
 
 @media (max-width: 767px) {
+  .section__title {
+    font-size: clamp(2.25rem, 11vw, 3.6rem);
+    line-height: 0.92;
+  }
+
   .page-hero__title {
-    font-size: clamp(2.85rem, 14vw, 4.5rem);
-    line-height: 0.94;
+    font-size: clamp(3rem, 14vw, 4.8rem);
+    line-height: 0.92;
   }
 
   .page-hero__subtitle {
@@ -109,7 +124,7 @@
   }
 
   .page-section__title {
-    font-size: clamp(1.95rem, 10vw, 3rem);
+    font-size: clamp(2.15rem, 10.5vw, 3.35rem);
   }
 }
 
@@ -250,10 +265,12 @@
 
 .card__title {
   font-family: var(--font-display);
-  font-size: var(--text-xl);
+  font-size: clamp(1.65rem, 2.2vw, 2.35rem);
   font-weight: var(--weight-bold);
   margin-bottom: var(--space-md);
   text-transform: uppercase;
+  line-height: 0.92;
+  letter-spacing: -0.045em;
 }
 
 .card__text {
@@ -416,15 +433,14 @@
   align-items: center;
   justify-content: space-between;
   padding: var(--space-lg) var(--space-xl);
-  font-family: var(--font-mono);
-  font-size: var(--text-base);
+  font-family: var(--font-display);
+  font-size: clamp(1.05rem, 1.7vw, 1.25rem);
   font-weight: var(--weight-bold);
-  text-transform: uppercase;
   text-align: left;
   cursor: pointer;
   transition: background var(--duration-fast) var(--ease-out);
   background: var(--bg-card);
-  letter-spacing: var(--tracking-wide);
+  letter-spacing: -0.02em;
 }
 
 .accordion__trigger:hover {
@@ -523,8 +539,11 @@
 }
 
 .step__title {
-  font-size: var(--text-3xl);
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 3.2vw, 3rem);
   text-transform: uppercase;
+  line-height: 0.92;
+  letter-spacing: -0.04em;
 }
 
 .step__text {
@@ -586,7 +605,12 @@
 }
 
 .cta-strip__title {
-  font-size: clamp(var(--text-2xl), 4vw, var(--text-4xl));
+  font-family: var(--font-display);
+  font-size: clamp(2.8rem, 5vw, 4.8rem);
+  font-weight: var(--weight-bold);
+  line-height: 0.92;
+  letter-spacing: -0.055em;
+  text-transform: uppercase;
   margin-bottom: var(--space-xl);
 }
 
@@ -595,6 +619,20 @@
   margin: 0 auto var(--space-2xl);
   font-size: var(--text-lg);
   color: var(--text-secondary);
+}
+
+@media (max-width: 767px) {
+  .card__title {
+    font-size: clamp(1.5rem, 7vw, 2rem);
+  }
+
+  .accordion__trigger {
+    font-size: clamp(1rem, 4.8vw, 1.12rem);
+  }
+
+  .cta-strip__title {
+    font-size: clamp(2.2rem, 11vw, 3.8rem);
+  }
 }
 
 /* ── Tooltip ── */

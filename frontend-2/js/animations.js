@@ -28,6 +28,10 @@ export function initAnimations() {
 export function initFaqAccordion() {
   const triggers = document.querySelectorAll('.accordion__trigger');
 
+  /**
+   * @param {Element} trigger
+   * @param {boolean} expanded
+   */
   const setAccordionState = (trigger, expanded) => {
     const item = trigger.closest('.accordion__item');
     const content = item?.querySelector('.accordion__content');

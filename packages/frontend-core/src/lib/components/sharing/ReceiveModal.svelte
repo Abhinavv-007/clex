@@ -4,7 +4,9 @@
   import { transferStore } from '$stores/transfer'
   import { getSignalingBaseUrl } from '$transfer/signaling'
   import { WebRTCTransfer } from '$transfer/webrtc'
+  import { zipFiles } from '$tools/zip'
   import { isValidRoomCode } from '$utils/crypto'
+  import { formatBytes, saveBlobWithSystemFallback, triggerBlobDownload, truncateName } from '$utils'
   import type { TransferProfile } from '$transfer/types'
   import TransferProgress from './TransferProgress.svelte'
 
@@ -13,9 +15,11 @@
   let code = ''
   let error = ''
   let transfer: WebRTCTransfer | null = null
+  let saving = false
 
   $: state = $transferStore.state
   $: inputError = code.length > 0 && code.length < 6 ? 'Code must be 6 characters' : ''
+  $: receivedFiles = $transferStore.receivedFiles
 
   async function connect() {
     const trimmed = code.trim().toUpperCase()
@@ -49,6 +53,49 @@
 
   function getRequestedProfile(): TransferProfile {
     return $transferStore.method === 'local' ? 'local' : 'webrtc'
+  }
+
+  async function saveReceivedFile(index: number) {
+    const file = receivedFiles[index]
+    if (!file) return
+
+    saving = true
+    try {
+      await saveBlobWithSystemFallback(file.blob, file.name, file.type)
+    } finally {
+      saving = false
+    }
+  }
+
+  async function saveAllReceivedFiles() {
+    if (receivedFiles.length === 0) return
+
+    saving = true
+    try {
+      if (receivedFiles.length === 1) {
+        await saveBlobWithSystemFallback(receivedFiles[0].blob, receivedFiles[0].name, receivedFiles[0].type)
+        return
+      }
+
+      const archiveName = `${code.trim().toUpperCase() || 'clex-transfer'}.zip`
+      const zipBlob = await zipFiles(
+        receivedFiles.map(file => ({
+          blob: file.blob,
+          name: file.name,
+        })),
+        archiveName
+      )
+
+      await saveBlobWithSystemFallback(zipBlob, archiveName, 'application/zip')
+    } finally {
+      saving = false
+    }
+  }
+
+  function downloadReceivedFile(index: number) {
+    const file = receivedFiles[index]
+    if (!file) return
+    triggerBlobDownload(file.blob, file.name)
   }
 </script>
 
@@ -130,7 +177,7 @@
         </div>
         <div>
           <p class="text-[15px] font-semibold text-white tracking-[-0.01em]">Receiving files…</p>
-          <p class="text-[13px] text-slate-400 mt-0.5">They will download automatically</p>
+          <p class="text-[13px] text-slate-400 mt-0.5">We'll try to save automatically and keep manual save options ready</p>
         </div>
       </div>
       <TransferProgress />
@@ -146,9 +193,95 @@
       </div>
       <div>
         <p class="text-[18px] font-semibold text-white tracking-tight">Transfer Complete</p>
-        <p class="text-[14px] text-slate-400 mt-1">Check your browser's downloads</p>
+        <p class="text-[14px] text-slate-400 mt-1">
+          Your browser may have saved the files automatically. If not, use the save controls below.
+        </p>
       </div>
+      {#if receivedFiles.length > 0}
+        <div class="rm-save-panel">
+          <button class="bg-white text-black font-medium text-[14px] py-2.5 px-6 rounded-lg hover:bg-slate-100 transition-colors w-full" on:click={saveAllReceivedFiles} disabled={saving}>
+            {#if saving}
+              Preparing…
+            {:else if receivedFiles.length === 1}
+              Save file
+            {:else}
+              Save all as ZIP
+            {/if}
+          </button>
+
+          {#if receivedFiles.length > 1}
+            <div class="rm-file-actions">
+              {#each receivedFiles as file, index}
+                <button class="rm-file-btn" on:click={() => saveReceivedFile(index)} disabled={saving}>
+                  <span>{truncateName(file.name, 28)}</span>
+                  <span class="rm-file-size">{formatBytes(file.size)}</span>
+                </button>
+              {/each}
+            </div>
+          {:else}
+            <button class="rm-file-btn" on:click={() => downloadReceivedFile(0)} disabled={saving}>
+              Download again
+            </button>
+          {/if}
+        </div>
+      {/if}
       <button class="bg-white text-black font-medium text-[14px] py-2.5 px-6 rounded-lg mt-2 hover:bg-slate-100 transition-colors" on:click={close}>Done</button>
     </div>
   {/if}
 </div>
+
+<style>
+  .rm-save-panel {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 4px;
+  }
+
+  .rm-file-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .rm-file-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.12);
+    background: rgba(255,255,255,0.04);
+    color: white;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+  }
+
+  .rm-file-btn:hover:not(:disabled) {
+    background: rgba(255,255,255,0.08);
+    border-color: rgba(255,255,255,0.18);
+  }
+
+  .rm-file-btn:disabled {
+    opacity: 0.6;
+    cursor: wait;
+  }
+
+  .rm-file-size {
+    flex-shrink: 0;
+    color: rgba(255,255,255,0.6);
+    font-size: 12px;
+  }
+
+  @media (max-width: 520px) {
+    .rm-file-btn {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  }
+</style>

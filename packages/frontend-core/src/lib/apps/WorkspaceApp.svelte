@@ -69,7 +69,11 @@
 
 <style>
   .ws-page {
-    padding: 88px 16px 48px;
+    padding:
+      calc(88px + env(safe-area-inset-top, 0px))
+      calc(16px + env(safe-area-inset-right, 0px))
+      calc(48px + env(safe-area-inset-bottom, 0px))
+      calc(16px + env(safe-area-inset-left, 0px));
     min-height: 100vh;
   }
 
@@ -84,6 +88,7 @@
     justify-content: space-between;
     margin-bottom: 20px;
     gap: 16px;
+    min-width: 0;
   }
 
   .ws-title {
@@ -125,6 +130,8 @@
     color: var(--text-2);
     cursor: pointer;
     transition: all 0.15s;
+    min-width: 0;
+    flex: 1 1 0;
   }
 
   .wmt-active {
@@ -152,6 +159,7 @@
     border-radius: 16px;
     padding: 24px;
     min-height: calc(100vh - 160px);
+    min-width: 0;
   }
 
   .ws-col-sticky {
@@ -171,5 +179,30 @@
 
   @media (min-width: 768px) {
     .ws-mobile-panel { display: none; }
+  }
+
+  @media (max-width: 767px) {
+    .ws-page {
+      padding:
+        calc(82px + env(safe-area-inset-top, 0px))
+        calc(12px + env(safe-area-inset-right, 0px))
+        calc(32px + env(safe-area-inset-bottom, 0px))
+        calc(12px + env(safe-area-inset-left, 0px));
+    }
+
+    .ws-header {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .ws-mobile-tabs {
+      width: 100%;
+    }
+
+    .ws-col {
+      padding: 16px;
+      min-height: auto;
+      overflow-x: clip;
+    }
   }
 </style>

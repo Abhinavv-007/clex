@@ -42,15 +42,15 @@
 }
 
 .faq-section__title {
-  font-family: var(--font-mono);
-  font-size: clamp(1.4rem, 2.4vw, 1.95rem);
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 3.2vw, 2.9rem);
   text-transform: uppercase;
-  letter-spacing: var(--tracking-wider);
+  letter-spacing: -0.045em;
   margin-bottom: var(--space-lg);
   padding-bottom: var(--space-md);
   border-bottom: var(--border-thick) solid var(--accent);
   display: inline-block;
-  line-height: 1.1;
+  line-height: 0.94;
 }
 
 .faq-answer strong {

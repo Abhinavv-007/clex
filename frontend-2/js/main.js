@@ -4,6 +4,7 @@
    ============================================ */
 
 import '@clex/frontend-core/styles.css';
+import { pickupToken } from '@clex/frontend-core';
 
 import { initTheme, toggleTheme } from './theme.js';
 import { initNav } from './nav.js';
@@ -24,11 +25,34 @@ document.addEventListener('DOMContentLoaded', async () => {
   const activePage = document.body.getAttribute('data-page') || '';
   initNav(activePage);
 
+  await handleGoogleDriveOAuthCallback();
   await initIslands();
 
   // Lazy load animations only when needed
   loadAnimations();
 });
+
+async function handleGoogleDriveOAuthCallback() {
+  const url = new URL(window.location.href);
+  const connected = url.searchParams.get('gdrive') === 'connected';
+  const errorCode = url.searchParams.get('error');
+
+  if (!connected && !errorCode) return;
+
+  if (connected) {
+    const token = await pickupToken();
+    if (!token) {
+      console.warn('Google Drive OAuth callback completed, but no token was picked up.');
+    }
+  } else if (errorCode) {
+    console.warn(`Google Drive OAuth failed: ${errorCode}`);
+  }
+
+  url.searchParams.delete('gdrive');
+  url.searchParams.delete('error');
+  const cleanedUrl = `${url.pathname}${url.search}${url.hash}`;
+  window.history.replaceState({}, '', cleanedUrl);
+}
 
 async function loadAnimations() {
   try {

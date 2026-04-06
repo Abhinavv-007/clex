@@ -120,4 +120,29 @@
   .wm-shell--compact .wm-body--padded {
     padding: 20px;
   }
+
+  @media (max-width: 520px) {
+    .wm-titlebar {
+      grid-template-columns: auto 1fr;
+      align-items: start;
+      row-gap: 6px;
+      padding: 12px 14px;
+    }
+
+    .wm-title {
+      justify-content: flex-start;
+      text-align: left;
+    }
+
+    .wm-status {
+      grid-column: 1 / -1;
+      justify-content: flex-start;
+      min-height: 0;
+    }
+
+    .wm-title :global(span),
+    .wm-status :global(span) {
+      font-size: 0.625rem;
+    }
+  }
 </style>
