@@ -102,7 +102,7 @@
     border: 2px dashed var(--border-hard);
     background: var(--surface-2);
     border-radius: 12px;
-    padding: 28px 16px;
+    padding: 20px 14px;
     text-align: center;
     cursor: pointer;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
@@ -126,8 +126,8 @@
   }
 
   .dropzone-icon {
-    width: 40px;
-    height: 40px;
+    width: 36px;
+    height: 36px;
     border-radius: 10px;
     background: var(--surface);
     border: 2px solid var(--border-hard);
@@ -136,7 +136,7 @@
     align-items: center;
     justify-content: center;
     color: var(--text-1);
-    margin-bottom: 8px;
+    margin-bottom: 6px;
     transition: transform 0.2s ease;
   }
 
@@ -145,13 +145,13 @@
   }
 
   .dropzone-title {
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 600;
     color: var(--text-1);
   }
 
   .dropzone-hint {
-    font-size: 12px;
+    font-size: 11px;
     color: var(--text-3);
   }
 
@@ -162,9 +162,9 @@
   }
 
   .dropzone-types {
-    font-size: 11px;
+    font-size: 10px;
     color: var(--text-3);
-    margin-top: 4px;
+    margin-top: 2px;
   }
 
   .drag-overlay {

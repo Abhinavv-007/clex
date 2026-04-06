@@ -102,10 +102,6 @@
         {/if}
       </button>
 
-      <div class="ds-access ds-access-desktop">
-        <ReceiveAccessCard {receiveBasePath} {receivePathFormat} size={158} />
-      </div>
-
       <div class="ds-access ds-access-mobile">
         <ReceiveAccessCard {receiveBasePath} {receivePathFormat} size={132} compact={true} />
       </div>
@@ -300,11 +296,6 @@
   /* Buttons */
   .ds-access {
     min-width: 0;
-  }
-
-  .ds-access-desktop {
-    display: block;
-    padding-top: 2px;
   }
 
   .ds-access-mobile {
@@ -521,10 +512,6 @@
 
     .ds-cancel-btn {
       white-space: normal;
-    }
-
-    .ds-access-desktop {
-      display: none;
     }
 
     .ds-access-mobile {

@@ -4,6 +4,7 @@
   import FileList from '$components/workspace/FileList.svelte'
   import ToolChain from '$components/workspace/ToolChain.svelte'
   import SharePanel from '$components/workspace/SharePanel.svelte'
+  import ReceiveAccessCard from '$components/sharing/ReceiveAccessCard.svelte'
 
   export let receiveBasePath = siteRoutes.receive
   export let receivePathFormat: 'segment' | 'query' = 'segment'
@@ -51,6 +52,10 @@
       <aside class="ws-col ws-col-sticky ws-col-share">
         <SharePanel {receiveBasePath} {receivePathFormat} />
       </aside>
+
+      <aside class="ws-qr-slot ws-col-sticky">
+        <ReceiveAccessCard {receiveBasePath} {receivePathFormat} size={168} />
+      </aside>
     </div>
 
     <div class="ws-mobile-panel">
@@ -78,7 +83,7 @@
   }
 
   .ws-inner {
-    max-width: 1280px;
+    max-width: 1420px;
     margin: 0 auto;
   }
 
@@ -143,7 +148,7 @@
 
   .ws-grid {
     display: none;
-    grid-template-columns: 300px 1fr 280px;
+    grid-template-columns: 280px minmax(360px, 1fr) 248px 236px;
     gap: 12px;
     align-items: start;
   }
@@ -170,21 +175,24 @@
   }
 
   .ws-col-share {
-    overflow-y: auto;
-    scrollbar-width: thin;
-    scrollbar-color: var(--border-strong) transparent;
+    min-height: auto;
   }
-
-  .ws-col-share::-webkit-scrollbar { width: 4px; }
-  .ws-col-share::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 2px; }
 
   .ws-col-files {
     position: sticky;
     top: 80px;
+    min-height: auto;
     max-height: calc(100vh - 100px);
     overflow: hidden;
     display: flex;
     flex-direction: column;
+  }
+
+  .ws-qr-slot {
+    position: sticky;
+    top: 80px;
+    align-self: start;
+    min-width: 0;
   }
 
   .ws-mobile-panel { display: block; }

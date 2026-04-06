@@ -61,9 +61,9 @@
     </div>
   </section>
 
-  <section class="fl-panel fl-panel--receive">
+  <div class="fl-receive-wrap">
     <ReceiveEntryCard {receiveEntryHref} />
-  </section>
+  </div>
 
   {#if $hasFiles}
     <div class="fl-mobile-actions">
@@ -82,7 +82,6 @@
     display: flex;
     flex-direction: column;
     gap: 14px;
-    height: 100%;
     min-height: 0;
   }
 
@@ -96,13 +95,14 @@
   }
 
   .fl-panel--files {
-    flex: 1 1 auto;
+    flex: 0 1 auto;
     display: flex;
     flex-direction: column;
     min-height: 0;
+    max-height: min(540px, calc(100vh - 290px));
   }
 
-  .fl-panel--receive {
+  .fl-receive-wrap {
     flex: 0 0 auto;
   }
 
@@ -191,10 +191,10 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 12px;
-    padding: 48px 24px;
+    gap: 10px;
+    padding: 30px 20px;
     color: var(--text-3);
-    font-size: 13px;
+    font-size: 12px;
     background: var(--surface-2);
     border: 2px dashed var(--border-hard);
     border-radius: 12px;
@@ -206,10 +206,14 @@
   .fl-empty svg {
     color: var(--text-2);
     opacity: 0.5;
-    margin-bottom: 4px;
+    margin-bottom: 2px;
   }
 
   @media (max-width: 767px) {
+    .fl-panel--files {
+      max-height: none;
+    }
+
     .fl-list {
       max-height: none;
       overflow: visible;
