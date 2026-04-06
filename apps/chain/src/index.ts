@@ -262,6 +262,12 @@ export default {
 
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors })
 
+    // GET /chain/ — the Worker route clex.in/chain/* intercepts the trailing-slash
+    // page request before Pages can serve it. Redirect to the canonical /chain page.
+    if (request.method === 'GET' && (url.pathname === '/chain/' || url.pathname === '/chain')) {
+      return Response.redirect(new URL('/chain', url.origin).href, 301)
+    }
+
     // POST /chain/register
     if (request.method === 'POST' && url.pathname === '/chain/register') {
       return handleRegister(request, env, cors)

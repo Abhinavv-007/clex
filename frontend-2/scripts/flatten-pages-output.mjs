@@ -9,6 +9,7 @@ const flatRoutes = [
   'how-it-works',
   'workspace',
   'receive',
+  'chain',
   'getting-started',
   'faq',
   'privacy',
