@@ -11,8 +11,8 @@
   export let receiveBasePath = siteRoutes.receive
   export let receivePathFormat: 'segment' | 'query' = 'segment'
   export let receiveEntryHref = siteRoutes.receive
-  /** Chain API base URL — pass from the mounting script (reads import.meta.env there). */
-  export let chainApiUrl = 'http://localhost:8789'
+  /** Chain API base URL — pass from the mounting script. Empty string = same origin (production). */
+  export let chainApiUrl = ''
 
   $: activePanel = $uiStore.activePanel
 

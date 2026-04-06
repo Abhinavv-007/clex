@@ -16,7 +16,7 @@ new_sqlite_classes = ["ChainLedger"]
 [[d1_databases]]
 binding = "DB"
 database_name = "clex-chain"
-database_id = "local-chain-db"
+database_id = "b2a1c87d-ae8d-4d92-957d-b04fa74c15b0"
 
 [vars]
 ALLOWED_ORIGIN = "*"
@@ -37,9 +37,7 @@ new_sqlite_classes = ["ChainLedger"]
 [[env.production.d1_databases]]
 binding = "DB"
 database_name = "clex-chain"
-# After running: wrangler d1 create clex-chain
-# Replace with the real database_id from the output
-database_id = "REPLACE_WITH_D1_DATABASE_ID"
+database_id = "b2a1c87d-ae8d-4d92-957d-b04fa74c15b0"
 
 [[env.production.routes]]
 pattern = "clex.in/chain/*"
