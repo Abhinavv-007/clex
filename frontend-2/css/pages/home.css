@@ -42,7 +42,8 @@
 .nav__logo-image {
   width: 42px;
   height: 42px;
-  object-fit: contain;
+  object-fit: cover;
+  object-position: center;
   flex: 0 0 auto;
 }
 
@@ -520,7 +521,8 @@
 .footer__logo-image {
   width: 56px;
   height: 56px;
-  object-fit: contain;
+  object-fit: cover;
+  object-position: center;
   flex: 0 0 auto;
 }
 

@@ -24,14 +24,14 @@
   --border:         rgba(0,0,0,0.10);
   --border-strong:  rgba(0,0,0,0.20);
   --border-hard:    #000000;
-  --border-focus:   #FFE600;
+  --border-focus:   #8F7800;
 
   /* Shadows — neo-brutalist hard offset */
   --shadow-sm:      3px 3px 0 #000000;
   --shadow-md:      4px 4px 0 #000000;
   --shadow-lg:      6px 6px 0 #000000;
   --shadow-xl:      8px 8px 0 #000000;
-  --shadow-accent:  4px 4px 0 #FFE600;
+  --shadow-accent:  4px 4px 0 #8F7800;
 
   /* Text */
   --text-1:   #0A0A0C;
@@ -40,9 +40,9 @@
   --text-inv: #FFFFFF;
 
   /* Accent — yellow, used sparingly for maximum impact */
-  --accent:         #FFE600;
-  --accent-dim:     rgba(255,230,0,0.15);
-  --accent-border:  rgba(255,230,0,0.4);
+  --accent:         #8F7800;
+  --accent-dim:     rgba(143,120,0,0.15);
+  --accent-border:  rgba(143,120,0,0.4);
   --accent-fg:      #000000;
 
   /* Status */

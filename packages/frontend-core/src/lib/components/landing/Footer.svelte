@@ -63,14 +63,9 @@
     <!-- Brand column -->
     <div class="footer-brand reveal" class:is-visible={visible}>
       <a href={routes.home} class="brand-logo">
-        <div class="brand-mark">
-          <svg viewBox="0 0 20 20" fill="none" width="14" height="14">
-            <path d="M10 1L18 5.5V14.5L10 19L2 14.5V5.5L10 1Z"
-              stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
-            <path d="M10 5L15 7.5V12.5L10 15L5 12.5V7.5L10 5Z"
-              fill="currentColor" opacity="0.35"/>
-          </svg>
-        </div>
+        <span class="brand-mark" aria-hidden="true">
+          <img src="/brand/clex-logo.png" alt="" class="brand-mark-image" />
+        </span>
         <span class="brand-name">clex</span>
       </a>
 
@@ -169,15 +164,17 @@
   .brand-mark {
     width: 34px;
     height: 34px;
-    border-radius: 9px;
-    background: var(--text-1);
-    color: var(--text-inv);
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 1.5px solid var(--border-hard);
-    box-shadow: var(--shadow-sm);
     flex-shrink: 0;
+  }
+
+  .brand-mark-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
   }
 
   .brand-name {

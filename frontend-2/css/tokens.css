@@ -166,9 +166,9 @@
   --text-tertiary: #888888;
   --text-inverse: #f0f0e8;
 
-  --accent: #baef00;
-  --accent-hover: #a8d600;
-  --accent-muted: rgba(186, 239, 0, 0.2);
+  --accent: #8f7800;
+  --accent-hover: #7b6600;
+  --accent-muted: rgba(143, 120, 0, 0.18);
   --accent-secondary: #ff3d00;
   --accent-secondary-hover: #e63600;
   --accent-tertiary: #0099cc;
@@ -188,6 +188,6 @@
   --scrollbar-thumb: #c0b9aa;
 
   --gradient-hero: linear-gradient(135deg, #f5f0e8 0%, #ebe5d9 50%, #f0ebe0 100%);
-  --gradient-accent: linear-gradient(135deg, var(--accent) 0%, #9ccc00 100%);
+  --gradient-accent: linear-gradient(135deg, var(--accent) 0%, #6f5c00 100%);
   --gradient-card: linear-gradient(180deg, #ffffff 0%, #fafaf5 100%);
 }
