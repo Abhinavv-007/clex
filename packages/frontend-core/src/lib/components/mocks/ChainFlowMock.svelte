@@ -1,6 +1,5 @@
 <script lang="ts">
   import { onMount } from 'svelte'
-  import { slide, fade } from 'svelte/transition'
 
   type ChainStep = {
     label: string
@@ -63,6 +62,7 @@
 
   let activeIndex = 0
   let autoCycle = true
+  $: activeStep = steps[activeIndex]
 
   function selectStep(index: number) {
     activeIndex = index
@@ -103,22 +103,15 @@
   </div>
 
   <div class="cfm-detail-wrap">
-    {#key activeIndex}
-      <section
-        class="cfm-detail"
-        aria-live="polite"
-        in:slide={{ duration: 220 }}
-        out:fade={{ duration: 140 }}
-      >
-        <div class="cfm-detail__eyebrow">Step {activeIndex + 1}</div>
-        <div class="cfm-detail__header">
-          <h3>{steps[activeIndex].label}</h3>
-          <span>{steps[activeIndex].detail}</span>
-        </div>
-        <p>{steps[activeIndex].explanation}</p>
-        <div class="cfm-detail__highlight">{steps[activeIndex].highlight}</div>
-      </section>
-    {/key}
+    <section class="cfm-detail" aria-live="polite">
+      <div class="cfm-detail__eyebrow">Step {activeIndex + 1}</div>
+      <div class="cfm-detail__header">
+        <h3>{activeStep.label}</h3>
+        <span>{activeStep.detail}</span>
+      </div>
+      <p>{activeStep.explanation}</p>
+      <div class="cfm-detail__highlight">{activeStep.highlight}</div>
+    </section>
   </div>
 </div>
 
@@ -208,7 +201,6 @@
   }
 
   .cfm-detail {
-    margin-top: 22px;
     padding: 18px 20px;
     border: 2px solid color-mix(in srgb, var(--accent) 38%, var(--border-hard));
     border-radius: 18px;
@@ -218,9 +210,14 @@
     max-width: 100%;
     box-sizing: border-box;
     overflow: hidden;
+    min-height: 220px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
   }
 
   .cfm-detail-wrap {
+    margin-top: 22px;
     width: 100%;
     max-width: 100%;
     overflow-x: clip;
@@ -278,6 +275,8 @@
     font-size: 11px;
     letter-spacing: 0.05em;
     color: var(--text-1);
+    max-width: 100%;
+    align-self: flex-start;
   }
 
   .cfm-detail__highlight::before {
@@ -306,6 +305,7 @@
 
     .cfm-detail {
       padding: 16px;
+      min-height: 250px;
     }
 
     .cfm-detail__header h3 {
