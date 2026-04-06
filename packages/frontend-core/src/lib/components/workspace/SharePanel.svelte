@@ -8,7 +8,6 @@
 
   export let receiveBasePath = siteRoutes.receive
   export let receivePathFormat: 'segment' | 'query' = 'segment'
-  export let receiveEntryHref = siteRoutes.receive
 
   function setMethod(method: TransferMethod) {
     transferStore.setMethod(method)
@@ -35,19 +34,6 @@
         Choose how to send your files
       {/if}
     </p>
-  </div>
-
-  <div class="sp-receive sp-receive--featured">
-    <div class="sp-receive-copy">
-      <span class="sp-receive-label">Receiving files?</span>
-      <p class="sp-receive-text">Open the receive screen and enter the room code to start downloading.</p>
-    </div>
-    <a href={receiveEntryHref} class="btn-accent sp-receive-btn sp-receive-btn--featured">
-      Enter room code
-      <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
-        <path d="M2 5.5h7M6 2.5l3 3-3 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-    </a>
   </div>
 
   {#if !$hasFiles}
@@ -197,76 +183,6 @@
   .sp-content::-webkit-scrollbar { width: 4px; }
   .sp-content::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 2px; }
 
-  /* Receive footer */
-  .sp-receive {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    min-width: 0;
-  }
-
-  .sp-receive-label {
-    font-size: 12px;
-    color: var(--text-2);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    font-weight: 700;
-  }
-
-  .sp-receive-btn {
-    width: 100%;
-    justify-content: center;
-    font-size: 12px;
-    gap: 6px;
-    padding: 8px 16px;
-    display: flex;
-    align-items: center;
-    text-decoration: none;
-    border: 1px solid var(--border-strong);
-    border-radius: 8px;
-    color: var(--text-2);
-    transition: background 0.15s, color 0.15s;
-    background: transparent;
-  }
-
-  .sp-receive--featured {
-    padding: 14px;
-    border: 2px solid var(--border-hard);
-    box-shadow: 3px 3px 0 var(--border-hard);
-    border-radius: 14px;
-    background: color-mix(in srgb, var(--accent) 10%, var(--surface));
-  }
-
-  .sp-receive-copy {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-
-  .sp-receive-text {
-    margin: 0;
-    font-size: 12px;
-    line-height: 1.55;
-    color: var(--text-2);
-  }
-
-  .sp-receive-btn--featured {
-    background: var(--accent);
-    color: #0a0a0a;
-    border-color: #0a0a0a;
-    font-weight: 700;
-  }
-
-  .sp-receive-btn--featured:hover {
-    background: var(--accent-hover);
-    color: #0a0a0a;
-  }
-
-  .sp-receive-btn:hover:not(.sp-receive-btn--featured) {
-    background: var(--raised);
-    color: var(--text-1);
-  }
-
   @media (max-width: 767px) {
     .sp-root {
       gap: 14px;
@@ -283,12 +199,5 @@
       overflow: visible;
     }
 
-    .sp-receive--featured {
-      padding: 12px;
-    }
-
-    .sp-receive-btn {
-      white-space: normal;
-    }
   }
 </style>

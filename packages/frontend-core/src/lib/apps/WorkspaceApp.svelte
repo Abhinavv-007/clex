@@ -41,7 +41,7 @@
 
     <div class="ws-grid">
       <aside class="ws-col ws-col-files">
-        <FileList />
+        <FileList {receiveEntryHref} />
       </aside>
 
       <section class="ws-col">
@@ -49,18 +49,18 @@
       </section>
 
       <aside class="ws-col ws-col-sticky ws-col-share">
-        <SharePanel {receiveBasePath} {receivePathFormat} {receiveEntryHref} />
+        <SharePanel {receiveBasePath} {receivePathFormat} />
       </aside>
     </div>
 
     <div class="ws-mobile-panel">
       <div class="ws-col">
         {#if activePanel === 'files'}
-          <FileList />
+          <FileList {receiveEntryHref} />
         {:else if activePanel === 'tools'}
           <ToolChain />
         {:else}
-          <SharePanel {receiveBasePath} {receivePathFormat} {receiveEntryHref} />
+          <SharePanel {receiveBasePath} {receivePathFormat} />
         {/if}
       </div>
     </div>

@@ -1,11 +1,15 @@
 <script lang="ts">
   import { filesStore, hasFiles } from '$stores/files'
   import { uiStore } from '$stores/ui'
+  import { siteRoutes } from '$utils'
   import FileCard from './FileCard.svelte'
   import FileDropzone from './FileDropzone.svelte'
+  import ReceiveEntryCard from './ReceiveEntryCard.svelte'
   import { flip } from 'svelte/animate'
   import { slide } from 'svelte/transition'
   import { formatBytes } from '$utils/format'
+
+  export let receiveEntryHref = siteRoutes.receive
 
   $: totalSize = $filesStore.reduce((sum, f) => sum + f.size, 0)
 </script>
@@ -57,6 +61,10 @@
     </div>
   </section>
 
+  <section class="fl-panel fl-panel--receive">
+    <ReceiveEntryCard {receiveEntryHref} />
+  </section>
+
   {#if $hasFiles}
     <div class="fl-mobile-actions">
       <button class="btn-secondary fl-mobile-btn" on:click={() => uiStore.setPanel('tools')}>
@@ -92,6 +100,10 @@
     display: flex;
     flex-direction: column;
     min-height: 0;
+  }
+
+  .fl-panel--receive {
+    flex: 0 0 auto;
   }
 
   .fl-header {
