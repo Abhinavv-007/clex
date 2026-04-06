@@ -2,13 +2,15 @@
   import { onMount } from 'svelte'
   import QR from 'qrcode'
 
-  export let value: string
+  export let value = ''
+  export let text = ''
   export let size = 180
 
   let svgContent = ''
+  $: qrValue = value || text
 
-  $: if (value) {
-    generateQR(value)
+  $: if (qrValue) {
+    generateQR(qrValue)
   }
 
   async function generateQR(text: string) {
@@ -26,11 +28,11 @@
   }
 
   onMount(() => {
-    if (value) generateQR(value)
+    if (qrValue) generateQR(qrValue)
   })
 </script>
 
-<div class="qr-container" style="width: {size}px; height: {size}px;" aria-label="QR code for {value}">
+<div class="qr-container" style="width: {size}px; height: {size}px;" aria-label="QR code for {qrValue}">
   {#if svgContent}
     {@html svgContent}
   {/if}

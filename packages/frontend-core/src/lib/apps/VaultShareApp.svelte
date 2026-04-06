@@ -32,7 +32,7 @@
   let downloadUrl = ''
 
   function extractKey(): string {
-    const parts = window.location.pathname.split('/')
+    const parts = window.location.pathname.split('/').filter(Boolean)
     return parts[parts.length - 1] ?? ''
   }
 
@@ -84,19 +84,21 @@
 
       const data = await res.json() as {
         filename: string
-        sizeBytes: number
+        sizeBytes?: number
         mimeType: string
-        expiresAt: number
-        downloadUrl: string
+        expiresAt?: number
+        expiresIn?: number
+        downloadUrl?: string
+        signedUrl?: string
       }
 
       meta = {
         filename: data.filename,
-        sizeBytes: data.sizeBytes,
+        sizeBytes: data.sizeBytes ?? 0,
         mimeType: data.mimeType,
-        expiresAt: data.expiresAt,
+        expiresAt: data.expiresAt ?? Date.now() + (data.expiresIn ?? 3600) * 1000,
       }
-      downloadUrl = data.downloadUrl
+      downloadUrl = data.downloadUrl ?? data.signedUrl ?? ''
 
       if (meta.expiresAt < Date.now()) {
         phase = 'expired'
@@ -121,13 +123,13 @@
 
       const total = parseInt(res.headers.get('content-length') ?? '0', 10)
       const reader = res.body!.getReader()
-      const chunks: Uint8Array[] = []
+      const chunks: ArrayBuffer[] = []
       let received = 0
 
       while (true) {
         const { done, value } = await reader.read()
         if (done) break
-        chunks.push(value)
+        chunks.push(value.buffer.slice(value.byteOffset, value.byteOffset + value.byteLength))
         received += value.length
         if (total > 0) {
           downloadProgress = Math.round((received / total) * 100)
@@ -272,7 +274,7 @@
     box-shadow: var(--shadow-md);
     border-radius: 20px;
     padding: 40px 36px;
-    max-width: 480px;
+    max-width: 420px;
     width: 100%;
     display: flex;
     flex-direction: column;
@@ -300,11 +302,14 @@
   }
 
   .vsh-filename {
-    font-family: var(--font-mono);
-    font-size: 15px;
+    font-family: var(--font-display);
+    font-size: 1.6rem;
     font-weight: 700;
     color: var(--text-1);
-    word-break: break-all;
+    letter-spacing: -0.04em;
+    line-height: 0.95;
+    text-transform: uppercase;
+    word-break: break-word;
   }
 
   .vsh-meta-row {
@@ -413,10 +418,12 @@
 
   .vsh-title {
     font-family: var(--font-display);
-    font-size: 22px;
+    font-size: clamp(1.9rem, 4vw, 2.35rem);
     font-weight: 800;
     color: var(--text-1);
-    letter-spacing: -0.03em;
+    letter-spacing: -0.04em;
+    line-height: 0.92;
+    text-transform: uppercase;
     margin: 0;
   }
 

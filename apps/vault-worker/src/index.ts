@@ -196,8 +196,10 @@ async function handleSecretCreate(req: Request, env: Env, cors: Record<string, s
   const maxSize = parseInt(env.MAX_SECRET_SIZE ?? '50000')
   if (encryptedPayload.length > maxSize * 1.4) return err('Payload too large', 413, cors)
 
-  const validTtls = [3600, 21600, 86400, 604800]
-  const ttl = validTtls.includes(ttlSeconds) ? ttlSeconds : 86400
+  const parsedTtl = Math.floor(Number(ttlSeconds))
+  const ttl = Number.isFinite(parsedTtl)
+    ? Math.min(604800, Math.max(60, parsedTtl))
+    : 86400
   const id = randomId(16)
   const now = Date.now()
   const record: SecretRecord = {
@@ -361,10 +363,19 @@ async function handleFileUpload(req: Request, env: Env, cors: Record<string, str
  * Verifies user owns the file via D1, then returns a Supabase signed URL
  * valid for 1 hour. Client downloads directly from Supabase.
  */
-async function handleFileDownload(fileId: string, userId: string, env: Env, cors: Record<string, string>): Promise<Response> {
-  const row = await env.DB.prepare(
-    'SELECT storage_path, filename, mime_type, delete_at FROM attachments WHERE id = ? AND user_id = ?'
-  ).bind(fileId, userId).first<{ storage_path: string; filename: string; mime_type: string; delete_at: number }>()
+async function handleFileDownload(
+  fileId: string,
+  userId: string | null,
+  env: Env,
+  cors: Record<string, string>,
+): Promise<Response> {
+  const row = userId
+    ? await env.DB.prepare(
+      'SELECT storage_path, filename, mime_type, size_bytes, delete_at FROM attachments WHERE id = ? AND user_id = ?'
+    ).bind(fileId, userId).first<{ storage_path: string; filename: string; mime_type: string; size_bytes: number; delete_at: number }>()
+    : await env.DB.prepare(
+      'SELECT storage_path, filename, mime_type, size_bytes, delete_at FROM attachments WHERE id = ?'
+    ).bind(fileId).first<{ storage_path: string; filename: string; mime_type: string; size_bytes: number; delete_at: number }>()
 
   if (!row) return err('File not found or access denied', 404, cors)
   if (Math.floor(Date.now() / 1000) > row.delete_at) {
@@ -374,9 +385,12 @@ async function handleFileDownload(fileId: string, userId: string, env: Env, cors
   try {
     const signedUrl = await supabaseSignedUrl(env, row.storage_path)
     return json({
+      downloadUrl: signedUrl,
       signedUrl,
       filename: row.filename,
+      sizeBytes: row.size_bytes,
       mimeType: row.mime_type,
+      expiresAt: row.delete_at * 1000,
       expiresIn: 3600,
     }, 200, cors)
   } catch (e: unknown) {
@@ -614,9 +628,12 @@ export default {
     const fileMatch = path.match(/^\/vault\/api\/files\/([a-f0-9]+)$/)
     if (fileMatch) {
       const fileId = fileMatch[1]
+      if (method === 'GET') {
+        const userId = request.headers.get('X-Vault-UID')
+        return handleFileDownload(fileId, userId, env, cors)
+      }
       const userId = request.headers.get('X-Vault-UID')
       if (!userId) return err('X-Vault-UID required', 401, cors)
-      if (method === 'GET') return handleFileDownload(fileId, userId, env, cors)
       if (method === 'DELETE') return handleFileDelete(fileId, userId, env, cors)
     }
 

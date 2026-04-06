@@ -214,7 +214,7 @@
           </div>
         </div>
 
-        <p class="vst-hint">Files are auto-deleted after 24 hours. Only authenticated users can upload files.</p>
+        <p class="vst-hint">Files are auto-deleted after 24 hours. Uploads are capped at 10 MB per file and 100 MB per day for each signed-in Vault user.</p>
       </div>
 
     <!-- ── Encryption ─────────────────────────────────────────────────── -->

@@ -18,6 +18,7 @@
   import VaultSettings from '$components/vault/VaultSettings.svelte'
   import VaultPairingModal from '$components/vault/VaultPairingModal.svelte'
   import VaultSecretCreate from '$components/vault/VaultSecretCreate.svelte'
+  import VaultCloudShare from '$components/vault/VaultCloudShare.svelte'
   import Toast from '$components/ui/Toast.svelte'
   import {
     masterKey as masterKeyStore,
@@ -119,6 +120,27 @@
   $: panel = $ui.activePanel
   $: pairingOpen = $ui.pairingModalOpen
   $: infoPanelCollapsed = $ui.infoPanelCollapsed
+  $: panelTitle = panel === 'notes'
+    ? 'Encrypted notes, secrets, and file handoffs.'
+    : panel === 'secrets'
+      ? 'Create a one-time link without leaving Vault.'
+      : panel === 'share'
+        ? 'Publish a short-lived file link with QR access.'
+        : 'Manage devices, storage, and recovery controls.'
+  $: panelSubtitle = panel === 'notes'
+    ? 'Vault should feel like Workspace: direct, dense, and easy to move through.'
+    : panel === 'secrets'
+      ? 'Short TTL links, QR handoff, and a wider layout for real use instead of a cramped modal.'
+      : panel === 'share'
+        ? 'The Supabase relay already exists on the backend. This surface puts the 10 MB and 100 MB/day rules into the product.'
+        : 'Pair devices, check storage, and control the key lifecycle from the same shell.'
+
+  const panelTabs: { id: 'notes' | 'secrets' | 'share' | 'settings'; label: string }[] = [
+    { id: 'notes', label: 'Notes' },
+    { id: 'secrets', label: 'Secret Share' },
+    { id: 'share', label: 'Cloud Share' },
+    { id: 'settings', label: 'Settings' },
+  ]
 </script>
 
 <Toast />
@@ -146,42 +168,52 @@
 {:else}
   <div class="va-page" in:fade={{ duration: 220 }}>
     <div class="va-inner">
+      <div class="va-shell-header">
+        <div class="va-title-block">
+          <p class="va-kicker">Vault</p>
+          <h1 class="va-title">{panelTitle}</h1>
+          <p class="va-sub">{panelSubtitle}</p>
+        </div>
+
+        <div class="va-panel-switch" role="tablist" aria-label="Vault sections">
+          {#each panelTabs as item}
+            <button
+              class="va-panel-tab"
+              class:va-panel-tab--active={panel === item.id}
+              on:click={() => vaultActions.setPanel(item.id)}
+            >
+              {item.label}
+            </button>
+          {/each}
+        </div>
+      </div>
 
       {#if panel === 'settings'}
-        <!-- Full-width settings view -->
         <div class="va-settings-wrap">
           <VaultSettings storageUsed={$storageUsed} />
         </div>
 
       {:else if panel === 'secrets'}
-        <!-- Secret share creation -->
         <div class="va-secrets-wrap">
-          <div class="va-secrets-header">
-            <button class="btn-icon" on:click={() => vaultActions.setPanel('notes')}>
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
-                <path d="M10 3L6 8l4 5"/>
-              </svg>
-            </button>
-          </div>
           <VaultSecretCreate {vaultApiUrl} />
         </div>
 
-      {:else}
-        <!-- Three-panel notes view -->
-        <div class="va-grid" class:va-grid--no-info={infoPanelCollapsed}>
+      {:else if panel === 'share'}
+        <div class="va-share-wrap">
+          <VaultCloudShare {vaultApiUrl} />
+        </div>
 
-          <!-- Sidebar -->
+      {:else}
+        <div class="va-grid" class:va-grid--no-info={infoPanelCollapsed}>
           <aside class="va-col va-col-sidebar">
             <VaultSidebar />
           </aside>
 
-          <!-- Editor -->
           <main class="va-col va-col-editor">
             <VaultHeader {offline} />
             <VaultEditor />
           </main>
 
-          <!-- Info panel -->
           {#if !infoPanelCollapsed}
             <aside class="va-col va-col-info">
               <VaultInfoPanel />
@@ -189,7 +221,6 @@
           {/if}
         </div>
 
-        <!-- Collapsed info panel expand button -->
         {#if infoPanelCollapsed}
           <button
             class="va-info-expand btn-icon"
@@ -204,27 +235,14 @@
           </button>
         {/if}
       {/if}
-
-      <!-- Secret Share tab in nav strip -->
-      <button
-        class="va-secrets-fab"
-        class:va-secrets-fab--active={panel === 'secrets'}
-        on:click={() => vaultActions.setPanel(panel === 'secrets' ? 'notes' : 'secrets')}
-        title="Secret Share"
-        aria-label="Secret Share"
-      >
-        👁
-      </button>
     </div>
   </div>
 
-  <!-- Pairing Modal -->
   {#if pairingOpen}
     <VaultPairingModal {vaultApiUrl} />
   {/if}
 {/if}
 
-<!-- Mobile tabs -->
 {#if !loading}
   <div class="va-mobile-tabs">
     <button
@@ -237,6 +255,11 @@
       class:va-mtab--active={panel === 'secrets'}
       on:click={() => vaultActions.setPanel('secrets')}
     >Secrets</button>
+    <button
+      class="va-mtab"
+      class:va-mtab--active={panel === 'share'}
+      on:click={() => vaultActions.setPanel('share')}
+    >Cloud</button>
     <button
       class="va-mtab"
       class:va-mtab--active={panel === 'settings'}
@@ -256,22 +279,95 @@
   }
 
   .va-inner {
-    max-width: 1440px;
+    max-width: 1420px;
     margin: 0 auto;
     position: relative;
   }
 
-  /* Three-panel grid */
+  .va-shell-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 18px;
+    margin-bottom: 20px;
+  }
+
+  .va-title-block {
+    min-width: 0;
+  }
+
+  .va-kicker {
+    margin: 0 0 8px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-3);
+  }
+
+  .va-title {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 3.5vw, 3.1rem);
+    line-height: 0.9;
+    letter-spacing: -0.05em;
+    text-transform: uppercase;
+    color: var(--text-1);
+  }
+
+  .va-sub {
+    margin: 10px 0 0;
+    max-width: 64ch;
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--text-2);
+  }
+
+  .va-panel-switch {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: flex-end;
+  }
+
+  .va-panel-tab {
+    min-height: 42px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    border: 2px solid var(--border-hard);
+    background: var(--surface);
+    box-shadow: 3px 3px 0 var(--border-hard);
+    font-family: var(--font-display);
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-2);
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  }
+
+  .va-panel-tab:hover {
+    transform: translate(-1px, -1px);
+    box-shadow: 5px 5px 0 var(--border-hard);
+  }
+
+  .va-panel-tab--active {
+    background: var(--accent);
+    color: #111;
+    border-color: #111;
+    box-shadow: 4px 4px 0 #111;
+  }
+
   .va-grid {
     display: grid;
-    grid-template-columns: 260px minmax(480px, 1fr) 220px;
+    grid-template-columns: 280px minmax(360px, 1fr) 248px;
     gap: 12px;
     align-items: start;
     height: calc(100vh - 152px);
   }
 
   .va-grid--no-info {
-    grid-template-columns: 260px minmax(480px, 1fr);
+    grid-template-columns: 280px minmax(360px, 1fr);
   }
 
   .va-col {
@@ -312,69 +408,20 @@
     z-index: 10;
   }
 
-  /* Secrets FAB */
-  .va-secrets-fab {
-    position: fixed;
-    bottom: 32px;
-    right: 24px;
-    width: 48px;
-    height: 48px;
-    border-radius: 12px;
-    background: var(--surface);
-    border: 2px solid var(--border-hard);
-    box-shadow: 4px 4px 0 var(--border-hard);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 20px;
-    cursor: pointer;
-    transition: transform 0.15s, box-shadow 0.15s;
-    z-index: 100;
+  .va-settings-wrap,
+  .va-secrets-wrap,
+  .va-share-wrap {
+    background: transparent;
+    min-height: calc(100vh - 210px);
   }
 
-  .va-secrets-fab:hover {
-    transform: translate(-2px, -2px);
-    box-shadow: 6px 6px 0 var(--border-hard);
-  }
-
-  .va-secrets-fab:active {
-    transform: translate(2px, 2px);
-    box-shadow: 1px 1px 0 var(--border-hard);
-  }
-
-  .va-secrets-fab--active {
-    background: var(--accent);
-    border-color: #000;
-    box-shadow: 4px 4px 0 #000;
-  }
-
-  /* Settings / Secrets full-width views */
   .va-settings-wrap {
-    background: var(--surface);
-    border: 2px solid var(--border-hard);
-    box-shadow: var(--shadow-md);
-    border-radius: 16px;
-    padding: 24px;
-    min-height: calc(100vh - 160px);
-    display: flex;
-    flex-direction: column;
+    display: block;
   }
 
-  .va-secrets-wrap {
-    background: var(--surface);
-    border: 2px solid var(--border-hard);
-    box-shadow: var(--shadow-md);
-    border-radius: 16px;
-    padding: 24px;
-    min-height: calc(100vh - 160px);
-    overflow-y: auto;
-    scrollbar-width: thin;
-  }
-
-  .va-secrets-header {
-    display: flex;
-    align-items: center;
-    margin-bottom: 20px;
+  .va-secrets-wrap,
+  .va-share-wrap {
+    overflow: visible;
   }
 
   /* Boot screen */
@@ -461,6 +508,15 @@
   .va-mtab--active { color: var(--text-1); }
 
   @media (max-width: 1023px) {
+    .va-shell-header {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .va-panel-switch {
+      justify-content: flex-start;
+    }
+
     .va-grid {
       grid-template-columns: 220px minmax(320px, 1fr) 180px;
     }
@@ -478,11 +534,13 @@
       flex-direction: column;
       height: auto;
     }
+    .va-title {
+      font-size: 1.9rem;
+    }
     .va-col-sidebar {
       display: none;
     }
     .va-col-info { display: none; }
-    .va-secrets-fab { display: none; }
     .va-mobile-tabs { display: flex; }
   }
 </style>

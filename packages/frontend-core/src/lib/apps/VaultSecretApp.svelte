@@ -35,7 +35,7 @@
 
   // Extract secret ID from URL path (/vault/secret/<id>)
   function extractId(): string {
-    const parts = window.location.pathname.split('/')
+    const parts = window.location.pathname.split('/').filter(Boolean)
     return parts[parts.length - 1] ?? ''
   }
 
@@ -255,24 +255,23 @@
   {:else if phase === 'confirm'}
     <div class="vsa-center" in:scale={{ duration: 280, easing: quintOut, start: 0.95 }}>
       <div class="vsa-card">
-        <div class="vsa-icon">👁</div>
-        <h1 class="vsa-title">View Secret</h1>
+        <div class="vsa-kicker">Secret Link</div>
+        <h1 class="vsa-title">Open once. Then it is gone.</h1>
         <p class="vsa-desc">
           You are about to view a one-time secret. Once opened, it will be <strong>permanently destroyed</strong> after 60 seconds.
         </p>
 
         <div class="vsa-warn-grid">
           {#each [
-            { icon: '⏱', text: '60s countdown — then gone' },
-            { icon: '👁', text: 'View once only' },
-            { icon: '⊘', text: 'Copy disabled' },
-            { icon: '🔒', text: 'Tab switch locks' },
-            { icon: '🛡', text: 'DevTools blocked' },
-            { icon: '🗑', text: 'Memory-only' },
+            '60s countdown',
+            'View once',
+            'Copy disabled',
+            'Tab switch locks',
+            'DevTools blocked',
+            'Memory only',
           ] as w}
             <div class="vsa-warn-badge">
-              <span>{w.icon}</span>
-              <span>{w.text}</span>
+              <span>{w}</span>
             </div>
           {/each}
         </div>
@@ -411,7 +410,7 @@
     box-shadow: var(--shadow-md);
     border-radius: 20px;
     padding: 40px 36px;
-    max-width: 520px;
+    max-width: 460px;
     width: 100%;
     display: flex;
     flex-direction: column;
@@ -420,14 +419,19 @@
     text-align: center;
   }
 
+  .vsa-kicker {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-3);
+  }
+
   .vsa-card--destroyed {
     border-color: var(--red, #ff4444);
     box-shadow: 6px 6px 0 var(--red, #ff4444);
-  }
-
-  .vsa-icon {
-    font-size: 48px;
-    line-height: 1;
   }
 
   .vsa-icon--red {
@@ -436,11 +440,13 @@
 
   .vsa-title {
     font-family: var(--font-display);
-    font-size: 26px;
+    font-size: clamp(2rem, 4vw, 2.6rem);
     font-weight: 800;
     color: var(--text-1);
     letter-spacing: -0.03em;
     margin: 0;
+    line-height: 0.92;
+    text-transform: uppercase;
   }
 
   .vsa-desc {
@@ -510,7 +516,7 @@
 
   /* ── Viewing state ──────────────────────────────────────────────────────── */
   .vsa-view {
-    max-width: 680px;
+    max-width: 620px;
     margin: 0 auto;
   }
 
