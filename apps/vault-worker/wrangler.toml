@@ -1,0 +1,73 @@
+name = "clex-vault"
+main = "src/index.ts"
+compatibility_date = "2024-05-29"
+compatibility_flags = ["nodejs_compat"]
+workers_dev = true
+
+# ── KV Namespaces ──────────────────────────────────────────────────────────────
+# Create these with: wrangler kv namespace create VAULT_SECRETS etc.
+[[kv_namespaces]]
+binding = "VAULT_SECRETS"
+id = "PLACEHOLDER_VAULT_SECRETS_KV_ID"
+
+[[kv_namespaces]]
+binding = "VAULT_TOKENS"
+id = "PLACEHOLDER_VAULT_TOKENS_KV_ID"
+
+[[kv_namespaces]]
+binding = "VAULT_SIGNALS"
+id = "PLACEHOLDER_VAULT_SIGNALS_KV_ID"
+
+# ── R2 Bucket ─────────────────────────────────────────────────────────────────
+# Create with: wrangler r2 bucket create vault-files
+[[r2_buckets]]
+binding = "VAULT_FILES"
+bucket_name = "vault-files"
+
+# ── D1 Database ───────────────────────────────────────────────────────────────
+# Create with: wrangler d1 create clex-vault
+[[d1_databases]]
+binding = "DB"
+database_name = "clex-vault"
+database_id = "PLACEHOLDER_VAULT_D1_ID"
+
+[vars]
+ALLOWED_ORIGIN = "*"
+MAX_SECRET_SIZE = "50000"
+MAX_FILE_SIZE = "20971520"
+STORAGE_QUOTA_BYTES = "1073741824"
+
+# ── Production ────────────────────────────────────────────────────────────────
+[env.production]
+name = "clex-vault-prod"
+
+[[env.production.kv_namespaces]]
+binding = "VAULT_SECRETS"
+id = "PLACEHOLDER_VAULT_SECRETS_KV_ID"
+
+[[env.production.kv_namespaces]]
+binding = "VAULT_TOKENS"
+id = "PLACEHOLDER_VAULT_TOKENS_KV_ID"
+
+[[env.production.kv_namespaces]]
+binding = "VAULT_SIGNALS"
+id = "PLACEHOLDER_VAULT_SIGNALS_KV_ID"
+
+[[env.production.r2_buckets]]
+binding = "VAULT_FILES"
+bucket_name = "vault-files"
+
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "clex-vault"
+database_id = "PLACEHOLDER_VAULT_D1_ID"
+
+[[env.production.routes]]
+pattern = "clex.in/vault/api/*"
+zone_name = "clex.in"
+
+[env.production.vars]
+ALLOWED_ORIGIN = "https://clex.in, https://www.clex.in"
+MAX_SECRET_SIZE = "50000"
+MAX_FILE_SIZE = "20971520"
+STORAGE_QUOTA_BYTES = "1073741824"

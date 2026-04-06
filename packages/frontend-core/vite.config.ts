@@ -17,6 +17,7 @@ export default defineConfig({
       $transfer: r('src/lib/transfer'),
       $utils: r('src/lib/utils'),
       $chain: r('src/lib/chain'),
+      $lib: r('src/lib'),
     },
   },
   optimizeDeps: {

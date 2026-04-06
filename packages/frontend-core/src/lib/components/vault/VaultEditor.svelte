@@ -1,0 +1,455 @@
+<script lang="ts">
+  import { activeNote, masterKey, ui, vaultActions, generateId, wordCount, readTimeMins, relativeTime } from '$stores/vault'
+  import type { DecryptedNote } from '$stores/vault'
+  import { saveNote } from '$lib/vault/db'
+  import { encryptText } from '$lib/vault/crypto'
+  import { updateInIndex } from '$lib/vault/search'
+  import MarkdownEditor from './MarkdownEditor.svelte'
+  import { fly, fade } from 'svelte/transition'
+  import { tick } from 'svelte'
+
+  let titleInput: HTMLInputElement
+  let saving = false
+  let saveError = false
+
+  async function handleTitleInput(e: Event) {
+    const note = $activeNote
+    const key = $masterKey
+    if (!note || !key) return
+    const title = (e.target as HTMLInputElement).value
+    const updated: DecryptedNote = { ...note, title, updatedAt: Date.now() }
+    vaultActions.upsertNote(updated)
+    scheduleNoteSave(updated)
+  }
+
+  async function handleBodyInput(body: string) {
+    const note = $activeNote
+    if (!note) return
+    const updated: DecryptedNote = { ...note, body, updatedAt: Date.now() }
+    vaultActions.upsertNote(updated)
+    scheduleNoteSave(updated)
+  }
+
+  let saveTimer: ReturnType<typeof setTimeout>
+  function scheduleNoteSave(note: DecryptedNote) {
+    clearTimeout(saveTimer)
+    saveTimer = setTimeout(() => persistNote(note), 600)
+  }
+
+  async function persistNote(note: DecryptedNote) {
+    const key = $masterKey
+    if (!key) return
+    saving = true
+    saveError = false
+    try {
+      const [titleBlob, bodyBlob] = await Promise.all([
+        encryptText(note.title, key.key),
+        encryptText(note.body, key.key),
+      ])
+      await saveNote({
+        id: note.id,
+        titleBlob,
+        bodyBlob,
+        createdAt: note.createdAt,
+        updatedAt: note.updatedAt,
+        tags: note.tags,
+        folderId: note.folderId,
+        isPinned: note.isPinned,
+        attachmentIds: note.attachmentIds,
+      })
+      updateInIndex({ id: note.id, title: note.title, body: note.body, tags: note.tags, updatedAt: note.updatedAt })
+    } catch (e) {
+      saveError = true
+      console.error('[vault] save failed:', e)
+    } finally {
+      saving = false
+    }
+  }
+
+  async function togglePin() {
+    const note = $activeNote
+    const key = $masterKey
+    if (!note || !key) return
+    const updated: DecryptedNote = { ...note, isPinned: !note.isPinned, updatedAt: Date.now() }
+    vaultActions.upsertNote(updated)
+    await persistNote(updated)
+  }
+
+  async function addTag(tag: string) {
+    const note = $activeNote
+    if (!note || note.tags.includes(tag)) return
+    const updated: DecryptedNote = { ...note, tags: [...note.tags, tag], updatedAt: Date.now() }
+    vaultActions.upsertNote(updated)
+    await persistNote(updated)
+  }
+
+  async function removeTag(tag: string) {
+    const note = $activeNote
+    if (!note) return
+    const updated: DecryptedNote = { ...note, tags: note.tags.filter(t => t !== tag), updatedAt: Date.now() }
+    vaultActions.upsertNote(updated)
+    await persistNote(updated)
+  }
+
+  let tagInput = ''
+  function handleTagKey(e: KeyboardEvent) {
+    if ((e.key === 'Enter' || e.key === ',') && tagInput.trim()) {
+      e.preventDefault()
+      addTag(tagInput.trim().toLowerCase().replace(/\s+/g, '-'))
+      tagInput = ''
+    }
+  }
+</script>
+
+{#if $activeNote}
+  {@const note = $activeNote}
+  <div class="ved-root" in:fade={{ duration: 180 }}>
+    <!-- Toolbar -->
+    <div class="ved-toolbar">
+      <div class="ved-mode-tabs">
+        <button
+          class="ved-mode-btn"
+          class:ved-mode-btn--active={$ui.editorMode === 'edit'}
+          on:click={() => vaultActions.setEditorMode('edit')}
+        >Edit</button>
+        <button
+          class="ved-mode-btn"
+          class:ved-mode-btn--active={$ui.editorMode === 'preview'}
+          on:click={() => vaultActions.setEditorMode('preview')}
+        >Preview</button>
+      </div>
+
+      <div class="ved-toolbar-actions">
+        <!-- Pin -->
+        <button
+          class="btn-icon"
+          class:ved-pinned={note.isPinned}
+          on:click={togglePin}
+          title={note.isPinned ? 'Unpin' : 'Pin'}
+          aria-label="Toggle pin"
+        >
+          <svg width="15" height="15" viewBox="0 0 15 15" fill={note.isPinned ? 'currentColor' : 'none'} stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 1l-1.5 5h-3L3 7.5l3 1L7.5 12l1.5-2.5L12 11 13 9.5 9.5 8z"/>
+          </svg>
+        </button>
+
+        <!-- Toggle info panel -->
+        <button
+          class="btn-icon"
+          on:click={vaultActions.toggleInfoPanel}
+          title="Toggle info panel"
+          aria-label="Toggle info panel"
+        >
+          <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+            <circle cx="7.5" cy="7.5" r="6"/>
+            <path d="M7.5 7v4M7.5 4.5v.5"/>
+          </svg>
+        </button>
+
+        <!-- Save indicator -->
+        <span class="ved-save-state" class:ved-save-state--saving={saving} class:ved-save-state--error={saveError}>
+          {#if saving}
+            <span class="ved-save-dot ved-save-dot--saving"></span>
+            Saving…
+          {:else if saveError}
+            <span class="ved-save-dot ved-save-dot--error"></span>
+            Error
+          {:else}
+            <span class="ved-save-dot ved-save-dot--ok"></span>
+            Saved
+          {/if}
+        </span>
+      </div>
+    </div>
+
+    <!-- Title -->
+    <input
+      bind:this={titleInput}
+      class="ved-title"
+      type="text"
+      placeholder="Untitled"
+      value={note.title}
+      on:input={handleTitleInput}
+    />
+
+    <!-- Tags row -->
+    {#if note.tags.length > 0 || true}
+      <div class="ved-tags-row">
+        {#each note.tags as tag}
+          <span class="ved-tag">
+            #{tag}
+            <button class="ved-tag-remove" on:click={() => removeTag(tag)} aria-label="Remove tag {tag}">✕</button>
+          </span>
+        {/each}
+        <input
+          class="ved-tag-input"
+          bind:value={tagInput}
+          placeholder="+ tag"
+          on:keydown={handleTagKey}
+        />
+      </div>
+    {/if}
+
+    <!-- Editor body -->
+    <div class="ved-body">
+      <MarkdownEditor
+        value={note.body}
+        mode={$ui.editorMode}
+        placeholder="Start writing… markdown supported"
+        on:input={(e) => handleBodyInput(e.detail)}
+        on:save={() => persistNote(note)}
+      />
+    </div>
+  </div>
+{:else}
+  <div class="ved-empty" in:fade={{ duration: 200 }}>
+    <div class="ved-empty-inner">
+      <div class="ved-empty-icon">⬡</div>
+      <h3 class="ved-empty-title">Vault</h3>
+      <p class="ved-empty-sub">Select a note or create a new one</p>
+      <div class="ved-shortcuts">
+        <div class="ved-shortcut"><kbd>⌘B</kbd> bold</div>
+        <div class="ved-shortcut"><kbd>⌘I</kbd> italic</div>
+        <div class="ved-shortcut"><kbd>⌘`</kbd> code</div>
+        <div class="ved-shortcut"><kbd>⌘K</kbd> link</div>
+      </div>
+    </div>
+  </div>
+{/if}
+
+<style>
+  .ved-root {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+  }
+
+  .ved-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 12px;
+    flex-shrink: 0;
+  }
+
+  .ved-mode-tabs {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 3px;
+    background: var(--surface-2);
+    border: 1.5px solid var(--border-hard);
+    border-radius: 9px;
+    box-shadow: 2px 2px 0 var(--border-hard);
+  }
+
+  .ved-mode-btn {
+    padding: 4px 14px;
+    border-radius: 7px;
+    border: 1.5px solid transparent;
+    background: transparent;
+    font-family: var(--font-display);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-2);
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+
+  .ved-mode-btn--active {
+    background: var(--surface);
+    border-color: var(--border-hard);
+    color: var(--text-1);
+    box-shadow: 2px 2px 0 var(--border-hard);
+  }
+
+  .ved-toolbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .ved-pinned {
+    color: var(--accent-text);
+  }
+
+  .ved-save-state {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-3);
+    letter-spacing: 0.04em;
+    padding: 4px 10px;
+    border-radius: 6px;
+    background: var(--raised);
+    border: 1px solid var(--border);
+  }
+
+  .ved-save-state--saving { color: var(--amber); }
+  .ved-save-state--error { color: var(--red); }
+
+  .ved-save-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+    flex-shrink: 0;
+  }
+
+  .ved-save-dot--saving {
+    background: var(--amber);
+    animation: pulse-dot 1s ease-in-out infinite;
+  }
+
+  .ved-save-dot--error {
+    background: var(--red);
+  }
+
+  .ved-title {
+    width: 100%;
+    background: transparent;
+    border: none;
+    outline: none;
+    font-family: var(--font-display);
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--text-1);
+    letter-spacing: -0.03em;
+    line-height: 1.2;
+    padding: 0;
+    margin-bottom: 8px;
+    flex-shrink: 0;
+  }
+
+  .ved-title::placeholder {
+    color: var(--text-3);
+  }
+
+  .ved-tags-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 12px;
+    min-height: 28px;
+    flex-shrink: 0;
+  }
+
+  .ved-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--accent-text);
+    background: var(--accent-dim);
+    border: 1px solid var(--accent-border);
+    border-radius: 5px;
+    padding: 2px 8px;
+    letter-spacing: 0.03em;
+  }
+
+  .ved-tag-remove {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 9px;
+    color: var(--accent-text);
+    opacity: 0.6;
+    padding: 0 0 0 2px;
+    line-height: 1;
+  }
+
+  .ved-tag-remove:hover { opacity: 1; }
+
+  .ved-tag-input {
+    background: none;
+    border: none;
+    outline: none;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-3);
+    width: 60px;
+    padding: 0;
+  }
+
+  .ved-tag-input::placeholder { color: var(--text-3); opacity: 0.6; }
+
+  .ved-body {
+    flex: 1 1 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Empty state */
+  .ved-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+  }
+
+  .ved-empty-inner {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .ved-empty-icon {
+    font-size: 40px;
+    color: var(--text-3);
+    opacity: 0.4;
+  }
+
+  .ved-empty-title {
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text-1);
+    letter-spacing: -0.03em;
+    margin: 0;
+  }
+
+  .ved-empty-sub {
+    font-size: 13px;
+    color: var(--text-3);
+    margin: 0;
+  }
+
+  .ved-shortcuts {
+    display: flex;
+    gap: 12px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .ved-shortcut {
+    font-size: 12px;
+    color: var(--text-3);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  kbd {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    background: var(--surface-2);
+    border: 1.5px solid var(--border-hard);
+    border-radius: 5px;
+    padding: 1px 6px;
+    box-shadow: 0 2px 0 var(--border-hard);
+    color: var(--text-2);
+  }
+</style>

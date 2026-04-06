@@ -19,6 +19,9 @@ const devSlashlessRouteMap = new Map([
   ['/faq', '/faq/index.html'],
   ['/privacy', '/privacy/index.html'],
   ['/terms', '/terms/index.html'],
+  ['/vault', '/vault/index.html'],
+  ['/vault/secret', '/vault/secret/index.html'],
+  ['/vault/share', '/vault/share/index.html'],
 ]);
 
 const previewSlashlessRouteMap = new Map([
@@ -32,6 +35,9 @@ const previewSlashlessRouteMap = new Map([
   ['/faq', '/faq'],
   ['/privacy', '/privacy'],
   ['/terms', '/terms'],
+  ['/vault', '/vault'],
+  ['/vault/secret', '/vault/secret'],
+  ['/vault/share', '/vault/share'],
 ]);
 
 /**
@@ -175,6 +181,7 @@ export default defineConfig({
       $transfer: r('../packages/frontend-core/src/lib/transfer'),
       $utils: r('../packages/frontend-core/src/lib/utils'),
       $chain: r('../packages/frontend-core/src/lib/chain'),
+      $lib: r('../packages/frontend-core/src/lib'),
     },
   },
   build: {
@@ -190,6 +197,9 @@ export default defineConfig({
         faq: r('faq/index.html'),
         privacy: r('privacy/index.html'),
         terms: r('terms/index.html'),
+        vault: r('vault/index.html'),
+        'vault-secret': r('vault/secret/index.html'),
+        'vault-share': r('vault/share/index.html'),
       },
     },
   },

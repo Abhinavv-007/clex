@@ -19,7 +19,9 @@
       "$utils": ["../packages/frontend-core/src/lib/utils"],
       "$utils/*": ["../packages/frontend-core/src/lib/utils/*"],
       "$chain": ["../packages/frontend-core/src/lib/chain"],
-      "$chain/*": ["../packages/frontend-core/src/lib/chain/*"]
+      "$chain/*": ["../packages/frontend-core/src/lib/chain/*"],
+      "$lib": ["../packages/frontend-core/src/lib"],
+      "$lib/*": ["../packages/frontend-core/src/lib/*"]
     },
     "resolveJsonModule": true,
     "skipLibCheck": true,

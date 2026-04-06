@@ -19,7 +19,9 @@
       "$utils": ["./src/lib/utils"],
       "$utils/*": ["./src/lib/utils/*"],
       "$chain": ["./src/lib/chain"],
-      "$chain/*": ["./src/lib/chain/*"]
+      "$chain/*": ["./src/lib/chain/*"],
+      "$lib": ["./src/lib"],
+      "$lib/*": ["./src/lib/*"]
     },
     "resolveJsonModule": true,
     "skipLibCheck": true,

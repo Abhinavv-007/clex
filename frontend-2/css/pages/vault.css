@@ -1,0 +1,41 @@
+/* ============================================
+   CLEX — Vault Route Shells
+   ============================================ */
+
+body[data-page="vault"],
+body[data-page="vault-secret"],
+body[data-page="vault-share"] {
+  background: var(--bg-primary);
+  overflow-x: hidden;
+}
+
+/* ── Vault main app ──────────────────────────────────────────────────────── */
+
+.vault-shell {
+  min-height: 100vh;
+}
+
+#vault-app-island {
+  min-height: 100vh;
+}
+
+/* ── Secret view page ─────────────────────────────────────────────────────── */
+
+.vault-secret-shell {
+  min-height: 100vh;
+  /* No nav on this page — full-screen protective view */
+}
+
+#vault-secret-app-island {
+  min-height: 100vh;
+}
+
+/* ── Share / file download page ───────────────────────────────────────────── */
+
+.vault-share-shell {
+  min-height: 100vh;
+}
+
+#vault-share-app-island {
+  min-height: 100vh;
+}

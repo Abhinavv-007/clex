@@ -85,4 +85,29 @@ export async function initIslands() {
     });
     return;
   }
+
+  if (page === 'vault') {
+    const [{ VaultApp }] = await Promise.all([import('@clex/frontend-core')]);
+    mount(VaultApp, document.getElementById('vault-app-island'), {
+      signalingUrl: import.meta.env.PUBLIC_SIGNAL_URL ?? 'wss://signal.clex.in',
+      vaultApiUrl: '/vault/api',
+    });
+    return;
+  }
+
+  if (page === 'vault-secret') {
+    const [{ VaultSecretApp }] = await Promise.all([import('@clex/frontend-core')]);
+    mount(VaultSecretApp, document.getElementById('vault-secret-app-island'), {
+      vaultApiUrl: '/vault/api',
+    });
+    return;
+  }
+
+  if (page === 'vault-share') {
+    const [{ VaultShareApp }] = await Promise.all([import('@clex/frontend-core')]);
+    mount(VaultShareApp, document.getElementById('vault-share-app-island'), {
+      vaultApiUrl: '/vault/api',
+    });
+    return;
+  }
 }

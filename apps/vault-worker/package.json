@@ -1,0 +1,18 @@
+{
+  "name": "@clex/vault-worker",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "build": "wrangler deploy --dry-run",
+    "deploy": "wrangler deploy --env production",
+    "db:migrate": "wrangler d1 execute clex-vault --file=./schema.sql"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240524.0",
+    "typescript": "^5.4.5",
+    "wrangler": "^3.57.0"
+  }
+}
