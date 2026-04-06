@@ -15,6 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      deployments: write
 
     steps:
       - name: Checkout
@@ -43,6 +44,8 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           githubToken: ${{ secrets.GITHUB_TOKEN }}
+          packageManager: npm
+          wranglerVersion: "4.80.0"
           command: >-
             pages deploy frontend-2/dist
             --project-name clex-web
