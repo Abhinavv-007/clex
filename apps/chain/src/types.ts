@@ -8,7 +8,7 @@ export interface TransferFile {
   category: string  // 'image' | 'pdf' | 'document' | 'archive' | 'video' | 'audio' | 'other'
   type: string      // MIME type — never a filename
   size: number      // bytes
-  hash: string      // SHA-256 hex of file content, computed client-side
+  hash: string | null // SHA-256 hex of file content when available
 }
 
 export type TransferStatus =

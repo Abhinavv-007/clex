@@ -9,7 +9,7 @@ export interface ChainFile {
   category: string
   type: string
   size: number
-  hash: string
+  hash: string | null
 }
 
 export interface CreateSessionResult {

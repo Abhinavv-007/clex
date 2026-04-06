@@ -60,29 +60,26 @@ export function initChainInstrumentation(client: ChainClient): () => void {
 
       // Build file metadata — hash all blobs concurrently
       const files = get(filesStore)
-      let chainFiles: ChainFile[] = []
-      try {
-        chainFiles = await Promise.all(
-          files.map(async f => {
-            const blob = f.processed?.blob ?? f.file
-            const hash = await hashBlob(blob)
-            return {
-              category: fileCategory(f.type),
-              type: f.type || 'application/octet-stream',
-              size: f.size,
-              hash,
-            }
-          })
-        )
-      } catch {
-        // If hashing fails, use placeholder hashes — don't block the transfer
-        chainFiles = files.map(f => ({
-          category: fileCategory(f.type),
-          type: f.type || 'application/octet-stream',
-          size: f.size,
-          hash: '0'.repeat(64),
-        }))
-      }
+      const chainFiles: ChainFile[] = await Promise.all(
+        files.map(async f => {
+          const blob = f.processed?.blob ?? f.file
+          let hash: string | null = null
+
+          try {
+            hash = await hashBlob(blob)
+          } catch {
+            // Keep the transfer moving even if hashing is unavailable for a file.
+            hash = null
+          }
+
+          return {
+            category: fileCategory(f.type),
+            type: f.type || 'application/octet-stream',
+            size: f.size,
+            hash,
+          }
+        })
+      )
 
       if (chainFiles.length === 0) return
 

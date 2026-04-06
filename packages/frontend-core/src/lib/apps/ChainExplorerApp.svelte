@@ -25,6 +25,7 @@
   let expandLoading = false
 
   let refreshTimer: ReturnType<typeof setInterval>
+  const ZERO_HASH = '0'.repeat(64)
 
   // ── Lifecycle ─────────────────────────────────────────────────────────────
   onMount(async () => {
@@ -119,6 +120,22 @@
 
   function totalPages() {
     return Math.max(1, Math.ceil(total / limit))
+  }
+
+  function isMissingHash(hash: string | null | undefined) {
+    return !hash || hash === ZERO_HASH
+  }
+
+  function displayPreviousHash(hash: string) {
+    return hash === ZERO_HASH ? 'Genesis record' : hash
+  }
+
+  function displayFileHash(hash: string | null) {
+    return isMissingHash(hash) ? 'Hash unavailable' : `${hash.slice(0, 16)}…`
+  }
+
+  function hashClass(hash: string | null | undefined) {
+    return isMissingHash(hash) ? 'cex-hash__val cex-hash__val--placeholder' : 'cex-hash__val'
   }
 </script>
 
@@ -247,11 +264,11 @@
                         <div class="cex-hash-pair">
                           <div class="cex-hash">
                             <span class="cex-hash__key">prev</span>
-                            <code class="cex-hash__val">{expanded.previous_hash}</code>
+                            <code class={hashClass(expanded.previous_hash)}>{displayPreviousHash(expanded.previous_hash)}</code>
                           </div>
                           <div class="cex-hash">
                             <span class="cex-hash__key">hash</span>
-                            <code class="cex-hash__val">{expanded.record_hash}</code>
+                            <code class={hashClass(expanded.record_hash)}>{expanded.record_hash}</code>
                           </div>
                         </div>
                       </div>
@@ -265,7 +282,7 @@
                               <span class="cex-file-badge cex-file-badge--{f.category}">{f.category}</span>
                               <span class="cex-file-type">{f.type}</span>
                               <span class="cex-file-size">{formatBytes(f.size)}</span>
-                              <code class="cex-file-hash">{f.hash.slice(0, 16)}…</code>
+                              <code class:cex-file-hash--placeholder={isMissingHash(f.hash)} class="cex-file-hash">{displayFileHash(f.hash)}</code>
                             </div>
                           {/each}
                         </div>
@@ -594,6 +611,12 @@
     text-overflow: ellipsis;
   }
 
+  .cex-hash__val--placeholder {
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
   /* Files list */
   .cex-files-list { display: flex; flex-direction: column; gap: 6px; }
 
@@ -608,6 +631,7 @@
   .cex-file-type  { color: var(--text-secondary); font-size: var(--text-xs); font-family: var(--font-mono); }
   .cex-file-size  { color: var(--text-tertiary);  font-size: var(--text-xs); margin-left: auto; }
   .cex-file-hash  { font-size: 10px; color: var(--text-tertiary); font-family: var(--font-mono); }
+  .cex-file-hash--placeholder { text-transform: uppercase; letter-spacing: 0.08em; }
 
   /* Timeline */
   .cex-timeline { display: flex; flex-direction: column; gap: 6px; }

@@ -87,7 +87,7 @@ async function handleCreateSession(req: Request, env: Env, cors: HeadersInit): P
     category: String(f?.category ?? 'other').slice(0, 32),
     type:     String(f?.type     ?? 'application/octet-stream').slice(0, 128),
     size:     Math.max(0, Number(f?.size) || 0),
-    hash:     /^[0-9a-f]{64}$/.test(String(f?.hash)) ? String(f.hash) : '0'.repeat(64),
+    hash:     typeof f?.hash === 'string' && /^[0-9a-f]{64}$/.test(f.hash) ? f.hash : null,
   }))
 
   const sessionId = crypto.randomUUID()
