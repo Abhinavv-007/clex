@@ -7,6 +7,7 @@ workers_dev = true
 [vars]
 ALLOWED_ORIGIN = "*"
 FRONTEND_BASE_URL = "http://localhost:3000"
+GOOGLE_REDIRECT_URI = "http://localhost:8788/api/auth/google/callback"
 GOOGLE_DRIVE_SCOPE = "https://www.googleapis.com/auth/drive.file"
 
 [env.production]

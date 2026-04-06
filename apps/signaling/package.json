@@ -2,7 +2,7 @@
   "name": "@clex/signaling",
   "private": true,
   "scripts": {
-    "dev": "wrangler dev src/index.ts --ip 0.0.0.0 --port 8787",
+    "dev": "wrangler dev src/index.ts --ip 0.0.0.0 --port 8787 --inspector-port 9237",
     "build": "wrangler deploy --dry-run --outdir dist",
     "deploy": "wrangler deploy src/index.ts",
     "typecheck": "tsc --noEmit"

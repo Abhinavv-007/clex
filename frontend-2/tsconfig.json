@@ -17,7 +17,9 @@
       "$transfer": ["../packages/frontend-core/src/lib/transfer"],
       "$transfer/*": ["../packages/frontend-core/src/lib/transfer/*"],
       "$utils": ["../packages/frontend-core/src/lib/utils"],
-      "$utils/*": ["../packages/frontend-core/src/lib/utils/*"]
+      "$utils/*": ["../packages/frontend-core/src/lib/utils/*"],
+      "$chain": ["../packages/frontend-core/src/lib/chain"],
+      "$chain/*": ["../packages/frontend-core/src/lib/chain/*"]
     },
     "resolveJsonModule": true,
     "skipLibCheck": true,

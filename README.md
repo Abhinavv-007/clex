@@ -93,7 +93,7 @@ flowchart LR
 ├── packages/frontend-core # Shared Svelte runtime, workspace, receive flow, mocks, stores
 ├── apps/api/              # Google Drive OAuth + upload worker
 ├── apps/signaling/        # WebRTC signaling worker
-└── apps/web/              # Fallback/reference SvelteKit frontend
+└── archive/old-frontend/  # Archived legacy SvelteKit frontend kept as reference
 ```
 
 ---
@@ -119,9 +119,12 @@ Useful focused commands:
 
 ```bash
 pnpm dev:frontend
+pnpm dev:web
 pnpm dev:api
 pnpm dev:signal
 ```
+
+`pnpm dev:web` is kept as a compatibility alias and starts the same `frontend-2` app as `pnpm dev:frontend`.
 
 Builds:
 

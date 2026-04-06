@@ -130,8 +130,9 @@
     return hash === ZERO_HASH ? 'Genesis record' : hash
   }
 
-  function displayFileHash(hash: string | null) {
-    return isMissingHash(hash) ? 'Hash unavailable' : `${hash.slice(0, 16)}…`
+  function displayFileHash(hash: string | null | undefined) {
+    if (!hash || hash === ZERO_HASH) return 'Hash unavailable'
+    return `${hash.slice(0, 16)}…`
   }
 
   function hashClass(hash: string | null | undefined) {
