@@ -22,7 +22,7 @@
 </script>
 
 <button
-  class="group w-full text-left rounded-xl transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
+  class="tool-card group w-full text-left rounded-xl transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
   class:compact
   class:nb-card-surface={enabled}
   class:nb-card={!enabled}
@@ -33,18 +33,42 @@
   <div class="flex items-start gap-3">
     <!-- Icon -->
     <span
-      class="flex-shrink-0 text-xl leading-none mt-0.5 w-9 h-9 flex items-center justify-center rounded-lg transition-transform duration-200 group-hover:scale-110"
+      class="tool-card__icon flex-shrink-0 text-xl leading-none mt-0.5 w-9 h-9 flex items-center justify-center rounded-lg transition-transform duration-200"
       style="background: {accent}15; border: 1px solid {accent}25;"
     >{tool.icon}</span>
 
     <div class="min-w-0 flex-1">
-      <p class="font-display font-semibold text-sm text-slate-100 leading-tight">{tool.name}</p>
+      <p class="tool-card__name font-display font-semibold text-sm leading-tight">{tool.name}</p>
       {#if !compact}
-        <p class="text-xs text-slate-500 mt-1 leading-snug">{tool.description}</p>
+        <p class="tool-card__description text-xs mt-1 leading-snug">{tool.description}</p>
       {/if}
     </div>
 
     <!-- Arrow -->
-    <span class="text-slate-600 group-hover:text-slate-400 transition-colors text-sm mt-1 flex-shrink-0">→</span>
+    <span class="tool-card__arrow transition-colors text-sm mt-1 flex-shrink-0">→</span>
   </div>
 </button>
+
+<style>
+  .tool-card__name {
+    color: var(--text-1);
+  }
+
+  .tool-card__description {
+    color: var(--text-2);
+  }
+
+  .tool-card__arrow {
+    color: var(--text-3);
+  }
+
+  .tool-card:hover .tool-card__icon,
+  .tool-card:focus-visible .tool-card__icon {
+    transform: scale(1.1);
+  }
+
+  .tool-card:hover .tool-card__arrow,
+  .tool-card:focus-visible .tool-card__arrow {
+    color: var(--text-1);
+  }
+</style>

@@ -134,7 +134,7 @@ export default {
       }
 
       headers.append('Set-Cookie', serializeCookie(TOKEN_COOKIE, tokenData.access_token, {
-        path: TOKEN_PICKUP_PATH,
+        path: '/',
         httpOnly: true,
         secure,
         sameSite: 'Lax',
@@ -150,10 +150,11 @@ export default {
       const token = cookies.get(TOKEN_COOKIE) ?? null
       const headers = new Headers()
       appendCors(headers, request, env)
+      headers.set('Cache-Control', 'no-store')
 
       if (token) {
         headers.append('Set-Cookie', serializeCookie(TOKEN_COOKIE, '', {
-          path: TOKEN_PICKUP_PATH,
+          path: '/',
           httpOnly: true,
           secure,
           sameSite: 'Lax',

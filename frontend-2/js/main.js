@@ -39,14 +39,20 @@ async function handleGoogleDriveOAuthCallback() {
 
   if (!connected && !errorCode) return;
 
+  let shouldCleanUrl = Boolean(errorCode);
+
   if (connected) {
     const token = await pickupToken();
-    if (!token) {
+    if (token) {
+      shouldCleanUrl = true;
+    } else {
       console.warn('Google Drive OAuth callback completed, but no token was picked up.');
     }
   } else if (errorCode) {
     console.warn(`Google Drive OAuth failed: ${errorCode}`);
   }
+
+  if (!shouldCleanUrl) return;
 
   url.searchParams.delete('gdrive');
   url.searchParams.delete('error');

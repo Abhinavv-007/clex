@@ -101,7 +101,7 @@
 
   .sp-sub {
     font-size: 12px;
-    color: var(--text-3);
+    color: var(--text-2);
     margin-top: 2px;
   }
 

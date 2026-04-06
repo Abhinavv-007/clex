@@ -11,10 +11,11 @@ const DRIVE_FOLDER_MIME = 'application/vnd.google-apps.folder'
 const DRIVE_ROOT_FOLDER_NAME = 'Glex sharing'
 
 const TOKEN_KEY = 'clex_gdrive_token'
+const PENDING_AUTH_KEY = 'clex_gdrive_auth_pending'
 const DRIVE_AUTH_DB_NAME = 'clex_drive_auth'
 const DRIVE_AUTH_STORE_NAME = 'workspace_state'
 const DRIVE_AUTH_STATE_KEY = 'pending_google_drive_auth'
-const PICKUP_RETRY_DELAYS_MS = [0, 150, 350, 700]
+const PICKUP_RETRY_DELAYS_MS = [0, 150, 350, 700, 1400, 2400]
 
 function getApiBaseUrl(): string {
   const configured = (import.meta.env.PUBLIC_API_BASE_URL as string | undefined)?.trim()
@@ -61,6 +62,7 @@ export function getStoredToken(): string | null {
 export function storeToken(token: string): void {
   getSessionStorage()?.setItem(TOKEN_KEY, token)
   getLocalStorage()?.setItem(TOKEN_KEY, token)
+  clearPendingAuth()
 }
 
 export function clearToken(): void {
@@ -70,6 +72,21 @@ export function clearToken(): void {
 
 export function hasToken(): boolean {
   return getStoredToken() !== null
+}
+
+export function hasPendingAuth(): boolean {
+  return getSessionStorage()?.getItem(PENDING_AUTH_KEY) === '1'
+    || getLocalStorage()?.getItem(PENDING_AUTH_KEY) === '1'
+}
+
+function markPendingAuth(): void {
+  getSessionStorage()?.setItem(PENDING_AUTH_KEY, '1')
+  getLocalStorage()?.setItem(PENDING_AUTH_KEY, '1')
+}
+
+function clearPendingAuth(): void {
+  getSessionStorage()?.removeItem(PENDING_AUTH_KEY)
+  getLocalStorage()?.removeItem(PENDING_AUTH_KEY)
 }
 
 // ─── Upload ──────────────────────────────────────────────────────────────────
@@ -174,6 +191,7 @@ export async function pickupToken(): Promise<string | null> {
 
   const existingToken = getStoredToken()
   if (existingToken) {
+    clearPendingAuth()
     await restorePendingDriveAuthState()
     return existingToken
   }
@@ -198,6 +216,7 @@ async function ensureGoogleOAuthConfigured(): Promise<void> {
 export async function initiateGoogleAuth(): Promise<void> {
   await ensureGoogleOAuthConfigured()
   await persistPendingDriveAuthState()
+  markPendingAuth()
   const apiBase = getApiBaseUrl()
   const returnTo = typeof window !== 'undefined' ? window.location.origin : ''
   const authUrl = new URL(`${apiBase}/api/auth/google`, typeof window !== 'undefined' ? window.location.origin : 'http://localhost')

@@ -45,19 +45,22 @@
       const connected = params.get('gdrive') === 'connected'
       const errorCode = params.get('error')
 
-      if (connected || errorCode) {
-        history.replaceState(null, '', window.location.pathname)
-      }
+      let shouldCleanUrl = Boolean(errorCode)
 
       if (connected) {
         const token = await pickupToken()
         if (token) {
+          shouldCleanUrl = true
           uiStore.toast({ type: 'success', message: 'Google Drive connected' })
         } else {
           uiStore.toast({ type: 'error', message: 'Google Drive auth failed — try again' })
         }
       } else if (errorCode) {
         uiStore.toast({ type: 'error', message: getOAuthErrorMessage(errorCode) })
+      }
+
+      if (shouldCleanUrl) {
+        history.replaceState(null, '', window.location.pathname)
       }
     }
     handleOAuth()

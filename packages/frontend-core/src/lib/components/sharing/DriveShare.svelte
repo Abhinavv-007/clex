@@ -2,7 +2,7 @@
   import { filesStore } from '$stores/files'
   import { transferStore } from '$stores/transfer'
   import { uiStore } from '$stores/ui'
-  import { uploadToDrive, getStoredToken, hasToken, initiateGoogleAuth, clearToken } from '$transfer/gdrive'
+  import { uploadToDrive, getStoredToken, hasToken, hasPendingAuth, initiateGoogleAuth, clearToken, pickupToken } from '$transfer/gdrive'
   import { formatBytes } from '$utils/format'
   import { onMount } from 'svelte'
 
@@ -13,12 +13,33 @@
   let error = ''
   let tokenPresent = false
 
-  onMount(() => { tokenPresent = hasToken() })
+  async function syncDriveConnection(): Promise<string | null> {
+    const existingToken = getStoredToken()
+    if (existingToken) {
+      tokenPresent = true
+      return existingToken
+    }
+
+    if (!hasPendingAuth()) {
+      tokenPresent = hasToken()
+      return getStoredToken()
+    }
+
+    const pickedUpToken = await pickupToken()
+    tokenPresent = Boolean(pickedUpToken)
+    return pickedUpToken
+  }
+
+  onMount(() => {
+    void syncDriveConnection()
+  })
 
   async function connectDrive() {
     error = ''
 
     try {
+      const recoveredToken = await syncDriveConnection()
+      if (recoveredToken) return
       await initiateGoogleAuth()
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Google Drive connection could not be started'
@@ -34,7 +55,7 @@
       return
     }
 
-    const token = getStoredToken()
+    const token = getStoredToken() ?? await syncDriveConnection()
     if (!token) {
       await connectDrive()
       return

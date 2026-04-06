@@ -28,7 +28,7 @@
     <div class="flex items-start gap-3">
       <!-- Preview thumbnail -->
       {#if isImage}
-        <div class="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 border border-white/10">
+        <div class="tool-result__preview w-14 h-14 rounded-xl overflow-hidden flex-shrink-0">
           <img src={result.outputUrl} alt={result.outputName} class="w-full h-full object-cover" loading="lazy" />
         </div>
       {:else}
@@ -42,8 +42,8 @@
       {/if}
 
       <div class="min-w-0">
-        <p class="font-display font-semibold text-sm text-slate-100 truncate">{result.outputName}</p>
-        <p class="text-xs text-slate-500 mt-0.5">{formatBytes(result.outputBlob.size)}</p>
+        <p class="tool-result__name font-display font-semibold text-sm truncate">{result.outputName}</p>
+        <p class="tool-result__meta text-xs mt-0.5">{formatBytes(result.outputBlob.size)}</p>
         <span class="badge badge-green mt-1.5">✓ Ready</span>
       </div>
     </div>
@@ -69,3 +69,17 @@
     on:share={() => dispatch('share')}
   />
 </div>
+
+<style>
+  .tool-result__preview {
+    border: 1px solid var(--border);
+  }
+
+  .tool-result__name {
+    color: var(--text-1);
+  }
+
+  .tool-result__meta {
+    color: var(--text-2);
+  }
+</style>
