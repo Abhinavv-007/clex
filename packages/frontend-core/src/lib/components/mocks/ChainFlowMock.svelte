@@ -17,6 +17,7 @@
       explanation:
         'Start with the original file in the workspace. Clex detects the type immediately and suggests the most useful next actions without uploading anything.',
       highlight: 'Detected as image input and ready for browser-side processing.',
+      accent: true,
     },
     {
       label: 'Compress',

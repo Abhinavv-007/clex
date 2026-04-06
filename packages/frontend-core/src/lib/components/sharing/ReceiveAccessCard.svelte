@@ -68,8 +68,8 @@
   .rac-card {
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    padding: 14px;
+    gap: 14px;
+    padding: 16px;
     background: color-mix(in srgb, var(--accent) 10%, var(--surface));
     border: 2px solid var(--border-hard);
     border-radius: 14px;
@@ -85,7 +85,7 @@
   .rac-header {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 10px;
   }
 
   .rac-label {
@@ -99,29 +99,37 @@
 
   .rac-title {
     margin: 0;
-    font-size: 15px;
+    font-size: 16px;
     line-height: 1.2;
     letter-spacing: -0.02em;
     color: var(--text-1);
   }
 
   .rac-code {
-    align-self: flex-start;
-    padding: 7px 10px;
-    border-radius: 999px;
+    width: 100%;
+    padding: 14px 16px;
+    border-radius: 12px;
     background: var(--surface);
     border: 1px solid var(--border);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--border-hard) 8%, transparent);
     font-family: 'JetBrains Mono', 'Fira Code', monospace;
-    font-size: 12px;
+    font-size: 24px;
     font-weight: 700;
-    letter-spacing: 0.18em;
+    letter-spacing: 0.28em;
     color: var(--text-1);
     text-transform: uppercase;
+    text-align: center;
+    user-select: all;
   }
 
   .rac-qr {
     display: flex;
     justify-content: center;
+    padding: 14px;
+    border-radius: 16px;
+    background: color-mix(in srgb, var(--surface) 84%, var(--accent) 16%);
+    border: 1px solid color-mix(in srgb, var(--border-hard) 18%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--surface) 55%, transparent);
   }
 
   .rac-copy-btn {
@@ -144,8 +152,8 @@
     }
 
     .rac-code {
-      font-size: 11px;
-      letter-spacing: 0.14em;
+      font-size: 18px;
+      letter-spacing: 0.2em;
     }
   }
 </style>
