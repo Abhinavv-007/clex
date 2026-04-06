@@ -40,9 +40,9 @@
 }
 
 .nav__logo-image {
-  width: 42px;
-  height: 42px;
-  object-fit: contain;
+  width: 44px;
+  height: 44px;
+  object-fit: cover;
   object-position: center;
   flex: 0 0 auto;
 }
@@ -519,9 +519,9 @@
 }
 
 .footer__logo-image {
-  width: 56px;
-  height: 56px;
-  object-fit: contain;
+  width: 58px;
+  height: 58px;
+  object-fit: cover;
   object-position: center;
   flex: 0 0 auto;
 }
@@ -646,15 +646,15 @@
     border-bottom: none;
   }
   .nav__logo-image {
-    width: 38px;
-    height: 38px;
+    width: 42px;
+    height: 42px;
   }
   .nav__logo-wordmark {
     font-size: clamp(1.25rem, 5vw, 1.55rem);
   }
   .footer__logo-image {
-    width: 48px;
-    height: 48px;
+    width: 52px;
+    height: 52px;
   }
   .footer__logo-wordmark {
     font-size: clamp(1.35rem, 6vw, 1.75rem);
