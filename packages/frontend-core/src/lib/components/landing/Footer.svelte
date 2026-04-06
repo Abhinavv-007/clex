@@ -175,6 +175,9 @@
     height: 100%;
     object-fit: cover;
     object-position: center;
+    clip-path: inset(7%);
+    transform: scale(1.14);
+    transform-origin: center;
   }
 
   .brand-name {

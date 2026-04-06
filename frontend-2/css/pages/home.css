@@ -45,6 +45,9 @@
   object-fit: cover;
   object-position: center;
   flex: 0 0 auto;
+  clip-path: inset(7%);
+  transform: scale(1.14);
+  transform-origin: center;
 }
 
 .nav__logo-wordmark {
@@ -524,6 +527,9 @@
   object-fit: cover;
   object-position: center;
   flex: 0 0 auto;
+  clip-path: inset(7%);
+  transform: scale(1.14);
+  transform-origin: center;
 }
 
 .footer__logo-wordmark {
