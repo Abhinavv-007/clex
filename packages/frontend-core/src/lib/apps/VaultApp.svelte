@@ -35,6 +35,7 @@
   import { decryptText } from '$lib/vault/crypto'
   import { buildSearchIndex } from '$lib/vault/search'
   import { initSync, onSyncState, destroySync } from '$lib/vault/sync'
+  import { onVaultAuthChanged } from '$lib/vault/auth'
 
   export let signalingUrl = 'wss://signal.clex.in'
   export let vaultApiUrl = '/vault/api'
@@ -93,6 +94,13 @@
 
       unsubSync = onSyncState((state) => {
         vaultActions.setSyncState(state)
+      })
+
+      // 5. Restore Firebase auth state (non-blocking — just populates UI)
+      onVaultAuthChanged((user) => {
+        vaultActions.setGoogleUser(user)
+      }).catch(() => {
+        // Firebase unavailable — continue without Google auth
       })
 
     } catch (e: unknown) {

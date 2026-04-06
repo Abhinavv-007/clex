@@ -1,7 +1,8 @@
 <script lang="ts">
-  import { masterKey, devices, ui, vaultActions, formatBytes, generateId } from '$stores/vault'
+  import { masterKey, googleUser, devices, ui, vaultActions, formatBytes, generateId } from '$stores/vault'
   import { getAllDevices, saveDevice, deleteDevice as dbDeleteDevice, clearAllData, detectDeviceName, getDeviceFingerprint } from '$lib/vault/db'
-  import { exportKeyAsJson, importKeyFromJson, rotateMasterKey } from '$lib/vault/crypto'
+  import { exportKeyAsJson, importKeyFromJson, rotateMasterKey, deriveGoogleKey } from '$lib/vault/crypto'
+  import { signInWithGoogle, signOutGoogle } from '$lib/vault/auth'
   import { fly, fade, slide } from 'svelte/transition'
 
   export let storageUsed = 0
@@ -73,6 +74,44 @@
     await navigator.clipboard.writeText(key.fingerprint)
     copySuccess = true
     setTimeout(() => (copySuccess = false), 1500)
+  }
+
+  // ── Google Auth ──────────────────────────────────────────────────────────────
+
+  let authBusy = false
+  let authError = ''
+  $: user = $googleUser
+
+  async function handleGoogleSignIn() {
+    authBusy = true
+    authError = ''
+    try {
+      const u = await signInWithGoogle()
+      if (!u) return  // popup dismissed
+      vaultActions.setGoogleUser(u)
+      // Derive deterministic master key from Google UID.
+      // New vault = gets Google key automatically.
+      // Existing vault = key replaces the random one; notes save with new key on next edit.
+      const gk = await deriveGoogleKey(u.uid)
+      vaultActions.setMasterKey(gk)
+    } catch (e: unknown) {
+      authError = e instanceof Error ? e.message : 'Sign-in failed'
+    } finally {
+      authBusy = false
+    }
+  }
+
+  async function handleGoogleSignOut() {
+    authBusy = true
+    authError = ''
+    try {
+      await signOutGoogle()
+      vaultActions.setGoogleUser(null)
+    } catch (e: unknown) {
+      authError = e instanceof Error ? e.message : 'Sign-out failed'
+    } finally {
+      authBusy = false
+    }
   }
 
   async function exportAllNotes() {
@@ -235,17 +274,44 @@
     {:else if tab === 'account'}
       <div in:fade={{ duration: 160 }}>
         <div class="vst-section-label">Google Account</div>
-        <p class="vst-hint">
-          Sign in to enable R2 file storage, Google auto-pair, and up to 3 paired devices.
-          Your encryption key is <strong>never</strong> shared with or stored by Google or Clex.
-        </p>
-        <p class="vst-hint">
-          When auto-pair is enabled, your key is derived from: <code>HKDF(googleUID + deviceSalt)</code>. Both devices independently compute the same room ID. No codes required.
-        </p>
-        <!-- Auth button — wired to existing clex Firebase auth if available -->
-        <button class="btn-accent vst-action-btn" on:click={() => window.location.href = '/api/auth/google?return_to=' + encodeURIComponent(window.location.href)}>
-          Sign in with Google
-        </button>
+
+        {#if user}
+          <div class="vst-user-card">
+            {#if user.photoURL}
+              <img class="vst-avatar" src={user.photoURL} alt="avatar" referrerpolicy="no-referrer" />
+            {:else}
+              <div class="vst-avatar vst-avatar--placeholder">
+                {(user.displayName ?? user.email ?? '?')[0].toUpperCase()}
+              </div>
+            {/if}
+            <div class="vst-user-info">
+              {#if user.displayName}<span class="vst-user-name">{user.displayName}</span>{/if}
+              {#if user.email}<span class="vst-user-email">{user.email}</span>{/if}
+            </div>
+          </div>
+
+          <div class="vst-notice vst-notice--green">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M2.5 7l3 3 6-6"/></svg>
+            Auto-pair active — any device signed into this Google account derives the same vault key automatically. No pairing codes needed.
+          </div>
+
+          {#if authError}<p class="vst-err">{authError}</p>{/if}
+          <button class="btn-secondary vst-action-btn" disabled={authBusy} on:click={handleGoogleSignOut}>
+            {authBusy ? 'Signing out…' : 'Sign out'}
+          </button>
+        {:else}
+          <p class="vst-hint">
+            Sign in to enable file storage and Google auto-pair. Any device signed into the same Google account derives the same vault key — no codes required.
+          </p>
+          <p class="vst-hint">
+            Your encryption key is derived locally via <code>HKDF(googleUID, "clex-vault-v1")</code>. It is <strong>never</strong> sent to or stored by Google or Clex.
+          </p>
+
+          {#if authError}<p class="vst-err">{authError}</p>{/if}
+          <button class="btn-accent vst-action-btn" disabled={authBusy} on:click={handleGoogleSignIn}>
+            {authBusy ? 'Signing in…' : 'Sign in with Google'}
+          </button>
+        {/if}
       </div>
 
     <!-- ── Data ───────────────────────────────────────────────────────── -->
@@ -518,5 +584,67 @@
   .vst-confirm-btns {
     display: flex;
     gap: 8px;
+  }
+
+  /* Account tab */
+  .vst-user-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px;
+    background: var(--surface-2);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 16px;
+  }
+
+  .vst-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    object-fit: cover;
+  }
+
+  .vst-avatar--placeholder {
+    background: var(--accent);
+    color: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-display);
+    font-size: 18px;
+    font-weight: 700;
+  }
+
+  .vst-user-info {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+  }
+
+  .vst-user-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-1);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .vst-user-email {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-3);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .vst-notice--green {
+    color: var(--green);
+    background: rgba(0, 200, 120, 0.06);
+    border-color: rgba(0, 200, 120, 0.2);
   }
 </style>

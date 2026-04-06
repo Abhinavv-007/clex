@@ -10,6 +10,7 @@ import type { StoredNote, StoredFolder, StoredDevice, StoredAttachment } from '.
 import type { MasterKey } from '../vault/crypto'
 import type { SyncState } from '../vault/sync'
 import type { SearchResult } from '../vault/search'
+import type { VaultUser } from '../vault/auth'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -47,6 +48,7 @@ export interface VaultUIState {
 // ── Raw stores ────────────────────────────────────────────────────────────────
 
 export const masterKey = writable<MasterKey | null>(null)
+export const googleUser = writable<VaultUser | null>(null)
 export const notes = writable<DecryptedNote[]>([])
 export const folders = writable<StoredFolder[]>([])
 export const devices = writable<StoredDevice[]>([])
@@ -132,6 +134,10 @@ export const storageUsed = derived(attachments, $atts => {
 export const vaultActions = {
   setMasterKey(key: MasterKey) {
     masterKey.set(key)
+  },
+
+  setGoogleUser(user: VaultUser | null) {
+    googleUser.set(user)
   },
 
   setNotes(decrypted: DecryptedNote[]) {

@@ -169,16 +169,24 @@ export async function getOrCreateDeviceSalt(): Promise<Uint8Array> {
 }
 
 export async function deriveGoogleKey(googleUid: string): Promise<MasterKey> {
-  const salt = await getOrCreateDeviceSalt()
+  // Fixed salt — must be identical across all devices so that the
+  // derived key (and therefore the yjs room ID) is deterministic.
+  // Any device signed into the same Google account derives the same key.
+  const encoder = new TextEncoder()
   const keyMaterial = await crypto.subtle.importKey(
     'raw',
-    new TextEncoder().encode(googleUid),
+    encoder.encode(googleUid),
     { name: 'HKDF' },
     false,
-    ['deriveKey', 'deriveBits']
+    ['deriveBits']
   )
   const derivedBits = await crypto.subtle.deriveBits(
-    { name: 'HKDF', hash: 'SHA-256', salt, info: new TextEncoder().encode('vault-master-key-v1') },
+    {
+      name: 'HKDF',
+      hash: 'SHA-256',
+      salt: encoder.encode('clex-vault-v1'),         // fixed — same on every device
+      info: encoder.encode('vault-master-key-v1'),
+    },
     keyMaterial,
     256
   )
