@@ -100,7 +100,7 @@
 .animate-typing-cursor::after {
   content: '▊';
   animation: typing-cursor 1s step-end infinite;
-  color: var(--accent);
+  color: var(--accent-text);
   margin-left: 2px;
 }
 

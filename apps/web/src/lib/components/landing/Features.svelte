@@ -237,7 +237,7 @@
   }
 
   .title-accent {
-    color: var(--accent);
+    color: var(--accent-text);
   }
 
   .features-sub {

@@ -29,7 +29,7 @@
   font-family: var(--font-display);
   font-size: var(--text-5xl);
   font-weight: var(--weight-bold);
-  color: var(--accent);
+  color: var(--accent-text);
   line-height: 1;
 }
 
@@ -57,7 +57,7 @@
 .gs-step__tip {
   font-family: var(--font-mono);
   font-size: var(--text-sm);
-  color: var(--accent);
+  color: var(--accent-text);
   padding: var(--space-md) var(--space-lg);
   border-left: var(--border-thick) solid var(--accent);
   background: var(--accent-muted);

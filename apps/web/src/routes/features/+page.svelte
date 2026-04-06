@@ -270,7 +270,7 @@
   }
 
   .title-accent {
-    color: var(--accent);
+    color: var(--accent-text);
     -webkit-text-stroke: 2px var(--text-1);
     paint-order: stroke fill;
   }

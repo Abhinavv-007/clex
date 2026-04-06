@@ -177,7 +177,7 @@
 }
 
 .nav__mobile-link:hover {
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 @media (max-width: 899px) {
@@ -228,7 +228,7 @@
 }
 
 .hero__title-accent {
-  color: var(--accent);
+  color: var(--accent-text);
   position: relative;
 }
 
@@ -275,7 +275,7 @@
   text-transform: uppercase;
   letter-spacing: -0.04em;
   line-height: 0.95;
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .story-microapps__copy {
@@ -360,7 +360,7 @@
 }
 
 .routing__method-stat-value {
-  color: var(--accent);
+  color: var(--accent-text);
   font-weight: var(--weight-bold);
 }
 
@@ -445,7 +445,7 @@
   text-transform: uppercase;
   letter-spacing: -0.045em;
   line-height: 0.95;
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .features-preview__demo-copy {
@@ -489,7 +489,7 @@
 }
 
 .trust__icon {
-  color: var(--accent);
+  color: var(--accent-text);
   font-size: var(--text-lg);
 }
 
@@ -564,7 +564,7 @@
 }
 
 .footer__link:hover {
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .footer__bottom {
@@ -598,7 +598,7 @@
 }
 
 .footer__legal-link:hover {
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 @media (max-width: 899px) {

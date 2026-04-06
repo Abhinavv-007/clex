@@ -445,7 +445,7 @@
     font-weight: 700;
     letter-spacing: -0.05em;
     line-height: 1;
-    color: var(--accent);
+    color: var(--accent-text);
   }
 
   .metric-unit {

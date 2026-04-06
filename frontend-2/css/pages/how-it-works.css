@@ -44,7 +44,7 @@
   font-weight: var(--weight-bold);
   line-height: 0.85;
   color: transparent;
-  -webkit-text-stroke: 3px var(--accent);
+  -webkit-text-stroke: 3px var(--accent-text);
   margin-bottom: var(--space-xl);
 }
 
@@ -150,7 +150,7 @@
   justify-content: center;
   font-family: var(--font-mono);
   font-size: var(--text-xs);
-  color: var(--accent);
+  color: var(--accent-text);
   box-shadow: 3px 3px 0px var(--accent);
 }
 
@@ -180,7 +180,7 @@
 }
 
 .tool-chain-visual__item-icon {
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 /* ── Routing Visual ── */

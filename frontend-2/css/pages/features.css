@@ -200,7 +200,7 @@
 
 .delivery-flow__arrow {
   font-size: var(--text-3xl);
-  color: var(--accent);
+  color: var(--accent-text);
   align-self: center;
   font-weight: var(--weight-bold);
 }
@@ -257,7 +257,7 @@
   flex-shrink: 0;
   font-family: var(--font-mono);
   font-size: var(--text-xl);
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 @media (max-width: 899px) {

@@ -93,7 +93,7 @@ a {
 }
 
 a:hover {
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 /* ── Strong / Em ── */

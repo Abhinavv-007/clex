@@ -75,7 +75,7 @@
 .legal-section__number {
   font-family: var(--font-mono);
   font-size: var(--text-xs);
-  color: var(--accent);
+  color: var(--accent-text);
   text-transform: uppercase;
   letter-spacing: var(--tracking-widest);
   margin-bottom: var(--space-sm);
@@ -119,7 +119,7 @@
   content: '→';
   position: absolute;
   left: calc(var(--space-md) * -1);
-  color: var(--accent);
+  color: var(--accent-text);
   font-weight: var(--weight-bold);
 }
 

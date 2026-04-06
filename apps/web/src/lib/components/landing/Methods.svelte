@@ -210,7 +210,7 @@
     margin-bottom: 16px;
   }
 
-  .title-accent { color: var(--accent); }
+  .title-accent { color: var(--accent-text); }
 
   .methods-sub { font-size: 17px; line-height: 1.7; color: var(--text-2); max-width: 52ch; }
 
@@ -449,10 +449,8 @@
   .privacy-icon {
     width: 48px; height: 48px; border-radius: 12px;
     border: 2px solid var(--accent); background: var(--accent-dim);
-    display: grid; place-items: center; color: var(--accent); flex-shrink: 0;
+    display: grid; place-items: center; color: var(--accent-text); flex-shrink: 0;
   }
-
-  :global(:not(.dark)) .privacy-icon { color: #000; }
 
   .privacy-copy { flex: 1; font-size: 14px; line-height: 1.65; color: var(--text-2); min-width: 240px; }
   .privacy-copy strong { display: block; font-weight: 700; color: var(--text-1); margin-bottom: 4px; font-family: var(--font-display); }

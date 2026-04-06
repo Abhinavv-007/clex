@@ -300,7 +300,7 @@
     color: var(--text-3); line-height: 1;
     font-family: var(--font-sans);
   }
-  .accordion-item--open .accordion-icon { color: var(--accent); }
+  .accordion-item--open .accordion-icon { color: var(--accent-text); }
 
   .accordion-body {
     padding: 16px 20px 22px;
@@ -320,7 +320,7 @@
   .faq-answer :global(code) {
     font-family: var(--font-mono); font-size: 11px; padding: 2px 6px;
     background: var(--accent-dim); border: 1px solid var(--accent-border);
-    border-radius: 3px; color: var(--accent);
+    border-radius: 3px; color: var(--accent-text);
   }
 
   /* ── CTA ──────────────────────────────── */

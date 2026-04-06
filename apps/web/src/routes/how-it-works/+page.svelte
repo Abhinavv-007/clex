@@ -238,12 +238,12 @@
     font-weight: 700;
     line-height: 0.85;
     color: transparent;
-    -webkit-text-stroke: 3px var(--accent);
+    -webkit-text-stroke: 3px var(--accent-text);
     margin-bottom: 24px;
     letter-spacing: -0.01em;
     display: block;
   }
-  :global(.dark) .gs-num { -webkit-text-stroke: 3px var(--accent); }
+  :global(.dark) .gs-num { -webkit-text-stroke: 3px var(--accent-text); }
 
   .gs-title {
     font-family: var(--font-display);
@@ -327,7 +327,7 @@
     letter-spacing: -0.04em; line-height: 1.05;
     color: var(--text-1); margin-bottom: 16px;
   }
-  .hiw-cta-accent { color: var(--accent); }
+  .hiw-cta-accent { color: var(--accent-text); }
   .hiw-cta-text {
     font-size: 17px; color: var(--text-2); max-width: 40ch;
     margin: 0 auto 32px; line-height: 1.7;

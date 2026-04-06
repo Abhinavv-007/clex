@@ -85,7 +85,7 @@ export function getNavHTML(activePage = '') {
     <a href="${routes.howItWorks}" class="nav__mobile-link">How It Works</a>
     <a href="${routes.gettingStarted}" class="nav__mobile-link">Get Started</a>
     <a href="${routes.faq}" class="nav__mobile-link">FAQ</a>
-    <a href="${routes.workspace}" class="nav__mobile-link" style="color: var(--accent);">Open Workspace →</a>
+    <a href="${routes.workspace}" class="nav__mobile-link" style="color: var(--accent-text);">Open Workspace →</a>
   </div>
   `;
 }

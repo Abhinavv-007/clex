@@ -24,14 +24,14 @@
   --border:         rgba(0,0,0,0.10);
   --border-strong:  rgba(0,0,0,0.20);
   --border-hard:    #000000;
-  --border-focus:   #8F7800;
+  --border-focus:   #FFE600;
 
   /* Shadows — neo-brutalist hard offset */
   --shadow-sm:      3px 3px 0 #000000;
   --shadow-md:      4px 4px 0 #000000;
   --shadow-lg:      6px 6px 0 #000000;
   --shadow-xl:      8px 8px 0 #000000;
-  --shadow-accent:  4px 4px 0 #8F7800;
+  --shadow-accent:  4px 4px 0 #FFE600;
 
   /* Text */
   --text-1:   #0A0A0C;
@@ -40,9 +40,10 @@
   --text-inv: #FFFFFF;
 
   /* Accent — yellow, used sparingly for maximum impact */
-  --accent:         #8F7800;
-  --accent-dim:     rgba(143,120,0,0.15);
-  --accent-border:  rgba(143,120,0,0.4);
+  --accent:         #FFE600;
+  --accent-dim:     rgba(255,230,0,0.12);
+  --accent-border:  rgba(255,230,0,0.35);
+  --accent-text:    #3B3520;
   --accent-fg:      #000000;
 
   /* Status */
@@ -96,6 +97,7 @@
   --accent:         #FFE600;
   --accent-dim:     rgba(255,230,0,0.12);
   --accent-border:  rgba(255,230,0,0.35);
+  --accent-text:    var(--accent);
   --accent-fg:      #000000;
 
   --green:   #00E570;
@@ -149,7 +151,7 @@ img, svg { display: block; max-width: 100%; }
   .text-primary   { color: var(--text-1); }
   .text-secondary { color: var(--text-2); }
   .text-tertiary  { color: var(--text-3); }
-  .text-accent    { color: var(--accent); }
+  .text-accent    { color: var(--accent-text); }
 }
 
 /* ─────────────────────────────────────────────────────────
