@@ -231,7 +231,7 @@
 }
 
 .hero__title-accent {
-  color: var(--accent-text);
+  color: var(--accent);
   position: relative;
 }
 
@@ -514,6 +514,84 @@
   max-width: 300px;
 }
 
+.footer__creator {
+  margin-top: var(--space-xl);
+  padding: var(--space-lg);
+  border: var(--border-thick) solid var(--border-bold);
+  box-shadow: var(--shadow-md);
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--accent) 10%, var(--bg-secondary)) 0%, color-mix(in srgb, var(--surface) 90%, var(--bg-secondary)) 100%);
+}
+
+.footer__creator-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  color: var(--accent-text);
+}
+
+.footer__creator-label::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 24%, transparent);
+}
+
+.footer__creator-text {
+  margin-top: var(--space-sm);
+  font-size: var(--text-base);
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+.footer__creator-links {
+  display: grid;
+  gap: 10px;
+  margin-top: var(--space-md);
+}
+
+.footer__creator-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: var(--border-medium) solid var(--border-color);
+  background: color-mix(in srgb, var(--surface) 90%, transparent);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  color: var(--text-secondary);
+  letter-spacing: 0.02em;
+  transition: transform var(--duration-fast), border-color var(--duration-fast), color var(--duration-fast), background var(--duration-fast);
+}
+
+.footer__creator-link span {
+  overflow-wrap: anywhere;
+}
+
+.footer__creator-link:hover {
+  transform: translateY(-1px);
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+  color: var(--text-primary);
+}
+
+.footer__creator-link svg {
+  flex: 0 0 auto;
+  color: var(--accent-text);
+}
+
 .footer__logo {
   margin-bottom: var(--space-md);
   display: flex;
@@ -673,6 +751,10 @@
     grid-column: 1 / -1;
     max-width: none;
   }
+
+  .footer__creator {
+    max-width: 620px;
+  }
   .footer__bottom {
     flex-direction: column;
     gap: var(--space-md);
@@ -686,6 +768,10 @@
   }
   .footer__grid {
     grid-template-columns: 1fr;
+  }
+
+  .footer__creator {
+    padding: 16px;
   }
 }
 
