@@ -18,6 +18,8 @@ export {
   truncateName,
 } from './format'
 
+export { detectReceivedFileFacts } from './mediaInfo'
+
 export {
   saveBlobWithSystemFallback,
   triggerBlobDownload,

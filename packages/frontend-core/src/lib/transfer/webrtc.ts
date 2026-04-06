@@ -205,11 +205,21 @@ export class WebRTCTransfer {
             totalSize: msg.totalSize,
             received: 0,
           })
+          transferStore.setCurrentFile({
+            id: msg.fileId,
+            name: msg.name,
+            type: msg.mimeType,
+            size: msg.totalSize,
+          })
+          if (this.speedTimer === null) {
+            this.startSpeedTimer(() => totalBytesReceived)
+          }
           transferStore.setState('transferring')
         } else if (msg.type === 'file-end') {
           if (msg.fileId) this.assembleAndDownload(msg.fileId)
         } else if (msg.type === 'transfer-complete') {
           this.transferCompleted = true
+          transferStore.setCurrentFile(null)
           transferStore.setState('complete')
           this.stopSpeedTimer()
         }
@@ -266,6 +276,12 @@ export class WebRTCTransfer {
     this.startSpeedTimer(() => bytesSent)
 
     for (const file of this.sendQueue) {
+      transferStore.setCurrentFile({
+        id: file.id,
+        name: file.name,
+        type: file.type,
+        size: file.size,
+      })
       const buf = await file.blob.arrayBuffer()
       const totalChunks = Math.ceil(buf.byteLength / CHUNK_SIZE)
 
@@ -296,6 +312,7 @@ export class WebRTCTransfer {
 
     this.transferCompleted = true
     this.stopSpeedTimer()
+    transferStore.setCurrentFile(null)
     transferStore.setState('complete')
   }
 
@@ -524,6 +541,7 @@ export class WebRTCTransfer {
     this.failed = true
     this.clearConnectionTimer()
     this.stopSpeedTimer()
+    transferStore.setCurrentFile(null)
     transferStore.setError(message, diagnosticCode)
     this.logDiagnostic(diagnosticCode)
     this.destroy()

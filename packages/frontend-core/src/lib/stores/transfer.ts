@@ -21,6 +21,13 @@ export interface ReceivedFile {
   blob: Blob
 }
 
+export interface TransferPreviewFile {
+  id: string
+  name: string
+  type: string
+  size: number
+}
+
 export interface TransferStore {
   state: TransferState
   method: TransferMethod
@@ -34,6 +41,7 @@ export interface TransferStore {
   diagnosticCode: string | null
   error: string | null
   driveLink: string | null
+  currentFile: TransferPreviewFile | null
   receivedFiles: ReceivedFile[]
 }
 
@@ -51,6 +59,7 @@ function makeInitial(): TransferStore {
     diagnosticCode: null,
     error: null,
     driveLink: null,
+    currentFile: null,
     receivedFiles: [],
   }
 }
@@ -73,6 +82,7 @@ function createTransferStore() {
         connectionKind: 'unknown',
         diagnosticCode: null,
         driveLink: null,
+        currentFile: null,
         receivedFiles: [],
       }))
     },
@@ -85,6 +95,9 @@ function createTransferStore() {
     },
     setSpeed(speedBps: number) {
       update(s => ({ ...s, speedBps }))
+    },
+    setCurrentFile(currentFile: TransferPreviewFile | null) {
+      update(s => ({ ...s, currentFile }))
     },
     setConnectionKind(connectionKind: ConnectionKind) {
       update(s => ({ ...s, connectionKind, nearby: connectionKind === 'lan' }))
@@ -100,11 +113,12 @@ function createTransferStore() {
         ...s,
         state: 'failed',
         error,
+        currentFile: null,
         diagnosticCode: diagnosticCode ?? s.diagnosticCode,
       }))
     },
     setDriveLink(driveLink: string) {
-      update(s => ({ ...s, state: 'complete', driveLink, receivedFiles: [] }))
+      update(s => ({ ...s, state: 'complete', driveLink, currentFile: null, receivedFiles: [] }))
     },
     addReceivedFile(file: ReceivedFile) {
       update(s => ({

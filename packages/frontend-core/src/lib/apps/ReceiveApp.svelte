@@ -5,7 +5,7 @@
   import { WebRTCTransfer } from '$transfer/webrtc'
   import { zipFiles } from '$tools/zip'
   import { isValidRoomCode } from '$utils/crypto'
-  import { formatBytes, saveBlobWithSystemFallback, siteRoutes, truncateName, triggerBlobDownload } from '$utils'
+  import { detectReceivedFileFacts, formatBytes, saveBlobWithSystemFallback, siteRoutes, truncateName, triggerBlobDownload } from '$utils'
   import type { TransferProfile } from '$transfer/types'
   import TransferProgress from '$components/sharing/TransferProgress.svelte'
 
@@ -22,12 +22,15 @@
   let transfer: WebRTCTransfer | null = null
   let autoConnecting = false
   let saving = false
+  let fileFacts: Record<string, string[]> = {}
+  let factsRun = 0
 
   $: state = $transferStore.state
   $: inputError = code.length > 0 && code.length < 6 ? 'Code must be 6 characters' : ''
   $: nearby = $transferStore.nearby
   $: normalizedCode = code.trim().toUpperCase()
   $: receivedFiles = $transferStore.receivedFiles
+  $: void hydrateFileFacts(receivedFiles)
 
   onMount(() => {
     if (typeof window === 'undefined') return
@@ -137,6 +140,18 @@
     const file = receivedFiles[index]
     if (!file) return
     triggerBlobDownload(file.blob, file.name)
+  }
+
+  async function hydrateFileFacts(files: typeof receivedFiles) {
+    const run = ++factsRun
+    const nextFacts = { ...fileFacts }
+
+    for (const file of files) {
+      if (nextFacts[file.id]) continue
+      nextFacts[file.id] = await detectReceivedFileFacts(file)
+      if (run !== factsRun) return
+      fileFacts = { ...nextFacts }
+    }
   }
 </script>
 
@@ -289,12 +304,20 @@
                 <div class="receive-file-actions">
                   {#each receivedFiles as file, index}
                     <button class="btn-secondary receive-file-btn" on:click={() => saveReceivedFile(index)} disabled={saving}>
-                      <span>{truncateName(file.name, 28)}</span>
+                      <span class="receive-file-copy">
+                        <span>{truncateName(file.name, 28)}</span>
+                        {#if fileFacts[file.id]?.length}
+                          <span class="receive-file-facts">{fileFacts[file.id].join(' · ')}</span>
+                        {/if}
+                      </span>
                       <span class="receive-file-size">{formatBytes(file.size)}</span>
                     </button>
                   {/each}
                 </div>
               {:else}
+                {#if fileFacts[receivedFiles[0].id]?.length}
+                  <div class="receive-single-facts">{fileFacts[receivedFiles[0].id].join(' · ')}</div>
+                {/if}
                 <button class="btn-secondary receive-file-btn" on:click={() => downloadReceivedFile(0)} disabled={saving}>
                   Download again
                 </button>
@@ -581,10 +604,33 @@
     white-space: normal;
   }
 
+  .receive-file-copy {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    min-width: 0;
+    text-align: left;
+  }
+
   .receive-file-size {
     color: var(--text-3);
     font-size: 12px;
     flex-shrink: 0;
+  }
+
+  .receive-file-facts,
+  .receive-single-facts {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-3);
+  }
+
+  .receive-single-facts {
+    text-align: center;
+    margin-top: -4px;
   }
 
   .receive-actions :global(.btn-primary),
