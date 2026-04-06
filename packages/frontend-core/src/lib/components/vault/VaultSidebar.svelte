@@ -241,7 +241,7 @@
 
   .vs-search {
     padding-left: 32px;
-    padding-right: searchQuery ? 32px : 12px;
+    padding-right: 32px;
     height: 34px;
     font-size: 13px;
     border-radius: 8px;

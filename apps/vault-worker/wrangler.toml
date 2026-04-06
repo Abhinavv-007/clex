@@ -5,31 +5,29 @@ compatibility_flags = ["nodejs_compat"]
 workers_dev = true
 
 # ── KV Namespaces ──────────────────────────────────────────────────────────────
-# Create these with: wrangler kv namespace create VAULT_SECRETS etc.
 [[kv_namespaces]]
 binding = "VAULT_SECRETS"
-id = "PLACEHOLDER_VAULT_SECRETS_KV_ID"
+id = "5162af1e61064f4b83c2c610a4eb5242"
 
 [[kv_namespaces]]
 binding = "VAULT_TOKENS"
-id = "PLACEHOLDER_VAULT_TOKENS_KV_ID"
+id = "eea542853aed48cb94933b5ec022e35d"
 
 [[kv_namespaces]]
 binding = "VAULT_SIGNALS"
-id = "PLACEHOLDER_VAULT_SIGNALS_KV_ID"
+id = "e50630ec62f64567be6dc57aaee809d6"
 
 # ── R2 Bucket ─────────────────────────────────────────────────────────────────
-# Create with: wrangler r2 bucket create vault-files
-[[r2_buckets]]
-binding = "VAULT_FILES"
-bucket_name = "vault-files"
+# Uncomment after enabling R2 at dash.cloudflare.com/r2
+# [[r2_buckets]]
+# binding = "VAULT_FILES"
+# bucket_name = "vault-files"
 
 # ── D1 Database ───────────────────────────────────────────────────────────────
-# Create with: wrangler d1 create clex-vault
 [[d1_databases]]
 binding = "DB"
 database_name = "clex-vault"
-database_id = "PLACEHOLDER_VAULT_D1_ID"
+database_id = "68d8ae50-6b96-46e2-85b2-4edbd4d3c0ba"
 
 [vars]
 ALLOWED_ORIGIN = "*"
@@ -43,24 +41,26 @@ name = "clex-vault-prod"
 
 [[env.production.kv_namespaces]]
 binding = "VAULT_SECRETS"
-id = "PLACEHOLDER_VAULT_SECRETS_KV_ID"
+id = "5162af1e61064f4b83c2c610a4eb5242"
 
 [[env.production.kv_namespaces]]
 binding = "VAULT_TOKENS"
-id = "PLACEHOLDER_VAULT_TOKENS_KV_ID"
+id = "eea542853aed48cb94933b5ec022e35d"
 
 [[env.production.kv_namespaces]]
 binding = "VAULT_SIGNALS"
-id = "PLACEHOLDER_VAULT_SIGNALS_KV_ID"
+id = "e50630ec62f64567be6dc57aaee809d6"
 
-[[env.production.r2_buckets]]
-binding = "VAULT_FILES"
-bucket_name = "vault-files"
+# ── R2 Bucket (production) ────────────────────────────────────────────────────
+# Uncomment after enabling R2 at dash.cloudflare.com/r2
+# [[env.production.r2_buckets]]
+# binding = "VAULT_FILES"
+# bucket_name = "vault-files"
 
 [[env.production.d1_databases]]
 binding = "DB"
 database_name = "clex-vault"
-database_id = "PLACEHOLDER_VAULT_D1_ID"
+database_id = "68d8ae50-6b96-46e2-85b2-4edbd4d3c0ba"
 
 [[env.production.routes]]
 pattern = "clex.in/vault/api/*"

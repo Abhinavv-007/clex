@@ -19,7 +19,7 @@ export interface Env {
   VAULT_SECRETS: KVNamespace
   VAULT_TOKENS: KVNamespace
   VAULT_SIGNALS: KVNamespace
-  VAULT_FILES: R2Bucket
+  VAULT_FILES: R2Bucket | undefined  // optional until R2 is enabled on the account
   DB: D1Database
   ALLOWED_ORIGIN: string
   MAX_SECRET_SIZE: string
@@ -206,7 +206,7 @@ async function handleFileComplete(tokenId: string, req: Request, env: Env, cors:
   const body = req.body
   if (!body) return err('No file body', 400, cors)
 
-  await env.VAULT_FILES.put(record.r2Key, body, {
+  await env.VAULT_FILES!.put(record.r2Key, body, {
     httpMetadata: { contentType: record.mimeType },
     customMetadata: {
       uid: record.uid,
@@ -237,7 +237,7 @@ async function handleFileDownload(r2Key: string, env: Env, cors: Record<string, 
 
   const record: FileTokenRecord = JSON.parse(raw)
   if (Date.now() > record.expiresAt) {
-    await env.VAULT_FILES.delete(record.r2Key)
+    await env.VAULT_FILES!.delete(record.r2Key)
     await env.VAULT_TOKENS.delete(`file:${r2Key}`)
     return err('File expired', 410, cors)
   }
@@ -246,7 +246,7 @@ async function handleFileDownload(r2Key: string, env: Env, cors: Record<string, 
     return err('File already downloaded', 410, cors)
   }
 
-  const obj = await env.VAULT_FILES.get(record.r2Key)
+  const obj = await env.VAULT_FILES!.get(record.r2Key)
   if (!obj) return err('File not found in storage', 404, cors)
 
   // Increment download count
@@ -256,7 +256,7 @@ async function handleFileDownload(r2Key: string, env: Env, cors: Record<string, 
 
   // If download-once, delete after serving
   if (record.downloadOnce) {
-    await env.VAULT_FILES.delete(record.r2Key)
+    await env.VAULT_FILES!.delete(record.r2Key)
     await env.VAULT_TOKENS.delete(`file:${r2Key}`)
   }
 
@@ -273,7 +273,7 @@ async function handleFileDelete(r2Key: string, uid: string, env: Env, cors: Reco
   if (raw) {
     const record: FileTokenRecord = JSON.parse(raw)
     if (record.uid !== uid) return err('Forbidden', 403, cors)
-    await env.VAULT_FILES.delete(record.r2Key)
+    await env.VAULT_FILES!.delete(record.r2Key)
     await env.VAULT_TOKENS.delete(`file:${r2Key}`)
     await env.DB.prepare('DELETE FROM vault_files WHERE r2_key = ? AND uid = ?').bind(r2Key, uid).run()
   }
@@ -406,29 +406,31 @@ export default {
     }
 
     // ── Files ─────────────────────────────────────────────────────────────────
-    if (path === '/vault/api/files' && method === 'POST') {
-      return handleFileUpload(request, env, cors)
-    }
-
-    if (path === '/vault/api/files' && method === 'GET') {
-      const uid = request.headers.get('X-Vault-UID')
-      if (!uid) return err('X-Vault-UID required', 401, cors)
-      return handleFileList(uid, env, cors)
-    }
-
-    const uploadCompleteMatch = path.match(/^\/vault\/api\/files\/upload\/([a-f0-9]+)$/)
-    if (uploadCompleteMatch && method === 'PUT') {
-      return handleFileComplete(uploadCompleteMatch[1], request, env, cors)
-    }
-
-    const fileKeyMatch = path.match(/^\/vault\/api\/files\/(.+)$/)
-    if (fileKeyMatch) {
-      const r2Key = decodeURIComponent(fileKeyMatch[1])
-      if (method === 'GET') return handleFileDownload(r2Key, env, cors)
-      if (method === 'DELETE') {
+    if (path.startsWith('/vault/api/files')) {
+      if (!env.VAULT_FILES) {
+        return err('File sharing not available — R2 not configured', 503, cors)
+      }
+      if (path === '/vault/api/files' && method === 'POST') {
+        return handleFileUpload(request, env, cors)
+      }
+      if (path === '/vault/api/files' && method === 'GET') {
         const uid = request.headers.get('X-Vault-UID')
         if (!uid) return err('X-Vault-UID required', 401, cors)
-        return handleFileDelete(r2Key, uid, env, cors)
+        return handleFileList(uid, env, cors)
+      }
+      const uploadCompleteMatch = path.match(/^\/vault\/api\/files\/upload\/([a-f0-9]+)$/)
+      if (uploadCompleteMatch && method === 'PUT') {
+        return handleFileComplete(uploadCompleteMatch[1], request, env, cors)
+      }
+      const fileKeyMatch = path.match(/^\/vault\/api\/files\/(.+)$/)
+      if (fileKeyMatch) {
+        const r2Key = decodeURIComponent(fileKeyMatch[1])
+        if (method === 'GET') return handleFileDownload(r2Key, env, cors)
+        if (method === 'DELETE') {
+          const uid = request.headers.get('X-Vault-UID')
+          if (!uid) return err('X-Vault-UID required', 401, cors)
+          return handleFileDelete(r2Key, uid, env, cors)
+        }
       }
     }
 

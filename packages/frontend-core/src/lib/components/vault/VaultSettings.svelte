@@ -14,6 +14,9 @@
   let importSuccess = false
   let copySuccess = false
 
+  type SettingsTab = 'devices' | 'storage' | 'encryption' | 'account' | 'data'
+  const SETTINGS_TABS: SettingsTab[] = ['devices', 'storage', 'encryption', 'account', 'data']
+
   $: tab = $ui.settingsTab
   $: key = $masterKey
 
@@ -113,11 +116,11 @@
 
   <!-- Tab nav -->
   <div class="vst-tabs">
-    {#each ['devices', 'storage', 'encryption', 'account', 'data'] as t}
+    {#each SETTINGS_TABS as t}
       <button
         class="vst-tab"
         class:vst-tab--active={tab === t}
-        on:click={() => vaultActions.setSettingsTab(t as typeof tab)}
+        on:click={() => vaultActions.setSettingsTab(t)}
       >{t.charAt(0).toUpperCase() + t.slice(1)}</button>
     {/each}
   </div>
