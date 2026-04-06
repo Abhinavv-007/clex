@@ -9,7 +9,7 @@
   import { siteRoutes } from '$utils'
   import { formatBytes } from '$utils/format'
   import TransferProgress from './TransferProgress.svelte'
-  import QRCode from './QRCode.svelte'
+  import ReceiveAccessCard from './ReceiveAccessCard.svelte'
 
   export let receiveBasePath = siteRoutes.receive
   export let receivePathFormat: 'segment' | 'query' = 'segment'
@@ -17,16 +17,12 @@
   const signalingUrl = getSignalingBaseUrl(import.meta.env.PUBLIC_SIGNALING_URL as string | undefined)
 
   let transfer: WebRTCTransfer | null = null
-  let copied = false
 
   $: state = $transferStore.state
   $: nearby = $transferStore.nearby
   $: transferProfile = (($transferStore.method === 'local' ? 'local' : 'webrtc') as TransferProfile)
   // Room code comes from the store — generated once, persists across method tab switches
   $: roomCode = $transferStore.roomCode ?? ''
-  $: receivePageUrl = typeof window !== 'undefined'
-    ? buildReceivePageUrl(window.location.origin, roomCode, transferProfile)
-    : buildReceivePath(roomCode, transferProfile)
 
   onDestroy(() => {
     transfer?.destroy()
@@ -65,27 +61,7 @@
     transferStore.reset() // reset() now generates a fresh room code in the store
   }
 
-  async function copyLink() {
-    await navigator.clipboard.writeText(receivePageUrl)
-    copied = true
-    setTimeout(() => (copied = false), 2000)
-  }
-
   $: totalSize = $filesStore.reduce((sum, f) => sum + f.size, 0)
-
-  function buildReceivePath(roomCode: string, profile: TransferProfile): string {
-    if (receivePathFormat === 'query') {
-      const params = new URLSearchParams({ code: roomCode, mode: profile })
-      return `${receiveBasePath}?${params.toString()}`
-    }
-
-    const params = new URLSearchParams({ mode: profile })
-    return `${receiveBasePath}/${roomCode}?${params.toString()}`
-  }
-
-  function buildReceivePageUrl(origin: string, roomCode: string, profile: TransferProfile): string {
-    return `${origin}${buildReceivePath(roomCode, profile)}`
-  }
 </script>
 
 <div class="ds-root">
@@ -126,26 +102,8 @@
         {/if}
       </button>
 
-      <!-- Copy link -->
-      <button class="btn-secondary ds-copy-btn" on:click={copyLink}>
-        {#if copied}
-          <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
-            <path d="M2.5 6.5L5 9 10.5 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          Copied!
-        {:else}
-          <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
-            <rect x="4.5" y="4.5" width="7" height="7" rx="1.2" stroke="currentColor" stroke-width="1.1"/>
-            <path d="M8.5 4.5v-2A1.2 1.2 0 007.3 1.3H2.8A1.2 1.2 0 001.5 2.5v4.5a1.2 1.2 0 001.3 1.2h2" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/>
-          </svg>
-          Copy receive link
-        {/if}
-      </button>
-
-      <!-- QR code -->
-      <div class="ds-qr-wrap">
-        <QRCode value={receivePageUrl} size={148} />
-        <p class="ds-qr-hint">Scan to open receive page</p>
+      <div class="ds-access-mobile">
+        <ReceiveAccessCard {receiveBasePath} {receivePathFormat} size={132} compact={true} />
       </div>
     </div>
 
@@ -335,27 +293,9 @@
     user-select: all;
   }
 
-  /* QR */
-  .ds-qr-wrap {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
-  }
-
-  .ds-qr-hint {
-    font-size: 10px;
-    color: var(--text-3);
-  }
-
   /* Buttons */
-  .ds-copy-btn {
-    width: 100%;
-    gap: 7px;
-    font-size: 13px;
-    padding: 9px 16px;
-    justify-content: center;
-    white-space: normal;
+  .ds-access-mobile {
+    display: none;
   }
 
   .ds-send-btn {
@@ -566,13 +506,13 @@
       flex-wrap: wrap;
     }
 
-    .ds-qr-wrap {
-      padding-top: 4px;
-    }
-
-    .ds-copy-btn,
     .ds-cancel-btn {
       white-space: normal;
+    }
+
+    .ds-access-mobile {
+      display: block;
+      padding-top: 2px;
     }
   }
 </style>

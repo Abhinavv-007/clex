@@ -40,15 +40,15 @@
     </div>
 
     <div class="ws-grid">
-      <aside class="ws-col ws-col-sticky">
-        <FileList />
+      <aside class="ws-col ws-col-files">
+        <FileList {receiveBasePath} {receivePathFormat} />
       </aside>
 
       <section class="ws-col">
         <ToolChain />
       </section>
 
-      <aside class="ws-col ws-col-sticky">
+      <aside class="ws-col ws-col-sticky ws-col-share">
         <SharePanel {receiveBasePath} {receivePathFormat} {receiveEntryHref} />
       </aside>
     </div>
@@ -56,7 +56,7 @@
     <div class="ws-mobile-panel">
       <div class="ws-col">
         {#if activePanel === 'files'}
-          <FileList />
+          <FileList {receiveBasePath} {receivePathFormat} />
         {:else if activePanel === 'tools'}
           <ToolChain />
         {:else}
@@ -167,13 +167,25 @@
     top: 80px;
     min-height: auto;
     max-height: calc(100vh - 100px);
+  }
+
+  .ws-col-share {
     overflow-y: auto;
     scrollbar-width: thin;
     scrollbar-color: var(--border-strong) transparent;
   }
 
-  .ws-col-sticky::-webkit-scrollbar { width: 4px; }
-  .ws-col-sticky::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 2px; }
+  .ws-col-share::-webkit-scrollbar { width: 4px; }
+  .ws-col-share::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 2px; }
+
+  .ws-col-files {
+    position: sticky;
+    top: 80px;
+    max-height: calc(100vh - 100px);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
 
   .ws-mobile-panel { display: block; }
 

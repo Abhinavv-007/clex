@@ -1,13 +1,20 @@
 <script lang="ts">
   import { filesStore, hasFiles } from '$stores/files'
+  import { transferStore } from '$stores/transfer'
   import { uiStore } from '$stores/ui'
+  import { siteRoutes } from '$utils'
+  import ReceiveAccessCard from '$components/sharing/ReceiveAccessCard.svelte'
   import FileCard from './FileCard.svelte'
   import FileDropzone from './FileDropzone.svelte'
   import { flip } from 'svelte/animate'
   import { slide } from 'svelte/transition'
   import { formatBytes } from '$utils/format'
 
+  export let receiveBasePath = siteRoutes.receive
+  export let receivePathFormat: 'segment' | 'query' = 'segment'
+
   $: totalSize = $filesStore.reduce((sum, f) => sum + f.size, 0)
+  $: showReceiveAccess = $hasFiles && $transferStore.method !== 'drive'
 </script>
 
 <div class="fl-root">
@@ -45,6 +52,12 @@
       {/each}
     </div>
 
+    {#if showReceiveAccess}
+      <div class="fl-receive-access">
+        <ReceiveAccessCard {receiveBasePath} {receivePathFormat} size={136} />
+      </div>
+    {/if}
+
     <div class="fl-mobile-actions">
       <button class="btn-secondary fl-mobile-btn" on:click={() => uiStore.setPanel('tools')}>
         Prepare files
@@ -69,6 +82,8 @@
     display: flex;
     flex-direction: column;
     gap: 12px;
+    height: 100%;
+    min-height: 0;
   }
 
   .fl-header {
@@ -110,11 +125,17 @@
     display: flex;
     flex-direction: column;
     gap: 6px;
-    max-height: calc(100vh - 380px);
+    flex: 1 1 auto;
+    min-height: 0;
     overflow-y: auto;
     scrollbar-width: thin;
     scrollbar-color: var(--border-strong) transparent;
     padding-right: 2px;
+  }
+
+  .fl-receive-access {
+    flex: 0 0 auto;
+    margin-top: 4px;
   }
 
   .fl-list::-webkit-scrollbar { width: 4px; }
@@ -164,6 +185,12 @@
       max-height: none;
       overflow: visible;
       padding-right: 0;
+      min-height: auto;
+      flex: 0 0 auto;
+    }
+
+    .fl-receive-access {
+      display: none;
     }
 
     .fl-mobile-actions {
