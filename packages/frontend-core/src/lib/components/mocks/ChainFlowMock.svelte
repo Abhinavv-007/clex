@@ -79,52 +79,65 @@
   })
 </script>
 
-<div class="cfm-root" role="group" aria-label="Tool chaining flow">
-  {#each steps as step, index}
-    <button
-      type="button"
-      class="cfm-step"
-      class:cfm-step--accent={step.accent || index === activeIndex}
-      class:cfm-step--active={index === activeIndex}
-      class:cfm-step--final={step.final}
-      aria-expanded={index === activeIndex}
-      aria-pressed={index === activeIndex}
-      on:click={() => selectStep(index)}
-    >
-      <span class="cfm-step__label">{step.label}</span>
-      <span class="cfm-step__detail">{step.detail}</span>
-    </button>
+<div class="cfm-shell">
+  <div class="cfm-root" role="group" aria-label="Tool chaining flow">
+    {#each steps as step, index}
+      <button
+        type="button"
+        class="cfm-step"
+        class:cfm-step--accent={step.accent || index === activeIndex}
+        class:cfm-step--active={index === activeIndex}
+        class:cfm-step--final={step.final}
+        aria-expanded={index === activeIndex}
+        aria-pressed={index === activeIndex}
+        on:click={() => selectStep(index)}
+      >
+        <span class="cfm-step__label">{step.label}</span>
+        <span class="cfm-step__detail">{step.detail}</span>
+      </button>
 
-    {#if index < steps.length - 1}
-      <span class="cfm-connector">→</span>
-    {/if}
-  {/each}
+      {#if index < steps.length - 1}
+        <span class="cfm-connector">→</span>
+      {/if}
+    {/each}
+  </div>
+
+  <div class="cfm-detail-wrap">
+    {#key activeIndex}
+      <section
+        class="cfm-detail"
+        aria-live="polite"
+        in:slide={{ duration: 220 }}
+        out:fade={{ duration: 140 }}
+      >
+        <div class="cfm-detail__eyebrow">Step {activeIndex + 1}</div>
+        <div class="cfm-detail__header">
+          <h3>{steps[activeIndex].label}</h3>
+          <span>{steps[activeIndex].detail}</span>
+        </div>
+        <p>{steps[activeIndex].explanation}</p>
+        <div class="cfm-detail__highlight">{steps[activeIndex].highlight}</div>
+      </section>
+    {/key}
+  </div>
 </div>
 
-{#key activeIndex}
-  <section
-    class="cfm-detail"
-    aria-live="polite"
-    in:slide={{ duration: 220 }}
-    out:fade={{ duration: 140 }}
-  >
-    <div class="cfm-detail__eyebrow">Step {activeIndex + 1}</div>
-    <div class="cfm-detail__header">
-      <h3>{steps[activeIndex].label}</h3>
-      <span>{steps[activeIndex].detail}</span>
-    </div>
-    <p>{steps[activeIndex].explanation}</p>
-    <div class="cfm-detail__highlight">{steps[activeIndex].highlight}</div>
-  </section>
-{/key}
-
 <style>
+  .cfm-shell {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: clip;
+  }
+
   .cfm-root {
     display: flex;
     flex-wrap: wrap;
     gap: 14px;
     align-items: flex-start;
     justify-content: center;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: clip;
   }
 
   .cfm-step {
@@ -141,6 +154,7 @@
     color: var(--text-1);
     cursor: pointer;
     text-align: center;
+    box-sizing: border-box;
     transition:
       transform 180ms ease,
       box-shadow 180ms ease,
@@ -200,6 +214,16 @@
     border-radius: 18px;
     background: color-mix(in srgb, var(--accent) 10%, var(--surface));
     box-shadow: var(--shadow-md);
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+
+  .cfm-detail-wrap {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: clip;
   }
 
   .cfm-detail__eyebrow {

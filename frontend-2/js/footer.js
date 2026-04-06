@@ -18,9 +18,6 @@ export function getFooterHTML() {
           <p class="footer__desc">
             One workspace. Drop files, prepare them, share them. No friction, no accounts, no server storage. Just fast, private file movement.
           </p>
-          <div class="flex gap-sm">
-            <span class="badge badge--outline"><span class="badge__dot"></span> Online</span>
-          </div>
         </div>
 
         <div class="footer__col">
