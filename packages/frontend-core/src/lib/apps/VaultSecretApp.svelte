@@ -15,6 +15,7 @@
     noSelect: boolean
     tabSwitchLock: boolean
     devtoolsGuard: boolean
+    screenshotGuard: boolean
     memoryOnly: true
     viewWindowSeconds: number
   }
@@ -41,6 +42,7 @@
     noSelect: true,
     tabSwitchLock: true,
     devtoolsGuard: true,
+    screenshotGuard: false,
     memoryOnly: true,
     viewWindowSeconds: 60,
   }
@@ -57,6 +59,8 @@
   let secretId = ''
   let secretKeyB64 = ''
   let accessInput = ''
+  let screenshotFlash = false
+  let screenshotFlashTimer: ReturnType<typeof setTimeout> | null = null
 
   function normalizePolicy(input?: Partial<SecretPolicy>): SecretPolicy {
     if (!input) return LEGACY_POLICY
@@ -70,6 +74,7 @@
       noSelect: Boolean(input.noSelect),
       tabSwitchLock: Boolean(input.tabSwitchLock),
       devtoolsGuard: Boolean(input.devtoolsGuard),
+      screenshotGuard: Boolean(input.screenshotGuard),
       memoryOnly: true,
       viewWindowSeconds: timedView
         ? Math.min(3600, Math.max(15, Number.isFinite(requestedWindow) ? requestedWindow : 60))
@@ -151,6 +156,9 @@
     if (policy.devtoolsGuard) {
       rules.push('DevTools guard enabled')
     }
+    if (policy.screenshotGuard) {
+      rules.push('Screenshot guard enabled')
+    }
 
     rules.push('Memory only')
     return rules.join(' • ')
@@ -164,6 +172,7 @@
     if (policy.noSelect) badges.push('No select')
     if (policy.tabSwitchLock) badges.push('Tab switch lock')
     if (policy.devtoolsGuard) badges.push('DevTools guard')
+    if (policy.screenshotGuard) badges.push('Screenshot guard')
     badges.push('Memory only')
 
     return badges
@@ -208,6 +217,12 @@
     if (secretPolicy.devtoolsGuard && event.key === 'F12') {
       event.preventDefault()
       event.stopPropagation()
+    }
+
+    if (secretPolicy.screenshotGuard && event.key === 'PrintScreen') {
+      event.preventDefault()
+      event.stopPropagation()
+      triggerScreenshotGuard()
     }
   }
 
@@ -276,7 +291,12 @@
       clearInterval(devtoolsTimer)
       devtoolsTimer = null
     }
+    if (screenshotFlashTimer) {
+      clearTimeout(screenshotFlashTimer)
+      screenshotFlashTimer = null
+    }
     secretContent = null
+    screenshotFlash = false
     phase = 'destroyed'
     const url = new URL(window.location.href)
     url.hash = ''
@@ -412,8 +432,21 @@
 
     if (countdownTimer) clearInterval(countdownTimer)
     if (devtoolsTimer) clearInterval(devtoolsTimer)
+    if (screenshotFlashTimer) clearTimeout(screenshotFlashTimer)
     secretContent = null
   })
+
+  function triggerScreenshotGuard() {
+    screenshotFlash = true
+    if (screenshotFlashTimer) clearTimeout(screenshotFlashTimer)
+    screenshotFlashTimer = setTimeout(() => {
+      screenshotFlash = false
+    }, 1800)
+
+    if (navigator.clipboard?.writeText) {
+      void navigator.clipboard.writeText('').catch(() => {})
+    }
+  }
 
   $: countdownUrgent = countdown <= 10
   $: countdownWarning = countdown <= 30 && countdown > 10
@@ -431,6 +464,7 @@
   class="vsa-page"
   class:vsa-page--locked={locked}
   class:vsa-page--no-select={phase === 'viewing' && secretPolicy.noSelect}
+  class:vsa-page--watermarked={phase === 'viewing' && secretPolicy.screenshotGuard}
 >
   {#if phase === 'loading'}
     <div class="vsa-center" in:fade={{ duration: 160 }}>
@@ -495,6 +529,10 @@
 
   {:else if phase === 'viewing'}
     <div class="vsa-view" in:fade={{ duration: 200 }}>
+      {#if screenshotFlash}
+        <div class="vsa-screenshot-flash">Screenshot blocked by sender policy</div>
+      {/if}
+
       {#if secretPolicy.timedView}
         <div class="vsa-countdown-wrap">
           <div
@@ -534,6 +572,10 @@
             {/each}
           </div>
         </div>
+
+        {#if secretPolicy.screenshotGuard}
+          <p class="vsa-guard-note">Screenshot guard is best-effort on the web. Vault overlays the reveal and blocks Print Screen where the browser allows it.</p>
+        {/if}
 
         <p class="vsa-caution">{viewingCaution}</p>
       </div>
@@ -585,6 +627,25 @@
   .vsa-page--no-select * {
     user-select: none;
     -webkit-user-select: none;
+  }
+
+  .vsa-page--watermarked .vsa-content-card {
+    position: relative;
+  }
+
+  .vsa-page--watermarked .vsa-content-card::after {
+    content: 'CLEX VAULT';
+    position: absolute;
+    inset: 12px;
+    display: grid;
+    place-items: center;
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 9vw, 4rem);
+    letter-spacing: 0.22em;
+    color: color-mix(in srgb, var(--accent) 24%, transparent);
+    pointer-events: none;
+    transform: rotate(-18deg);
+    text-transform: uppercase;
   }
 
   .vsa-center {
@@ -715,6 +776,23 @@
   .vsa-view {
     max-width: 720px;
     margin: 0 auto;
+  }
+
+  .vsa-screenshot-flash {
+    position: sticky;
+    top: 12px;
+    z-index: 20;
+    margin-bottom: 12px;
+    padding: 12px 16px;
+    border-radius: 14px;
+    border: 2px solid var(--red, #ff4444);
+    background: color-mix(in srgb, var(--red, #ff4444) 12%, var(--surface));
+    box-shadow: 4px 4px 0 var(--red, #ff4444);
+    font-family: var(--font-display);
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-1);
+    text-align: center;
   }
 
   .vsa-countdown-wrap {
@@ -868,6 +946,14 @@
     text-align: center;
     margin: 0;
     line-height: 1.6;
+  }
+
+  .vsa-guard-note {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--text-3);
+    text-align: center;
   }
 
   .vsa-back-btn {

@@ -14,6 +14,7 @@
     noSelect: boolean
     tabSwitchLock: boolean
     devtoolsGuard: boolean
+    screenshotGuard: boolean
     memoryOnly: true
     viewWindowSeconds: number
   }
@@ -24,6 +25,7 @@
     | 'noSelect'
     | 'tabSwitchLock'
     | 'devtoolsGuard'
+    | 'screenshotGuard'
 
   interface SecretStatusPayload {
     exists?: boolean
@@ -72,6 +74,11 @@
       label: 'DevTools guard',
       copy: 'Block common inspector shortcuts and detect an open panel',
     },
+    {
+      key: 'screenshotGuard',
+      label: 'Screenshot guard',
+      copy: 'Best-effort block for Print Screen and a live watermark on reveal',
+    },
   ]
 
   const DEFAULT_PROTECTIONS: Record<SelectableProtectionKey, boolean> = {
@@ -80,6 +87,7 @@
     noSelect: false,
     tabSwitchLock: false,
     devtoolsGuard: false,
+    screenshotGuard: false,
   }
 
   let content = ''
@@ -630,7 +638,7 @@
     background: color-mix(in srgb, var(--accent) 14%, var(--surface));
     border-color: color-mix(in srgb, var(--accent) 68%, var(--border-hard));
     color: var(--text-1);
-    box-shadow: 4px 4px 0 var(--border-hard);
+    box-shadow: 4px 4px 0 var(--accent);
   }
 
   .vsc-custom-wrap {
@@ -719,6 +727,10 @@
     color: var(--accent-fg);
     border-color: #111;
     box-shadow: 2px 2px 0 #111;
+  }
+
+  .vsc-protection-btn--active .vsc-protection-copy {
+    color: var(--text-1);
   }
 
   .vsc-system-card {

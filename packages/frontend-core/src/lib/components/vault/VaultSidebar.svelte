@@ -158,7 +158,7 @@
       <div class="vs-divider" />
 
       <!-- Note list -->
-      <NoteList {searchResults} />
+      <NoteList {searchResults} on:create={createNote} />
     </div>
   {:else}
     <!-- Collapsed state — show icon strip -->

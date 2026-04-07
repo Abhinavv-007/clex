@@ -32,6 +32,18 @@
     scheduleAutosave()
   }
 
+  function applyEditorChange(nextText: string, selectionStart: number, selectionEnd = selectionStart) {
+    value = nextText
+    dispatch('input', nextText)
+    scheduleAutosave()
+    setTimeout(() => {
+      if (!textarea) return
+      textarea.focus()
+      textarea.selectionStart = selectionStart
+      textarea.selectionEnd = selectionEnd
+    }, 0)
+  }
+
   // ── Keyboard shortcuts ────────────────────────────────────────────────────
   function handleKeydown(e: KeyboardEvent) {
     const mod = e.metaKey || e.ctrlKey
@@ -161,28 +173,106 @@
   }
 
   function wrapSelection(before: string, after: string) {
+    if (!textarea) return
     const start = textarea.selectionStart
     const end = textarea.selectionEnd
     const text = textarea.value
     const selected = text.slice(start, end)
     const newText = text.slice(0, start) + before + selected + after + text.slice(end)
-    value = newText
-    dispatch('input', newText)
-    setTimeout(() => {
-      textarea.selectionStart = start + before.length
-      textarea.selectionEnd = end + before.length
-    }, 0)
+    applyEditorChange(newText, start + before.length, end + before.length)
   }
 
   function insertAtCursor(text: string) {
+    if (!textarea) return
     const pos = textarea.selectionStart
     const current = textarea.value
     const newText = current.slice(0, pos) + text + current.slice(pos)
-    value = newText
-    dispatch('input', newText)
-    setTimeout(() => {
-      textarea.selectionStart = textarea.selectionEnd = pos + text.length
-    }, 0)
+    applyEditorChange(newText, pos + text.length)
+  }
+
+  function prefixSelectedLines(prefix: string) {
+    if (!textarea) return
+
+    const text = textarea.value
+    const start = textarea.selectionStart
+    const end = textarea.selectionEnd
+    const blockStart = text.lastIndexOf('\n', Math.max(0, start - 1)) + 1
+    const blockEndRaw = text.indexOf('\n', end)
+    const blockEnd = blockEndRaw === -1 ? text.length : blockEndRaw
+    const block = text.slice(blockStart, blockEnd)
+    const nextBlock = block
+      .split('\n')
+      .map((line) => `${prefix}${line}`)
+      .join('\n')
+    const nextText = text.slice(0, blockStart) + nextBlock + text.slice(blockEnd)
+    applyEditorChange(nextText, blockStart, blockStart + nextBlock.length)
+  }
+
+  function wrapBlock(prefix: string, suffix: string) {
+    if (!textarea) return
+
+    const start = textarea.selectionStart
+    const end = textarea.selectionEnd
+    const text = textarea.value
+    const selected = text.slice(start, end)
+    const body = selected || 'code'
+    const leadingBreak = start > 0 && text[start - 1] !== '\n' ? '\n' : ''
+    const trailingBreak = end < text.length && text[end] !== '\n' ? '\n' : ''
+    const replacement = `${leadingBreak}${prefix}${body}${suffix}${trailingBreak}`
+    const nextText = text.slice(0, start) + replacement + text.slice(end)
+    const cursorStart = start + leadingBreak.length + prefix.length
+    applyEditorChange(nextText, cursorStart, cursorStart + body.length)
+  }
+
+  function insertLinkTemplate() {
+    if (!textarea) return
+    const start = textarea.selectionStart
+    const end = textarea.selectionEnd
+    const text = textarea.value
+    const selected = text.slice(start, end) || 'link text'
+    const replacement = `[${selected}](https://)`
+    const nextText = text.slice(0, start) + replacement + text.slice(end)
+    const urlStart = start + selected.length + 4
+    applyEditorChange(nextText, urlStart, urlStart + 8)
+  }
+
+  function applyTool(tool: 'h1' | 'h2' | 'bold' | 'italic' | 'highlight' | 'quote' | 'checklist' | 'code' | 'link') {
+    if (mode !== 'edit') return
+
+    if (tool === 'h1') {
+      prefixSelectedLines('# ')
+      return
+    }
+    if (tool === 'h2') {
+      prefixSelectedLines('## ')
+      return
+    }
+    if (tool === 'bold') {
+      wrapSelection('**', '**')
+      return
+    }
+    if (tool === 'italic') {
+      wrapSelection('*', '*')
+      return
+    }
+    if (tool === 'highlight') {
+      wrapSelection('==', '==')
+      return
+    }
+    if (tool === 'quote') {
+      prefixSelectedLines('> ')
+      return
+    }
+    if (tool === 'checklist') {
+      prefixSelectedLines('- [ ] ')
+      return
+    }
+    if (tool === 'code') {
+      wrapBlock('```\n', '\n```')
+      return
+    }
+
+    insertLinkTemplate()
   }
 
   // ── Markdown renderer ─────────────────────────────────────────────────────
@@ -231,6 +321,7 @@
     html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
     html = html.replace(/\*(.+?)\*/g, '<em>$1</em>')
     html = html.replace(/~~(.+?)~~/g, '<del>$1</del>')
+    html = html.replace(/==(.+?)==/g, '<mark class="ve-mark">$1</mark>')
 
     // Links
     html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="ve-link" target="_blank" rel="noopener">$1</a>')
@@ -264,6 +355,25 @@
 </script>
 
 <div class="ve-root">
+  {#if mode === 'edit'}
+    <div class="ve-toolbar">
+      <div class="ve-toolgroup">
+        <button class="ve-tool" type="button" on:click={() => applyTool('h1')}>H1</button>
+        <button class="ve-tool" type="button" on:click={() => applyTool('h2')}>H2</button>
+        <button class="ve-tool" type="button" on:click={() => applyTool('bold')}>Bold</button>
+        <button class="ve-tool" type="button" on:click={() => applyTool('italic')}>Italic</button>
+        <button class="ve-tool" type="button" on:click={() => applyTool('highlight')}>Highlight</button>
+      </div>
+
+      <div class="ve-toolgroup">
+        <button class="ve-tool" type="button" on:click={() => applyTool('quote')}>Quote</button>
+        <button class="ve-tool" type="button" on:click={() => applyTool('checklist')}>Checklist</button>
+        <button class="ve-tool" type="button" on:click={() => applyTool('code')}>Code</button>
+        <button class="ve-tool" type="button" on:click={() => applyTool('link')}>Link</button>
+      </div>
+    </div>
+  {/if}
+
   {#if mode === 'edit'}
     <textarea
       bind:this={textarea}
@@ -299,6 +409,47 @@
     display: flex;
     flex-direction: column;
     position: relative;
+    gap: 12px;
+  }
+
+  .ve-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 10px 12px;
+    border-radius: 14px;
+    border: 1.5px solid var(--border-hard);
+    background: color-mix(in srgb, var(--surface-2) 82%, var(--surface));
+    box-shadow: 3px 3px 0 var(--border-hard);
+  }
+
+  .ve-toolgroup {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .ve-tool {
+    min-height: 34px;
+    padding: 7px 12px;
+    border-radius: 999px;
+    border: 1.5px solid var(--border-hard);
+    background: var(--surface);
+    box-shadow: 2px 2px 0 var(--border-hard);
+    font-family: var(--font-display);
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-1);
+    cursor: pointer;
+    transition: transform 120ms ease, box-shadow 120ms ease;
+  }
+
+  .ve-tool:hover {
+    transform: translate(-1px, -1px);
+    box-shadow: 4px 4px 0 var(--border-hard);
   }
 
   .ve-textarea {
@@ -365,6 +516,12 @@
     padding: 1px 6px;
     color: var(--cyan);
   }
+  :global(.ve-mark) {
+    background: color-mix(in srgb, var(--accent) 40%, transparent);
+    color: var(--text-1);
+    border-radius: 4px;
+    padding: 0 3px;
+  }
   :global(.ve-link) { color: var(--cyan); text-decoration: underline; text-underline-offset: 3px; }
   :global(.ve-hr) { border: none; height: 2px; background: var(--border); margin: 20px 0; }
   :global(.ve-task) { display: flex; align-items: flex-start; gap: 8px; margin: 6px 0; color: var(--text-2); }
@@ -418,5 +575,20 @@
 
   .ve-save-dot--fresh::before {
     background: var(--green);
+  }
+
+  @media (max-width: 767px) {
+    .ve-toolbar {
+      padding: 10px;
+    }
+
+    .ve-toolgroup {
+      width: 100%;
+    }
+
+    .ve-tool {
+      flex: 1 1 auto;
+      justify-content: center;
+    }
   }
 </style>

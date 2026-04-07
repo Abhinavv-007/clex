@@ -18,6 +18,11 @@
     deleteAt: number
   }
 
+  interface RelayHealthPayload {
+    ok?: boolean
+    storageConfigured?: boolean
+  }
+
   const MAX_FILE_BYTES = 10 * 1024 * 1024
 
   let fileInput: HTMLInputElement | null = null
@@ -34,6 +39,7 @@
   let linkCopied = false
   let codeCopied = false
   let connectBusy = false
+  let relayStatus: 'unknown' | 'ready' | 'route-missing' | 'storage-missing' = 'unknown'
 
   $: user = $googleUser
   $: key = $masterKey
@@ -58,10 +64,39 @@
   }
 
   onMount(() => {
+    void checkRelayHealth(true)
     if (user?.uid) {
       void loadFiles()
     }
   })
+
+  async function checkRelayHealth(silent = false): Promise<boolean> {
+    try {
+      const res = await fetch(`${vaultApiUrl}/health`)
+      if (!res.ok) {
+        relayStatus = 'route-missing'
+        if (!silent) {
+          error = 'Vault relay is unreachable. Verify that the `/vault/api` worker route is deployed on the live site.'
+        }
+        return false
+      }
+
+      const payload = await res.json().catch(() => ({})) as RelayHealthPayload
+      relayStatus = payload.storageConfigured === false ? 'storage-missing' : 'ready'
+
+      if (!silent && relayStatus === 'storage-missing') {
+        error = 'Vault relay is live, but Supabase storage is not configured on this deployment yet.'
+      }
+
+      return relayStatus === 'ready'
+    } catch {
+      relayStatus = 'route-missing'
+      if (!silent) {
+        error = 'Vault relay is unreachable. Verify that the `/vault/api` worker route is deployed on the live site.'
+      }
+      return false
+    }
+  }
 
   function formatDate(ts: number): string {
     return new Date(ts).toLocaleString([], {
@@ -112,7 +147,7 @@
     return apiMessage || fallback
   }
 
-  function mapThrownError(err: unknown, fallback: string): string {
+  async function mapThrownError(err: unknown, fallback: string): Promise<string> {
     const code = err && typeof err === 'object' && 'code' in err && typeof err.code === 'string'
       ? err.code
       : ''
@@ -122,12 +157,26 @@
     }
 
     if (err instanceof TypeError) {
-      return 'Vault relay could not be reached. Check the `/vault/api` worker route, your connection, and the live deployment.'
+      const relayReady = await checkRelayHealth(true)
+      if (!relayReady) {
+        return relayStatus === 'storage-missing'
+          ? 'Vault relay is live, but Supabase storage is missing or misconfigured on this deployment.'
+          : 'Vault relay could not be reached. Check the `/vault/api` worker route and the live deployment.'
+      }
+
+      return 'Vault relay is live, but the upload failed before storage accepted the file. Check the worker logs and Supabase bucket settings.'
     }
 
     if (err instanceof Error) {
       if (/network connection lost|network-request-failed|failed to fetch|load failed|networkerror/i.test(err.message)) {
-        return 'Vault could not reach the relay or Supabase storage. Verify the live worker route and Supabase credentials, then try again.'
+        const relayReady = await checkRelayHealth(true)
+        if (!relayReady) {
+          return relayStatus === 'storage-missing'
+            ? 'Vault relay is live, but Supabase storage is missing or misconfigured on this deployment.'
+            : 'Vault relay could not be reached. Check the `/vault/api` worker route and the live deployment.'
+        }
+
+        return 'Vault relay responded, but the storage handoff failed. Check the worker logs, Supabase credentials, and the attachments bucket.'
       }
 
       return err.message
@@ -205,7 +254,7 @@
         activeFileId = ''
       }
     } catch (err) {
-      error = mapThrownError(err, 'Failed to load files')
+      error = await mapThrownError(err, 'Failed to load files')
     } finally {
       filesLoading = false
     }
@@ -266,6 +315,15 @@
     error = ''
 
     try {
+      const relayReady = await checkRelayHealth(true)
+      if (!relayReady) {
+        throw new Error(
+          relayStatus === 'storage-missing'
+            ? 'Vault relay is live, but Supabase storage is missing or misconfigured on this deployment.'
+            : 'Vault relay could not be reached. Check the `/vault/api` worker route and the live deployment.',
+        )
+      }
+
       for (const file of selectedFiles) {
         uploadIndex += 1
 
@@ -295,7 +353,7 @@
       selectedFiles = []
       await loadFiles()
     } catch (err) {
-      error = mapThrownError(err, 'Upload failed')
+      error = await mapThrownError(err, 'Upload failed')
     } finally {
       uploading = false
       uploadIndex = 0
@@ -342,7 +400,7 @@
       }
       await loadFiles()
     } catch (err) {
-      error = mapThrownError(err, 'Failed to delete file')
+      error = await mapThrownError(err, 'Failed to delete file')
     } finally {
       deleteBusyId = ''
     }
@@ -364,6 +422,9 @@
         <span class="vcs-limit-chip">10 MB per file</span>
         <span class="vcs-limit-chip">100 MB per day</span>
         <span class="vcs-limit-chip">Auto-delete after 24 hours</span>
+        <span class="vcs-limit-chip">
+          Relay {relayStatus === 'ready' ? 'ready' : relayStatus === 'storage-missing' ? 'needs storage' : relayStatus === 'route-missing' ? 'offline' : 'checking'}
+        </span>
       </div>
 
       {#if !user}

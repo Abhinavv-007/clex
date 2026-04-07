@@ -1,6 +1,7 @@
 <script lang="ts">
+  import { onMount } from 'svelte'
   import { masterKey, googleUser, devices, ui, syncState, vaultActions, formatBytes } from '$stores/vault'
-  import { getAllDevices, deleteDevice as dbDeleteDevice, clearAllData } from '$lib/vault/db'
+  import { getAllDevices, deleteDevice as dbDeleteDevice, clearAllData, detectDeviceName, getDeviceFingerprint } from '$lib/vault/db'
   import { exportKeyAsJson, importKeyFromJson, rotateMasterKey, deriveGoogleKey } from '$lib/vault/crypto'
   import { signInWithGoogle, signOutGoogle } from '$lib/vault/auth'
   import { fade, slide } from 'svelte/transition'
@@ -14,6 +15,8 @@
   let importError = ''
   let importSuccess = false
   let copySuccess = false
+  let currentDeviceName = 'This browser'
+  let currentDeviceFingerprint = ''
 
   type SettingsTab = 'devices' | 'storage' | 'encryption' | 'account' | 'data'
   const SETTINGS_TABS: SettingsTab[] = ['devices', 'storage', 'encryption', 'account', 'data']
@@ -94,6 +97,18 @@
   $: lastSyncLabel = sync.lastSync
     ? new Date(sync.lastSync).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     : 'Not yet'
+  $: totalDevices = $devices.length + 1
+  $: currentDeviceSuffix = currentDeviceFingerprint ? `···${currentDeviceFingerprint.slice(-4)}` : 'local'
+  $: deviceSummary = $devices.length > 0
+    ? `${$devices.length} paired device${$devices.length === 1 ? '' : 's'}`
+    : 'Only this device right now'
+
+  onMount(() => {
+    currentDeviceName = detectDeviceName()
+    void (async () => {
+      currentDeviceFingerprint = await getDeviceFingerprint()
+    })()
+  })
 
   async function handleGoogleSignIn() {
     authBusy = true
@@ -186,8 +201,8 @@
     </div>
     <div class="vst-summary-card">
       <span class="vst-summary-label">Devices</span>
-      <strong class="vst-summary-value">{$devices.length + 1} known</strong>
-      <p class="vst-summary-copy">This browser plus paired Vault devices</p>
+      <strong class="vst-summary-value">{totalDevices} known</strong>
+      <p class="vst-summary-copy">{deviceSummary}</p>
     </div>
     <div class="vst-summary-card">
       <span class="vst-summary-label">Relay</span>
@@ -205,35 +220,64 @@
     <!-- ── Devices ──────────────────────────────────────────────────────── -->
     {#if tab === 'devices'}
       <div class="vst-pane" in:fade={{ duration: 160 }}>
-        <div class="vst-section-label">Paired Devices</div>
+        <div class="vst-section-label">Vault Devices</div>
 
         <div class="vst-notice">
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="7" cy="7" r="5.5"/><path d="M7 6v3.5M7 4.5v.2"/></svg>
-          Clearing browser data will unpair this device.
+          Notes sync over the shared Vault room when both devices are online. Use Quick Connect once, then Sync now in Notes whenever you want to force a fresh merge.
+        </div>
+
+        <div class="vst-device-overview">
+          <div>
+            <p class="vst-device-count">{totalDevices} device{totalDevices === 1 ? '' : 's'} in this vault</p>
+            <p class="vst-hint">This browser is always listed first. Other rows are direct-paired Vault devices saved on this browser.</p>
+          </div>
+          <button class="btn-accent vst-action-btn" on:click={vaultActions.openPairingModal}>
+            + Add Device
+          </button>
         </div>
 
         <div class="vst-device-list">
+          <div class="vst-device-row vst-device-row--self">
+            <div class="vst-device-icon">⬢</div>
+            <div class="vst-device-info">
+              <div class="vst-device-head">
+                <span class="vst-device-name">{currentDeviceName}</span>
+                <span class="vst-device-chip">This device</span>
+              </div>
+              <span class="vst-device-meta">
+                Local key ready · {currentDeviceSuffix}
+              </span>
+            </div>
+            {#if user}
+              <button class="btn-secondary vst-unpair-btn" on:click={handleGoogleSignOut} disabled={authBusy}>
+                {authBusy ? 'Signing out…' : 'Sign out'}
+              </button>
+            {:else}
+              <span class="vst-device-inline-note">Ready</span>
+            {/if}
+          </div>
+
           {#each $devices as device (device.id)}
             <div class="vst-device-row">
               <div class="vst-device-icon">⬡</div>
               <div class="vst-device-info">
-                <span class="vst-device-name">{device.name}</span>
+                <div class="vst-device-head">
+                  <span class="vst-device-name">{device.name}</span>
+                  <span class="vst-device-chip">Paired</span>
+                </div>
                 <span class="vst-device-meta">
                   Last seen {new Date(device.lastSeen).toLocaleString()} · ···{device.id.slice(-4)}
                 </span>
               </div>
               <button class="btn-secondary vst-unpair-btn" on:click={() => handleUnpairDevice(device.id)}>
-                Unpair
+                Disconnect
               </button>
             </div>
           {:else}
             <p class="vst-empty">No other devices paired yet.</p>
           {/each}
         </div>
-
-        <button class="btn-accent vst-action-btn" on:click={vaultActions.openPairingModal}>
-          + Add Device
-        </button>
       </div>
 
     <!-- ── Storage ─────────────────────────────────────────────────────── -->
@@ -568,14 +612,40 @@
     margin-bottom: 16px;
   }
 
+  .vst-device-overview {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 16px;
+    border-radius: 16px;
+    border: 1.5px solid var(--border-hard);
+    background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+    box-shadow: 3px 3px 0 var(--border-hard);
+  }
+
+  .vst-device-count {
+    margin: 0 0 8px;
+    font-family: var(--font-display);
+    font-size: 1.1rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--text-1);
+  }
+
   .vst-device-row {
     display: flex;
     align-items: center;
     gap: 12px;
     padding: 12px 14px;
     background: var(--surface-2);
-    border: 1.5px solid var(--border);
-    border-radius: 10px;
+    border: 1.5px solid var(--border-hard);
+    border-radius: 14px;
+    box-shadow: 3px 3px 0 var(--border-hard);
+  }
+
+  .vst-device-row--self {
+    background: color-mix(in srgb, var(--accent) 10%, var(--surface));
   }
 
   .vst-device-icon {
@@ -592,10 +662,39 @@
     gap: 3px;
   }
 
+  .vst-device-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
   .vst-device-name {
     font-size: 13px;
     font-weight: 600;
     color: var(--text-1);
+  }
+
+  .vst-device-chip,
+  .vst-device-inline-note {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 24px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    border: 1.5px solid var(--border-hard);
+    background: var(--surface);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-2);
+  }
+
+  .vst-device-inline-note {
+    color: var(--accent-text);
   }
 
   .vst-device-meta {
@@ -619,6 +718,10 @@
   .vst-action-btn {
     display: inline-flex;
     margin-top: 8px;
+  }
+
+  .vst-device-overview .vst-action-btn {
+    margin-top: 0;
   }
 
   .vst-storage-bar {
@@ -775,6 +878,12 @@
 
     .vst-pane {
       padding: 16px;
+    }
+
+    .vst-device-overview,
+    .vst-device-row {
+      flex-direction: column;
+      align-items: flex-start;
     }
 
     .vst-fingerprint-row {

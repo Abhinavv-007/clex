@@ -57,7 +57,7 @@ interface SyncMap<T> {
   observe: (callback: (event: SyncMapEvent) => void) => void
 }
 
-interface SyncSeedState {
+export interface SyncSeedState {
   notes: StoredNote[]
   folders: StoredFolder[]
 }
@@ -142,9 +142,12 @@ async function handleFolderMapChange(event: SyncMapEvent): Promise<void> {
   notify({ syncing: false, lastSync: Date.now(), connected: true, error: null })
 }
 
-async function reconcileSeed(seed: SyncSeedState): Promise<void> {
-  if (!notesMap || !foldersMap || reconciled) return
-  reconciled = true
+async function reconcileSeed(seed: SyncSeedState, force = false): Promise<void> {
+  if (!notesMap || !foldersMap) return
+  if (!force && reconciled) return
+  if (!force) {
+    reconciled = true
+  }
 
   const remoteNotes = snapshotMap(notesMap)
   const remoteFolders = snapshotMap(foldersMap)
@@ -295,6 +298,17 @@ export function syncDeleteFolder(id: string): void {
     foldersMap?.delete(id)
   })
   notify({ lastSync: Date.now(), error: null })
+}
+
+export async function runManualSync(seed: SyncSeedState): Promise<void> {
+  if (!notesMap || !foldersMap) {
+    notify({ error: 'Sync room is not ready yet', connected: false })
+    return
+  }
+
+  notify({ syncing: true, error: null })
+  await reconcileSeed(seed, true)
+  notify({ syncing: false, lastSync: Date.now(), error: null })
 }
 
 export function destroySync(): void {

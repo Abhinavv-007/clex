@@ -44,7 +44,7 @@
   } from '$lib/vault/db'
   import { decryptText } from '$lib/vault/crypto'
   import { buildSearchIndex, removeFromIndex, updateInIndex } from '$lib/vault/search'
-  import { initSync, onSyncState, destroySync, setSyncHandlers } from '$lib/vault/sync'
+  import { initSync, onSyncState, destroySync, runManualSync, setSyncHandlers } from '$lib/vault/sync'
   import { onVaultAuthChanged } from '$lib/vault/auth'
 
   export let signalingUrl = 'wss://signal.clex.in'
@@ -179,6 +179,25 @@
     })
 
     if (version !== syncInitVersion) return
+  }
+
+  async function handleManualSync() {
+    const mk = get(masterKeyStore)
+    if (!mk) return
+
+    try {
+      await ensureSyncForRoom(mk.roomId)
+      const [storedNotes, storedFolders] = await Promise.all([
+        getAllNotes(),
+        getAllFolders(),
+      ])
+      await runManualSync({
+        notes: storedNotes,
+        folders: storedFolders,
+      })
+    } catch (error) {
+      console.error('[vault] manual sync failed:', error)
+    }
   }
 
   onMount(async () => {
@@ -348,7 +367,7 @@
           </aside>
 
           <main class="va-col va-col-editor">
-            <VaultHeader {offline} />
+            <VaultHeader {offline} on:syncNow={handleManualSync} />
             <VaultEditor />
           </main>
 

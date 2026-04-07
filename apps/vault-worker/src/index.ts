@@ -193,6 +193,7 @@ interface SecretPolicy {
   noSelect: boolean
   tabSwitchLock: boolean
   devtoolsGuard: boolean
+  screenshotGuard: boolean
   memoryOnly: true
   viewWindowSeconds: number
 }
@@ -206,6 +207,7 @@ function normalizeSecretPolicy(input?: Partial<SecretPolicy>): SecretPolicy {
       noSelect: true,
       tabSwitchLock: true,
       devtoolsGuard: true,
+      screenshotGuard: false,
       memoryOnly: true,
       viewWindowSeconds: 60,
     }
@@ -224,6 +226,7 @@ function normalizeSecretPolicy(input?: Partial<SecretPolicy>): SecretPolicy {
     noSelect: Boolean(input.noSelect),
     tabSwitchLock: Boolean(input.tabSwitchLock),
     devtoolsGuard: Boolean(input.devtoolsGuard),
+    screenshotGuard: Boolean(input.screenshotGuard),
     memoryOnly: true,
     viewWindowSeconds,
   }
@@ -598,6 +601,11 @@ interface PairingOffer {
   expiresAt: number
 }
 
+interface PairingAnswerRecord {
+  answer: string
+  deviceInfo: string
+}
+
 async function handlePairingOffer(req: Request, env: Env, cors: Record<string, string>): Promise<Response> {
   let body: { offer?: string; deviceInfo?: string }
   try { body = await req.json() } catch { return err('Invalid JSON', 400, cors) }
@@ -630,17 +638,30 @@ async function handlePairingFetch(code: string, env: Env, cors: Record<string, s
 }
 
 async function handlePairingAnswer(code: string, req: Request, env: Env, cors: Record<string, string>): Promise<Response> {
-  let body: { answer?: string }
+  let body: { answer?: string; deviceInfo?: string }
   try { body = await req.json() } catch { return err('Invalid JSON', 400, cors) }
   if (!body.answer) return err('answer required', 400, cors)
-  await env.VAULT_SIGNALS.put(`pairing-answer:${code}`, body.answer, { expirationTtl: 60 })
+  const record: PairingAnswerRecord = {
+    answer: body.answer,
+    deviceInfo: body.deviceInfo ?? '{}',
+  }
+  await env.VAULT_SIGNALS.put(`pairing-answer:${code}`, JSON.stringify(record), { expirationTtl: 60 })
   return json({ ok: true }, 200, cors)
 }
 
 async function handlePairingAnswerPoll(code: string, env: Env, cors: Record<string, string>): Promise<Response> {
-  const answer = await env.VAULT_SIGNALS.get(`pairing-answer:${code}`)
-  if (!answer) return json({ found: false }, 200, cors)
-  return json({ found: true, answer }, 200, cors)
+  const raw = await env.VAULT_SIGNALS.get(`pairing-answer:${code}`)
+  if (!raw) return json({ found: false }, 200, cors)
+
+  try {
+    const record = JSON.parse(raw) as Partial<PairingAnswerRecord>
+    if (typeof record.answer === 'string') {
+      return json({ found: true, answer: record.answer, deviceInfo: record.deviceInfo ?? '{}' }, 200, cors)
+    }
+    return json({ found: true, answer: raw, deviceInfo: '{}' }, 200, cors)
+  } catch {
+    return json({ found: true, answer: raw, deviceInfo: '{}' }, 200, cors)
+  }
 }
 
 async function handlePairingDelete(code: string, env: Env, cors: Record<string, string>): Promise<Response> {
@@ -666,7 +687,12 @@ export default {
 
     // Health
     if (path === '/vault/api/health' || path === '/health') {
-      return json({ ok: true, service: 'vault', ts: Date.now() }, 200, cors)
+      return json({
+        ok: true,
+        service: 'vault',
+        ts: Date.now(),
+        storageConfigured: Boolean(env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY),
+      }, 200, cors)
     }
 
     // ── Secret Share ──────────────────────────────────────────────────────────

@@ -1,8 +1,9 @@
 <script lang="ts">
   import { createEventDispatcher, onDestroy, onMount } from 'svelte'
   import { masterKey, vaultActions } from '$stores/vault'
-  import { startPairingAsSender, completePairingAsReceiver } from '$lib/vault/pairing'
+  import { startPairingAsSender, completePairingAsReceiver, type PairingDeviceInfo } from '$lib/vault/pairing'
   import { storeMasterKeyFromRaw } from '$lib/vault/crypto'
+  import { detectDeviceName, getDeviceFingerprint, saveDevice, type StoredDevice } from '$lib/vault/db'
   import { formatGroupedCode } from '$lib/vault/handoff'
   import { scale, fade } from 'svelte/transition'
   import { quintOut } from 'svelte/easing'
@@ -31,14 +32,19 @@
   let linkCopied = false
 
   let countdownTimer: ReturnType<typeof setInterval> | null = null
+  let localDeviceFingerprint = ''
 
   onMount(() => {
     tab = initialTab
     receiverCode = sanitizeCode(prefillCode)
 
-    if (tab === 'receiver' && autoConnect && receiverCode.length === 8) {
-      void startReceiver()
-    }
+    void (async () => {
+      localDeviceFingerprint = await getDeviceFingerprint()
+
+      if (tab === 'receiver' && autoConnect && receiverCode.length === 8) {
+        void startReceiver()
+      }
+    })()
   })
 
   onDestroy(() => {
@@ -97,6 +103,8 @@
       return
     }
 
+    const localDevice = await getLocalDeviceInfo()
+
     status = 'waiting'
     error = ''
     pairingCode = ''
@@ -109,12 +117,16 @@
       const result = await startPairingAsSender(
         vaultApiUrl,
         key,
+        localDevice,
         (nextStatus) => {
           status = nextStatus as Status
         },
         () => {
           status = 'complete'
           clearCountdown()
+        },
+        (remoteDevice) => {
+          void storePairedDevice(remoteDevice)
         },
       )
 
@@ -156,9 +168,11 @@
     error = ''
 
     try {
+      const localDevice = await getLocalDeviceInfo()
       await completePairingAsReceiver(
         receiverCode,
         vaultApiUrl,
+        localDevice,
         (nextStatus) => {
           status = nextStatus as Status
         },
@@ -167,6 +181,9 @@
           vaultActions.setMasterKey(nextKey)
           status = 'complete'
           setTimeout(close, 1800)
+        },
+        (remoteDevice) => {
+          void storePairedDevice(remoteDevice)
         },
       )
     } catch (eventualError: unknown) {
@@ -198,6 +215,32 @@
     const minutes = Math.floor(seconds / 60)
     const remainder = seconds % 60
     return `${minutes}:${remainder.toString().padStart(2, '0')}`
+  }
+
+  async function getLocalDeviceInfo(): Promise<PairingDeviceInfo> {
+    const id = localDeviceFingerprint || await getDeviceFingerprint()
+    localDeviceFingerprint = id
+
+    return {
+      id,
+      name: detectDeviceName(),
+      lastSeen: Date.now(),
+    }
+  }
+
+  async function storePairedDevice(deviceInfo: PairingDeviceInfo | null) {
+    if (!deviceInfo?.id || deviceInfo.id === localDeviceFingerprint) return
+
+    const device: StoredDevice = {
+      id: deviceInfo.id,
+      name: deviceInfo.name,
+      pairedAt: Date.now(),
+      lastSeen: deviceInfo.lastSeen,
+      roomVersion: 1,
+    }
+
+    await saveDevice(device)
+    vaultActions.upsertDevice(device)
   }
 
   $: groupedPairingCode = formatGroupedCode(pairingCode)

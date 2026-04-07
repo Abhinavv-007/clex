@@ -1,10 +1,13 @@
 <script lang="ts">
+  import { createEventDispatcher } from 'svelte'
   import { visibleNotes, ui, vaultActions, relativeTime, wordCount } from '$stores/vault'
   import type { DecryptedNote } from '$stores/vault'
   import { fade, fly } from 'svelte/transition'
   import { flip } from 'svelte/animate'
 
   export let searchResults: import('$lib/vault/search').SearchResult[] = []
+
+  const dispatch = createEventDispatcher<{ create: void }>()
 
   function selectNote(id: string) {
     vaultActions.selectNote(id)
@@ -22,6 +25,10 @@
     if (!r) return null
     return { title: r.titleHighlight, snippet: r.snippet }
   }
+
+  function requestCreate() {
+    dispatch('create')
+  }
 </script>
 
 <div class="nl-root scroll-thin">
@@ -35,7 +42,7 @@
         <p>No notes yet</p>
         <button
           class="nl-create-btn btn-accent"
-          on:click={() => vaultActions.setPanel('notes')}
+          on:click={requestCreate}
         >
           Create first note
         </button>
@@ -72,7 +79,7 @@
         </div>
 
         <div class="nl-meta">
-          <span>{relativeTime(note.updatedAt)}</span>
+          <span>{relativeTime(note.updatedAt)} · {wordCount(note.body)} words</span>
           {#if note.tags.length}
             <div class="nl-tags">
               {#each note.tags.slice(0, 2) as tag}
@@ -122,50 +129,56 @@
   .nl-create-btn {
     margin-top: 8px;
     font-size: 12px;
-    padding: 8px 16px;
-    border-radius: 8px;
+    padding: 10px 18px;
+    border-radius: 12px;
   }
 
   .nl-item {
     width: 100%;
     text-align: left;
-    padding: 12px 14px;
-    border-radius: 10px;
-    border: 1.5px solid transparent;
-    background: transparent;
+    padding: 14px 15px;
+    border-radius: 14px;
+    border: 1.5px solid var(--border);
+    background: color-mix(in srgb, var(--surface-2) 72%, var(--surface));
     cursor: pointer;
-    transition: background 150ms, border-color 150ms;
+    transition: background 150ms, border-color 150ms, transform 150ms, box-shadow 150ms;
     position: relative;
     flex-shrink: 0;
+    box-shadow: 2px 2px 0 transparent;
   }
 
   .nl-item:hover {
+    transform: translate(-1px, -1px);
     background: var(--raised);
-    border-color: var(--border);
+    border-color: var(--border-hard);
+    box-shadow: 4px 4px 0 var(--border-hard);
   }
 
   .nl-item--active {
-    background: var(--surface-2);
-    border-color: var(--border-strong);
+    background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+    border-color: color-mix(in srgb, var(--accent) 68%, var(--border-hard));
+    box-shadow: 4px 4px 0 var(--border-hard);
   }
 
   .nl-pin {
     position: absolute;
-    top: 10px;
-    right: 12px;
-    font-size: 11px;
-    opacity: 0.6;
+    top: 12px;
+    right: 14px;
+    font-size: 12px;
+    opacity: 0.75;
   }
 
   .nl-title {
-    font-size: 13px;
-    font-weight: 600;
+    font-family: var(--font-display);
+    font-size: 15px;
+    font-weight: 700;
     color: var(--text-1);
-    margin-bottom: 4px;
+    margin-bottom: 6px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    padding-right: 20px;
+    padding-right: 28px;
+    letter-spacing: -0.02em;
   }
 
   .nl-title :global(mark) {
@@ -176,14 +189,14 @@
   }
 
   .nl-snippet {
-    font-size: 12px;
+    font-size: 13px;
     color: var(--text-3);
-    line-height: 1.5;
+    line-height: 1.6;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
-    margin-bottom: 6px;
+    margin-bottom: 10px;
   }
 
   .nl-snippet :global(mark) {

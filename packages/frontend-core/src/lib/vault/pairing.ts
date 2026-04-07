@@ -27,6 +27,12 @@ export interface PairingSession {
   onKeyReceived?: (rawKey: ArrayBuffer) => void
 }
 
+export interface PairingDeviceInfo {
+  id: string
+  name: string
+  lastSeen: number
+}
+
 // ── STUN config ───────────────────────────────────────────────────────────────
 
 const RTC_CONFIG: RTCConfiguration = {
@@ -41,8 +47,10 @@ const RTC_CONFIG: RTCConfiguration = {
 export async function startPairingAsSender(
   vaultApiUrl: string,
   masterKey: MasterKey,
+  localDeviceInfo: PairingDeviceInfo,
   onStatus: (s: PairingSession['status']) => void,
-  onComplete: () => void
+  onComplete: () => void,
+  onRemoteDevice?: (deviceInfo: PairingDeviceInfo | null) => void,
 ): Promise<{ code: string; expiresAt: number; qrPayload: string; pairingLink: string }> {
   const peer = new RTCPeerConnection(RTC_CONFIG)
   const channel = peer.createDataChannel('vault-pair', { ordered: true })
@@ -77,7 +85,7 @@ export async function startPairingAsSender(
   const res = await fetch(`${vaultApiUrl}/pairing/offer`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ offer: offerPayload, deviceInfo: JSON.stringify({ name: navigator.userAgent.slice(0, 80) }) }),
+    body: JSON.stringify({ offer: offerPayload, deviceInfo: JSON.stringify(localDeviceInfo) }),
   })
 
   const data = await res.json() as { code: string; expiresAt: number }
@@ -88,7 +96,7 @@ export async function startPairingAsSender(
   const qrPayload = pairingLink
 
   // Poll for answer from Device B
-  pollForAnswer(data.code, vaultApiUrl, peer, channel, masterKey, onStatus, onComplete)
+  pollForAnswer(data.code, vaultApiUrl, peer, channel, masterKey, onStatus, onComplete, onRemoteDevice)
 
   onStatus('waiting')
   return { code: data.code, expiresAt: data.expiresAt, qrPayload, pairingLink }
@@ -101,7 +109,8 @@ async function pollForAnswer(
   channel: RTCDataChannel,
   masterKey: MasterKey,
   onStatus: (s: PairingSession['status']) => void,
-  onComplete: () => void
+  onComplete: () => void,
+  onRemoteDevice?: (deviceInfo: PairingDeviceInfo | null) => void,
 ): Promise<void> {
   const deadline = Date.now() + PAIRING_TTL_MS
   const interval = setInterval(async () => {
@@ -112,11 +121,12 @@ async function pollForAnswer(
     }
     try {
       const res = await fetch(`${vaultApiUrl}/pairing/${code}/answer`)
-      const data = await res.json() as { found: boolean; answer?: string }
+      const data = await res.json() as { found: boolean; answer?: string; deviceInfo?: string }
       if (!data.found || !data.answer) return
 
       clearInterval(interval)
       onStatus('connecting')
+      onRemoteDevice?.(parseDeviceInfo(data.deviceInfo))
 
       const answer = JSON.parse(data.answer) as RTCSessionDescriptionInit
       await peer.setRemoteDescription(new RTCSessionDescription(answer))
@@ -145,8 +155,10 @@ async function pollForAnswer(
 export async function completePairingAsReceiver(
   code: string,
   vaultApiUrl: string,
+  localDeviceInfo: PairingDeviceInfo,
   onStatus: (s: PairingSession['status']) => void,
-  onKeyReceived: (rawKey: ArrayBuffer) => void
+  onKeyReceived: (rawKey: ArrayBuffer) => void,
+  onRemoteDevice?: (deviceInfo: PairingDeviceInfo | null) => void,
 ): Promise<void> {
   onStatus('connecting')
 
@@ -154,8 +166,9 @@ export async function completePairingAsReceiver(
   const res = await fetch(`${vaultApiUrl}/pairing/${code}`)
   if (!res.ok) throw new Error('Pairing code not found or expired')
 
-  const data = await res.json() as { found: boolean; offer?: string }
+  const data = await res.json() as { found: boolean; offer?: string; deviceInfo?: string }
   if (!data.found || !data.offer) throw new Error('Pairing offer not found')
+  onRemoteDevice?.(parseDeviceInfo(data.deviceInfo))
 
   const offerData = JSON.parse(data.offer) as { sdp: string; type: string; candidates: RTCIceCandidateInit[] }
 
@@ -201,7 +214,10 @@ export async function completePairingAsReceiver(
   await fetch(`${vaultApiUrl}/pairing/${code}/answer`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ answer: JSON.stringify({ type: answer.type, sdp: answer.sdp }) }),
+    body: JSON.stringify({
+      answer: JSON.stringify({ type: answer.type, sdp: answer.sdp }),
+      deviceInfo: JSON.stringify(localDeviceInfo),
+    }),
   })
 }
 
@@ -267,4 +283,21 @@ export async function completePairingFromQR(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ answer: JSON.stringify({ type: answer.type, sdp: answer.sdp }) }),
   })
+}
+
+function parseDeviceInfo(raw?: string): PairingDeviceInfo | null {
+  if (!raw) return null
+
+  try {
+    const parsed = JSON.parse(raw) as Partial<PairingDeviceInfo>
+    if (!parsed.id || !parsed.name) return null
+
+    return {
+      id: parsed.id,
+      name: parsed.name,
+      lastSeen: typeof parsed.lastSeen === 'number' ? parsed.lastSeen : Date.now(),
+    }
+  } catch {
+    return null
+  }
 }
