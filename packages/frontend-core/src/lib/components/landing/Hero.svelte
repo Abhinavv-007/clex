@@ -45,6 +45,9 @@
             <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
         </a>
+        <a href={routes.vault} class="btn-secondary hero-cta">
+          Explore Vault
+        </a>
         <a href={routes.howItWorks} class="btn-secondary hero-cta">
           See how it works
         </a>
@@ -97,6 +100,16 @@
         <span>Image Compression</span>
         <span class="ticker-sep">·</span>
         <span>PDF Operations</span>
+        <span class="ticker-sep">·</span>
+        <span>Vault Notes</span>
+        <span class="ticker-sep">·</span>
+        <span>P2P Note Sync</span>
+        <span class="ticker-sep">·</span>
+        <span>Secret QR Links</span>
+        <span class="ticker-sep">·</span>
+        <span>Reveal Codes</span>
+        <span class="ticker-sep">·</span>
+        <span>Timed Cloud Relay</span>
         <span class="ticker-sep">·</span>
         <span>DOCX to PDF</span>
         <span class="ticker-sep">·</span>
