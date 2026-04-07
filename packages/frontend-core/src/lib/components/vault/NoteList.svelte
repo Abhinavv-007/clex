@@ -59,7 +59,12 @@
         on:click={() => selectNote(note.id)}
       >
         {#if note.isPinned}
-          <span class="nl-pin" title="Pinned">📌</span>
+          <span class="nl-pin" title="Pinned">
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+              <path d="M10.5 2.5L9 6.5h-3L4 8l3 1 .9 3.5 1.6-2.4 2.8 1.2 .7-1.7-2.5-1.6z"/>
+            </svg>
+            Pinned
+          </span>
         {/if}
 
         <div class="nl-title">
@@ -164,8 +169,19 @@
     position: absolute;
     top: 12px;
     right: 14px;
-    font-size: 12px;
-    opacity: 0.75;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 7px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--accent) 14%, var(--surface));
+    color: var(--accent-text);
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border: 1px solid color-mix(in srgb, var(--accent) 44%, var(--border));
   }
 
   .nl-title {
@@ -177,7 +193,7 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    padding-right: 28px;
+    padding-right: 82px;
     letter-spacing: -0.02em;
   }
 

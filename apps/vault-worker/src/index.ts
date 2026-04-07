@@ -15,6 +15,11 @@
  *   POST   /vault/api/pairing/:code/answer      — device B posts answer
  *   GET    /vault/api/pairing/:code/answer      — device A polls for answer
  *   DELETE /vault/api/pairing/:code             — clean up after pairing
+ *   PUT    /vault/api/backup/:roomId            — store encrypted Vault backup snapshot
+ *   GET    /vault/api/backup/:roomId            — fetch encrypted Vault backup snapshot
+ *   POST   /vault/api/devices                   — upsert signed-in account device metadata
+ *   GET    /vault/api/devices                   — list signed-in account device metadata
+ *   DELETE /vault/api/devices/:id               — remove a device from the account registry
  *   GET    /vault/api/health                    — health check
  *
  * Cron (every hour):
@@ -90,6 +95,10 @@ function random8Digit(): string {
 /** UTC date string for quota key: YYYY-MM-DD */
 function utcDate(now = Date.now()): string {
   return new Date(now).toISOString().slice(0, 10)
+}
+
+function isRoomId(value: string): boolean {
+  return /^[a-f0-9]{32}$/i.test(value)
 }
 
 // ── Supabase Storage helpers ──────────────────────────────────────────────────
@@ -606,6 +615,160 @@ interface PairingAnswerRecord {
   deviceInfo: string
 }
 
+interface BackupSnapshotRecord {
+  roomId: string
+  fingerprint: string
+  noteCount: number
+  folderCount: number
+  updatedAt: number
+  snapshot: {
+    ciphertextB64: string
+    ivB64: string
+  }
+}
+
+interface AccountDeviceRecord {
+  id: string
+  name: string
+  lastSeen: number
+  pairedAt: number
+  roomId: string
+  fingerprint: string
+}
+
+async function handleBackupPut(
+  roomId: string,
+  req: Request,
+  env: Env,
+  cors: Record<string, string>,
+): Promise<Response> {
+  if (!isRoomId(roomId)) return err('Invalid room id', 400, cors)
+
+  let body: Partial<BackupSnapshotRecord>
+  try { body = await req.json() } catch { return err('Invalid JSON', 400, cors) }
+
+  if (
+    typeof body.fingerprint !== 'string' ||
+    typeof body.noteCount !== 'number' ||
+    typeof body.folderCount !== 'number' ||
+    typeof body.updatedAt !== 'number' ||
+    !body.snapshot ||
+    typeof body.snapshot.ciphertextB64 !== 'string' ||
+    typeof body.snapshot.ivB64 !== 'string'
+  ) {
+    return err('Backup payload is incomplete', 400, cors)
+  }
+
+  const record: BackupSnapshotRecord = {
+    roomId,
+    fingerprint: body.fingerprint,
+    noteCount: Math.max(0, Math.floor(body.noteCount)),
+    folderCount: Math.max(0, Math.floor(body.folderCount)),
+    updatedAt: Math.floor(body.updatedAt),
+    snapshot: body.snapshot,
+  }
+
+  await env.VAULT_TOKENS.put(`backup:${roomId}`, JSON.stringify(record))
+  return json({ ok: true, updatedAt: record.updatedAt }, 200, cors)
+}
+
+async function handleBackupGet(roomId: string, env: Env, cors: Record<string, string>): Promise<Response> {
+  if (!isRoomId(roomId)) return err('Invalid room id', 400, cors)
+
+  const raw = await env.VAULT_TOKENS.get(`backup:${roomId}`)
+  if (!raw) return err('Backup not found', 404, cors)
+
+  return new Response(raw, {
+    status: 200,
+    headers: { 'Content-Type': 'application/json', ...cors },
+  })
+}
+
+async function readAccountDevices(env: Env, uid: string): Promise<AccountDeviceRecord[]> {
+  const raw = await env.VAULT_TOKENS.get(`devices:${uid}`)
+  if (!raw) return []
+
+  try {
+    const parsed = JSON.parse(raw) as AccountDeviceRecord[]
+    return Array.isArray(parsed) ? parsed : []
+  } catch {
+    return []
+  }
+}
+
+async function writeAccountDevices(env: Env, uid: string, devices: AccountDeviceRecord[]): Promise<void> {
+  await env.VAULT_TOKENS.put(`devices:${uid}`, JSON.stringify(devices))
+}
+
+async function handleAccountDeviceUpsert(
+  req: Request,
+  env: Env,
+  cors: Record<string, string>,
+): Promise<Response> {
+  const uid = req.headers.get('X-Vault-UID')
+  if (!uid) return err('X-Vault-UID required', 401, cors)
+
+  let body: Partial<AccountDeviceRecord>
+  try { body = await req.json() } catch { return err('Invalid JSON', 400, cors) }
+
+  if (
+    typeof body.id !== 'string' ||
+    typeof body.name !== 'string' ||
+    typeof body.lastSeen !== 'number' ||
+    typeof body.pairedAt !== 'number' ||
+    typeof body.roomId !== 'string' ||
+    typeof body.fingerprint !== 'string'
+  ) {
+    return err('Device payload is incomplete', 400, cors)
+  }
+
+  const nextDevice: AccountDeviceRecord = {
+    id: body.id,
+    name: body.name.slice(0, 96),
+    lastSeen: Math.floor(body.lastSeen),
+    pairedAt: Math.floor(body.pairedAt),
+    roomId: body.roomId,
+    fingerprint: body.fingerprint.slice(0, 32),
+  }
+
+  const devices = await readAccountDevices(env, uid)
+  const filtered = devices.filter((device) => device.id !== nextDevice.id)
+  filtered.unshift(nextDevice)
+  const uniqueDevices = filtered
+    .sort((a, b) => b.lastSeen - a.lastSeen)
+    .slice(0, 24)
+
+  await writeAccountDevices(env, uid, uniqueDevices)
+  return json({ ok: true, devices: uniqueDevices }, 200, cors)
+}
+
+async function handleAccountDeviceList(
+  req: Request,
+  env: Env,
+  cors: Record<string, string>,
+): Promise<Response> {
+  const uid = req.headers.get('X-Vault-UID')
+  if (!uid) return err('X-Vault-UID required', 401, cors)
+
+  const devices = await readAccountDevices(env, uid)
+  return json({ devices: devices.sort((a, b) => b.lastSeen - a.lastSeen) }, 200, cors)
+}
+
+async function handleAccountDeviceDelete(
+  deviceId: string,
+  req: Request,
+  env: Env,
+  cors: Record<string, string>,
+): Promise<Response> {
+  const uid = req.headers.get('X-Vault-UID')
+  if (!uid) return err('X-Vault-UID required', 401, cors)
+
+  const devices = await readAccountDevices(env, uid)
+  const nextDevices = devices.filter((device) => device.id !== deviceId)
+  await writeAccountDevices(env, uid, nextDevices)
+  return json({ ok: true, devices: nextDevices }, 200, cors)
+}
+
 async function handlePairingOffer(req: Request, env: Env, cors: Record<string, string>): Promise<Response> {
   let body: { offer?: string; deviceInfo?: string }
   try { body = await req.json() } catch { return err('Invalid JSON', 400, cors) }
@@ -684,6 +847,25 @@ export default {
     }
 
     const path = url.pathname
+
+    const backupMatch = path.match(/^\/vault\/api\/backup\/([a-f0-9]{32})$/i)
+    if (backupMatch) {
+      if (method === 'PUT') return handleBackupPut(backupMatch[1].toLowerCase(), request, env, cors)
+      if (method === 'GET') return handleBackupGet(backupMatch[1].toLowerCase(), env, cors)
+      return err('Method not allowed', 405, cors)
+    }
+
+    if (path === '/vault/api/devices') {
+      if (method === 'POST') return handleAccountDeviceUpsert(request, env, cors)
+      if (method === 'GET') return handleAccountDeviceList(request, env, cors)
+      return err('Method not allowed', 405, cors)
+    }
+
+    const accountDeviceMatch = path.match(/^\/vault\/api\/devices\/([^/]+)$/)
+    if (accountDeviceMatch) {
+      if (method === 'DELETE') return handleAccountDeviceDelete(decodeURIComponent(accountDeviceMatch[1]), request, env, cors)
+      return err('Method not allowed', 405, cors)
+    }
 
     // Health
     if (path === '/vault/api/health' || path === '/health') {

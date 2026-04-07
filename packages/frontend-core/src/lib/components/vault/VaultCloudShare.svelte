@@ -540,6 +540,20 @@
         {#if error}
           <p class="vcs-error">{error}</p>
         {/if}
+
+        {#if relayStatus !== 'ready'}
+          <div class="vcs-fallback">
+            <div>
+              <p class="vcs-fallback-title">Google Drive fallback</p>
+              <p class="vcs-fallback-copy">
+                This deployment cannot publish timed Vault relay links right now. Use the Workspace Drive flow until the relay worker and storage secrets are fixed.
+              </p>
+            </div>
+            <a class="vcs-primary-link" href="/workspace">
+              Open Workspace Drive
+            </a>
+          </div>
+        {/if}
       </div>
     </section>
 
@@ -1011,6 +1025,54 @@
     color: #b42318;
   }
 
+  .vcs-fallback {
+    margin-top: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 16px;
+    border-radius: 16px;
+    border: 1.5px solid var(--border-hard);
+    background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+    box-shadow: 3px 3px 0 var(--border-hard);
+  }
+
+  .vcs-fallback-title {
+    margin: 0 0 6px;
+    font-family: var(--font-display);
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-1);
+    letter-spacing: -0.02em;
+  }
+
+  .vcs-fallback-copy {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--text-2);
+    max-width: 52ch;
+  }
+
+  .vcs-primary-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 40px;
+    padding: 10px 16px;
+    border-radius: 999px;
+    border: 1.5px solid var(--border-hard);
+    background: var(--text-1);
+    color: var(--text-inv);
+    box-shadow: 2px 2px 0 var(--border-hard);
+    font-family: var(--font-display);
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
   @media (max-width: 1080px) {
     .vcs-shell {
       grid-template-columns: 1fr;
@@ -1041,6 +1103,11 @@
       align-items: stretch;
     }
 
+    .vcs-fallback {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
     .vcs-meta-grid {
       grid-template-columns: 1fr;
     }
@@ -1048,7 +1115,8 @@
     .vcs-primary-btn,
     .vcs-secondary-btn,
     .vcs-secondary-link,
-    .vcs-danger-btn {
+    .vcs-danger-btn,
+    .vcs-primary-link {
       width: 100%;
     }
   }

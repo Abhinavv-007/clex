@@ -4,9 +4,11 @@
   import { getAllDevices, deleteDevice as dbDeleteDevice, clearAllData, detectDeviceName, getDeviceFingerprint } from '$lib/vault/db'
   import { exportKeyAsJson, importKeyFromJson, rotateMasterKey, deriveGoogleKey } from '$lib/vault/crypto'
   import { signInWithGoogle, signOutGoogle } from '$lib/vault/auth'
+  import { fetchAccountDevices, removeAccountDevice, upsertAccountDevice, type AccountDeviceRecord } from '$lib/vault/backup'
   import { fade, slide } from 'svelte/transition'
 
   export let storageUsed = 0
+  export let vaultApiUrl = '/vault/api'
   const STORAGE_QUOTA = 1_073_741_824 // 1 GB
 
   let confirmClear = false
@@ -17,6 +19,11 @@
   let copySuccess = false
   let currentDeviceName = 'This browser'
   let currentDeviceFingerprint = ''
+  let accountDevices: AccountDeviceRecord[] = []
+  let deviceRegistryBusy = false
+  let deviceRegistryError = ''
+  let lastDeviceRegistryKey = ''
+  let deviceRegistryKey = ''
 
   type SettingsTab = 'devices' | 'storage' | 'encryption' | 'account' | 'data'
   const SETTINGS_TABS: SettingsTab[] = ['devices', 'storage', 'encryption', 'account', 'data']
@@ -97,11 +104,20 @@
   $: lastSyncLabel = sync.lastSync
     ? new Date(sync.lastSync).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     : 'Not yet'
-  $: totalDevices = $devices.length + 1
+  $: accountOnlyDevices = accountDevices.filter((device) => device.id !== currentDeviceFingerprint)
+  $: totalDevices = new Set([
+    currentDeviceFingerprint || '__self__',
+    ...$devices.map((device) => device.id),
+    ...accountOnlyDevices.map((device) => device.id),
+  ]).size
   $: currentDeviceSuffix = currentDeviceFingerprint ? `···${currentDeviceFingerprint.slice(-4)}` : 'local'
-  $: deviceSummary = $devices.length > 0
-    ? `${$devices.length} paired device${$devices.length === 1 ? '' : 's'}`
-    : 'Only this device right now'
+  $: pairedDeviceCount = $devices.length
+  $: accountDeviceCount = accountOnlyDevices.length
+  $: deviceSummary = accountDeviceCount > 0
+    ? `${accountDeviceCount} signed-in device${accountDeviceCount === 1 ? '' : 's'} on this account`
+    : pairedDeviceCount > 0
+      ? `${pairedDeviceCount} paired device${pairedDeviceCount === 1 ? '' : 's'}`
+      : 'Only this device right now'
 
   onMount(() => {
     currentDeviceName = detectDeviceName()
@@ -109,6 +125,58 @@
       currentDeviceFingerprint = await getDeviceFingerprint()
     })()
   })
+
+  async function syncDeviceRegistry() {
+    if (!user?.uid || !key || !currentDeviceFingerprint) return
+
+    deviceRegistryBusy = true
+    deviceRegistryError = ''
+
+    try {
+      await upsertAccountDevice(vaultApiUrl, user.uid, {
+        id: currentDeviceFingerprint,
+        name: currentDeviceName,
+        lastSeen: Date.now(),
+        pairedAt: Date.now(),
+        roomId: key.roomId,
+        fingerprint: key.fingerprint,
+      })
+
+      accountDevices = await fetchAccountDevices(vaultApiUrl, user.uid)
+    } catch (error) {
+      deviceRegistryError = error instanceof Error ? error.message : 'Could not sync account devices'
+    } finally {
+      deviceRegistryBusy = false
+    }
+  }
+
+  async function handleRemoveAccountDevice(id: string) {
+    if (!user?.uid) return
+
+    deviceRegistryBusy = true
+    deviceRegistryError = ''
+    try {
+      await removeAccountDevice(vaultApiUrl, user.uid, id)
+      accountDevices = accountDevices.filter((device) => device.id !== id)
+    } catch (error) {
+      deviceRegistryError = error instanceof Error ? error.message : 'Could not remove device'
+    } finally {
+      deviceRegistryBusy = false
+    }
+  }
+
+  $: deviceRegistryKey = user?.uid && key && currentDeviceFingerprint
+    ? `${user.uid}:${key.roomId}:${currentDeviceFingerprint}`
+    : ''
+  $: if (deviceRegistryKey && deviceRegistryKey !== lastDeviceRegistryKey) {
+    lastDeviceRegistryKey = deviceRegistryKey
+    void syncDeviceRegistry()
+  }
+  $: if (!deviceRegistryKey && lastDeviceRegistryKey) {
+    lastDeviceRegistryKey = ''
+    accountDevices = []
+    deviceRegistryError = ''
+  }
 
   async function handleGoogleSignIn() {
     authBusy = true
@@ -224,13 +292,13 @@
 
         <div class="vst-notice">
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="7" cy="7" r="5.5"/><path d="M7 6v3.5M7 4.5v.2"/></svg>
-          Notes sync over the shared Vault room when both devices are online. Use Quick Connect once, then Sync now in Notes whenever you want to force a fresh merge.
+          Notes sync over the shared Vault room when both devices are online. Use Quick Connect once, then Sync + backup in Notes whenever you want to force a live merge and refresh the encrypted room snapshot.
         </div>
 
         <div class="vst-device-overview">
           <div>
             <p class="vst-device-count">{totalDevices} device{totalDevices === 1 ? '' : 's'} in this vault</p>
-            <p class="vst-hint">This browser is always listed first. Other rows are direct-paired Vault devices saved on this browser.</p>
+            <p class="vst-hint">This browser is always listed first. Paired devices are local pairings; signed-in devices come from the account registry.</p>
           </div>
           <button class="btn-accent vst-action-btn" on:click={vaultActions.openPairingModal}>
             + Add Device
@@ -244,6 +312,9 @@
               <div class="vst-device-head">
                 <span class="vst-device-name">{currentDeviceName}</span>
                 <span class="vst-device-chip">This device</span>
+                {#if user}
+                  <span class="vst-device-chip">Signed in</span>
+                {/if}
               </div>
               <span class="vst-device-meta">
                 Local key ready · {currentDeviceSuffix}
@@ -278,12 +349,51 @@
             <p class="vst-empty">No other devices paired yet.</p>
           {/each}
         </div>
+
+        {#if user}
+          <div class="vst-divider" />
+          <div class="vst-account-row">
+            <div class="vst-section-label">Signed-in Account Devices</div>
+            <button class="btn-ghost vst-refresh-btn" type="button" disabled={deviceRegistryBusy} on:click={syncDeviceRegistry}>
+              {deviceRegistryBusy ? 'Refreshing…' : 'Refresh'}
+            </button>
+          </div>
+
+          {#if deviceRegistryError}
+            <p class="vst-err">{deviceRegistryError}</p>
+          {/if}
+
+          <div class="vst-device-list">
+            {#each accountOnlyDevices as device (device.id)}
+              <div class="vst-device-row">
+                <div class="vst-device-icon">⬢</div>
+                <div class="vst-device-info">
+                  <div class="vst-device-head">
+                    <span class="vst-device-name">{device.name}</span>
+                    <span class="vst-device-chip">Account</span>
+                    <span class="vst-device-chip">···{device.id.slice(-4)}</span>
+                  </div>
+                  <span class="vst-device-meta">
+                    Last seen {new Date(device.lastSeen).toLocaleString()} · Key {device.fingerprint}
+                  </span>
+                </div>
+                <button class="btn-secondary vst-unpair-btn" disabled={deviceRegistryBusy} on:click={() => handleRemoveAccountDevice(device.id)}>
+                  Remove
+                </button>
+              </div>
+            {:else}
+              <p class="vst-empty">
+                {deviceRegistryBusy ? 'Refreshing device registry…' : 'No other signed-in devices on this account yet.'}
+              </p>
+            {/each}
+          </div>
+        {/if}
       </div>
 
     <!-- ── Storage ─────────────────────────────────────────────────────── -->
     {:else if tab === 'storage'}
       <div class="vst-pane" in:fade={{ duration: 160 }}>
-        <div class="vst-section-label">R2 Storage</div>
+        <div class="vst-section-label">Vault Storage & Backup</div>
 
         <div class="vst-storage-bar">
           <div class="progress-bar">
@@ -295,7 +405,8 @@
           </div>
         </div>
 
-        <p class="vst-hint">Files are auto-deleted after 24 hours. Uploads are capped at 10 MB per file and 100 MB per day for each signed-in Vault user.</p>
+        <p class="vst-hint">Notes stay encrypted on this device first. Sync + backup writes an encrypted snapshot keyed to your Vault room, while Cloud Share still uses the timed relay limits shown below.</p>
+        <p class="vst-hint">Relay files auto-delete after 24 hours. Uploads remain capped at 10 MB per file and 100 MB per day for each signed-in Vault user.</p>
       </div>
 
     <!-- ── Encryption ─────────────────────────────────────────────────── -->
@@ -612,6 +723,14 @@
     margin-bottom: 16px;
   }
 
+  .vst-account-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
   .vst-device-overview {
     display: flex;
     align-items: flex-start;
@@ -722,6 +841,11 @@
 
   .vst-device-overview .vst-action-btn {
     margin-top: 0;
+  }
+
+  .vst-refresh-btn {
+    font-size: 12px;
+    padding: 6px 12px;
   }
 
   .vst-storage-bar {

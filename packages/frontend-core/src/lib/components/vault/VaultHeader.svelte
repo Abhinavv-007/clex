@@ -59,7 +59,7 @@
 
   <div class="vh-actions">
     <button class="vh-sync-btn" type="button" on:click={requestManualSync}>
-      {state.syncing ? 'Syncing…' : 'Sync now'}
+      {state.syncing ? 'Syncing…' : 'Sync + backup'}
     </button>
 
     {#if state.peerCount > 0}

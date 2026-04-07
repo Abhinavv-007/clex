@@ -32,6 +32,7 @@ export interface TransferStore {
   state: TransferState
   method: TransferMethod
   roomCode: string | null
+  peerChainId: string | null
   progress: number
   bytesSent: number
   bytesTotal: number
@@ -50,6 +51,7 @@ function makeInitial(): TransferStore {
     state: 'idle',
     method: 'webrtc',
     roomCode: generateRoomCode(),
+    peerChainId: null,
     progress: 0,
     bytesSent: 0,
     bytesTotal: 0,
@@ -82,12 +84,16 @@ function createTransferStore() {
         connectionKind: 'unknown',
         diagnosticCode: null,
         driveLink: null,
+        peerChainId: null,
         currentFile: null,
         receivedFiles: [],
       }))
     },
     setRoomCode(roomCode: string) {
       update(s => ({ ...s, roomCode }))
+    },
+    setPeerChainId(peerChainId: string | null) {
+      update(s => ({ ...s, peerChainId }))
     },
     setProgress(bytesSent: number, bytesTotal: number) {
       const progress = bytesTotal > 0 ? Math.min(100, Math.round((bytesSent / bytesTotal) * 100)) : 0
@@ -113,12 +119,13 @@ function createTransferStore() {
         ...s,
         state: 'failed',
         error,
+        peerChainId: null,
         currentFile: null,
         diagnosticCode: diagnosticCode ?? s.diagnosticCode,
       }))
     },
     setDriveLink(driveLink: string) {
-      update(s => ({ ...s, state: 'complete', driveLink, currentFile: null, receivedFiles: [] }))
+      update(s => ({ ...s, state: 'complete', driveLink, peerChainId: null, currentFile: null, receivedFiles: [] }))
     },
     addReceivedFile(file: ReceivedFile) {
       update(s => ({

@@ -13,6 +13,8 @@
   let textarea: HTMLTextAreaElement
   let lastSaved = 0
   let saveTimer: ReturnType<typeof setTimeout>
+  let savedSelectionStart = 0
+  let savedSelectionEnd = 0
 
   $: wc = wordCount(value)
   $: rt = readTimeMins(value)
@@ -28,12 +30,15 @@
 
   function handleInput(e: Event) {
     value = (e.target as HTMLTextAreaElement).value
+    syncSelectionFromTextarea()
     dispatch('input', value)
     scheduleAutosave()
   }
 
   function applyEditorChange(nextText: string, selectionStart: number, selectionEnd = selectionStart) {
     value = nextText
+    savedSelectionStart = selectionStart
+    savedSelectionEnd = selectionEnd
     dispatch('input', nextText)
     scheduleAutosave()
     setTimeout(() => {
@@ -41,7 +46,25 @@
       textarea.focus()
       textarea.selectionStart = selectionStart
       textarea.selectionEnd = selectionEnd
+      syncSelectionFromTextarea()
     }, 0)
+  }
+
+  function syncSelectionFromTextarea() {
+    if (!textarea) return
+    savedSelectionStart = textarea.selectionStart
+    savedSelectionEnd = textarea.selectionEnd
+  }
+
+  function getSelectionRange(): { start: number; end: number } {
+    if (textarea) {
+      syncSelectionFromTextarea()
+    }
+
+    return {
+      start: savedSelectionStart,
+      end: savedSelectionEnd,
+    }
   }
 
   // ── Keyboard shortcuts ────────────────────────────────────────────────────
@@ -102,11 +125,7 @@
         const before = text.slice(0, lineStart)
         const after = text.slice(pos)
         const newText = `${before}\`\`\`\n\n\`\`\`${after}`
-        value = newText
-        dispatch('input', newText)
-        setTimeout(() => {
-          textarea.selectionStart = textarea.selectionEnd = lineStart + 4
-        }, 0)
+        applyEditorChange(newText, lineStart + 4)
         return
       }
     }
@@ -126,13 +145,11 @@
           e.preventDefault()
           const before = text.slice(0, lineStart)
           const after = text.slice(pos)
-          value = `${before}${after}`
-          setTimeout(() => { textarea.selectionStart = textarea.selectionEnd = lineStart }, 0)
+          applyEditorChange(`${before}${after}`, lineStart)
         } else {
           e.preventDefault()
           insertAtCursor(`\n${bulletMatch[1]}${bulletMatch[2]} `)
         }
-        dispatch('input', textarea.value)
         return
       }
 
@@ -143,13 +160,11 @@
           e.preventDefault()
           const before = text.slice(0, lineStart)
           const after = text.slice(pos)
-          value = `${before}${after}`
-          setTimeout(() => { textarea.selectionStart = textarea.selectionEnd = lineStart }, 0)
+          applyEditorChange(`${before}${after}`, lineStart)
         } else {
           e.preventDefault()
           insertAtCursor(`\n${numMatch[1]}${parseInt(numMatch[2]) + 1}. `)
         }
-        dispatch('input', textarea.value)
         return
       }
 
@@ -160,42 +175,34 @@
           e.preventDefault()
           const before = text.slice(0, lineStart)
           const after = text.slice(pos)
-          value = `${before}${after}`
-          setTimeout(() => { textarea.selectionStart = textarea.selectionEnd = lineStart }, 0)
+          applyEditorChange(`${before}${after}`, lineStart)
         } else {
           e.preventDefault()
           insertAtCursor(`\n${taskMatch[1]}- [ ] `)
         }
-        dispatch('input', textarea.value)
         return
       }
     }
   }
 
   function wrapSelection(before: string, after: string) {
-    if (!textarea) return
-    const start = textarea.selectionStart
-    const end = textarea.selectionEnd
-    const text = textarea.value
+    const { start, end } = getSelectionRange()
+    const text = textarea?.value ?? value
     const selected = text.slice(start, end)
     const newText = text.slice(0, start) + before + selected + after + text.slice(end)
     applyEditorChange(newText, start + before.length, end + before.length)
   }
 
   function insertAtCursor(text: string) {
-    if (!textarea) return
-    const pos = textarea.selectionStart
-    const current = textarea.value
+    const { start: pos } = getSelectionRange()
+    const current = textarea?.value ?? value
     const newText = current.slice(0, pos) + text + current.slice(pos)
     applyEditorChange(newText, pos + text.length)
   }
 
   function prefixSelectedLines(prefix: string) {
-    if (!textarea) return
-
-    const text = textarea.value
-    const start = textarea.selectionStart
-    const end = textarea.selectionEnd
+    const text = textarea?.value ?? value
+    const { start, end } = getSelectionRange()
     const blockStart = text.lastIndexOf('\n', Math.max(0, start - 1)) + 1
     const blockEndRaw = text.indexOf('\n', end)
     const blockEnd = blockEndRaw === -1 ? text.length : blockEndRaw
@@ -209,11 +216,8 @@
   }
 
   function wrapBlock(prefix: string, suffix: string) {
-    if (!textarea) return
-
-    const start = textarea.selectionStart
-    const end = textarea.selectionEnd
-    const text = textarea.value
+    const { start, end } = getSelectionRange()
+    const text = textarea?.value ?? value
     const selected = text.slice(start, end)
     const body = selected || 'code'
     const leadingBreak = start > 0 && text[start - 1] !== '\n' ? '\n' : ''
@@ -225,10 +229,8 @@
   }
 
   function insertLinkTemplate() {
-    if (!textarea) return
-    const start = textarea.selectionStart
-    const end = textarea.selectionEnd
-    const text = textarea.value
+    const { start, end } = getSelectionRange()
+    const text = textarea?.value ?? value
     const selected = text.slice(start, end) || 'link text'
     const replacement = `[${selected}](https://)`
     const nextText = text.slice(0, start) + replacement + text.slice(end)
@@ -358,18 +360,18 @@
   {#if mode === 'edit'}
     <div class="ve-toolbar">
       <div class="ve-toolgroup">
-        <button class="ve-tool" type="button" on:click={() => applyTool('h1')}>H1</button>
-        <button class="ve-tool" type="button" on:click={() => applyTool('h2')}>H2</button>
-        <button class="ve-tool" type="button" on:click={() => applyTool('bold')}>Bold</button>
-        <button class="ve-tool" type="button" on:click={() => applyTool('italic')}>Italic</button>
-        <button class="ve-tool" type="button" on:click={() => applyTool('highlight')}>Highlight</button>
+        <button class="ve-tool" type="button" on:mousedown|preventDefault={() => applyTool('h1')}>H1</button>
+        <button class="ve-tool" type="button" on:mousedown|preventDefault={() => applyTool('h2')}>H2</button>
+        <button class="ve-tool" type="button" on:mousedown|preventDefault={() => applyTool('bold')}>Bold</button>
+        <button class="ve-tool" type="button" on:mousedown|preventDefault={() => applyTool('italic')}>Italic</button>
+        <button class="ve-tool" type="button" on:mousedown|preventDefault={() => applyTool('highlight')}>Highlight</button>
       </div>
 
       <div class="ve-toolgroup">
-        <button class="ve-tool" type="button" on:click={() => applyTool('quote')}>Quote</button>
-        <button class="ve-tool" type="button" on:click={() => applyTool('checklist')}>Checklist</button>
-        <button class="ve-tool" type="button" on:click={() => applyTool('code')}>Code</button>
-        <button class="ve-tool" type="button" on:click={() => applyTool('link')}>Link</button>
+        <button class="ve-tool" type="button" on:mousedown|preventDefault={() => applyTool('quote')}>Quote</button>
+        <button class="ve-tool" type="button" on:mousedown|preventDefault={() => applyTool('checklist')}>Checklist</button>
+        <button class="ve-tool" type="button" on:mousedown|preventDefault={() => applyTool('code')}>Code</button>
+        <button class="ve-tool" type="button" on:mousedown|preventDefault={() => applyTool('link')}>Link</button>
       </div>
     </div>
   {/if}
@@ -381,6 +383,11 @@
       {placeholder}
       on:input={handleInput}
       on:keydown={handleKeydown}
+      on:click={syncSelectionFromTextarea}
+      on:focus={syncSelectionFromTextarea}
+      on:keyup={syncSelectionFromTextarea}
+      on:mouseup={syncSelectionFromTextarea}
+      on:select={syncSelectionFromTextarea}
       spellcheck="true"
       autocorrect="on"
       autocapitalize="sentences"

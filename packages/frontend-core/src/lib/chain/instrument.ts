@@ -32,8 +32,62 @@ interface ActiveSession {
 
 export function initChainInstrumentation(client: ChainClient): () => void {
   let active: ActiveSession | null = null
+  let activePromise: Promise<ActiveSession | null> | null = null
   let prevState: TransferState = 'idle'
   let registered = false
+  let lastEventStatus: string | null = null
+
+  async function createSessionForTransfer(method: string): Promise<ActiveSession | null> {
+    const route = method === 'drive' ? 'drive' : method === 'local' ? 'local' : 'webrtc'
+
+    if (active?.route === route) return active
+    if (activePromise) return activePromise
+
+    activePromise = (async () => {
+      const chainId = getChainId()
+      if (!registered) {
+        await client.register(chainId)
+        registered = true
+      }
+
+      // Build file metadata — hash all blobs concurrently
+      const files = get(filesStore)
+      const chainFiles: ChainFile[] = await Promise.all(
+        files.map(async f => {
+          const blob = f.processed?.blob ?? f.file
+          let hash: string | null = null
+
+          try {
+            hash = await hashBlob(blob)
+          } catch {
+            hash = null
+          }
+
+          return {
+            category: fileCategory(f.type),
+            type: f.type || 'application/octet-stream',
+            size: f.size,
+            hash,
+          }
+        })
+      )
+
+      if (chainFiles.length === 0) return null
+
+      const result = await client.createSession(chainId, route, chainFiles)
+      if (!result) return null
+
+      const nextSession = { sessionId: result.session_id, route, startedAt: Date.now() }
+      active = nextSession
+      lastEventStatus = 'waiting_peer'
+      await client.appendEvent(result.session_id, 'waiting_peer')
+      return nextSession
+    })().finally(() => {
+      activePromise = null
+    })
+
+    return activePromise
+  }
 
   // Eagerly register this client's chain ID
   void (async () => {
@@ -52,58 +106,26 @@ export function initChainInstrumentation(client: ChainClient): () => void {
 
     // ── Session creation: idle/failed → waiting_peer (sender starts sending) ──
     if (state === 'waiting_peer' && (prev === 'idle' || prev === 'preparing' || prev === 'failed')) {
-      // Avoid double-creating if already have a session for this transfer
-      if (active?.route === method) return
-
-      const chainId = getChainId()
-      if (!registered) await client.register(chainId)
-
-      // Build file metadata — hash all blobs concurrently
-      const files = get(filesStore)
-      const chainFiles: ChainFile[] = await Promise.all(
-        files.map(async f => {
-          const blob = f.processed?.blob ?? f.file
-          let hash: string | null = null
-
-          try {
-            hash = await hashBlob(blob)
-          } catch {
-            // Keep the transfer moving even if hashing is unavailable for a file.
-            hash = null
-          }
-
-          return {
-            category: fileCategory(f.type),
-            type: f.type || 'application/octet-stream',
-            size: f.size,
-            hash,
-          }
-        })
-      )
-
-      if (chainFiles.length === 0) return
-
-      const route = method === 'drive' ? 'drive' : method === 'local' ? 'local' : 'webrtc'
-      const result = await client.createSession(chainId, route, chainFiles)
-      if (result) {
-        active = { sessionId: result.session_id, route, startedAt: Date.now() }
-        // Append the initial waiting_peer event
-        void client.appendEvent(result.session_id, 'waiting_peer')
-      }
+      void createSessionForTransfer(method)
       return
     }
 
     // ── Event appends for subsequent state transitions ──────────────────────
-    if (!active) return
-
     const chainStatus = STATE_TO_CHAIN[state]
     if (!chainStatus) return
+    if (chainStatus === lastEventStatus) return
 
-    void client.appendEvent(active.sessionId, chainStatus)
+    const session = active ?? await activePromise
+    if (!session) return
+
+    lastEventStatus = chainStatus
+    const receiverChainId = chainStatus === 'completed' ? store.peerChainId ?? undefined : undefined
+    void client.appendEvent(session.sessionId, chainStatus, receiverChainId)
 
     // Clear session on terminal states
     if (['completed', 'failed', 'cancelled', 'abandoned'].includes(chainStatus)) {
       active = null
+      lastEventStatus = null
     }
   })
 

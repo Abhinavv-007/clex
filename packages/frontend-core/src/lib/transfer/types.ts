@@ -23,6 +23,7 @@ export const DC_LABEL = 'clex-transfer'
 
 // DataChannel message types (JSON control messages)
 export type DCControlMessage =
+  | { type: 'receiver-chain'; chainId: string }
   | { type: 'file-start'; fileId: string; name: string; mimeType: string; totalChunks: number; totalSize: number }
   | { type: 'file-end'; fileId: string }
   | { type: 'transfer-complete' }

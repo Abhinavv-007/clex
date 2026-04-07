@@ -1,4 +1,5 @@
 import { transferStore } from '$stores/transfer'
+import { getChainId } from '$utils/chainId'
 
 import { getConnectionKindFromStats } from './network'
 import { SignalingClient } from './signaling'
@@ -79,6 +80,7 @@ export class WebRTCTransfer {
     transferStore.clearReceivedFiles()
     this.sendQueue = files
     transferStore.setState('preparing')
+    transferStore.setPeerChainId(null)
     transferStore.setConnectionKind('unknown')
     transferStore.setDiagnosticCode(null)
 
@@ -94,6 +96,7 @@ export class WebRTCTransfer {
   async initReceiver(): Promise<void> {
     transferStore.clearReceivedFiles()
     transferStore.setState('preparing')
+    transferStore.setPeerChainId(null)
     transferStore.setConnectionKind('unknown')
     transferStore.setDiagnosticCode(null)
 
@@ -173,6 +176,18 @@ export class WebRTCTransfer {
     this.dc.onopen = () => {
       void this.handleDataChannelOpen()
     }
+    this.dc.onmessage = ({ data }) => {
+      if (typeof data !== 'string') return
+
+      try {
+        const msg = JSON.parse(data) as DCControlMessage
+        if (msg.type === 'receiver-chain') {
+          transferStore.setPeerChainId(msg.chainId)
+        }
+      } catch {
+        // Ignore malformed peer metadata without interrupting the transfer.
+      }
+    }
     this.dc.onerror = () => {
       this.failTransfer('Data channel error. Transfer failed.', 'sender_dc_error')
     }
@@ -188,6 +203,8 @@ export class WebRTCTransfer {
 
     dc.onopen = () => {
       void this.handleDataChannelOpen()
+      const receiverChainId = getChainId()
+      dc.send(JSON.stringify({ type: 'receiver-chain', chainId: receiverChainId } satisfies DCControlMessage))
     }
 
     dc.onmessage = ({ data }) => {

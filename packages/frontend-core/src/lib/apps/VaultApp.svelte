@@ -37,6 +37,8 @@
     getAllDevices,
     getNotesByFolder,
     openVaultDb,
+    detectDeviceName,
+    getDeviceFingerprint,
     saveNote,
     saveFolder,
     deleteNote as dbDeleteNote,
@@ -46,6 +48,7 @@
   import { buildSearchIndex, removeFromIndex, updateInIndex } from '$lib/vault/search'
   import { initSync, onSyncState, destroySync, runManualSync, setSyncHandlers } from '$lib/vault/sync'
   import { onVaultAuthChanged } from '$lib/vault/auth'
+  import { fetchVaultBackup, pushVaultBackup, upsertAccountDevice, type BackupSnapshot } from '$lib/vault/backup'
 
   export let signalingUrl = 'wss://signal.clex.in'
   export let vaultApiUrl = '/vault/api'
@@ -59,6 +62,7 @@
   let activeSyncRoomId = ''
   let syncInitVersion = 0
   let bootComplete = false
+  let backupSyncPromise: Promise<void> | null = null
 
   function consumePairingCodeFromUrl() {
     const url = new URL(window.location.href)
@@ -195,8 +199,84 @@
         notes: storedNotes,
         folders: storedFolders,
       })
+      await syncEncryptedBackup()
     } catch (error) {
       console.error('[vault] manual sync failed:', error)
+    }
+  }
+
+  async function mergeBackupSnapshot(snapshot: BackupSnapshot) {
+    const [localNotes, localFolders] = await Promise.all([
+      getAllNotes(),
+      getAllFolders(),
+    ])
+
+    const localNoteMap = new Map(localNotes.map((note) => [note.id, note]))
+    const localFolderIds = new Set(localFolders.map((folder) => folder.id))
+
+    for (const remoteNote of snapshot.notes) {
+      const localNote = localNoteMap.get(remoteNote.id)
+      if (!localNote || remoteNote.updatedAt > localNote.updatedAt) {
+        await applySyncedNote(remoteNote)
+      }
+    }
+
+    for (const remoteFolder of snapshot.folders) {
+      if (!localFolderIds.has(remoteFolder.id)) {
+        await applySyncedFolder(remoteFolder)
+      }
+    }
+  }
+
+  async function syncEncryptedBackup() {
+    const mk = get(masterKeyStore)
+    if (!mk) return
+    if (backupSyncPromise) return backupSyncPromise
+
+    backupSyncPromise = (async () => {
+      try {
+        const remote = await fetchVaultBackup(vaultApiUrl, mk).catch((error) => {
+          if (error instanceof Error && /404/.test(error.message)) return null
+          console.warn('[vault] backup fetch failed:', error)
+          return null
+        })
+
+        if (remote) {
+          await mergeBackupSnapshot(remote)
+        }
+
+        const [latestNotes, latestFolders] = await Promise.all([
+          getAllNotes(),
+          getAllFolders(),
+        ])
+
+        await pushVaultBackup(vaultApiUrl, mk, latestNotes, latestFolders)
+      } catch (error) {
+        console.warn('[vault] encrypted backup sync failed:', error)
+      } finally {
+        backupSyncPromise = null
+      }
+    })()
+
+    return backupSyncPromise
+  }
+
+  async function syncSignedInDevice(userId: string) {
+    const mk = get(masterKeyStore)
+    if (!mk) return
+
+    try {
+      const deviceId = await getDeviceFingerprint()
+      await upsertAccountDevice(vaultApiUrl, userId, {
+        id: deviceId,
+        name: detectDeviceName(),
+        lastSeen: Date.now(),
+        pairedAt: Date.now(),
+        roomId: mk.roomId,
+        fingerprint: mk.fingerprint,
+      })
+    } catch (error) {
+      console.warn('[vault] device registry sync failed:', error)
     }
   }
 
@@ -240,6 +320,7 @@
 
       // 4. Initialize P2P sync (non-blocking)
       await ensureSyncForRoom(mk.roomId)
+      void syncEncryptedBackup()
 
       unsubSync = onSyncState((state) => {
         vaultActions.setSyncState(state)
@@ -248,6 +329,9 @@
       // 5. Restore Firebase auth state (non-blocking — just populates UI)
       onVaultAuthChanged((user) => {
         vaultActions.setGoogleUser(user)
+        if (user?.uid) {
+          void syncSignedInDevice(user.uid)
+        }
       }).catch(() => {
         // Firebase unavailable — continue without Google auth
       })
@@ -270,7 +354,10 @@
   })
 
   $: if (bootComplete && $masterKeyStore?.roomId && $masterKeyStore.roomId !== activeSyncRoomId) {
-    void ensureSyncForRoom($masterKeyStore.roomId)
+    void (async () => {
+      await ensureSyncForRoom($masterKeyStore.roomId)
+      await syncEncryptedBackup()
+    })()
   }
 
   $: loading = $ui.loading
@@ -285,7 +372,7 @@
         ? 'Timed file relay with QR handoff'
         : 'Devices, storage, encryption, and account controls'
   $: panelSubtitle = panel === 'notes'
-    ? 'Keep notes local, move between folders quickly, and switch into secret or file sharing without leaving the same workspace shell.'
+    ? 'Keep notes local first, sync live over shared rooms, and fall back to encrypted room backups without leaving the same workspace shell.'
     : panel === 'secrets'
       ? 'Set expiry, choose the protections that actually matter, then hand off the full link or QR code.'
       : panel === 'share'
@@ -347,7 +434,7 @@
 
       {#if panel === 'settings'}
         <div class="va-settings-wrap">
-          <VaultSettings storageUsed={$storageUsed} />
+          <VaultSettings storageUsed={$storageUsed} {vaultApiUrl} />
         </div>
 
       {:else if panel === 'secrets'}

@@ -181,44 +181,48 @@
           </div>
         {:else}
           <button
-            class="btn-icon ved-danger-icon"
+            class="ved-action-btn ved-action-btn--danger"
             on:click={deleteNote}
             title="Delete note"
             aria-label="Delete note"
           >
-            <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M3.5 4.5h8M6 4.5V3h3v1.5M5 6.5v4M7.5 6.5v4M10 6.5v4M4.5 4.5l.5 7h5l.5-7"/>
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M3.5 4.5h9"/>
+              <path d="M6 4.5V3.25h4v1.25"/>
+              <path d="M5.25 6.25v5.25M8 6.25v5.25M10.75 6.25v5.25"/>
+              <path d="M4.5 4.5l.6 8h5.8l.6-8"/>
             </svg>
+            <span>Delete</span>
           </button>
         {/if}
 
-        <!-- Pin -->
         <button
-          class="btn-icon"
-          class:ved-pinned={note.isPinned}
+          class="ved-action-btn"
+          class:ved-action-btn--active={note.isPinned}
           on:click={togglePin}
-          title={note.isPinned ? 'Unpin' : 'Pin'}
+          title={note.isPinned ? 'Unpin note' : 'Pin note'}
           aria-label="Toggle pin"
         >
-          <svg width="15" height="15" viewBox="0 0 15 15" fill={note.isPinned ? 'currentColor' : 'none'} stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M9 1l-1.5 5h-3L3 7.5l3 1L7.5 12l1.5-2.5L12 11 13 9.5 9.5 8z"/>
+          <svg width="15" height="15" viewBox="0 0 16 16" fill={note.isPinned ? 'currentColor' : 'none'} stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M10.5 2.5L9 6.5h-3L4 8l3 1 .9 3.5 1.6-2.4 2.8 1.2 .7-1.7-2.5-1.6z"/>
           </svg>
+          <span>{note.isPinned ? 'Pinned' : 'Pin'}</span>
         </button>
 
-        <!-- Toggle info panel -->
         <button
-          class="btn-icon"
+          class="ved-action-btn"
+          class:ved-action-btn--active={!$ui.infoPanelCollapsed}
           on:click={vaultActions.toggleInfoPanel}
           title="Toggle info panel"
           aria-label="Toggle info panel"
         >
-          <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true">
             <circle cx="7.5" cy="7.5" r="6"/>
             <path d="M7.5 7v4M7.5 4.5v.5"/>
           </svg>
+          <span>Details</span>
         </button>
 
-        <!-- Save indicator -->
         <span class="ved-save-state" class:ved-save-state--saving={saving} class:ved-save-state--error={saveError}>
           {#if saving}
             <span class="ved-save-dot ved-save-dot--saving"></span>
@@ -349,6 +353,34 @@
     justify-content: flex-end;
   }
 
+  .ved-action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 34px;
+    padding: 7px 12px;
+    border-radius: 999px;
+    border: 1.5px solid var(--border-hard);
+    background: var(--surface);
+    color: var(--text-1);
+    box-shadow: 2px 2px 0 var(--border-hard);
+    font-family: var(--font-display);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease, color 120ms ease;
+  }
+
+  .ved-action-btn:hover {
+    transform: translate(-1px, -1px);
+    box-shadow: 4px 4px 0 var(--border-hard);
+  }
+
+  .ved-action-btn span {
+    white-space: nowrap;
+  }
+
   .ved-delete-confirm {
     display: inline-flex;
     align-items: center;
@@ -386,8 +418,13 @@
   }
 
   .ved-confirm-btn--danger,
-  .ved-danger-icon {
+  .ved-action-btn--danger {
     color: var(--red);
+  }
+
+  .ved-action-btn--danger {
+    border-color: color-mix(in srgb, var(--red) 72%, var(--border-hard));
+    background: color-mix(in srgb, var(--red) 10%, var(--surface));
   }
 
   .ved-confirm-btn--danger {
@@ -395,8 +432,10 @@
     background: color-mix(in srgb, var(--red) 10%, var(--surface));
   }
 
-  .ved-pinned {
+  .ved-action-btn--active {
+    background: color-mix(in srgb, var(--accent) 12%, var(--surface));
     color: var(--accent-text);
+    border-color: color-mix(in srgb, var(--accent) 68%, var(--border-hard));
   }
 
   .ved-save-state {
