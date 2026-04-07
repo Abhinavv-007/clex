@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onDestroy } from 'svelte'
   import { encryptSecret } from '$lib/vault/crypto'
+  import { encodeSecretAccessCode } from '$lib/vault/handoff'
   import QRCode from '$components/sharing/QRCode.svelte'
   import { fade, fly, scale } from 'svelte/transition'
   import { quintOut } from 'svelte/easing'
@@ -88,8 +89,10 @@
   let creating = false
   let secretUrl = ''
   let secretId = ''
+  let secretAccessCode = ''
   let error = ''
   let copied = false
+  let codeCopied = false
   let statusData: SecretStatusPayload | null = null
   let statusPoller: ReturnType<typeof setInterval> | null = null
   let protections = { ...DEFAULT_PROTECTIONS }
@@ -101,6 +104,7 @@
   $: ttlLabel = formatTtl(ttlSeconds)
   $: canCreate = content.trim().length > 0 && !creating
   $: qrValue = secretUrl
+  $: formattedSecretAccessCode = secretAccessCode
   $: selectedProtectionCount = Object.values(protections).filter(Boolean).length
   $: policy = {
     ...protections,
@@ -156,7 +160,8 @@
       if (!res.ok) throw new Error(payload.error ?? `Server error: ${res.status}`)
 
       secretId = payload.id as string
-      secretUrl = `${window.location.origin}/vault/secret/${payload.id}#key=${keyB64}`
+      secretUrl = `${window.location.origin}/vault/secret?id=${encodeURIComponent(payload.id as string)}#key=${encodeURIComponent(keyB64)}`
+      secretAccessCode = encodeSecretAccessCode(payload.id as string, keyB64)
       statusData = {
         alreadyOpened: false,
         openedAt: null,
@@ -193,6 +198,13 @@
     setTimeout(() => (copied = false), 2000)
   }
 
+  async function copyCode() {
+    if (!secretAccessCode) return
+    await navigator.clipboard.writeText(secretAccessCode)
+    codeCopied = true
+    setTimeout(() => (codeCopied = false), 2000)
+  }
+
   function openLink() {
     window.open(secretUrl, '_blank', 'noopener,noreferrer')
   }
@@ -202,9 +214,11 @@
     statusPoller = null
     secretUrl = ''
     secretId = ''
+    secretAccessCode = ''
     statusData = null
     content = ''
     copied = false
+    codeCopied = false
     error = ''
     useCustomTtl = false
     quickTtl = 900
@@ -304,9 +318,13 @@
                 type="button"
                 class="vsc-protection-btn"
                 class:vsc-protection-btn--active={protections[item.key]}
+                aria-pressed={protections[item.key]}
                 on:click={() => toggleProtection(item.key)}
               >
-                <span class="vsc-protection-title">{item.label}</span>
+                <span class="vsc-protection-top">
+                  <span class="vsc-protection-title">{item.label}</span>
+                  <span class="vsc-protection-state">{protections[item.key] ? 'On' : 'Off'}</span>
+                </span>
                 <span class="vsc-protection-copy">{item.copy}</span>
               </button>
             {/each}
@@ -378,16 +396,37 @@
       {#if secretUrl}
         <div class="vsc-side-card" in:scale={{ duration: 260, easing: quintOut, start: 0.97 }}>
           <p class="vsc-kicker">Ready to share</p>
-          <h3 class="vsc-side-title">Send the link or let them scan it</h3>
+          <h3 class="vsc-side-title">Send the link, QR, or reveal code</h3>
           <p class="vsc-side-copy">
-            The server never receives the hash-based decryption key. The recipient needs the full URL exactly as shown here.
+            The server never receives the hash-based decryption key. Use the QR for the fastest handoff, the direct link for taps, or the reveal code for manual entry.
           </p>
 
           <div class="vsc-qr-wrap">
             <QRCode value={qrValue} size={186} />
           </div>
 
-          <div class="vsc-link-box">{secretUrl}</div>
+          <div class="vsc-handoff-grid">
+            <div class="vsc-handoff-card">
+              <div class="vsc-handoff-row">
+                <span class="vsc-meta-label">Direct link</span>
+                <button class="vsc-inline-btn" type="button" on:click={copyUrl}>
+                  {copied ? 'Copied' : 'Copy link'}
+                </button>
+              </div>
+              <div class="vsc-link-box">{secretUrl}</div>
+            </div>
+
+            <div class="vsc-handoff-card">
+              <div class="vsc-handoff-row">
+                <span class="vsc-meta-label">Reveal code</span>
+                <button class="vsc-inline-btn" type="button" on:click={copyCode}>
+                  {codeCopied ? 'Copied' : 'Copy code'}
+                </button>
+              </div>
+              <div class="vsc-code-box">{formattedSecretAccessCode}</div>
+              <p class="vsc-code-note">Open <code>/vault/secret</code> and paste this code if you cannot send the full link.</p>
+            </div>
+          </div>
 
           <div class="vsc-side-meta">
             <div class="vsc-meta-card">
@@ -476,15 +515,15 @@
   .vsc-side-title {
     margin: 0;
     font-family: var(--font-display);
-    font-size: clamp(2rem, 3vw, 2.75rem);
-    line-height: 0.94;
-    letter-spacing: -0.035em;
+    font-size: clamp(1.7rem, 2.5vw, 2.2rem);
+    line-height: 1.04;
+    letter-spacing: -0.03em;
     color: var(--text-1);
     text-wrap: balance;
   }
 
   .vsc-side-title {
-    font-size: clamp(1.45rem, 2.4vw, 2rem);
+    font-size: clamp(1.35rem, 2vw, 1.75rem);
   }
 
   .vsc-subtitle,
@@ -618,9 +657,9 @@
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: 6px;
-    min-height: 104px;
-    padding: 14px;
+    gap: 10px;
+    min-height: 118px;
+    padding: 15px 16px;
     border-radius: 14px;
     border: 2px solid var(--border-hard);
     background: var(--surface);
@@ -628,6 +667,14 @@
     text-align: left;
     cursor: pointer;
     transition: transform 120ms ease, box-shadow 120ms ease, border-color 120ms ease;
+  }
+
+  .vsc-protection-top {
+    width: 100%;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
   }
 
   .vsc-protection-title {
@@ -639,8 +686,36 @@
     letter-spacing: -0.02em;
   }
 
+  .vsc-protection-state,
+  .vsc-inline-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 24px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    border: 1.5px solid var(--border-hard);
+    background: var(--surface-2);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-2);
+  }
+
+  .vsc-inline-btn {
+    cursor: pointer;
+  }
+
   .vsc-protection-btn--active .vsc-protection-copy {
     color: rgba(17, 17, 17, 0.78);
+  }
+
+  .vsc-protection-btn--active .vsc-protection-state {
+    background: rgba(17, 17, 17, 0.12);
+    color: #111;
+    border-color: rgba(17, 17, 17, 0.36);
   }
 
   .vsc-system-card {
@@ -677,8 +752,8 @@
     flex: 1 1 220px;
   }
 
-  .vsc-link-box {
-    margin-top: 18px;
+  .vsc-link-box,
+  .vsc-code-box {
     padding: 12px;
     border: 1.5px solid var(--border-hard);
     background: var(--surface);
@@ -690,10 +765,47 @@
     overflow-wrap: anywhere;
   }
 
+  .vsc-code-box {
+    word-break: break-all;
+  }
+
   .vsc-qr-wrap {
     margin-top: 18px;
     display: flex;
     justify-content: center;
+  }
+
+  .vsc-handoff-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 18px;
+  }
+
+  .vsc-handoff-card {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .vsc-handoff-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .vsc-code-note {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--text-3);
+  }
+
+  .vsc-code-note code {
+    font-family: var(--font-mono);
+    font-size: 11px;
   }
 
   .vsc-meta-card,

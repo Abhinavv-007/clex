@@ -43,7 +43,7 @@ export async function startPairingAsSender(
   masterKey: MasterKey,
   onStatus: (s: PairingSession['status']) => void,
   onComplete: () => void
-): Promise<{ code: string; expiresAt: number; qrPayload: string }> {
+): Promise<{ code: string; expiresAt: number; qrPayload: string; pairingLink: string }> {
   const peer = new RTCPeerConnection(RTC_CONFIG)
   const channel = peer.createDataChannel('vault-pair', { ordered: true })
 
@@ -84,13 +84,14 @@ export async function startPairingAsSender(
   session.code = data.code
   session.expiresAt = data.expiresAt
 
-  const qrPayload = JSON.stringify({ code: data.code, offer: offerPayload, v: 1 })
+  const pairingLink = `${window.location.origin}/vault?pair=${encodeURIComponent(data.code)}`
+  const qrPayload = pairingLink
 
   // Poll for answer from Device B
   pollForAnswer(data.code, vaultApiUrl, peer, channel, masterKey, onStatus, onComplete)
 
   onStatus('waiting')
-  return { code: data.code, expiresAt: data.expiresAt, qrPayload }
+  return { code: data.code, expiresAt: data.expiresAt, qrPayload, pairingLink }
 }
 
 async function pollForAnswer(

@@ -1,25 +1,16 @@
 <script lang="ts">
-  /**
-   * VaultShareApp — encrypted temp file share recipient page
-   *
-   * URL format: /vault/share/[key]
-   * The [key] segment is the R2 object key / share token.
-   *
-   * Flow:
-   * 1. Parse key from URL path
-   * 2. GET /vault/api/files/<key> — returns signed R2 download URL + metadata
-   * 3. Download file, show progress
-   * 4. Trigger browser download
-   */
   import { onMount } from 'svelte'
   import { fade, scale } from 'svelte/transition'
   import { quintOut } from 'svelte/easing'
+  import { formatGroupedCode, normalizeRelayCode } from '$lib/vault/handoff'
 
   export let vaultApiUrl = '/vault/api'
 
-  type Phase = 'loading' | 'ready' | 'downloading' | 'done' | 'expired' | 'error'
+  type Phase = 'entry' | 'loading' | 'ready' | 'downloading' | 'done' | 'expired' | 'error'
   let phase: Phase = 'loading'
   let errorMsg = ''
+  let shareToken = ''
+  let accessInput = ''
 
   interface FileMeta {
     filename: string
@@ -27,13 +18,53 @@
     mimeType: string
     expiresAt: number
   }
+
   let meta: FileMeta | null = null
   let downloadProgress = 0
   let downloadUrl = ''
 
-  function extractKey(): string {
-    const parts = window.location.pathname.split('/').filter(Boolean)
-    return parts[parts.length - 1] ?? ''
+  function extractPathToken(pathname: string): string {
+    const parts = pathname.split('/').filter(Boolean)
+    if (parts.length >= 3 && parts[0] === 'vault' && parts[1] === 'share') {
+      return normalizeRelayCode(parts[2] ?? '')
+    }
+    return ''
+  }
+
+  function parseShareLocation(): string {
+    const url = new URL(window.location.href)
+    return normalizeRelayCode(
+      url.searchParams.get('id') ??
+      url.searchParams.get('code') ??
+      extractPathToken(url.pathname),
+    )
+  }
+
+  function parseShareInput(raw: string): string {
+    const trimmed = raw.trim()
+    if (!trimmed) return ''
+
+    if (/^https?:\/\//i.test(trimmed) || trimmed.startsWith('/')) {
+      try {
+        const url = new URL(trimmed, window.location.origin)
+        return normalizeRelayCode(
+          url.searchParams.get('id') ??
+          url.searchParams.get('code') ??
+          extractPathToken(url.pathname),
+        )
+      } catch {
+        return ''
+      }
+    }
+
+    return normalizeRelayCode(trimmed)
+  }
+
+  function applyShareLocation(token: string) {
+    shareToken = token
+    const url = new URL(window.location.href)
+    url.searchParams.set('id', token)
+    history.replaceState(null, '', `${url.pathname}${url.search}`)
   }
 
   function formatBytes(bytes: number): string {
@@ -42,13 +73,13 @@
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
   }
 
-  function timeUntil(ts: number): string {
-    const diff = ts - Date.now()
+  function timeUntil(timestamp: number): string {
+    const diff = timestamp - Date.now()
     if (diff <= 0) return 'expired'
-    const h = Math.floor(diff / 3600000)
-    const m = Math.floor((diff % 3600000) / 60000)
-    if (h > 0) return `${h}h ${m}m`
-    return `${m}m`
+    const hours = Math.floor(diff / 3600000)
+    const minutes = Math.floor((diff % 3600000) / 60000)
+    if (hours > 0) return `${hours}h ${minutes}m`
+    return `${minutes}m`
   }
 
   function mimeIcon(mime: string): string {
@@ -63,21 +94,24 @@
   }
 
   async function loadMeta() {
-    const key = extractKey()
+    const key = shareToken || parseShareLocation()
     if (!key) {
-      errorMsg = 'Invalid share link'
-      phase = 'error'
+      errorMsg = 'Paste the file link or relay code from Vault.'
+      phase = 'entry'
       return
     }
 
+    shareToken = key
+
     try {
-      const res = await fetch(`${vaultApiUrl}/files/${key}`)
+      const res = await fetch(`${vaultApiUrl}/files/${encodeURIComponent(key)}`)
       if (res.status === 404 || res.status === 410) {
         phase = 'expired'
         return
       }
       if (!res.ok) {
-        errorMsg = `Server error (${res.status})`
+        const payload = await res.json().catch(() => null) as { error?: string } | null
+        errorMsg = payload?.error ?? `Server error (${res.status})`
         phase = 'error'
         return
       }
@@ -106,10 +140,25 @@
       }
 
       phase = 'ready'
-    } catch (e: unknown) {
-      errorMsg = e instanceof Error ? e.message : 'Failed to load file info'
+    } catch (eventualError: unknown) {
+      errorMsg = eventualError instanceof Error ? eventualError.message : 'Failed to load file info'
       phase = 'error'
     }
+  }
+
+  async function acceptAccessInput() {
+    const token = parseShareInput(accessInput)
+
+    if (!token) {
+      errorMsg = 'Paste the direct file link or the relay code from Vault.'
+      phase = 'entry'
+      return
+    }
+
+    errorMsg = ''
+    applyShareLocation(token)
+    phase = 'loading'
+    await loadMeta()
   }
 
   async function downloadFile() {
@@ -122,14 +171,16 @@
       if (!res.ok) throw new Error(`Download failed: ${res.status}`)
 
       const total = parseInt(res.headers.get('content-length') ?? '0', 10)
-      const reader = res.body!.getReader()
-      const chunks: ArrayBuffer[] = []
+      const reader = res.body?.getReader()
+      if (!reader) throw new Error('Download stream unavailable')
+
+      const chunks: BlobPart[] = []
       let received = 0
 
       while (true) {
         const { done, value } = await reader.read()
         if (done) break
-        chunks.push(value.buffer.slice(value.byteOffset, value.byteOffset + value.byteLength))
+        chunks.push(value)
         received += value.length
         if (total > 0) {
           downloadProgress = Math.round((received / total) * 100)
@@ -138,38 +189,76 @@
 
       downloadProgress = 100
 
-      // Assemble + trigger browser download
       const blob = new Blob(chunks, { type: meta.mimeType })
       const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = meta.filename
-      document.body.appendChild(a)
-      a.click()
+      const anchor = document.createElement('a')
+      anchor.href = url
+      anchor.download = meta.filename
+      document.body.appendChild(anchor)
+      anchor.click()
       setTimeout(() => {
         URL.revokeObjectURL(url)
-        document.body.removeChild(a)
+        document.body.removeChild(anchor)
       }, 1000)
 
       phase = 'done'
-    } catch (e: unknown) {
-      errorMsg = e instanceof Error ? e.message : 'Download failed'
+    } catch (eventualError: unknown) {
+      errorMsg = eventualError instanceof Error ? eventualError.message : 'Download failed'
       phase = 'error'
     }
   }
 
-  onMount(loadMeta)
+  onMount(() => {
+    const token = parseShareLocation()
+    if (!token) {
+      phase = 'entry'
+      return
+    }
+
+    shareToken = token
+    void loadMeta()
+  })
+
+  $: formattedShareToken = formatGroupedCode(shareToken)
 </script>
 
 <div class="vsh-page">
-
-  <!-- ── Loading ─────────────────────────────────────────────────── -->
   {#if phase === 'loading'}
     <div class="vsh-center" in:fade={{ duration: 160 }}>
       <div class="vsh-spinner"></div>
     </div>
 
-  <!-- ── Ready — show file card ─────────────────────────────────── -->
+  {:else if phase === 'entry'}
+    <div class="vsh-center" in:scale={{ duration: 280, easing: quintOut, start: 0.95 }}>
+      <div class="vsh-card">
+        <div class="vsh-file-icon">⇄</div>
+        <h1 class="vsh-title">Open a Vault file</h1>
+        <p class="vsh-desc">Paste the direct file link or the relay code from Cloud Share.</p>
+
+        <div class="vsh-entry-stack">
+          <textarea
+            class="input vsh-entry-input"
+            rows="3"
+            placeholder="Paste the file link or relay code"
+            bind:value={accessInput}
+            on:keydown={(event) => event.key === 'Enter' && !event.shiftKey && (event.preventDefault(), acceptAccessInput())}
+          ></textarea>
+
+          {#if errorMsg}
+            <p class="vsh-desc vsh-desc--error">{errorMsg}</p>
+          {/if}
+
+          <button class="btn-accent vsh-dl-btn" on:click={acceptAccessInput}>
+            Continue
+          </button>
+        </div>
+
+        <p class="vsh-entry-note">
+          QR scans from Vault open this page automatically. Use the relay code when a direct link is not practical to send.
+        </p>
+      </div>
+    </div>
+
   {:else if phase === 'ready' && meta}
     <div class="vsh-center" in:scale={{ duration: 280, easing: quintOut, start: 0.95 }}>
       <div class="vsh-card">
@@ -179,6 +268,7 @@
           <div class="vsh-meta-row">
             <span class="vsh-meta-chip">{formatBytes(meta.sizeBytes)}</span>
             <span class="vsh-meta-chip">{meta.mimeType}</span>
+            <span class="vsh-meta-chip">Code {formattedShareToken}</span>
             <span class="vsh-meta-chip vsh-meta-chip--expires">
               Expires in {timeUntil(meta.expiresAt)}
             </span>
@@ -187,11 +277,11 @@
 
         <div class="vsh-notice">
           <span class="vsh-notice-icon">🔒</span>
-          <span>This file was shared privately via Vault. It will auto-delete after 24 hours.</span>
+          <span>This file was shared privately via Vault. It auto-deletes after 24 hours and only the holder of the link or relay code can open this page.</span>
         </div>
 
         <button class="btn-accent vsh-dl-btn" on:click={downloadFile}>
-          Download File
+          Download file
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M8 2v8M5 7l3 3 3-3M2 12h12"/>
           </svg>
@@ -199,7 +289,6 @@
       </div>
     </div>
 
-  <!-- ── Downloading ─────────────────────────────────────────────── -->
   {:else if phase === 'downloading' && meta}
     <div class="vsh-center" in:fade={{ duration: 160 }}>
       <div class="vsh-card">
@@ -214,7 +303,6 @@
       </div>
     </div>
 
-  <!-- ── Done ────────────────────────────────────────────────────── -->
   {:else if phase === 'done' && meta}
     <div class="vsh-center" in:scale={{ duration: 280, easing: quintOut, start: 0.95 }}>
       <div class="vsh-card vsh-card--done">
@@ -229,18 +317,16 @@
       </div>
     </div>
 
-  <!-- ── Expired ─────────────────────────────────────────────────── -->
   {:else if phase === 'expired'}
     <div class="vsh-center" in:scale={{ duration: 280, easing: quintOut, start: 0.95 }}>
       <div class="vsh-card">
         <div class="vsh-file-icon">🗑</div>
-        <h2 class="vsh-title">File Expired</h2>
-        <p class="vsh-desc">This shared file has expired or was already downloaded. Vault files auto-delete after 24 hours.</p>
+        <h2 class="vsh-title">File expired</h2>
+        <p class="vsh-desc">This file link is no longer available. Vault relay files auto-delete after 24 hours.</p>
         <a href="/vault" class="btn-ghost vsh-back-btn">← Back to Vault</a>
       </div>
     </div>
 
-  <!-- ── Error ───────────────────────────────────────────────────── -->
   {:else if phase === 'error'}
     <div class="vsh-center" in:fade={{ duration: 200 }}>
       <div class="vsh-card">
@@ -251,7 +337,6 @@
       </div>
     </div>
   {/if}
-
 </div>
 
 <style>
@@ -274,7 +359,7 @@
     box-shadow: var(--shadow-md);
     border-radius: 20px;
     padding: 40px 36px;
-    max-width: 420px;
+    max-width: 560px;
     width: 100%;
     display: flex;
     flex-direction: column;
@@ -293,6 +378,27 @@
     line-height: 1;
   }
 
+  .vsh-entry-stack {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .vsh-entry-input {
+    min-height: 104px;
+    resize: vertical;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  .vsh-entry-note {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--text-3);
+  }
+
   .vsh-file-info {
     display: flex;
     flex-direction: column;
@@ -301,15 +407,24 @@
     width: 100%;
   }
 
-  .vsh-filename {
+  .vsh-filename,
+  .vsh-title {
     font-family: var(--font-display);
-    font-size: 1.6rem;
     font-weight: 700;
     color: var(--text-1);
-    letter-spacing: -0.04em;
-    line-height: 0.95;
-    text-transform: uppercase;
+    letter-spacing: -0.03em;
+    line-height: 1.02;
+    margin: 0;
+    text-wrap: balance;
+  }
+
+  .vsh-filename {
+    font-size: clamp(1.45rem, 2.2vw, 1.9rem);
     word-break: break-word;
+  }
+
+  .vsh-title {
+    font-size: clamp(1.9rem, 3vw, 2.35rem);
   }
 
   .vsh-meta-row {
@@ -326,8 +441,8 @@
     color: var(--text-3);
     background: var(--surface-2);
     border: 1px solid var(--border);
-    border-radius: 4px;
-    padding: 2px 8px;
+    border-radius: 999px;
+    padding: 4px 10px;
     text-transform: uppercase;
     letter-spacing: 0.05em;
   }
@@ -344,7 +459,7 @@
     gap: 8px;
     background: var(--surface-2);
     border: 1.5px solid var(--border);
-    border-radius: 10px;
+    border-radius: 12px;
     padding: 12px 14px;
     font-size: 12px;
     color: var(--text-3);
@@ -353,7 +468,9 @@
     width: 100%;
   }
 
-  .vsh-notice-icon { flex-shrink: 0; }
+  .vsh-notice-icon {
+    flex-shrink: 0;
+  }
 
   .vsh-dl-btn {
     width: 100%;
@@ -363,7 +480,6 @@
     padding: 12px 20px;
   }
 
-  /* Progress */
   .vsh-dl-label {
     font-family: var(--font-mono);
     font-size: 13px;
@@ -402,7 +518,6 @@
     text-align: right;
   }
 
-  /* Done circle */
   .vsh-done-circle {
     width: 64px;
     height: 64px;
@@ -416,17 +531,6 @@
     color: #000;
   }
 
-  .vsh-title {
-    font-family: var(--font-display);
-    font-size: clamp(1.9rem, 4vw, 2.35rem);
-    font-weight: 800;
-    color: var(--text-1);
-    letter-spacing: -0.04em;
-    line-height: 0.92;
-    text-transform: uppercase;
-    margin: 0;
-  }
-
   .vsh-desc {
     font-size: 14px;
     color: var(--text-2);
@@ -434,7 +538,13 @@
     margin: 0;
   }
 
-  .vsh-back-btn { font-size: 13px; }
+  .vsh-desc--error {
+    color: var(--red, #ff4444);
+  }
+
+  .vsh-back-btn {
+    font-size: 13px;
+  }
 
   .vsh-spinner {
     width: 36px;

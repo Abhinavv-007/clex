@@ -422,13 +422,32 @@ async function handleFileDownload(
   env: Env,
   cors: Record<string, string>,
 ): Promise<Response> {
-  const row = userId
+  const normalizedId = fileId.trim().toLowerCase()
+  const exactRow = userId
     ? await env.DB.prepare(
-      'SELECT storage_path, filename, mime_type, size_bytes, delete_at FROM attachments WHERE id = ? AND user_id = ?'
-    ).bind(fileId, userId).first<{ storage_path: string; filename: string; mime_type: string; size_bytes: number; delete_at: number }>()
+      'SELECT id, storage_path, filename, mime_type, size_bytes, delete_at FROM attachments WHERE lower(id) = ? AND user_id = ?'
+    ).bind(normalizedId, userId).first<{ id: string; storage_path: string; filename: string; mime_type: string; size_bytes: number; delete_at: number }>()
     : await env.DB.prepare(
-      'SELECT storage_path, filename, mime_type, size_bytes, delete_at FROM attachments WHERE id = ?'
-    ).bind(fileId).first<{ storage_path: string; filename: string; mime_type: string; size_bytes: number; delete_at: number }>()
+      'SELECT id, storage_path, filename, mime_type, size_bytes, delete_at FROM attachments WHERE lower(id) = ?'
+    ).bind(normalizedId).first<{ id: string; storage_path: string; filename: string; mime_type: string; size_bytes: number; delete_at: number }>()
+
+  let row = exactRow
+
+  if (!row && /^[a-f0-9]{6,31}$/.test(normalizedId)) {
+    const prefixResult = userId
+      ? await env.DB.prepare(
+        'SELECT id, storage_path, filename, mime_type, size_bytes, delete_at FROM attachments WHERE lower(id) LIKE ? AND user_id = ? LIMIT 2'
+      ).bind(`${normalizedId}%`, userId).all<{ id: string; storage_path: string; filename: string; mime_type: string; size_bytes: number; delete_at: number }>()
+      : await env.DB.prepare(
+        'SELECT id, storage_path, filename, mime_type, size_bytes, delete_at FROM attachments WHERE lower(id) LIKE ? LIMIT 2'
+      ).bind(`${normalizedId}%`).all<{ id: string; storage_path: string; filename: string; mime_type: string; size_bytes: number; delete_at: number }>()
+
+    const matches = prefixResult.results ?? []
+    if (matches.length > 1) {
+      return err('Relay code matches multiple files. Use the full direct link instead.', 409, cors)
+    }
+    row = matches[0] ?? null
+  }
 
   if (!row) return err('File not found or access denied', 404, cors)
   if (Math.floor(Date.now() / 1000) > row.delete_at) {

@@ -4,6 +4,7 @@
   import { googleUser, masterKey, vaultActions, formatBytes } from '$stores/vault'
   import { signInWithGoogle } from '$lib/vault/auth'
   import { deriveGoogleKey } from '$lib/vault/crypto'
+  import { formatGroupedCode } from '$lib/vault/handoff'
 
   export let vaultApiUrl = '/vault/api'
 
@@ -30,15 +31,18 @@
   let error = ''
   let lastLoadedUid = ''
   let linkCopied = false
+  let codeCopied = false
   let connectBusy = false
 
   $: user = $googleUser
   $: key = $masterKey
   $: totalSelectedBytes = selectedFiles.reduce((sum, file) => sum + file.size, 0)
   $: activeFile = sharedFiles.find((item) => item.id === activeFileId) ?? sharedFiles[0] ?? null
+  $: shareCode = activeFile ? activeFile.id.slice(0, 8).toUpperCase() : ''
+  $: formattedShareCode = formatGroupedCode(shareCode)
   $: shareUrl =
     activeFile && typeof window !== 'undefined'
-      ? `${window.location.origin}/vault/share/${activeFile.id}`
+      ? `${window.location.origin}/vault/share?id=${encodeURIComponent(activeFile.id)}`
       : ''
 
   $: if (user?.uid && user.uid !== lastLoadedUid) {
@@ -108,11 +112,27 @@
   }
 
   function mapThrownError(err: unknown, fallback: string): string {
-    if (err instanceof TypeError) {
-      return 'Vault relay could not be reached. Check your connection or deployment and try again.'
+    const code = err && typeof err === 'object' && 'code' in err && typeof err.code === 'string'
+      ? err.code
+      : ''
+
+    if (code === 'auth/network-request-failed') {
+      return 'Google sign-in could not reach Firebase. Check popup blockers, your connection, and the live auth domain settings.'
     }
 
-    return err instanceof Error ? err.message : fallback
+    if (err instanceof TypeError) {
+      return 'Vault relay could not be reached. Check the `/vault/api` worker route, your connection, and the live deployment.'
+    }
+
+    if (err instanceof Error) {
+      if (/network connection lost|network-request-failed|failed to fetch|load failed|networkerror/i.test(err.message)) {
+        return 'Vault could not reach the relay or Supabase storage. Verify the live worker route and Supabase credentials, then try again.'
+      }
+
+      return err.message
+    }
+
+    return fallback
   }
 
   async function connectGoogle() {
@@ -257,6 +277,15 @@
     linkCopied = true
     setTimeout(() => {
       linkCopied = false
+    }, 1800)
+  }
+
+  async function copyCode() {
+    if (!shareCode) return
+    await navigator.clipboard.writeText(shareCode)
+    codeCopied = true
+    setTimeout(() => {
+      codeCopied = false
     }, 1800)
   }
 
@@ -427,21 +456,42 @@
           <p class="vcs-side-kicker">Active share</p>
           <h3 class="vcs-side-title">{activeFile.filename}</h3>
           <p class="vcs-side-copy">
-            Anyone with the QR code or URL can open the timed download page until the relay record expires.
+            Share the QR for instant opening, the direct link for taps, or the relay code for manual entry on the receive page.
           </p>
 
           <div class="vcs-qr-wrap">
             <QRCode value={shareUrl} size={180} />
           </div>
 
-          <div class="vcs-link-box">{shareUrl}</div>
+          <div class="vcs-handoff-grid">
+            <div class="vcs-handoff-card">
+              <div class="vcs-handoff-row">
+                <span class="vcs-meta-label">Direct link</span>
+                <button class="vcs-inline-btn" type="button" on:click={copyLink}>
+                  {linkCopied ? 'Copied' : 'Copy link'}
+                </button>
+              </div>
+              <div class="vcs-link-box">{shareUrl}</div>
+            </div>
+
+            <div class="vcs-handoff-card">
+              <div class="vcs-handoff-row">
+                <span class="vcs-meta-label">Relay code</span>
+                <button class="vcs-inline-btn" type="button" on:click={copyCode}>
+                  {codeCopied ? 'Copied' : 'Copy code'}
+                </button>
+              </div>
+              <div class="vcs-code-box">{formattedShareCode}</div>
+              <p class="vcs-code-note">Open <code>/vault/share</code> and paste this code if you cannot send the full link.</p>
+            </div>
+          </div>
 
           <div class="vcs-side-actions">
-            <button class="vcs-primary-btn" type="button" on:click={copyLink}>
-              {linkCopied ? 'Copied' : 'Copy link'}
-            </button>
             <a class="vcs-secondary-link" href={shareUrl} target="_blank" rel="noopener noreferrer">
               Open link
+            </a>
+            <a class="vcs-secondary-link" href="/vault/share" target="_blank" rel="noopener noreferrer">
+              Open receive page
             </a>
           </div>
 
@@ -525,16 +575,16 @@
   .vcs-title,
   .vcs-side-title {
     font-family: var(--font-display);
-    font-size: clamp(2rem, 3vw, 2.75rem);
-    line-height: 0.94;
-    letter-spacing: -0.035em;
+    font-size: clamp(1.7rem, 2.5vw, 2.2rem);
+    line-height: 1.04;
+    letter-spacing: -0.03em;
     color: var(--text-1);
     margin: 0;
     text-wrap: balance;
   }
 
   .vcs-side-title {
-    font-size: clamp(1.5rem, 2.4vw, 2rem);
+    font-size: clamp(1.35rem, 2vw, 1.75rem);
   }
 
   .vcs-subtitle,
@@ -710,13 +760,81 @@
     line-height: 1.6;
     color: var(--text-2);
     overflow-wrap: anywhere;
-    margin-top: 18px;
   }
 
   .vcs-qr-wrap {
     display: flex;
     justify-content: center;
     margin-top: 18px;
+  }
+
+  .vcs-handoff-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 18px;
+  }
+
+  .vcs-handoff-card {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .vcs-handoff-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .vcs-code-box,
+  .vcs-inline-btn {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .vcs-code-box {
+    width: 100%;
+    padding: 12px;
+    border: 1.5px solid var(--border-hard);
+    background: var(--surface);
+    border-radius: 12px;
+    font-family: var(--font-mono);
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 0.22em;
+    color: var(--text-1);
+    justify-content: center;
+  }
+
+  .vcs-inline-btn {
+    justify-content: center;
+    min-height: 24px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    border: 1.5px solid var(--border-hard);
+    background: var(--surface-2);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-2);
+    cursor: pointer;
+  }
+
+  .vcs-code-note {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--text-3);
+  }
+
+  .vcs-code-note code {
+    font-family: var(--font-mono);
+    font-size: 11px;
   }
 
   .vcs-meta-grid {

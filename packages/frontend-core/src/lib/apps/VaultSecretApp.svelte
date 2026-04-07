@@ -3,10 +3,11 @@
   import { fade, scale } from 'svelte/transition'
   import { quintOut } from 'svelte/easing'
   import { decryptSecret } from '$lib/vault/crypto'
+  import { decodeSecretAccessCode } from '$lib/vault/handoff'
 
   export let vaultApiUrl = '/vault/api'
 
-  type Phase = 'loading' | 'confirm' | 'viewing' | 'destroyed' | 'error' | 'missing-key'
+  type Phase = 'entry' | 'loading' | 'confirm' | 'viewing' | 'destroyed' | 'error'
 
   interface SecretPolicy {
     viewOnce: boolean
@@ -53,6 +54,9 @@
   let locked = false
   let lockReason = ''
   let secretPolicy: SecretPolicy = LEGACY_POLICY
+  let secretId = ''
+  let secretKeyB64 = ''
+  let accessInput = ''
 
   function normalizePolicy(input?: Partial<SecretPolicy>): SecretPolicy {
     if (!input) return LEGACY_POLICY
@@ -73,15 +77,61 @@
     }
   }
 
-  function extractId(): string {
-    const parts = window.location.pathname.split('/').filter(Boolean)
-    return parts[parts.length - 1] ?? ''
+  function extractIdFromPath(pathname: string): string {
+    const parts = pathname.split('/').filter(Boolean)
+    if (parts.length >= 3 && parts[0] === 'vault' && parts[1] === 'secret') {
+      return parts[2] ?? ''
+    }
+    return ''
   }
 
-  function extractKey(): string {
-    const hash = window.location.hash.slice(1)
-    const params = new URLSearchParams(hash)
-    return params.get('key') ?? ''
+  function parseSecretLocation(): { id: string; keyB64: string } | null {
+    const url = new URL(window.location.href)
+    const hashParams = new URLSearchParams(url.hash.replace(/^#/, ''))
+    const id = url.searchParams.get('id') ?? extractIdFromPath(url.pathname)
+    const keyB64 = hashParams.get('key') ?? ''
+
+    if (!id || !keyB64) return null
+    return { id, keyB64 }
+  }
+
+  function parseSecretInput(raw: string): { id: string; keyB64: string } | null {
+    const trimmed = raw.trim()
+    if (!trimmed) return null
+
+    const directCode = decodeSecretAccessCode(trimmed)
+    if (directCode) return directCode
+
+    if (/^https?:\/\//i.test(trimmed) || trimmed.startsWith('/')) {
+      try {
+        const url = new URL(trimmed, window.location.origin)
+        const codeParam = url.searchParams.get('code')
+        if (codeParam) {
+          return decodeSecretAccessCode(codeParam)
+        }
+
+        const hashParams = new URLSearchParams(url.hash.replace(/^#/, ''))
+        const id = url.searchParams.get('id') ?? extractIdFromPath(url.pathname)
+        const keyB64 = hashParams.get('key') ?? ''
+
+        if (!id || !keyB64) return null
+        return { id, keyB64 }
+      } catch {
+        return null
+      }
+    }
+
+    return null
+  }
+
+  function applySecretLocation(id: string, keyB64: string) {
+    secretId = id
+    secretKeyB64 = keyB64
+
+    const url = new URL(window.location.href)
+    url.searchParams.set('id', id)
+    url.hash = `key=${encodeURIComponent(keyB64)}`
+    history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`)
   }
 
   function describePolicy(policy: SecretPolicy): string {
@@ -228,15 +278,15 @@
     }
     secretContent = null
     phase = 'destroyed'
-    history.replaceState(null, '', window.location.pathname)
+    const url = new URL(window.location.href)
+    url.hash = ''
+    history.replaceState(null, '', `${url.pathname}${url.search}`)
   }
 
   async function loadSecretStatus() {
-    const secretId = extractId()
-
     if (!secretId) {
-      errorMsg = 'Invalid secret URL'
-      phase = 'error'
+      errorMsg = 'Paste a valid secret link or reveal code.'
+      phase = 'entry'
       return
     }
 
@@ -266,17 +316,15 @@
   }
 
   async function loadAndReveal() {
-    const secretId = extractId()
-    const keyB64 = extractKey()
-
     if (!secretId) {
-      errorMsg = 'Invalid secret URL'
-      phase = 'error'
+      errorMsg = 'Paste a valid secret link or reveal code.'
+      phase = 'entry'
       return
     }
 
-    if (!keyB64) {
-      phase = 'missing-key'
+    if (!secretKeyB64) {
+      errorMsg = 'The reveal key is missing. Paste the full link or reveal code from Vault.'
+      phase = 'entry'
       return
     }
 
@@ -305,7 +353,7 @@
       secretPolicy = normalizePolicy(data.policy)
       const decrypted = await decryptSecret(
         { ciphertextB64: data.encryptedPayload, ivB64: data.iv },
-        keyB64,
+        secretKeyB64,
       )
 
       secretContent = decrypted
@@ -315,11 +363,28 @@
       startCountdown()
       startDevtoolsDetection()
 
-      history.replaceState(null, '', `${window.location.pathname}#`)
+      const url = new URL(window.location.href)
+      url.hash = ''
+      history.replaceState(null, '', `${url.pathname}${url.search}`)
     } catch (error) {
       errorMsg = error instanceof Error ? error.message : 'Failed to decrypt this secret'
       phase = 'error'
     }
+  }
+
+  async function acceptAccessInput() {
+    const parsed = parseSecretInput(accessInput)
+
+    if (!parsed) {
+      errorMsg = 'Paste the full secret link or the reveal code from Vault.'
+      phase = 'entry'
+      return
+    }
+
+    errorMsg = ''
+    applySecretLocation(parsed.id, parsed.keyB64)
+    phase = 'loading'
+    await loadSecretStatus()
   }
 
   onMount(async () => {
@@ -328,11 +393,14 @@
     document.addEventListener('keydown', onKeyDown)
     document.addEventListener('visibilitychange', onVisibilityChange)
 
-    if (!extractKey()) {
-      phase = 'missing-key'
+    const locationSecret = parseSecretLocation()
+    if (!locationSecret) {
+      phase = 'entry'
       return
     }
 
+    secretId = locationSecret.id
+    secretKeyB64 = locationSecret.keyB64
     await loadSecretStatus()
   })
 
@@ -367,6 +435,37 @@
   {#if phase === 'loading'}
     <div class="vsa-center" in:fade={{ duration: 160 }}>
       <div class="vsa-spinner-lg"></div>
+    </div>
+
+  {:else if phase === 'entry'}
+    <div class="vsa-center" in:scale={{ duration: 280, easing: quintOut, start: 0.95 }}>
+      <div class="vsa-card">
+        <div class="vsa-kicker">Secret Link</div>
+        <h1 class="vsa-title">Open a private secret</h1>
+        <p class="vsa-desc">Paste the full secret link or the reveal code from Vault.</p>
+
+        <div class="vsa-entry-stack">
+          <textarea
+            class="input vsa-entry-input"
+            rows="3"
+            placeholder="Paste the secret link or reveal code"
+            bind:value={accessInput}
+            on:keydown={(event) => event.key === 'Enter' && !event.shiftKey && (event.preventDefault(), acceptAccessInput())}
+          ></textarea>
+
+          {#if errorMsg}
+            <p class="vsa-desc vsa-desc--red">{errorMsg}</p>
+          {/if}
+
+          <button class="btn-accent vsa-reveal-btn" on:click={acceptAccessInput}>
+            Continue
+          </button>
+        </div>
+
+        <p class="vsa-entry-note">
+          QR scans from Vault open this page automatically. Use the reveal code when you cannot send the full direct link.
+        </p>
+      </div>
     </div>
 
   {:else if phase === 'confirm'}
@@ -466,18 +565,6 @@
       </div>
     </div>
 
-  {:else if phase === 'missing-key'}
-    <div class="vsa-center" in:fade={{ duration: 200 }}>
-      <div class="vsa-card">
-        <div class="vsa-icon">🔑</div>
-        <h1 class="vsa-title">Incomplete Link</h1>
-        <p class="vsa-desc">
-          The decryption key is missing from this URL. Make sure you copied the full link including the <code>#key=…</code> fragment.
-        </p>
-        <p class="vsa-desc vsa-desc--mono">The secret cannot be opened without the hash-based key.</p>
-        <a href="/vault" class="btn-ghost vsa-back-btn">← Back to Vault</a>
-      </div>
-    </div>
   {/if}
 </div>
 
@@ -513,7 +600,7 @@
     box-shadow: var(--shadow-md);
     border-radius: 20px;
     padding: 40px 36px;
-    max-width: 520px;
+    max-width: 560px;
     width: 100%;
     display: flex;
     flex-direction: column;
@@ -539,13 +626,12 @@
 
   .vsa-title {
     font-family: var(--font-display);
-    font-size: clamp(2rem, 4vw, 2.8rem);
+    font-size: clamp(1.9rem, 3vw, 2.45rem);
     font-weight: 800;
     color: var(--text-1);
-    letter-spacing: -0.03em;
+    letter-spacing: -0.025em;
     margin: 0;
-    line-height: 0.96;
-    text-transform: uppercase;
+    line-height: 1.02;
     text-wrap: balance;
   }
 
@@ -554,20 +640,33 @@
     color: var(--text-2);
     line-height: 1.7;
     margin: 0;
-    max-width: 420px;
+    max-width: 460px;
   }
 
   .vsa-desc--red {
     color: var(--red, #ff4444);
   }
 
-  .vsa-desc code {
-    font-family: var(--font-mono);
+  .vsa-entry-stack {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .vsa-entry-input {
+    width: 100%;
+    min-height: 104px;
+    resize: vertical;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  .vsa-entry-note {
+    margin: 0;
     font-size: 12px;
-    background: var(--surface-2);
-    padding: 1px 5px;
-    border-radius: 4px;
-    border: 1px solid var(--border);
+    line-height: 1.6;
+    color: var(--text-3);
   }
 
   .vsa-warn-grid {

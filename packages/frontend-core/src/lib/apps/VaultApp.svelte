@@ -43,6 +43,33 @@
   let offline = !navigator.onLine
   let unsubSync: (() => void) | undefined
   let bootError = ''
+  let pairingInitialTab: 'sender' | 'receiver' = 'sender'
+  let pairingPrefillCode = ''
+  let pairingAutoConnect = false
+
+  function consumePairingCodeFromUrl() {
+    const url = new URL(window.location.href)
+    const raw = url.searchParams.get('pair') ?? url.searchParams.get('pairCode') ?? ''
+    const digits = raw.replace(/\D/g, '').slice(0, 8)
+
+    if (!digits) return
+
+    pairingInitialTab = 'receiver'
+    pairingPrefillCode = digits
+    pairingAutoConnect = true
+    vaultActions.setPanel('settings')
+    vaultActions.setSettingsTab('devices')
+    vaultActions.openPairingModal()
+    url.searchParams.delete('pair')
+    url.searchParams.delete('pairCode')
+    history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`)
+  }
+
+  function resetPairingHandoffState() {
+    pairingInitialTab = 'sender'
+    pairingPrefillCode = ''
+    pairingAutoConnect = false
+  }
 
   onMount(async () => {
     vaultActions.setLoading(true)
@@ -108,6 +135,7 @@
       console.error('[vault] boot error:', e)
     } finally {
       vaultActions.setLoading(false)
+      consumePairingCodeFromUrl()
     }
   })
 
@@ -239,7 +267,13 @@
   </div>
 
   {#if pairingOpen}
-    <VaultPairingModal {vaultApiUrl} />
+    <VaultPairingModal
+      {vaultApiUrl}
+      initialTab={pairingInitialTab}
+      prefillCode={pairingPrefillCode}
+      autoConnect={pairingAutoConnect}
+      on:close={resetPairingHandoffState}
+    />
   {/if}
 {/if}
 
@@ -286,14 +320,15 @@
 
   .va-shell-header {
     display: flex;
-    align-items: end;
+    align-items: flex-end;
     justify-content: space-between;
-    gap: 20px;
-    margin-bottom: 22px;
+    gap: 18px;
+    margin-bottom: 24px;
   }
 
   .va-title-block {
     min-width: 0;
+    max-width: 760px;
   }
 
   .va-kicker {
@@ -309,9 +344,9 @@
   .va-title {
     margin: 0;
     font-family: var(--font-display);
-    font-size: clamp(2.15rem, 3.8vw, 3.4rem);
-    line-height: 0.94;
-    letter-spacing: -0.045em;
+    font-size: clamp(1.9rem, 2.8vw, 2.55rem);
+    line-height: 1.02;
+    letter-spacing: -0.03em;
     color: var(--text-1);
     text-wrap: balance;
   }
@@ -326,37 +361,41 @@
 
   .va-panel-switch {
     display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    justify-content: flex-end;
+    align-items: center;
+    gap: 4px;
+    padding: 4px;
+    border: 2px solid var(--border-hard);
+    background: var(--surface-2);
+    box-shadow: 2px 2px 0 var(--border-hard);
+    border-radius: 14px;
+    flex: 0 0 auto;
   }
 
   .va-panel-tab {
-    min-height: 42px;
-    padding: 10px 14px;
-    border-radius: 12px;
-    border: 2px solid var(--border-hard);
-    background: var(--surface);
-    box-shadow: 3px 3px 0 var(--border-hard);
+    min-height: 46px;
+    min-width: 132px;
+    padding: 10px 16px;
+    border-radius: 10px;
+    border: 2px solid transparent;
+    background: transparent;
     font-family: var(--font-display);
     font-size: 14px;
     font-weight: 700;
     color: var(--text-2);
     cursor: pointer;
-    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
-    white-space: nowrap;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+    text-align: center;
   }
 
   .va-panel-tab:hover {
-    transform: translate(-1px, -1px);
-    box-shadow: 5px 5px 0 var(--border-hard);
+    color: var(--text-1);
   }
 
   .va-panel-tab--active {
-    background: var(--accent);
-    color: #111;
-    border-color: #111;
-    box-shadow: 4px 4px 0 #111;
+    background: var(--surface);
+    color: var(--text-1);
+    border-color: var(--border-hard);
+    box-shadow: 2px 2px 0 var(--border-hard);
   }
 
   .va-grid {
@@ -531,7 +570,9 @@
     }
 
     .va-panel-switch {
-      justify-content: flex-start;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      width: 100%;
     }
 
     .va-grid {
@@ -557,6 +598,9 @@
     }
     .va-title {
       font-size: 2rem;
+    }
+    .va-panel-switch {
+      display: none;
     }
     .va-col-sidebar {
       display: none;
