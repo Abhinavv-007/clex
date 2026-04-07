@@ -9,7 +9,9 @@
     getDriveSession,
     getStoredToken,
     initiateGoogleAuth,
+    persistPendingVaultDriveFiles,
     pickupToken,
+    restorePendingVaultDriveFiles,
     uploadDriveBatch,
   } from '$transfer/gdrive'
 
@@ -87,6 +89,28 @@
     void bootCloudShare()
   })
 
+  function mergeSelectedFiles(incoming: File[]): string[] {
+    const next = [...selectedFiles]
+    const rejected: string[] = []
+
+    for (const file of incoming) {
+      if (file.size > MAX_FILE_BYTES) {
+        rejected.push(`${file.name} exceeds the 1 GB file limit`)
+        continue
+      }
+
+      const exists = next.some(item =>
+        item.name === file.name
+        && item.size === file.size
+        && item.lastModified === file.lastModified,
+      )
+      if (!exists) next.push(file)
+    }
+
+    selectedFiles = next
+    return rejected
+  }
+
   function getActiveSessionShares(session: VaultDriveSessionRecord) {
     const folderShare = session.folder && session.files.length > 1
       ? [{
@@ -125,6 +149,12 @@
   async function bootCloudShare() {
     filesLoading = true
     try {
+      const restoredFiles = await restorePendingVaultDriveFiles()
+      const restoreWarnings = mergeSelectedFiles(restoredFiles)
+      if (restoreWarnings.length > 0) {
+        error = restoreWarnings.join('. ')
+      }
+
       await syncDriveConnection()
       if (tokenPresent) {
         await loadSessions()
@@ -143,13 +173,13 @@
     try {
       const token = await pickupToken()
       const session = await getDriveSession()
-      tokenPresent = Boolean(token || session.connected)
+      tokenPresent = Boolean(token || storedToken || session.connected)
       driveUser = session.user as DriveSessionUser | null
-      return token
+      return token ?? storedToken
     } catch (err) {
-      if (storedToken) {
+      const session = await getDriveSession()
+      if (storedToken || session.connected) {
         tokenPresent = true
-        const session = await getDriveSession()
         driveUser = session.user as DriveSessionUser | null
         return storedToken
       }
@@ -163,10 +193,11 @@
 
     try {
       const token = await syncDriveConnection()
-      if (token) {
+      if (tokenPresent || token) {
         await loadSessions()
         return
       }
+      await persistPendingVaultDriveFiles(selectedFiles)
       await initiateGoogleAuth()
     } catch (err) {
       error = err instanceof Error ? err.message : 'Google Drive connection could not be started'
@@ -190,30 +221,7 @@
   function handleFileSelection(event: Event) {
     const target = event.currentTarget as HTMLInputElement
     const incoming = Array.from(target.files ?? [])
-    const accepted: File[] = []
-    const rejected: string[] = []
-
-    for (const file of incoming) {
-      if (file.size > MAX_FILE_BYTES) {
-        rejected.push(`${file.name} exceeds the 1 GB file limit`)
-        continue
-      }
-      accepted.push(file)
-    }
-
-    if (accepted.length > 0) {
-      const next = [...selectedFiles]
-      for (const file of accepted) {
-        const exists = next.some(item =>
-          item.name === file.name
-          && item.size === file.size
-          && item.lastModified === file.lastModified,
-        )
-        if (!exists) next.push(file)
-      }
-      selectedFiles = next
-    }
-
+    const rejected = mergeSelectedFiles(incoming)
     error = rejected.join('. ')
     target.value = ''
   }
@@ -287,6 +295,9 @@
         token = await syncDriveConnection()
       }
       if (!token) {
+        if (tokenPresent) {
+          throw new Error('Google Drive is connected, but Clex is still restoring the upload token. Refresh once and try again.')
+        }
         throw new Error('Connect Google Drive before uploading Vault shares.')
       }
 
@@ -335,6 +346,7 @@
       sessions = [payload.session, ...sessions.filter(session => session.id !== payload.session.id)]
       activeSessionId = payload.session.id
       selectedFiles = []
+      await persistPendingVaultDriveFiles([])
       uploadStepLabel = 'Vault links ready'
       uploadProgress = 100
     } catch (err) {
@@ -426,7 +438,7 @@
 
       {#if !tokenPresent}
         <div class="vcs-connect">
-          <div>
+          <div class="vcs-panel-copy">
             <p class="vcs-connect-title">Connect Google Drive</p>
             <p class="vcs-connect-copy">
               Vault publishes links from your Google Drive account, not from a Clex relay bucket. Clex keeps the encrypted refresh token only so expired sessions can be deleted automatically after 24 hours.
@@ -438,7 +450,7 @@
         </div>
       {:else}
         <div class="vcs-account-bar">
-          <div>
+          <div class="vcs-panel-copy">
             <p class="vcs-account-title">{driveUser?.displayName ?? driveUser?.email ?? 'Google Drive connected'}</p>
             <p class="vcs-account-copy">Uploads are written to your Drive and cleaned up on the 24-hour window.</p>
           </div>
@@ -449,7 +461,7 @@
 
         <div class="vcs-uploader">
           <div class="vcs-dropzone">
-            <div>
+            <div class="vcs-panel-copy">
               <p class="vcs-dropzone-title">Queue files for Vault Drive</p>
               <p class="vcs-dropzone-copy">
                 Every file receives its own direct link, QR, and code. If you upload more than one file, Vault also creates a folder handoff for the whole session.
@@ -590,7 +602,7 @@
             {#each getActiveSessionShares(activeSession) as share}
               <div class="vcs-handoff-card">
                 <div class="vcs-handoff-head">
-                  <div>
+                  <div class="vcs-panel-copy">
                     <p class="vcs-handoff-title">{share.kind === 'folder' ? 'Folder share' : share.title}</p>
                     <p class="vcs-handoff-subtitle">{share.kind === 'folder' ? share.subtitle : share.subtitle}</p>
                   </div>
@@ -764,11 +776,20 @@
     justify-content: space-between;
     gap: 14px;
     align-items: center;
+    flex-wrap: wrap;
   }
 
   .vcs-account-bar {
     margin-top: 18px;
     align-items: flex-start;
+  }
+
+  .vcs-panel-copy {
+    flex: 1 1 18rem;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
   }
 
   .vcs-connect-title,
@@ -794,11 +815,17 @@
     align-items: center;
     justify-content: space-between;
     gap: 10px;
+    flex-wrap: wrap;
   }
 
-  .vcs-dropzone-actions { flex-wrap: wrap; }
-  .vcs-section-head { margin-bottom: 10px; }
+  .vcs-dropzone-actions { width: 100%; justify-content: flex-end; }
+  .vcs-section-head {
+    margin-bottom: 10px;
+    align-items: flex-start;
+  }
   .vcs-handoff-head { align-items: flex-start; }
+  .vcs-handoff-row,
+  .vcs-side-actions { align-items: flex-start; }
 
   .vcs-primary-btn,
   .vcs-secondary-btn,
@@ -819,6 +846,8 @@
     font-weight: 700;
     text-decoration: none;
     cursor: pointer;
+    flex-shrink: 0;
+    max-width: 100%;
     transition: transform 150ms ease, box-shadow 150ms ease;
   }
 
@@ -868,6 +897,7 @@
     align-items: center;
     justify-content: space-between;
     gap: 12px;
+    flex-wrap: wrap;
     padding: 14px 15px;
     border-radius: 14px;
     border: 1.5px solid var(--border);
@@ -1036,6 +1066,7 @@
 
   .vcs-link-box,
   .vcs-code-box {
+    width: 100%;
     padding: 12px 13px;
     border-radius: 14px;
     border: 1.5px solid var(--border-hard);
@@ -1054,14 +1085,29 @@
   }
 
   .vcs-row-action {
-    border: 0;
-    background: transparent;
+    min-height: 36px;
+    padding: 7px 12px;
+    border-radius: 999px;
+    border: 1.5px solid var(--border-hard);
+    background: var(--surface);
+    box-shadow: 2px 2px 0 var(--border-hard);
     font: inherit;
-    color: var(--accent-text);
+    font-weight: 700;
+    color: var(--text-1);
     cursor: pointer;
   }
 
-  @media (max-width: 960px) {
+  .vcs-row-action:hover {
+    transform: translate(-1px, -1px);
+    box-shadow: 4px 4px 0 var(--border-hard);
+  }
+
+  .vcs-dropzone-actions > *,
+  .vcs-side-actions > * {
+    flex: 1 1 11rem;
+  }
+
+  @media (max-width: 1040px) {
     .vcs-shell {
       grid-template-columns: 1fr;
     }
@@ -1071,28 +1117,42 @@
     .vcs-connect,
     .vcs-account-bar,
     .vcs-dropzone,
-    .vcs-handoff-grid,
-    .vcs-meta-grid,
-    .vcs-side-actions {
-      grid-template-columns: 1fr;
+    .vcs-section-head,
+    .vcs-handoff-row,
+    .vcs-side-actions,
+    .vcs-handoff-head,
+    .vcs-row,
+    .vcs-file-card {
       flex-direction: column;
       align-items: stretch;
     }
 
     .vcs-handoff-grid {
-      display: flex;
+      grid-template-columns: 1fr;
+      align-items: stretch;
     }
 
     .vcs-meta-grid {
-      display: grid;
       grid-template-columns: 1fr;
     }
 
     .vcs-primary-btn,
     .vcs-secondary-btn,
     .vcs-secondary-link,
-    .vcs-inline-btn {
+    .vcs-inline-btn,
+    .vcs-row-action {
       width: 100%;
+    }
+
+    .vcs-dropzone-actions,
+    .vcs-side-actions {
+      width: 100%;
+      justify-content: stretch;
+    }
+
+    .vcs-qr-wrap {
+      width: min(100%, 180px);
+      margin: 0 auto;
     }
   }
 </style>

@@ -2,7 +2,14 @@
   import { filesStore } from '$stores/files'
   import { transferStore } from '$stores/transfer'
   import { uiStore } from '$stores/ui'
-  import { uploadToDrive, getStoredToken, initiateGoogleAuth, disconnectGoogleDrive, pickupToken } from '$transfer/gdrive'
+  import {
+    uploadToDrive,
+    getDriveSession,
+    getStoredToken,
+    initiateGoogleAuth,
+    disconnectGoogleDrive,
+    pickupToken,
+  } from '$transfer/gdrive'
   import { formatBytes } from '$utils/format'
   import { onMount } from 'svelte'
 
@@ -17,10 +24,12 @@
     const existingToken = getStoredToken()
     try {
       const pickedUpToken = await pickupToken()
-      tokenPresent = Boolean(pickedUpToken)
-      return pickedUpToken
+      const session = await getDriveSession()
+      tokenPresent = Boolean(pickedUpToken || existingToken || session.connected)
+      return pickedUpToken ?? existingToken
     } catch (err) {
-      if (existingToken) {
+      const session = await getDriveSession()
+      if (existingToken || session.connected) {
         tokenPresent = true
         return existingToken
       }
@@ -43,7 +52,7 @@
 
     try {
       const recoveredToken = await syncDriveConnection()
-      if (recoveredToken) return
+      if (recoveredToken || tokenPresent) return
       await initiateGoogleAuth()
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Google Drive connection could not be started'
@@ -61,6 +70,12 @@
 
     const token = getStoredToken() ?? await syncDriveConnection()
     if (!token) {
+      if (tokenPresent) {
+        const msg = 'Google Drive is connected, but Clex is still restoring the upload token. Try again in a moment.'
+        error = msg
+        uiStore.toast({ type: 'error', message: msg })
+        return
+      }
       await connectDrive()
       return
     }

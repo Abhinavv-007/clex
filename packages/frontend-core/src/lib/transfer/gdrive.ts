@@ -14,6 +14,7 @@ const PENDING_AUTH_KEY = 'clex_gdrive_auth_pending'
 const DRIVE_AUTH_DB_NAME = 'clex_drive_auth'
 const DRIVE_AUTH_STORE_NAME = 'workspace_state'
 const DRIVE_AUTH_STATE_KEY = 'pending_google_drive_auth'
+const VAULT_DRIVE_AUTH_STATE_KEY = 'pending_vault_google_drive_auth'
 const DRIVE_AUTH_ERROR_KEY = 'clex_gdrive_callback_error'
 const PICKUP_RETRY_DELAYS_MS = [0, 150, 350, 700, 1400, 2400]
 
@@ -29,6 +30,10 @@ type PersistedDriveEntry = {
 type PersistedDriveAuthState = {
   files: PersistedDriveEntry[]
   method: TransferMethod
+}
+
+type PersistedVaultDriveAuthState = {
+  files: PersistedDriveEntry[]
 }
 
 export interface GoogleDriveUser {
@@ -227,6 +232,8 @@ export async function pickupToken(): Promise<string | null> {
     throw new Error(mapCallbackError(callbackError) ?? 'Google Drive callback failed')
   }
 
+  let lastError: string | null = null
+
   for (const delayMs of PICKUP_RETRY_DELAYS_MS) {
     if (delayMs > 0) {
       await delay(delayMs)
@@ -236,7 +243,15 @@ export async function pickupToken(): Promise<string | null> {
       const response = await fetch(`${getDriveApiBaseUrl()}/api/auth/gdrive/token`, {
         credentials: 'include',
       })
-      if (!response.ok) continue
+      if (!response.ok) {
+        const session = await getDriveSession()
+        if (session.connected) {
+          clearPendingAuth()
+          await restorePendingDriveAuthState()
+          return getStoredToken()
+        }
+        continue
+      }
       const data = await response.json() as GoogleDriveTokenPickupResponse
       if (data.token) {
         storeToken(data.token)
@@ -244,11 +259,23 @@ export async function pickupToken(): Promise<string | null> {
         return data.token
       }
       if (data.error && hasPendingAuth()) {
-        throw new Error(mapCallbackError(data.error) ?? data.error)
+        lastError = mapCallbackError(data.error) ?? data.error
+      }
+      if (data.connected) {
+        clearPendingAuth()
+        await restorePendingDriveAuthState()
+        return getStoredToken()
+      }
+
+      const session = await getDriveSession()
+      if (session.connected) {
+        clearPendingAuth()
+        await restorePendingDriveAuthState()
+        return getStoredToken()
       }
     } catch (error) {
       if (error instanceof Error) {
-        throw error
+        lastError = error.message
       }
     }
   }
@@ -261,7 +288,13 @@ export async function pickupToken(): Promise<string | null> {
   }
 
   if (hasPendingAuth()) {
-    throw new Error('Google Drive finished redirecting, but Clex could not restore the connection or your pending files.')
+    const session = await getDriveSession()
+    if (session.connected) {
+      clearPendingAuth()
+      await restorePendingDriveAuthState()
+      return getStoredToken()
+    }
+    throw new Error(lastError ?? 'Google Drive finished redirecting, but Clex could not restore the connection or your pending files.')
   }
 
   return null
@@ -319,13 +352,13 @@ async function openDriveAuthDb(): Promise<IDBDatabase | null> {
   })
 }
 
-async function writeDriveAuthState(state: PersistedDriveAuthState): Promise<void> {
+async function writeDriveAuthState<T>(state: T, key = DRIVE_AUTH_STATE_KEY): Promise<void> {
   const db = await openDriveAuthDb()
   if (!db) return
 
   await new Promise<void>((resolve, reject) => {
     const tx = db.transaction(DRIVE_AUTH_STORE_NAME, 'readwrite')
-    tx.objectStore(DRIVE_AUTH_STORE_NAME).put(state, DRIVE_AUTH_STATE_KEY)
+    tx.objectStore(DRIVE_AUTH_STORE_NAME).put(state, key)
     tx.oncomplete = () => resolve()
     tx.onerror = () => reject(tx.error ?? new Error('Could not store Drive auth state'))
   })
@@ -333,14 +366,14 @@ async function writeDriveAuthState(state: PersistedDriveAuthState): Promise<void
   db.close()
 }
 
-async function readDriveAuthState(): Promise<PersistedDriveAuthState | null> {
+async function readDriveAuthState<T>(key = DRIVE_AUTH_STATE_KEY): Promise<T | null> {
   const db = await openDriveAuthDb()
   if (!db) return null
 
-  const result = await new Promise<PersistedDriveAuthState | null>((resolve, reject) => {
+  const result = await new Promise<T | null>((resolve, reject) => {
     const tx = db.transaction(DRIVE_AUTH_STORE_NAME, 'readonly')
-    const request = tx.objectStore(DRIVE_AUTH_STORE_NAME).get(DRIVE_AUTH_STATE_KEY)
-    request.onsuccess = () => resolve((request.result as PersistedDriveAuthState | undefined) ?? null)
+    const request = tx.objectStore(DRIVE_AUTH_STORE_NAME).get(key)
+    request.onsuccess = () => resolve((request.result as T | undefined) ?? null)
     request.onerror = () => reject(request.error ?? new Error('Could not read Drive auth state'))
   })
 
@@ -348,13 +381,13 @@ async function readDriveAuthState(): Promise<PersistedDriveAuthState | null> {
   return result
 }
 
-async function clearDriveAuthState(): Promise<void> {
+async function clearDriveAuthState(key = DRIVE_AUTH_STATE_KEY): Promise<void> {
   const db = await openDriveAuthDb()
   if (!db) return
 
   await new Promise<void>((resolve, reject) => {
     const tx = db.transaction(DRIVE_AUTH_STORE_NAME, 'readwrite')
-    tx.objectStore(DRIVE_AUTH_STORE_NAME).delete(DRIVE_AUTH_STATE_KEY)
+    tx.objectStore(DRIVE_AUTH_STORE_NAME).delete(key)
     tx.oncomplete = () => resolve()
     tx.onerror = () => reject(tx.error ?? new Error('Could not clear Drive auth state'))
   })
@@ -364,7 +397,14 @@ async function clearDriveAuthState(): Promise<void> {
 
 async function persistPendingDriveAuthState(): Promise<void> {
   const currentFiles = get(filesStore)
-  if (currentFiles.length === 0) return
+  if (currentFiles.length === 0) {
+    try {
+      await clearDriveAuthState(DRIVE_AUTH_STATE_KEY)
+    } catch (error) {
+      console.warn('Could not clear empty Drive auth state before redirect.', error)
+    }
+    return
+  }
 
   const snapshot: PersistedDriveAuthState = {
     files: currentFiles.map(entry => ({
@@ -386,7 +426,7 @@ async function persistPendingDriveAuthState(): Promise<void> {
   }
 
   try {
-    await writeDriveAuthState(snapshot)
+    await writeDriveAuthState(snapshot, DRIVE_AUTH_STATE_KEY)
   } catch (error) {
     console.warn('Could not persist Drive auth state before redirect.', error)
   }
@@ -396,7 +436,7 @@ async function restorePendingDriveAuthState(): Promise<void> {
   let pendingState: PersistedDriveAuthState | null = null
 
   try {
-    pendingState = await readDriveAuthState()
+    pendingState = await readDriveAuthState<PersistedDriveAuthState>(DRIVE_AUTH_STATE_KEY)
   } catch (error) {
     console.warn('Could not read pending Drive auth state.', error)
     return
@@ -419,10 +459,62 @@ async function restorePendingDriveAuthState(): Promise<void> {
   uiStore.setPanel('share')
 
   try {
-    await clearDriveAuthState()
+    await clearDriveAuthState(DRIVE_AUTH_STATE_KEY)
   } catch (error) {
     console.warn('Could not clear restored Drive auth state.', error)
   }
+}
+
+export async function persistPendingVaultDriveFiles(files: File[]): Promise<void> {
+  if (files.length === 0) {
+    try {
+      await clearDriveAuthState(VAULT_DRIVE_AUTH_STATE_KEY)
+    } catch (error) {
+      console.warn('Could not clear empty Vault Drive auth state before redirect.', error)
+    }
+    return
+  }
+
+  const snapshot: PersistedVaultDriveAuthState = {
+    files: files.map(file => ({
+      id: `${file.name}:${file.size}:${file.lastModified}`,
+      file,
+      name: file.name,
+      size: file.size,
+      type: file.type,
+    })),
+  }
+
+  try {
+    await writeDriveAuthState(snapshot, VAULT_DRIVE_AUTH_STATE_KEY)
+  } catch (error) {
+    console.warn('Could not persist Vault Drive file state before redirect.', error)
+  }
+}
+
+export async function restorePendingVaultDriveFiles(): Promise<File[]> {
+  let pendingState: PersistedVaultDriveAuthState | null = null
+
+  try {
+    pendingState = await readDriveAuthState<PersistedVaultDriveAuthState>(VAULT_DRIVE_AUTH_STATE_KEY)
+  } catch (error) {
+    console.warn('Could not read pending Vault Drive auth state.', error)
+    return []
+  }
+
+  const restoredFiles = pendingState?.files?.map(entry => entry.file).filter(Boolean) ?? []
+
+  if (restoredFiles.length === 0) {
+    return []
+  }
+
+  try {
+    await clearDriveAuthState(VAULT_DRIVE_AUTH_STATE_KEY)
+  } catch (error) {
+    console.warn('Could not clear restored Vault Drive auth state.', error)
+  }
+
+  return restoredFiles
 }
 
 function escapeDriveQueryValue(value: string): string {
