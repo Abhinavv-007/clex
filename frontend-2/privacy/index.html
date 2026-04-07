@@ -6,7 +6,7 @@
   <link rel="icon" type="image/png" href="/brand/clex-logo.png">
   <link rel="apple-touch-icon" href="/brand/clex-logo.png">
   <title>Privacy Policy — Clex</title>
-  <meta name="description" content="Clex privacy policy covering Workspace, Vault notes, secret links, temporary relay storage, Google auth, and public transfer-chain boundaries.">
+  <meta name="description" content="Clex privacy policy covering Workspace, Vault notes, secret links, temporary Drive-share storage, Google auth, and public transfer-chain boundaries.">
   <script>
     (() => {
       try {
@@ -97,8 +97,8 @@
         </div>
         <div class="legal-highlight">
           <div class="legal-highlight__icon">📊</div>
-          <h3 class="legal-highlight__title">Scoped Relay Metadata</h3>
-          <p class="legal-highlight__text">Temporary relay files, quotas, and auth signals are limited to what Vault needs to work</p>
+          <h3 class="legal-highlight__title">Scoped Drive Metadata</h3>
+          <p class="legal-highlight__text">Temporary Drive-share metadata, quotas, and auth signals are limited to what Vault needs to work</p>
         </div>
       </div>
 
@@ -109,7 +109,7 @@
           <div class="legal-section__number">Section 01</div>
           <h2 class="legal-section__title">Overview</h2>
           <p class="legal-section__text">
-            Clex ("we", "us", "our") is a browser-based workspace for preparing and sharing files, plus Vault for encrypted notes, secret links, and timed relay links. This Privacy Policy explains how we collect, use, and protect information when you use clex.in and its related services.
+            Clex ("we", "us", "our") is a browser-based workspace for preparing and sharing files, plus Vault for encrypted notes, secret links, and timed Drive-share links. This Privacy Policy explains how we collect, use, and protect information when you use clex.in and its related services.
           </p>
           <p class="legal-section__text">
             Our default position is to keep content in your browser whenever possible. Direct P2P transfers, local network transfers, browser-side file processing, and local Vault notes are all designed to minimize server involvement.
@@ -127,7 +127,7 @@
             <li>We do not require an account for core browser-side preparation, P2P transfer, or local transfer functionality</li>
             <li>We do not sell or share personal data with third parties for advertising</li>
             <li>We do not use tracking cookies for behavioral advertising</li>
-            <li>We do not publish Vault notes, secret-link content, or timed relay file contents to the public Transfer Chain</li>
+            <li>We do not publish Vault notes, secret-link content, or timed Drive-share file contents to the public Transfer Chain</li>
           </ul>
         </div>
 
@@ -139,7 +139,7 @@
             <li><strong>Signaling and routing data:</strong> Temporary identifiers and network metadata used to establish P2P sessions and route transfers.</li>
             <li><strong>Basic service analytics:</strong> Aggregated page views, feature usage counts, and error reports used to keep the product stable.</li>
             <li><strong>Google account data:</strong> When you choose Google Drive fallback or Vault Cloud Share, authentication is handled through Google/Firebase flows. We may receive identifiers such as UID, email address, display name, and avatar URL that are necessary to show account state and apply quotas.</li>
-            <li><strong>Temporary relay metadata:</strong> For Vault Cloud Share we store file metadata such as file name, size, MIME type, upload time, delete time, owner UID, and storage path so the timed relay can function and clean itself up.</li>
+            <li><strong>Temporary Drive-share metadata:</strong> For Vault Cloud Share we store share metadata such as file name, size, MIME type, upload time, delete time, owner identifiers, share codes, and Drive item ids so the timed Drive session can function and clean itself up.</li>
             <li><strong>Secret status metadata:</strong> For Vault Secret Share we store encrypted payloads, expiry timestamps, open-status metadata, and the selected protection policy until the secret expires or is consumed.</li>
           </ul>
         </div>
@@ -189,16 +189,16 @@
 
         <div class="legal-section reveal">
           <div class="legal-section__number">Section 07</div>
-          <h2 class="legal-section__title">Vault Cloud Share and Temporary Relay Storage</h2>
+          <h2 class="legal-section__title">Vault Cloud Share and Temporary Drive Sessions</h2>
           <p class="legal-section__text">
-            Vault Cloud Share is different from direct transfer. It is a temporary relay feature backed by <strong>Supabase storage</strong> and related metadata tables so files can be picked up later through a timed link.
+            Vault Cloud Share is different from direct transfer. It is a temporary Drive-backed feature that writes uploads into the user's own <strong>Google Drive</strong> account under the <strong>Clex Share</strong> folder so files can be picked up later through a timed Vault link.
           </p>
           <ul class="legal-section__list">
-            <li>Google sign-in is required for Cloud Share so Vault can associate relay files with an owner and enforce daily quotas</li>
-            <li>Relay files are limited to 10 MB per file and 100 MB per day per signed-in Vault user</li>
-            <li>Relay files are scheduled for deletion after 24 hours</li>
-            <li>Recipients who have the relay link may access the file until the file expires or is deleted</li>
-            <li>Supabase infrastructure processes the temporary stored file and signed download URLs on our behalf</li>
+            <li>Google Drive sign-in is required so Vault can publish files in the user's Drive account and enforce daily quotas</li>
+            <li>Vault Drive shares are limited to 1 GB per file and 10 GB per day per connected account</li>
+            <li>Drive sessions are scheduled for deletion after 24 hours</li>
+            <li>Recipients who have the Vault link or access code may access the file or folder until the session expires or is deleted</li>
+            <li>We store encrypted refresh tokens and share metadata so the 24-hour cleanup job can remove expired Drive files and folders automatically</li>
           </ul>
         </div>
 
@@ -219,7 +219,7 @@
           <div class="legal-section__number">Section 09</div>
           <h2 class="legal-section__title">Chain Boundary</h2>
           <p class="legal-section__text">
-            The public Transfer Chain exists for workspace transfer-session metadata. Vault notes, secret-link content, secret policies, and timed cloud relay file contents are not written to that public ledger.
+            The public Transfer Chain exists for workspace transfer-session metadata. Vault notes, secret-link content, secret policies, and timed Drive-share file contents are not written to that public ledger.
           </p>
         </div>
 

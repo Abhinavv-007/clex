@@ -2,7 +2,7 @@
   import { onMount } from 'svelte'
   import { masterKey, googleUser, devices, ui, syncState, vaultActions, formatBytes } from '$stores/vault'
   import { getAllDevices, deleteDevice as dbDeleteDevice, clearAllData, detectDeviceName, getDeviceFingerprint } from '$lib/vault/db'
-  import { exportKeyAsJson, importKeyFromJson, rotateMasterKey, deriveGoogleKey } from '$lib/vault/crypto'
+  import { exportKeyAsJson, importKeyFromJson, rotateMasterKey } from '$lib/vault/crypto'
   import { signInWithGoogle, signOutGoogle } from '$lib/vault/auth'
   import { fetchAccountDevices, removeAccountDevice, upsertAccountDevice, type AccountDeviceRecord } from '$lib/vault/backup'
   import { fade, slide } from 'svelte/transition'
@@ -182,14 +182,7 @@
     authBusy = true
     authError = ''
     try {
-      const u = await signInWithGoogle()
-      if (!u) return  // popup dismissed
-      vaultActions.setGoogleUser(u)
-      // Derive deterministic master key from Google UID.
-      // New vault = gets Google key automatically.
-      // Existing vault = key replaces the random one; notes save with new key on next edit.
-      const gk = await deriveGoogleKey(u.uid)
-      vaultActions.setMasterKey(gk)
+      await signInWithGoogle()
     } catch (e: unknown) {
       authError = e instanceof Error ? e.message : 'Sign-in failed'
     } finally {
@@ -292,7 +285,7 @@
 
         <div class="vst-notice">
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="7" cy="7" r="5.5"/><path d="M7 6v3.5M7 4.5v.2"/></svg>
-          Notes sync over the shared Vault room when both devices are online. Use Quick Connect once, then Sync + backup in Notes whenever you want to force a live merge and refresh the encrypted room snapshot.
+          Notes sync over the shared Vault room when both devices are online. Signed-in devices on the same Google account rebind into the same encrypted vault automatically, and Sync + backup forces a pull, merge, and encrypted snapshot refresh.
         </div>
 
         <div class="vst-device-overview">
@@ -405,8 +398,8 @@
           </div>
         </div>
 
-        <p class="vst-hint">Notes stay encrypted on this device first. Sync + backup writes an encrypted snapshot keyed to your Vault room, while Cloud Share still uses the timed relay limits shown below.</p>
-        <p class="vst-hint">Relay files auto-delete after 24 hours. Uploads remain capped at 10 MB per file and 100 MB per day for each signed-in Vault user.</p>
+        <p class="vst-hint">Notes stay encrypted on this device first. Sync + backup writes an encrypted snapshot keyed to your Vault room so the same Google account can recover the vault across devices.</p>
+        <p class="vst-hint">Vault Drive files live in your own Google Drive under <code>Clex Share</code>, auto-delete after 24 hours, and stay capped at 1 GB per file and 10 GB per day.</p>
       </div>
 
     <!-- ── Encryption ─────────────────────────────────────────────────── -->
@@ -484,7 +477,7 @@
 
           <div class="vst-notice vst-notice--green">
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M2.5 7l3 3 6-6"/></svg>
-            Auto-pair active — any device signed into this Google account derives the same vault key automatically. No pairing codes needed.
+            Same-account vault active. Any device signed into this Google account derives the same vault key, lands in the same sync room, and restores the encrypted backup namespace automatically.
           </div>
 
           {#if authError}<p class="vst-err">{authError}</p>{/if}
@@ -493,7 +486,7 @@
           </button>
         {:else}
           <p class="vst-hint">
-            Sign in to enable file storage and Google auto-pair. Any device signed into the same Google account derives the same vault key — no codes required.
+            Sign in to bind this Vault to your Google account. Existing local notes are migrated into the Google-backed vault key, and any other device on the same account joins the same encrypted room automatically.
           </p>
           <p class="vst-hint">
             Your encryption key is derived locally via <code>HKDF(googleUID, "clex-vault-v1")</code>. It is <strong>never</strong> sent to or stored by Google or Clex.

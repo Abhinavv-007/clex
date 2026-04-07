@@ -10,6 +10,8 @@ export interface Env {
   GOOGLE_CLIENT_SECRET?: string
   GOOGLE_REDIRECT_URI?: string
   GOOGLE_DRIVE_SCOPE?: string
+  OAUTH_TOKEN_ENCRYPTION_SECRET?: string
+  DRIVE_SESSION_STORE: KVNamespace
 }
 
 export function getGoogleOAuthConfigStatus(source: Env): GoogleOAuthConfigStatus {
@@ -92,8 +94,8 @@ export function appendCors(headers: Headers, request: Request, env: Env): void {
 
   headers.set('Access-Control-Allow-Origin', allowed)
   headers.set('Access-Control-Allow-Credentials', 'true')
-  headers.set('Access-Control-Allow-Methods', 'GET, OPTIONS')
-  headers.set('Access-Control-Allow-Headers', 'Content-Type')
+  headers.set('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS')
+  headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization')
   headers.set('Vary', 'Origin')
 }
 
@@ -103,18 +105,58 @@ export function buildFrontendRedirect(
   returnTo: string | null,
   params: URLSearchParams
 ): string {
-  const fallback = env.FRONTEND_BASE_URL?.trim() || new URL(request.url).origin
-  const base = sanitizeReturnTo(returnTo) ?? fallback
-  const url = new URL('/workspace', base)
-  url.search = params.toString()
+  const fallbackBase = env.FRONTEND_BASE_URL?.trim() || new URL(request.url).origin
+  const fallback = new URL('/workspace', fallbackBase)
+  const target = sanitizeReturnTo(request, env, returnTo) ?? fallback.toString()
+  const url = new URL(target)
+
+  params.forEach((value, key) => {
+    url.searchParams.set(key, value)
+  })
+
   return url.toString()
 }
 
-function sanitizeReturnTo(value: string | null): string | null {
+function sanitizeReturnTo(request: Request, env: Env, value: string | null): string | null {
   if (!value) return null
+
   try {
     const url = new URL(value)
-    return url.origin
+    const requestOrigin = new URL(request.url).origin
+    const frontendOrigin = getOptionalOrigin(env.FRONTEND_BASE_URL)
+    const allowedOrigins = new Set<string>([
+      requestOrigin,
+      ...(frontendOrigin ? [frontendOrigin] : []),
+    ])
+
+    if (env.ALLOWED_ORIGIN !== '*') {
+      env.ALLOWED_ORIGIN
+        .split(',')
+        .map(entry => entry.trim())
+        .filter(Boolean)
+        .forEach(origin => allowedOrigins.add(origin))
+    }
+
+    if (env.ALLOWED_ORIGIN === '*' || allowedOrigins.has(url.origin)) {
+      return url.toString()
+    }
+  } catch {
+    try {
+      const fallbackBase = env.FRONTEND_BASE_URL?.trim() || new URL(request.url).origin
+      const url = new URL(value, fallbackBase)
+      return url.toString()
+    } catch {
+      return null
+    }
+  }
+
+  return null
+}
+
+function getOptionalOrigin(value: string | undefined): string | null {
+  if (!value?.trim()) return null
+  try {
+    return new URL(value).origin
   } catch {
     return null
   }

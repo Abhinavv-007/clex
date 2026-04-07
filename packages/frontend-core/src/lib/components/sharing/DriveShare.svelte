@@ -2,7 +2,7 @@
   import { filesStore } from '$stores/files'
   import { transferStore } from '$stores/transfer'
   import { uiStore } from '$stores/ui'
-  import { uploadToDrive, getStoredToken, hasToken, hasPendingAuth, initiateGoogleAuth, clearToken, pickupToken } from '$transfer/gdrive'
+  import { uploadToDrive, getStoredToken, initiateGoogleAuth, disconnectGoogleDrive, pickupToken } from '$transfer/gdrive'
   import { formatBytes } from '$utils/format'
   import { onMount } from 'svelte'
 
@@ -15,23 +15,27 @@
 
   async function syncDriveConnection(): Promise<string | null> {
     const existingToken = getStoredToken()
-    if (existingToken) {
-      tokenPresent = true
-      return existingToken
+    try {
+      const pickedUpToken = await pickupToken()
+      tokenPresent = Boolean(pickedUpToken)
+      return pickedUpToken
+    } catch (err) {
+      if (existingToken) {
+        tokenPresent = true
+        return existingToken
+      }
+      throw err
     }
-
-    if (!hasPendingAuth()) {
-      tokenPresent = hasToken()
-      return getStoredToken()
-    }
-
-    const pickedUpToken = await pickupToken()
-    tokenPresent = Boolean(pickedUpToken)
-    return pickedUpToken
   }
 
   onMount(() => {
-    void syncDriveConnection()
+    void (async () => {
+      try {
+        await syncDriveConnection()
+      } catch (err) {
+        error = err instanceof Error ? err.message : 'Google Drive connection could not be restored'
+      }
+    })()
   })
 
   async function connectDrive() {
@@ -84,7 +88,6 @@
       const msg = err instanceof Error ? err.message : 'Upload failed'
       error = msg
       if (msg.includes('401') || msg.includes('unauthorized')) {
-        clearToken()
         tokenPresent = false
       }
     } finally {
@@ -217,7 +220,7 @@
       </button>
 
       {#if tokenPresent}
-        <button class="dv-disconnect-btn" on:click={() => { clearToken(); tokenPresent = false; }}>
+        <button class="dv-disconnect-btn" on:click={() => { void disconnectGoogleDrive(); tokenPresent = false; }}>
           Disconnect Drive
         </button>
       {/if}

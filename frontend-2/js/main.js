@@ -42,13 +42,23 @@ async function handleGoogleDriveOAuthCallback() {
   let shouldCleanUrl = Boolean(errorCode);
 
   if (connected) {
-    const token = await pickupToken();
-    if (token) {
+    try {
+      const token = await pickupToken();
+      if (token) {
+        shouldCleanUrl = true;
+      } else {
+        console.warn('Google Drive OAuth callback completed, but no token was picked up.');
+      }
+    } catch (error) {
+      console.warn('Google Drive OAuth callback restore failed:', error);
       shouldCleanUrl = true;
-    } else {
-      console.warn('Google Drive OAuth callback completed, but no token was picked up.');
     }
   } else if (errorCode) {
+    try {
+      sessionStorage.setItem('clex_gdrive_callback_error', errorCode);
+    } catch {
+      // ignore sessionStorage failures
+    }
     console.warn(`Google Drive OAuth failed: ${errorCode}`);
   }
 

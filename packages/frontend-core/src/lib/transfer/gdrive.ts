@@ -4,24 +4,18 @@ import { transferStore, type TransferMethod } from '$stores/transfer'
 import { uiStore } from '$stores/ui'
 
 const DRIVE_FILES_URL = 'https://www.googleapis.com/drive/v3/files'
-const DRIVE_UPLOAD_URL = 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart'
-const DRIVE_FILE_URL = (id: string) => `https://www.googleapis.com/drive/v3/files/${id}`
-const DRIVE_PERMISSIONS_URL = (id: string) => `${DRIVE_FILE_URL(id)}/permissions`
+const DRIVE_UPLOAD_URL = 'https://www.googleapis.com/upload/drive/v3/files'
+const DRIVE_PERMISSIONS_URL = (id: string) => `https://www.googleapis.com/drive/v3/files/${id}/permissions`
 const DRIVE_FOLDER_MIME = 'application/vnd.google-apps.folder'
-const DRIVE_ROOT_FOLDER_NAME = 'Glex sharing'
+const DRIVE_ROOT_FOLDER_NAME = 'Clex Share'
 
 const TOKEN_KEY = 'clex_gdrive_token'
 const PENDING_AUTH_KEY = 'clex_gdrive_auth_pending'
 const DRIVE_AUTH_DB_NAME = 'clex_drive_auth'
 const DRIVE_AUTH_STORE_NAME = 'workspace_state'
 const DRIVE_AUTH_STATE_KEY = 'pending_google_drive_auth'
+const DRIVE_AUTH_ERROR_KEY = 'clex_gdrive_callback_error'
 const PICKUP_RETRY_DELAYS_MS = [0, 150, 350, 700, 1400, 2400]
-
-function getApiBaseUrl(): string {
-  const configured = (import.meta.env.PUBLIC_API_BASE_URL as string | undefined)?.trim()
-  if (configured) return configured.replace(/\/$/, '')
-  return ''
-}
 
 type PersistedDriveEntry = {
   id: string
@@ -35,6 +29,61 @@ type PersistedDriveEntry = {
 type PersistedDriveAuthState = {
   files: PersistedDriveEntry[]
   method: TransferMethod
+}
+
+export interface GoogleDriveUser {
+  sub: string
+  email: string | null
+  displayName: string | null
+  picture: string | null
+}
+
+export interface UploadResult {
+  fileId: string
+  webViewLink: string
+  directLink: string
+  folderName?: string
+}
+
+export interface DriveUploadItemResult {
+  id: string
+  name: string
+  sizeBytes: number
+  mimeType: string
+  webViewLink: string
+  directLink: string
+}
+
+export interface DriveUploadBatchResult {
+  folderId: string
+  folderName: string
+  webViewLink: string
+  directLink: string
+  files: DriveUploadItemResult[]
+}
+
+interface GoogleOAuthStatusResponse {
+  configured: boolean
+  missing: string[]
+}
+
+interface GoogleDriveTokenPickupResponse {
+  token: string | null
+  connected: boolean
+  user?: GoogleDriveUser | null
+  error?: string
+}
+
+interface GoogleDriveSessionResponse {
+  connected: boolean
+  user?: GoogleDriveUser | null
+  error?: string
+}
+
+export function getDriveApiBaseUrl(): string {
+  const configured = (import.meta.env.PUBLIC_API_BASE_URL as string | undefined)?.trim()
+  if (configured) return configured.replace(/\/$/, '')
+  return ''
 }
 
 function getSessionStorage(): Storage | null {
@@ -52,8 +101,6 @@ function getLocalStorage(): Storage | null {
     return null
   }
 }
-
-// ─── Token management ────────────────────────────────────────────────────────
 
 export function getStoredToken(): string | null {
   return getSessionStorage()?.getItem(TOKEN_KEY) ?? getLocalStorage()?.getItem(TOKEN_KEY) ?? null
@@ -89,18 +136,17 @@ function clearPendingAuth(): void {
   getLocalStorage()?.removeItem(PENDING_AUTH_KEY)
 }
 
-// ─── Upload ──────────────────────────────────────────────────────────────────
-
-export interface UploadResult {
-  fileId: string
-  webViewLink: string
-  directLink: string
-  folderName?: string
+function setCallbackError(code: string): void {
+  getSessionStorage()?.setItem(DRIVE_AUTH_ERROR_KEY, code)
 }
 
-interface GoogleOAuthStatusResponse {
-  configured: boolean
-  missing: string[]
+export function consumeDriveAuthError(): string | null {
+  const storage = getSessionStorage()
+  const value = storage?.getItem(DRIVE_AUTH_ERROR_KEY) ?? null
+  if (value) {
+    storage?.removeItem(DRIVE_AUTH_ERROR_KEY)
+  }
+  return value
 }
 
 function isLocalSetupHost(hostname: string): boolean {
@@ -115,77 +161,95 @@ function isLocalSetupHost(hostname: string): boolean {
 
 function getGoogleOAuthSetupMessage(): string {
   if (typeof window !== 'undefined' && !isLocalSetupHost(window.location.hostname)) {
-    return 'Google Drive is not configured on this deployment. Set GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and GOOGLE_REDIRECT_URI on the API worker, then redeploy. Also add that redirect URI in Google Cloud Console.'
+    return 'Google Drive is not configured on this deployment. Set GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URI, DRIVE_SESSION_STORE, and the token encryption secret on the API worker, then redeploy.'
   }
 
-  return 'Google Drive is not configured yet. Add GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and GOOGLE_REDIRECT_URI to the API service env, then restart development.'
+  return 'Google Drive is not configured yet. Add the OAuth env vars, DRIVE_SESSION_STORE, and the token encryption secret to the API service before testing this flow.'
 }
 
-export async function uploadToDrive(
-  items: Array<{ blob: Blob; name: string; type?: string }>,
-  accessToken: string,
-  onProgress?: (pct: number) => void
-): Promise<UploadResult> {
-  if (items.length === 0) {
-    throw new Error('No files selected for Google Drive upload')
+function mapCallbackError(code: string | null): string | null {
+  if (!code) return null
+
+  switch (code) {
+    case 'oauth_denied':
+      return 'Google Drive access was denied. Approve the Drive permission request to continue.'
+    case 'state_mismatch':
+      return 'The Google Drive callback could not be verified. Start the connection again from the app.'
+    case 'no_code':
+      return 'Google completed the redirect without an authorization code. Start the connection again.'
+    case 'oauth_not_configured':
+      return getGoogleOAuthSetupMessage()
+    case 'token_exchange_failed':
+    case 'refresh_token_failed':
+      return 'Google Drive authentication completed, but Clex could not exchange the token. Try again in a moment.'
+    case 'no_refresh_token':
+      return 'Google Drive connected without an offline refresh token. Reconnect and approve the full consent screen so timed cleanup can work.'
+    case 'userinfo_failed':
+    case 'userinfo_missing_subject':
+      return 'Google Drive connected, but Clex could not load the account profile needed to finish setup.'
+    default:
+      return 'Google Drive connection could not be completed. Try again.'
   }
+}
 
-  onProgress?.(4)
-  const rootFolderId = await ensureDriveRootFolder(accessToken)
-  onProgress?.(10)
-
-  const folderName = getDriveSessionFolderName()
-  const sessionFolderId = await createFolder(folderName, accessToken, rootFolderId)
-  onProgress?.(16)
-
-  const totalBytes = items.reduce((sum, item) => sum + item.blob.size, 0) || 1
-  let uploadedBytes = 0
-
-  for (const item of items) {
-    await uploadFileToFolder(item, accessToken, sessionFolderId, (loaded) => {
-      const pct = Math.round(16 + ((uploadedBytes + loaded) / totalBytes) * 68)
-      onProgress?.(Math.min(84, pct))
+export async function getDriveSession(): Promise<{ connected: boolean; user: GoogleDriveUser | null }> {
+  try {
+    const response = await fetch(`${getDriveApiBaseUrl()}/api/auth/gdrive/session`, {
+      credentials: 'include',
     })
-    uploadedBytes += item.blob.size
-    const pct = Math.round(16 + (uploadedBytes / totalBytes) * 68)
-    onProgress?.(Math.min(84, pct))
-  }
+    if (!response.ok) {
+      return { connected: false, user: null }
+    }
 
-  onProgress?.(88)
-  await setAnyoneWithLinkPermission(sessionFolderId, accessToken)
-
-  onProgress?.(100)
-
-  const folderLink = `https://drive.google.com/drive/folders/${sessionFolderId}`
-
-  return {
-    fileId: sessionFolderId,
-    webViewLink: folderLink,
-    directLink: folderLink,
-    folderName,
+    const data = await response.json() as GoogleDriveSessionResponse
+    return {
+      connected: Boolean(data.connected),
+      user: data.user ?? null,
+    }
+  } catch {
+    return { connected: false, user: null }
   }
 }
 
-// ─── Pick up token from server after OAuth callback ──────────────────────────
-// Calls the one-time pickup endpoint that reads + deletes the httpOnly cookie.
+export async function disconnectGoogleDrive(): Promise<void> {
+  clearToken()
+  clearPendingAuth()
+  await fetch(`${getDriveApiBaseUrl()}/api/auth/gdrive/session`, {
+    method: 'DELETE',
+    credentials: 'include',
+  }).catch(() => undefined)
+}
 
 export async function pickupToken(): Promise<string | null> {
+  const callbackError = consumeDriveAuthError()
+  if (callbackError) {
+    clearPendingAuth()
+    throw new Error(mapCallbackError(callbackError) ?? 'Google Drive callback failed')
+  }
+
   for (const delayMs of PICKUP_RETRY_DELAYS_MS) {
     if (delayMs > 0) {
       await delay(delayMs)
     }
 
     try {
-      const resp = await fetch(`${getApiBaseUrl()}/api/auth/gdrive/token`, { credentials: 'include' })
-      if (!resp.ok) continue
-      const data = (await resp.json()) as { token: string | null }
+      const response = await fetch(`${getDriveApiBaseUrl()}/api/auth/gdrive/token`, {
+        credentials: 'include',
+      })
+      if (!response.ok) continue
+      const data = await response.json() as GoogleDriveTokenPickupResponse
       if (data.token) {
         storeToken(data.token)
         await restorePendingDriveAuthState()
         return data.token
       }
-    } catch {
-      // retry
+      if (data.error && hasPendingAuth()) {
+        throw new Error(mapCallbackError(data.error) ?? data.error)
+      }
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error
+      }
     }
   }
 
@@ -196,18 +260,20 @@ export async function pickupToken(): Promise<string | null> {
     return existingToken
   }
 
+  if (hasPendingAuth()) {
+    throw new Error('Google Drive finished redirecting, but Clex could not restore the connection or your pending files.')
+  }
+
   return null
 }
 
-// ─── Initiate OAuth from the workspace ───────────────────────────────────────
-
 async function ensureGoogleOAuthConfigured(): Promise<void> {
-  const resp = await fetch(`${getApiBaseUrl()}/api/auth/google/status`, { credentials: 'include' })
-  if (!resp.ok) {
+  const response = await fetch(`${getDriveApiBaseUrl()}/api/auth/google/status`, { credentials: 'include' })
+  if (!response.ok) {
     throw new Error('Could not verify Google Drive configuration. Try again in a moment.')
   }
 
-  const data = (await resp.json()) as GoogleOAuthStatusResponse
+  const data = await response.json() as GoogleOAuthStatusResponse
   if (!data.configured) {
     throw new Error(getGoogleOAuthSetupMessage())
   }
@@ -217,8 +283,9 @@ export async function initiateGoogleAuth(): Promise<void> {
   await ensureGoogleOAuthConfigured()
   await persistPendingDriveAuthState()
   markPendingAuth()
-  const apiBase = getApiBaseUrl()
-  const returnTo = typeof window !== 'undefined' ? window.location.origin : ''
+
+  const apiBase = getDriveApiBaseUrl()
+  const returnTo = typeof window !== 'undefined' ? window.location.href : ''
   const authUrl = new URL(`${apiBase}/api/auth/google`, typeof window !== 'undefined' ? window.location.origin : 'http://localhost')
   if (returnTo) {
     authUrl.searchParams.set('return_to', returnTo)
@@ -345,7 +412,7 @@ async function restorePendingDriveAuthState(): Promise<void> {
       size: entry.size,
       type: entry.type,
       processed: entry.processed,
-    }))
+    })),
   )
 
   transferStore.setMethod(pendingState.method)
@@ -398,7 +465,7 @@ async function findFolderIdByName(name: string, accessToken: string, parentId?: 
     throw new Error(`Drive folder lookup failed: ${response.status} ${response.statusText}`)
   }
 
-  const data = (await response.json()) as { files?: Array<{ id: string }> }
+  const data = await response.json() as { files?: Array<{ id: string }> }
   return data.files?.[0]?.id ?? null
 }
 
@@ -420,37 +487,46 @@ async function createFolder(name: string, accessToken: string, parentId?: string
     throw new Error(`Drive folder creation failed: ${response.status} ${response.statusText}`)
   }
 
-  const data = (await response.json()) as { id: string }
+  const data = await response.json() as { id: string }
   return data.id
 }
 
-async function uploadFileToFolder(
+async function uploadFileResumableToFolder(
   item: { blob: Blob; name: string; type?: string },
   accessToken: string,
   parentId: string,
-  onProgress?: (loaded: number) => void
+  onProgress?: (loaded: number) => void,
 ): Promise<string> {
-  const metadata = JSON.stringify({
-    name: item.name,
-    mimeType: item.blob.type || item.type || 'application/octet-stream',
-    parents: [parentId],
+  const mimeType = item.blob.type || item.type || 'application/octet-stream'
+  const startResponse = await fetch(`${DRIVE_UPLOAD_URL}?uploadType=resumable&fields=id`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json; charset=UTF-8',
+      'X-Upload-Content-Type': mimeType,
+      'X-Upload-Content-Length': String(item.blob.size),
+    },
+    body: JSON.stringify({
+      name: item.name,
+      mimeType,
+      parents: [parentId],
+    }),
   })
-  const boundary = `clex_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
-  const body = new Blob(
-    [
-      `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${metadata}\r\n`,
-      `--${boundary}\r\nContent-Type: ${item.blob.type || item.type || 'application/octet-stream'}\r\n\r\n`,
-      item.blob,
-      `\r\n--${boundary}--`,
-    ],
-    { type: `multipart/related; boundary=${boundary}` }
-  )
 
-  return new Promise<string>((resolve, reject) => {
+  if (!startResponse.ok) {
+    throw new Error(`Drive upload session failed: ${startResponse.status} ${startResponse.statusText}`)
+  }
+
+  const uploadUrl = startResponse.headers.get('Location')
+  if (!uploadUrl) {
+    throw new Error('Drive upload session did not return an upload URL')
+  }
+
+  return await new Promise<string>((resolve, reject) => {
     const xhr = new XMLHttpRequest()
-    xhr.open('POST', DRIVE_UPLOAD_URL)
+    xhr.open('PUT', uploadUrl)
     xhr.setRequestHeader('Authorization', `Bearer ${accessToken}`)
-    xhr.setRequestHeader('Content-Type', `multipart/related; boundary=${boundary}`)
+    xhr.setRequestHeader('Content-Type', mimeType)
 
     xhr.upload.onprogress = event => {
       if (event.lengthComputable) {
@@ -472,7 +548,7 @@ async function uploadFileToFolder(
     }
 
     xhr.onerror = () => reject(new Error('Drive upload network error'))
-    xhr.send(body)
+    xhr.send(item.blob)
   })
 }
 
@@ -486,7 +562,94 @@ async function setAnyoneWithLinkPermission(itemId: string, accessToken: string):
     body: JSON.stringify({ role: 'reader', type: 'anyone' }),
   })
 
-  if (!response.ok) {
+  if (!response.ok && response.status !== 409) {
     throw new Error(`Drive permission update failed: ${response.status} ${response.statusText}`)
+  }
+}
+
+function createDriveFileLinks(fileId: string): { webViewLink: string; directLink: string } {
+  return {
+    webViewLink: `https://drive.google.com/file/d/${fileId}/view`,
+    directLink: `https://drive.google.com/uc?export=download&id=${fileId}`,
+  }
+}
+
+function createDriveFolderLinks(folderId: string): { webViewLink: string; directLink: string } {
+  const link = `https://drive.google.com/drive/folders/${folderId}`
+  return {
+    webViewLink: link,
+    directLink: link,
+  }
+}
+
+export async function uploadDriveBatch(
+  items: Array<{ blob: Blob; name: string; type?: string }>,
+  accessToken: string,
+  onProgress?: (pct: number) => void,
+): Promise<DriveUploadBatchResult> {
+  if (items.length === 0) {
+    throw new Error('No files selected for Google Drive upload')
+  }
+
+  onProgress?.(4)
+  const rootFolderId = await ensureDriveRootFolder(accessToken)
+  onProgress?.(10)
+
+  const folderName = getDriveSessionFolderName()
+  const folderId = await createFolder(folderName, accessToken, rootFolderId)
+  const folderLinks = createDriveFolderLinks(folderId)
+  onProgress?.(16)
+
+  const totalBytes = items.reduce((sum, item) => sum + item.blob.size, 0) || 1
+  let uploadedBytes = 0
+  const uploadedFiles: DriveUploadItemResult[] = []
+
+  for (const item of items) {
+    const fileId = await uploadFileResumableToFolder(item, accessToken, folderId, loaded => {
+      const pct = Math.round(16 + ((uploadedBytes + loaded) / totalBytes) * 68)
+      onProgress?.(Math.min(84, pct))
+    })
+    uploadedBytes += item.blob.size
+    const links = createDriveFileLinks(fileId)
+    await setAnyoneWithLinkPermission(fileId, accessToken)
+    uploadedFiles.push({
+      id: fileId,
+      name: item.name,
+      sizeBytes: item.blob.size,
+      mimeType: item.blob.type || item.type || 'application/octet-stream',
+      webViewLink: links.webViewLink,
+      directLink: links.directLink,
+    })
+    const pct = Math.round(16 + (uploadedBytes / totalBytes) * 68)
+    onProgress?.(Math.min(84, pct))
+  }
+
+  if (items.length > 1) {
+    onProgress?.(88)
+    await setAnyoneWithLinkPermission(folderId, accessToken)
+  }
+
+  onProgress?.(100)
+
+  return {
+    folderId,
+    folderName,
+    webViewLink: folderLinks.webViewLink,
+    directLink: folderLinks.directLink,
+    files: uploadedFiles,
+  }
+}
+
+export async function uploadToDrive(
+  items: Array<{ blob: Blob; name: string; type?: string }>,
+  accessToken: string,
+  onProgress?: (pct: number) => void,
+): Promise<UploadResult> {
+  const batch = await uploadDriveBatch(items, accessToken, onProgress)
+  return {
+    fileId: batch.folderId,
+    webViewLink: batch.webViewLink,
+    directLink: batch.directLink,
+    folderName: batch.folderName,
   }
 }

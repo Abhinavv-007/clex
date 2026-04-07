@@ -6,7 +6,7 @@
   <link rel="icon" type="image/png" href="/brand/clex-logo.png">
   <link rel="apple-touch-icon" href="/brand/clex-logo.png">
   <title>Terms of Service — Clex</title>
-  <meta name="description" content="Terms of Service for Clex Workspace and Vault, including direct transfer, Vault notes, secret links, timed relay storage, and user responsibilities.">
+  <meta name="description" content="Terms of Service for Clex Workspace and Vault, including direct transfer, Vault notes, secret links, timed Drive sharing, and user responsibilities.">
   <script>
     (() => {
       try {
@@ -124,10 +124,10 @@
             <li>File sharing via direct P2P transfer (WebRTC)</li>
             <li>File sharing via local network transfer</li>
             <li>File sharing via Google Drive as a fallback mechanism</li>
-            <li>Vault for encrypted local notes, controlled secret links, and timed cloud relay links</li>
+            <li>Vault for encrypted local notes, controlled secret links, and timed Google Drive share links</li>
           </ul>
           <p class="legal-section__text">
-            Most processing happens in your browser. Direct P2P and local transfers are not stored on our servers. Google Drive fallback stores files in your Google account. Vault Cloud Share uses temporary relay storage with explicit size, quota, and retention limits.
+            Most processing happens in your browser. Direct P2P and local transfers are not stored on our servers. Google Drive fallback stores files in your Google account. Vault Cloud Share uses temporary Drive sessions with explicit size, quota, and retention limits.
           </p>
         </div>
 
@@ -144,7 +144,7 @@
             <li>Not use the Service to distribute malware, viruses, or other harmful software</li>
             <li>Not misuse the signaling server or attempt to overload the infrastructure</li>
             <li>Accept responsibility for all content you process, store, reveal, share, or transfer through the Service</li>
-            <li>Share Vault secrets and timed relay links only with recipients you trust and intend to authorize</li>
+            <li>Share Vault secrets and timed Drive-share links only with recipients you trust and intend to authorize</li>
           </ul>
         </div>
 
@@ -173,17 +173,17 @@
           <div class="legal-section__number">Section 06</div>
           <h2 class="legal-section__title">Vault Cloud Share Terms</h2>
           <p class="legal-section__text">
-            Cloud Share is a timed relay feature and is subject to operational limits:
+            Cloud Share is a timed Google Drive handoff feature and is subject to operational limits:
           </p>
           <ul class="legal-section__list">
-            <li>Google sign-in is required to upload and manage relay files</li>
-            <li>Each uploaded file is limited to 10 MB</li>
-            <li>Each signed-in Vault user is limited to 100 MB of relay uploads per day</li>
-            <li>Relay files are scheduled for deletion after 24 hours</li>
-            <li>Anyone with the relay link may download the file until it expires or is deleted</li>
+            <li>Google Drive sign-in is required to upload and manage Vault Drive sessions</li>
+            <li>Each uploaded file is limited to 1 GB</li>
+            <li>Each connected account is limited to 10 GB of Vault Drive uploads per day</li>
+            <li>Vault Drive sessions are scheduled for deletion after 24 hours</li>
+            <li>Anyone with the Vault link or access code may open the file or folder until the session expires or is deleted</li>
           </ul>
           <p class="legal-section__text">
-            Relay storage is intended for temporary handoff, not archival use or guaranteed long-term storage.
+            Vault Drive sharing is intended for temporary handoff, not archival use or guaranteed long-term storage.
           </p>
         </div>
 
@@ -205,9 +205,9 @@
             Parts of the Service rely on third-party providers. When you use those paths, their terms may also apply.
           </p>
           <ul class="legal-section__list">
-            <li>Google Drive fallback is subject to Google's terms and policies</li>
+            <li>Google Drive based sharing is subject to Google's terms and policies</li>
             <li>Google/Firebase authentication is subject to Google's terms and policies</li>
-            <li>Supabase-backed relay storage is part of Vault Cloud Share's temporary infrastructure</li>
+            <li>Vault Cloud Share stores files in the user's own Google Drive account and relies on Clex cleanup metadata to remove expired sessions after 24 hours</li>
           </ul>
         </div>
 
@@ -222,7 +222,7 @@
             <li>File transfers, secret reveals, or relay uploads will always succeed</li>
             <li>P2P connections will always be possible on every network</li>
             <li>Browser-enforced protection features will defeat every capture method</li>
-            <li>Timed relay files will remain available beyond the intended retention window</li>
+            <li>Timed Drive-share files will remain available beyond the intended retention window</li>
           </ul>
           <p class="legal-section__text">
             Browser limits, network conditions, and third-party infrastructure can affect how the Service behaves.

@@ -42,6 +42,19 @@ const RTC_CONFIG: RTCConfiguration = {
   ],
 }
 
+async function ensurePairingRouteReady(vaultApiUrl: string): Promise<void> {
+  let response: Response
+  try {
+    response = await fetch(`${vaultApiUrl}/health`)
+  } catch {
+    throw new Error('Vault pairing route could not be reached. Verify that `/vault/api` is deployed on this site.')
+  }
+
+  if (!response.ok) {
+    throw new Error(`Vault pairing route is unavailable (${response.status}). Verify that "/vault/api/pairing/offer" is live.`)
+  }
+}
+
 // ── Sender side (Device A: generates code, waits for peer) ────────────────────
 
 export async function startPairingAsSender(
@@ -52,6 +65,8 @@ export async function startPairingAsSender(
   onComplete: () => void,
   onRemoteDevice?: (deviceInfo: PairingDeviceInfo | null) => void,
 ): Promise<{ code: string; expiresAt: number; qrPayload: string; pairingLink: string }> {
+  await ensurePairingRouteReady(vaultApiUrl)
+
   const peer = new RTCPeerConnection(RTC_CONFIG)
   const channel = peer.createDataChannel('vault-pair', { ordered: true })
 
@@ -75,8 +90,14 @@ export async function startPairingAsSender(
     }
   })
 
-  const offer = await peer.createOffer()
-  await peer.setLocalDescription(offer)
+  let offer: RTCSessionDescriptionInit
+  try {
+    offer = await peer.createOffer()
+    await peer.setLocalDescription(offer)
+  } catch {
+    peer.close()
+    throw new Error('Vault could not create the pairing offer for this browser. Check WebRTC support and try again.')
+  }
   await Promise.race([iceDone, new Promise(r => setTimeout(r, 3000))])
 
   const offerPayload = JSON.stringify({ sdp: offer.sdp, type: offer.type, candidates })
@@ -88,7 +109,17 @@ export async function startPairingAsSender(
     body: JSON.stringify({ offer: offerPayload, deviceInfo: JSON.stringify(localDeviceInfo) }),
   })
 
-  const data = await res.json() as { code: string; expiresAt: number }
+  if (!res.ok) {
+    const payload = await res.json().catch(() => null) as { error?: string } | null
+    peer.close()
+    throw new Error(payload?.error ?? `Vault could not create the pairing handoff (${res.status}).`)
+  }
+
+  const data = await res.json().catch(() => null) as { code?: string; expiresAt?: number } | null
+  if (!data?.code || typeof data.expiresAt !== 'number') {
+    peer.close()
+    throw new Error('Vault returned an invalid pairing response. Try again after refreshing the page.')
+  }
   session.code = data.code
   session.expiresAt = data.expiresAt
 
@@ -211,7 +242,7 @@ export async function completePairingAsReceiver(
   })
 
   // Post answer back
-  await fetch(`${vaultApiUrl}/pairing/${code}/answer`, {
+  const answerResponse = await fetch(`${vaultApiUrl}/pairing/${code}/answer`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -219,6 +250,11 @@ export async function completePairingAsReceiver(
       deviceInfo: JSON.stringify(localDeviceInfo),
     }),
   })
+
+  if (!answerResponse.ok) {
+    const payload = await answerResponse.json().catch(() => null) as { error?: string } | null
+    throw new Error(payload?.error ?? 'Vault rejected the pairing answer. Try generating a new handoff.')
+  }
 }
 
 // ── QR payload parsing ────────────────────────────────────────────────────────

@@ -1,263 +1,186 @@
 <script lang="ts">
   import { onMount } from 'svelte'
   import QRCode from '$components/sharing/QRCode.svelte'
-  import { googleUser, masterKey, vaultActions, formatBytes } from '$stores/vault'
-  import { signInWithGoogle } from '$lib/vault/auth'
-  import type { VaultUser } from '$lib/vault/auth'
-  import { deriveGoogleKey } from '$lib/vault/crypto'
+  import { formatBytes } from '$stores/vault'
   import { formatGroupedCode } from '$lib/vault/handoff'
+  import {
+    disconnectGoogleDrive,
+    getDriveApiBaseUrl,
+    getDriveSession,
+    getStoredToken,
+    initiateGoogleAuth,
+    pickupToken,
+    uploadDriveBatch,
+  } from '$transfer/gdrive'
 
-  export let vaultApiUrl = '/vault/api'
-
-  interface SharedFile {
+  interface VaultDriveSessionFileRecord {
     id: string
-    filename: string
+    name: string
     sizeBytes: number
     mimeType: string
-    uploadAt: number
+    webViewLink: string
+    directLink: string
+    shareId: string
+    code: string
+  }
+
+  interface VaultDriveSessionFolderRecord {
+    id: string
+    name: string
+    webViewLink: string
+    directLink: string
+    shareId: string
+    code: string
+  }
+
+  interface VaultDriveSessionRecord {
+    id: string
+    ownerSub: string
+    email: string | null
+    displayName: string | null
+    createdAt: number
     deleteAt: number
+    totalBytes: number
+    rootFolderName: string
+    folder: VaultDriveSessionFolderRecord | null
+    files: VaultDriveSessionFileRecord[]
   }
 
-  interface RelayHealthPayload {
-    ok?: boolean
-    storageConfigured?: boolean
+  interface DriveSessionUser {
+    sub: string
+    email: string | null
+    displayName: string | null
+    picture: string | null
   }
 
-  const MAX_FILE_BYTES = 10 * 1024 * 1024
+  interface VaultDriveFinalizeResponse {
+    ok: boolean
+    session: VaultDriveSessionRecord
+  }
+
+  const MAX_FILE_BYTES = 1024 * 1024 * 1024
+  const DAILY_QUOTA_BYTES = 10 * 1024 * 1024 * 1024
 
   let fileInput: HTMLInputElement | null = null
-  let selectedFiles: File[] = []
-  let sharedFiles: SharedFile[] = []
-  let activeFileId = ''
+  let driveUser: DriveSessionUser | null = null
+  let tokenPresent = false
+  let connectBusy = false
   let filesLoading = false
   let uploading = false
-  let uploadIndex = 0
-  let uploadTotal = 0
-  let deleteBusyId = ''
+  let selectedFiles: File[] = []
+  let sessions: VaultDriveSessionRecord[] = []
+  let activeSessionId = ''
+  let uploadProgress = 0
+  let uploadStepLabel = ''
   let error = ''
-  let lastLoadedUid = ''
-  let linkCopied = false
-  let codeCopied = false
-  let connectBusy = false
-  let relayStatus: 'unknown' | 'ready' | 'route-missing' | 'storage-missing' = 'unknown'
+  let linkCopied = ''
+  let codeCopied = ''
+  let deleteBusyId = ''
 
-  $: user = $googleUser
-  $: key = $masterKey
+  $: if (sessions.length > 0 && !sessions.some(session => session.id === activeSessionId)) {
+    activeSessionId = sessions[0].id
+  }
+  $: activeSession = sessions.find(session => session.id === activeSessionId) ?? sessions[0] ?? null
   $: totalSelectedBytes = selectedFiles.reduce((sum, file) => sum + file.size, 0)
-  $: activeFile = sharedFiles.find((item) => item.id === activeFileId) ?? sharedFiles[0] ?? null
-  $: shareCode = activeFile ? activeFile.id.slice(0, 8).toUpperCase() : ''
-  $: formattedShareCode = formatGroupedCode(shareCode)
-  $: shareUrl =
-    activeFile && typeof window !== 'undefined'
-      ? `${window.location.origin}/vault/share?id=${encodeURIComponent(activeFile.id)}`
-      : ''
-
-  $: if (user?.uid && user.uid !== lastLoadedUid) {
-    lastLoadedUid = user.uid
-    void loadFiles()
-  }
-
-  $: if (!user?.uid && lastLoadedUid) {
-    lastLoadedUid = ''
-    sharedFiles = []
-    activeFileId = ''
-  }
 
   onMount(() => {
-    void checkRelayHealth(true)
-    if (user?.uid) {
-      void loadFiles()
-    }
+    void bootCloudShare()
   })
 
-  async function checkRelayHealth(silent = false): Promise<boolean> {
+  function getActiveSessionShares(session: VaultDriveSessionRecord) {
+    const folderShare = session.folder && session.files.length > 1
+      ? [{
+          id: session.folder.shareId,
+          kind: 'folder' as const,
+          title: `${session.files.length} files`,
+          subtitle: session.folder.name,
+          code: session.folder.code,
+          url: buildVaultShareUrl(session.folder.shareId),
+          directLink: session.folder.directLink,
+          webViewLink: session.folder.webViewLink,
+          sizeBytes: session.totalBytes,
+        }]
+      : []
+
+    const fileShares = session.files.map(file => ({
+      id: file.shareId,
+      kind: 'file' as const,
+      title: file.name,
+      subtitle: `${formatBytes(file.sizeBytes)} · ${file.mimeType || 'Drive file'}`,
+      code: file.code,
+      url: buildVaultShareUrl(file.shareId),
+      directLink: file.directLink,
+      webViewLink: file.webViewLink,
+      sizeBytes: file.sizeBytes,
+    }))
+
+    return [...folderShare, ...fileShares]
+  }
+
+  function buildVaultShareUrl(token: string): string {
+    if (typeof window === 'undefined') return ''
+    return `${window.location.origin}/vault/share?id=${encodeURIComponent(token)}`
+  }
+
+  async function bootCloudShare() {
+    filesLoading = true
     try {
-      const res = await fetch(`${vaultApiUrl}/health`)
-      if (!res.ok) {
-        relayStatus = 'route-missing'
-        if (!silent) {
-          error = 'Vault relay is unreachable. Verify that the `/vault/api` worker route is deployed on the live site.'
-        }
-        return false
+      await syncDriveConnection()
+      if (tokenPresent) {
+        await loadSessions()
       }
-
-      const payload = await res.json().catch(() => ({})) as RelayHealthPayload
-      relayStatus = payload.storageConfigured === false ? 'storage-missing' : 'ready'
-
-      if (!silent && relayStatus === 'storage-missing') {
-        error = 'Vault relay is live, but Supabase storage is not configured on this deployment yet.'
-      }
-
-      return relayStatus === 'ready'
-    } catch {
-      relayStatus = 'route-missing'
-      if (!silent) {
-        error = 'Vault relay is unreachable. Verify that the `/vault/api` worker route is deployed on the live site.'
-      }
-      return false
+    } catch (err) {
+      error = err instanceof Error ? err.message : 'Google Drive connection could not be restored'
+    } finally {
+      filesLoading = false
     }
   }
 
-  function formatDate(ts: number): string {
-    return new Date(ts).toLocaleString([], {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    })
-  }
+  async function syncDriveConnection(): Promise<string | null> {
+    error = ''
 
-  function mapApiError(
-    payload: unknown,
-    status: number,
-    fallback: string,
-    phase: 'load' | 'upload' | 'delete',
-    fileName?: string,
-  ): string {
-    const apiMessage = payload && typeof payload === 'object' && 'error' in payload && typeof payload.error === 'string'
-      ? payload.error
-      : ''
-
-    if (status === 401) {
-      return phase === 'load'
-        ? 'Sign in with Google to load your Vault relay files.'
-        : 'Sign in with Google before publishing Vault file links.'
-    }
-
-    if (status === 413) {
-      return apiMessage || `${fileName ?? 'This file'} exceeds the 10 MB Vault limit.`
-    }
-
-    if (status === 429) {
-      return apiMessage || 'Vault relay quota reached for today. Try again tomorrow or trim your upload batch.'
-    }
-
-    if (status === 400 || status === 411) {
-      return apiMessage || 'Vault rejected this upload request. Refresh and try again.'
-    }
-
-    if (status >= 500) {
-      if (apiMessage.includes('Supabase')) {
-        return 'Vault reached the relay, but Supabase storage rejected the upload. Check the bucket, credentials, and CORS settings.'
+    const storedToken = getStoredToken()
+    try {
+      const token = await pickupToken()
+      const session = await getDriveSession()
+      tokenPresent = Boolean(token || session.connected)
+      driveUser = session.user as DriveSessionUser | null
+      return token
+    } catch (err) {
+      if (storedToken) {
+        tokenPresent = true
+        const session = await getDriveSession()
+        driveUser = session.user as DriveSessionUser | null
+        return storedToken
       }
-
-      return apiMessage || 'Vault relay is unavailable right now. Try again in a moment.'
+      throw err
     }
-
-    return apiMessage || fallback
   }
 
-  async function mapThrownError(err: unknown, fallback: string): Promise<string> {
-    const code = err && typeof err === 'object' && 'code' in err && typeof err.code === 'string'
-      ? err.code
-      : ''
-
-    if (code === 'auth/network-request-failed') {
-      return 'Google sign-in could not reach Firebase. Check popup blockers, your connection, and the live auth domain settings.'
-    }
-
-    if (err instanceof TypeError) {
-      const relayReady = await checkRelayHealth(true)
-      if (!relayReady) {
-        return relayStatus === 'storage-missing'
-          ? 'Vault relay is live, but Supabase storage is missing or misconfigured on this deployment.'
-          : 'Vault relay could not be reached. Check the `/vault/api` worker route and the live deployment.'
-      }
-
-      return 'Vault relay is live, but the upload failed before storage accepted the file. Check the worker logs and Supabase bucket settings.'
-    }
-
-    if (err instanceof Error) {
-      if (/network connection lost|network-request-failed|failed to fetch|load failed|networkerror/i.test(err.message)) {
-        const relayReady = await checkRelayHealth(true)
-        if (!relayReady) {
-          return relayStatus === 'storage-missing'
-            ? 'Vault relay is live, but Supabase storage is missing or misconfigured on this deployment.'
-            : 'Vault relay could not be reached. Check the `/vault/api` worker route and the live deployment.'
-        }
-
-        return 'Vault relay responded, but the storage handoff failed. Check the worker logs, Supabase credentials, and the attachments bucket.'
-      }
-
-      return err.message
-    }
-
-    return fallback
-  }
-
-  function mapAuthError(err: unknown): string {
-    const code = err && typeof err === 'object' && 'code' in err && typeof err.code === 'string'
-      ? err.code
-      : ''
-
-    if (!code) {
-      return err instanceof Error ? err.message : 'Google sign-in failed'
-    }
-
-    if (code === 'auth/network-request-failed') {
-      return 'Google sign-in could not reach Firebase. Check popup blockers, your connection, and the live auth domain settings.'
-    }
-
-    if (code === 'auth/popup-blocked') {
-      return 'The Google sign-in popup was blocked. Allow popups for clex.in and try again.'
-    }
-
-    if (code === 'auth/unauthorized-domain') {
-      return 'This Vault deployment is not approved in Firebase Auth. Add the live domain before using Google sign-in.'
-    }
-
-    if (code === 'auth/operation-not-allowed') {
-      return 'Google sign-in is disabled in Firebase Auth for this project.'
-    }
-
-    return err instanceof Error ? err.message : 'Google sign-in failed'
-  }
-
-  async function connectGoogle(): Promise<VaultUser | null> {
+  async function connectDrive() {
     connectBusy = true
     error = ''
 
     try {
-      const nextUser = await signInWithGoogle()
-      if (!nextUser) return null
-      vaultActions.setGoogleUser(nextUser)
-      const nextKey = await deriveGoogleKey(nextUser.uid)
-      vaultActions.setMasterKey(nextKey)
-      return nextUser
+      const token = await syncDriveConnection()
+      if (token) {
+        await loadSessions()
+        return
+      }
+      await initiateGoogleAuth()
     } catch (err) {
-      error = mapAuthError(err)
-      return null
+      error = err instanceof Error ? err.message : 'Google Drive connection could not be started'
     } finally {
       connectBusy = false
     }
   }
 
-  async function loadFiles() {
-    if (!user?.uid) return
-    filesLoading = true
-    error = ''
-
-    try {
-      const res = await fetch(`${vaultApiUrl}/files`, {
-        headers: { 'X-Vault-UID': user.uid },
-      })
-      const payload = await res.json().catch(() => ({}))
-      if (!res.ok) {
-        throw new Error(mapApiError(payload, res.status, `Failed to load files (${res.status})`, 'load'))
-      }
-
-      sharedFiles = (payload.files ?? []) as SharedFile[]
-      if (sharedFiles.length > 0 && !sharedFiles.some((item) => item.id === activeFileId)) {
-        activeFileId = sharedFiles[0].id
-      }
-      if (sharedFiles.length === 0) {
-        activeFileId = ''
-      }
-    } catch (err) {
-      error = await mapThrownError(err, 'Failed to load files')
-    } finally {
-      filesLoading = false
-    }
+  async function disconnectDrive() {
+    await disconnectGoogleDrive()
+    tokenPresent = false
+    driveUser = null
+    sessions = []
+    activeSessionId = ''
   }
 
   function promptFilePicker() {
@@ -272,7 +195,7 @@
 
     for (const file of incoming) {
       if (file.size > MAX_FILE_BYTES) {
-        rejected.push(`${file.name} exceeds 10 MB`)
+        rejected.push(`${file.name} exceeds the 1 GB file limit`)
         continue
       }
       accepted.push(file)
@@ -281,18 +204,17 @@
     if (accepted.length > 0) {
       const next = [...selectedFiles]
       for (const file of accepted) {
-        const exists = next.some(
-          (item) =>
-            item.name === file.name &&
-            item.size === file.size &&
-            item.lastModified === file.lastModified,
+        const exists = next.some(item =>
+          item.name === file.name
+          && item.size === file.size
+          && item.lastModified === file.lastModified,
         )
         if (!exists) next.push(file)
       }
       selectedFiles = next
     }
 
-    error = rejected.length > 0 ? rejected.join('. ') : ''
+    error = rejected.join('. ')
     target.value = ''
   }
 
@@ -300,110 +222,187 @@
     selectedFiles = selectedFiles.filter((_, itemIndex) => itemIndex !== index)
   }
 
+  async function preflightSelection() {
+    const response = await fetch(`${getDriveApiBaseUrl()}/api/drive/vault/preflight`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        files: selectedFiles.map(file => ({
+          name: file.name,
+          sizeBytes: file.size,
+        })),
+      }),
+    })
+
+    if (!response.ok) {
+      const payload = await response.json().catch(() => null) as { error?: string; remainingBytes?: number } | null
+      if (response.status === 429) {
+        const remaining = payload?.remainingBytes ?? 0
+        throw new Error(`Vault Drive daily quota reached. ${formatBytes(remaining)} remaining today out of ${formatBytes(DAILY_QUOTA_BYTES)}.`)
+      }
+      throw new Error(payload?.error ?? `Preflight failed (${response.status})`)
+    }
+  }
+
+  async function loadSessions() {
+    if (!tokenPresent) return
+
+    filesLoading = true
+    error = ''
+    try {
+      const response = await fetch(`${getDriveApiBaseUrl()}/api/drive/vault/sessions`, {
+        credentials: 'include',
+      })
+      const payload = await response.json().catch(() => null) as { sessions?: VaultDriveSessionRecord[]; error?: string } | null
+      if (!response.ok) {
+        throw new Error(payload?.error ?? `Could not load Vault Drive sessions (${response.status})`)
+      }
+
+      sessions = payload?.sessions ?? []
+      if (!activeSessionId && sessions[0]) {
+        activeSessionId = sessions[0].id
+      }
+      if (activeSessionId && !sessions.some(session => session.id === activeSessionId)) {
+        activeSessionId = sessions[0]?.id ?? ''
+      }
+    } catch (err) {
+      error = err instanceof Error ? err.message : 'Could not load Vault Drive sessions'
+    } finally {
+      filesLoading = false
+    }
+  }
+
   async function uploadSelected() {
     if (selectedFiles.length === 0 || uploading) return
 
-    let uploadUser = user
-    if (!uploadUser?.uid) {
-      uploadUser = await connectGoogle()
-      if (!uploadUser?.uid) return
-    }
-
     uploading = true
-    uploadTotal = selectedFiles.length
-    uploadIndex = 0
+    uploadProgress = 0
+    uploadStepLabel = 'Checking Drive session'
     error = ''
 
     try {
-      const relayReady = await checkRelayHealth(true)
-      if (!relayReady) {
-        throw new Error(
-          relayStatus === 'storage-missing'
-            ? 'Vault relay is live, but Supabase storage is missing or misconfigured on this deployment.'
-            : 'Vault relay could not be reached. Check the `/vault/api` worker route and the live deployment.',
-        )
+      let token = getStoredToken()
+      if (!token) {
+        token = await syncDriveConnection()
+      }
+      if (!token) {
+        throw new Error('Connect Google Drive before uploading Vault shares.')
       }
 
-      for (const file of selectedFiles) {
-        uploadIndex += 1
+      uploadStepLabel = 'Checking file limits'
+      await preflightSelection()
 
-        const res = await fetch(`${vaultApiUrl}/files`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': file.type || 'application/octet-stream',
-            'X-Filename': encodeURIComponent(file.name),
-            'X-Subscription-ID': key?.roomId ?? 'vault',
-            'X-Vault-UID': uploadUser.uid,
+      uploadStepLabel = 'Creating Drive folder'
+      const batch = await uploadDriveBatch(
+        selectedFiles.map(file => ({
+          blob: file,
+          name: file.name,
+          type: file.type,
+        })),
+        token,
+        pct => {
+          uploadProgress = pct
+          uploadStepLabel = pct < 20
+            ? 'Creating Drive folder'
+            : pct < 88
+              ? 'Uploading to your Google Drive'
+              : 'Publishing Vault links'
+        },
+      )
+
+      const response = await fetch(`${getDriveApiBaseUrl()}/api/drive/vault/finalize`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          rootFolderName: 'Clex Share',
+          folder: {
+            id: batch.folderId,
+            name: batch.folderName,
+            webViewLink: batch.webViewLink,
+            directLink: batch.directLink,
           },
-          body: file,
-        })
+          files: batch.files,
+        }),
+      })
 
-        const payload = await res.json().catch(() => ({}))
-        if (!res.ok) {
-          throw new Error(
-            mapApiError(payload, res.status, `Upload failed for ${file.name}`, 'upload', file.name),
-          )
-        }
-
-        if (payload.id) {
-          activeFileId = payload.id as string
-        }
+      const payload = await response.json().catch(() => null) as VaultDriveFinalizeResponse | { error?: string } | null
+      if (!response.ok || !payload || !('session' in payload)) {
+        throw new Error((payload && 'error' in payload ? payload.error : null) ?? `Could not publish Vault links (${response.status})`)
       }
 
+      sessions = [payload.session, ...sessions.filter(session => session.id !== payload.session.id)]
+      activeSessionId = payload.session.id
       selectedFiles = []
-      await loadFiles()
+      uploadStepLabel = 'Vault links ready'
+      uploadProgress = 100
     } catch (err) {
-      error = await mapThrownError(err, 'Upload failed')
+      error = err instanceof Error ? err.message : 'Vault Drive upload failed'
     } finally {
       uploading = false
-      uploadIndex = 0
-      uploadTotal = 0
+      setTimeout(() => {
+        uploadProgress = 0
+        uploadStepLabel = ''
+      }, 1200)
     }
   }
 
-  async function copyLink() {
-    if (!shareUrl) return
-    await navigator.clipboard.writeText(shareUrl)
-    linkCopied = true
-    setTimeout(() => {
-      linkCopied = false
-    }, 1800)
-  }
-
-  async function copyCode() {
-    if (!shareCode) return
-    await navigator.clipboard.writeText(shareCode)
-    codeCopied = true
-    setTimeout(() => {
-      codeCopied = false
-    }, 1800)
-  }
-
-  async function deleteFile(id: string) {
-    if (!user?.uid || deleteBusyId) return
-    deleteBusyId = id
+  async function deleteSession(sessionId: string) {
+    deleteBusyId = sessionId
     error = ''
 
     try {
-      const res = await fetch(`${vaultApiUrl}/files/${id}`, {
+      const response = await fetch(`${getDriveApiBaseUrl()}/api/drive/vault/sessions/${sessionId}`, {
         method: 'DELETE',
-        headers: { 'X-Vault-UID': user.uid },
+        credentials: 'include',
       })
-      const payload = await res.json().catch(() => ({}))
-      if (!res.ok) {
-        throw new Error(mapApiError(payload, res.status, 'Failed to delete file', 'delete'))
+      const payload = await response.json().catch(() => null) as { error?: string } | null
+      if (!response.ok) {
+        throw new Error(payload?.error ?? `Could not delete Vault Drive session (${response.status})`)
       }
 
-      sharedFiles = sharedFiles.filter((item) => item.id !== id)
-      if (activeFileId === id) {
-        activeFileId = sharedFiles[0]?.id ?? ''
+      sessions = sessions.filter(session => session.id !== sessionId)
+      if (activeSessionId === sessionId) {
+        activeSessionId = sessions[0]?.id ?? ''
       }
-      await loadFiles()
     } catch (err) {
-      error = await mapThrownError(err, 'Failed to delete file')
+      error = err instanceof Error ? err.message : 'Could not delete Vault Drive session'
     } finally {
       deleteBusyId = ''
     }
+  }
+
+  async function copyLink(value: string, key: string) {
+    await navigator.clipboard.writeText(value)
+    linkCopied = key
+    setTimeout(() => {
+      if (linkCopied === key) linkCopied = ''
+    }, 1600)
+  }
+
+  async function copyCode(value: string, key: string) {
+    await navigator.clipboard.writeText(value)
+    codeCopied = key
+    setTimeout(() => {
+      if (codeCopied === key) codeCopied = ''
+    }, 1600)
+  }
+
+  function formatDate(ts: number): string {
+    return new Date(ts).toLocaleString([], {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    })
+  }
+
+  function formatSessionTitle(session: VaultDriveSessionRecord): string {
+    if (session.files.length === 1) {
+      return session.files[0].name
+    }
+    return `${session.files.length} Drive files`
   }
 </script>
 
@@ -412,40 +411,48 @@
     <section class="vcs-main">
       <div class="vcs-header">
         <p class="vcs-kicker">Cloud Share</p>
-        <h2 class="vcs-title">Timed file relay with QR handoff</h2>
+        <h2 class="vcs-title">Google Drive handoff inside Vault</h2>
         <p class="vcs-subtitle">
-          Upload inside Vault, share the link or QR code, and let the relay remove itself after 24 hours.
+          Files stay in your own Google Drive under <strong>Clex Share</strong>, each file gets its own Vault link and code, and every upload session auto-deletes after 24 hours.
         </p>
       </div>
 
       <div class="vcs-limit-row">
-        <span class="vcs-limit-chip">10 MB per file</span>
-        <span class="vcs-limit-chip">100 MB per day</span>
-        <span class="vcs-limit-chip">Auto-delete after 24 hours</span>
-        <span class="vcs-limit-chip">
-          Relay {relayStatus === 'ready' ? 'ready' : relayStatus === 'storage-missing' ? 'needs storage' : relayStatus === 'route-missing' ? 'offline' : 'checking'}
-        </span>
+        <span class="vcs-limit-chip">1 GB per file</span>
+        <span class="vcs-limit-chip">10 GB per day</span>
+        <span class="vcs-limit-chip">24h auto-delete</span>
+        <span class="vcs-limit-chip">Stored in your Drive</span>
       </div>
 
-      {#if !user}
+      {#if !tokenPresent}
         <div class="vcs-connect">
           <div>
-            <p class="vcs-connect-title">Sign in to publish file links</p>
+            <p class="vcs-connect-title">Connect Google Drive</p>
             <p class="vcs-connect-copy">
-              Google sign-in lets Vault own the relay files, track the daily quota, and list active links on this device.
+              Vault publishes links from your Google Drive account, not from a Clex relay bucket. Clex keeps the encrypted refresh token only so expired sessions can be deleted automatically after 24 hours.
             </p>
           </div>
-          <button class="vcs-primary-btn" disabled={connectBusy} on:click={connectGoogle}>
-            {connectBusy ? 'Connecting…' : 'Connect Google'}
+          <button class="vcs-primary-btn" disabled={connectBusy} on:click={connectDrive}>
+            {connectBusy ? 'Connecting…' : 'Connect Google Drive'}
           </button>
         </div>
       {:else}
+        <div class="vcs-account-bar">
+          <div>
+            <p class="vcs-account-title">{driveUser?.displayName ?? driveUser?.email ?? 'Google Drive connected'}</p>
+            <p class="vcs-account-copy">Uploads are written to your Drive and cleaned up on the 24-hour window.</p>
+          </div>
+          <button class="vcs-secondary-btn" type="button" on:click={disconnectDrive}>
+            Disconnect
+          </button>
+        </div>
+
         <div class="vcs-uploader">
           <div class="vcs-dropzone">
             <div>
-              <p class="vcs-dropzone-title">Queue files</p>
+              <p class="vcs-dropzone-title">Queue files for Vault Drive</p>
               <p class="vcs-dropzone-copy">
-                Each file gets its own temporary link. Files stay capped at 10 MB and expire automatically after 24 hours.
+                Every file receives its own direct link, QR, and code. If you upload more than one file, Vault also creates a folder handoff for the whole session.
               </p>
             </div>
 
@@ -460,7 +467,7 @@
                 on:click={uploadSelected}
               >
                 {#if uploading}
-                  Uploading {uploadIndex}/{uploadTotal || selectedFiles.length}
+                  Uploading…
                 {:else}
                   Upload {selectedFiles.length} file{selectedFiles.length === 1 ? '' : 's'}
                 {/if}
@@ -474,12 +481,24 @@
               multiple
               on:change={handleFileSelection}
             />
+
+            {#if uploadStepLabel}
+              <div class="vcs-progress">
+                <div class="vcs-progress-top">
+                  <span>{uploadStepLabel}</span>
+                  <span>{uploadProgress}%</span>
+                </div>
+                <div class="vcs-progress-bar">
+                  <div class="vcs-progress-fill" style={`width:${uploadProgress}%`}></div>
+                </div>
+              </div>
+            {/if}
           </div>
 
           {#if selectedFiles.length > 0}
             <div class="vcs-queue">
               <div class="vcs-section-head">
-                <p class="vcs-section-title">Ready to upload</p>
+                <p class="vcs-section-title">Ready to publish</p>
                 <span class="vcs-section-meta">{formatBytes(totalSelectedBytes)}</span>
               </div>
               <div class="vcs-list">
@@ -502,37 +521,37 @@
 
       <div class="vcs-library">
         <div class="vcs-section-head">
-          <p class="vcs-section-title">Live file links</p>
-          <button class="vcs-inline-btn" type="button" disabled={filesLoading || !user} on:click={loadFiles}>
+          <p class="vcs-section-title">Active Drive sessions</p>
+          <button class="vcs-inline-btn" type="button" disabled={filesLoading || !tokenPresent} on:click={loadSessions}>
             {filesLoading ? 'Refreshing…' : 'Refresh'}
           </button>
         </div>
 
-        {#if sharedFiles.length > 0}
+        {#if sessions.length > 0}
           <div class="vcs-list">
-            {#each sharedFiles as file}
+            {#each sessions as session}
               <button
                 class="vcs-file-card"
-                class:vcs-file-card--active={activeFile?.id === file.id}
+                class:vcs-file-card--active={activeSession?.id === session.id}
                 type="button"
-                on:click={() => (activeFileId = file.id)}
+                on:click={() => (activeSessionId = session.id)}
               >
                 <div class="vcs-row-copy">
-                  <p class="vcs-row-title">{file.filename}</p>
+                  <p class="vcs-row-title">{formatSessionTitle(session)}</p>
                   <p class="vcs-row-meta">
-                    {formatBytes(file.sizeBytes)} · expires {formatDate(file.deleteAt)}
+                    {session.files.length} file{session.files.length === 1 ? '' : 's'} · {formatBytes(session.totalBytes)} · expires {formatDate(session.deleteAt)}
                   </p>
                 </div>
-                <span class="vcs-file-status">Ready</span>
+                <span class="vcs-file-status">{session.folder ? 'Folder + files' : 'Direct file'}</span>
               </button>
             {/each}
           </div>
         {:else}
           <div class="vcs-empty">
-            {#if user}
-              No relay files yet. Upload a file to create the first timed link.
+            {#if tokenPresent}
+              No Vault Drive shares yet. Publish a file or folder session to start.
             {:else}
-              Sign in to load your relay files.
+              Connect Google Drive to publish Vault Drive shares.
             {/if}
           </div>
         {/if}
@@ -540,98 +559,95 @@
         {#if error}
           <p class="vcs-error">{error}</p>
         {/if}
-
-        {#if relayStatus !== 'ready'}
-          <div class="vcs-fallback">
-            <div>
-              <p class="vcs-fallback-title">Google Drive fallback</p>
-              <p class="vcs-fallback-copy">
-                This deployment cannot publish timed Vault relay links right now. Use the Workspace Drive flow until the relay worker and storage secrets are fixed.
-              </p>
-            </div>
-            <a class="vcs-primary-link" href="/workspace">
-              Open Workspace Drive
-            </a>
-          </div>
-        {/if}
       </div>
     </section>
 
     <aside class="vcs-side">
-      {#if activeFile}
+      {#if activeSession}
         <div class="vcs-share-card">
-          <p class="vcs-side-kicker">Active share</p>
-          <h3 class="vcs-side-title">{activeFile.filename}</h3>
+          <p class="vcs-side-kicker">Selected session</p>
+          <h3 class="vcs-side-title">{formatSessionTitle(activeSession)}</h3>
           <p class="vcs-side-copy">
-            Share the QR for instant opening, the direct link for taps, or the relay code for manual entry on the receive page.
+            Every share below has its own Vault page, QR handoff, grouped code, and direct Drive target. The full session deletes automatically after 24 hours.
           </p>
-
-          <div class="vcs-qr-wrap">
-            <QRCode value={shareUrl} size={180} />
-          </div>
-
-          <div class="vcs-handoff-grid">
-            <div class="vcs-handoff-card">
-              <div class="vcs-handoff-row">
-                <span class="vcs-meta-label">Direct link</span>
-                <button class="vcs-inline-btn" type="button" on:click={copyLink}>
-                  {linkCopied ? 'Copied' : 'Copy link'}
-                </button>
-              </div>
-              <div class="vcs-link-box">{shareUrl}</div>
-            </div>
-
-            <div class="vcs-handoff-card">
-              <div class="vcs-handoff-row">
-                <span class="vcs-meta-label">Relay code</span>
-                <button class="vcs-inline-btn" type="button" on:click={copyCode}>
-                  {codeCopied ? 'Copied' : 'Copy code'}
-                </button>
-              </div>
-              <div class="vcs-code-box">{formattedShareCode}</div>
-              <p class="vcs-code-note">Open <code>/vault/share</code> and paste this code if you cannot send the full link.</p>
-            </div>
-          </div>
-
-          <div class="vcs-side-actions">
-            <a class="vcs-secondary-link" href={shareUrl} target="_blank" rel="noopener noreferrer">
-              Open link
-            </a>
-            <a class="vcs-secondary-link" href="/vault/share" target="_blank" rel="noopener noreferrer">
-              Open receive page
-            </a>
-          </div>
 
           <div class="vcs-meta-grid">
             <div class="vcs-meta-card">
-              <span class="vcs-meta-label">Size</span>
-              <strong>{formatBytes(activeFile.sizeBytes)}</strong>
+              <span class="vcs-meta-label">Files</span>
+              <strong>{activeSession.files.length}</strong>
             </div>
             <div class="vcs-meta-card">
-              <span class="vcs-meta-label">Uploaded</span>
-              <strong>{formatDate(activeFile.uploadAt)}</strong>
+              <span class="vcs-meta-label">Total size</span>
+              <strong>{formatBytes(activeSession.totalBytes)}</strong>
             </div>
             <div class="vcs-meta-card">
               <span class="vcs-meta-label">Expires</span>
-              <strong>{formatDate(activeFile.deleteAt)}</strong>
+              <strong>{formatDate(activeSession.deleteAt)}</strong>
             </div>
+          </div>
+
+          <div class="vcs-share-stack">
+            {#each getActiveSessionShares(activeSession) as share}
+              <div class="vcs-handoff-card">
+                <div class="vcs-handoff-head">
+                  <div>
+                    <p class="vcs-handoff-title">{share.kind === 'folder' ? 'Folder share' : share.title}</p>
+                    <p class="vcs-handoff-subtitle">{share.kind === 'folder' ? share.subtitle : share.subtitle}</p>
+                  </div>
+                  <span class="vcs-handoff-chip">{share.kind === 'folder' ? 'All files' : 'Single file'}</span>
+                </div>
+
+                <div class="vcs-handoff-grid">
+                  <div class="vcs-qr-wrap">
+                    <QRCode value={share.url} size={132} />
+                  </div>
+
+                  <div class="vcs-handoff-copy">
+                    <div class="vcs-handoff-row">
+                      <span class="vcs-meta-label">Vault link</span>
+                      <button class="vcs-inline-btn" type="button" on:click={() => copyLink(share.url, share.id)}>
+                        {linkCopied === share.id ? 'Copied' : 'Copy link'}
+                      </button>
+                    </div>
+                    <div class="vcs-link-box">{share.url}</div>
+
+                    <div class="vcs-handoff-row">
+                      <span class="vcs-meta-label">Access code</span>
+                      <button class="vcs-inline-btn" type="button" on:click={() => copyCode(share.code, share.id)}>
+                        {codeCopied === share.id ? 'Copied' : 'Copy code'}
+                      </button>
+                    </div>
+                    <div class="vcs-code-box">{formatGroupedCode(share.code)}</div>
+                  </div>
+                </div>
+
+                <div class="vcs-side-actions">
+                  <a class="vcs-secondary-link" href={share.url} target="_blank" rel="noopener noreferrer">
+                    Open Vault page
+                  </a>
+                  <a class="vcs-secondary-link" href={share.kind === 'folder' ? share.webViewLink : share.directLink} target="_blank" rel="noopener noreferrer">
+                    {share.kind === 'folder' ? 'Open Drive folder' : 'Open direct file'}
+                  </a>
+                </div>
+              </div>
+            {/each}
           </div>
 
           <button
             class="vcs-danger-btn"
             type="button"
-            disabled={deleteBusyId === activeFile.id}
-            on:click={() => deleteFile(activeFile.id)}
+            disabled={deleteBusyId === activeSession.id}
+            on:click={() => deleteSession(activeSession.id)}
           >
-            {deleteBusyId === activeFile.id ? 'Deleting…' : 'Delete link'}
+            {deleteBusyId === activeSession.id ? 'Deleting session…' : 'Delete this session'}
           </button>
         </div>
       {:else}
         <div class="vcs-placeholder">
-          <p class="vcs-side-kicker">Relay flow</p>
-          <h3 class="vcs-side-title">Queue, publish, hand off</h3>
+          <p class="vcs-side-kicker">Drive handoff</p>
+          <h3 class="vcs-side-title">Per-file links, QR, code, and folder share</h3>
           <p class="vcs-side-copy">
-            The right rail mirrors the workspace handoff pattern: pick a file, publish the link, then let the recipient scan or open it directly.
+            Publish a Vault Drive session to generate direct links for each file, plus a folder share when you upload multiple files together.
           </p>
         </div>
       {/if}
@@ -640,13 +656,11 @@
 </div>
 
 <style>
-  .vcs-root {
-    width: 100%;
-  }
+  .vcs-root { width: 100%; }
 
   .vcs-shell {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(300px, 350px);
+    grid-template-columns: minmax(0, 1fr) minmax(320px, 390px);
     gap: 20px;
     align-items: start;
   }
@@ -660,11 +674,22 @@
     padding: 22px;
   }
 
-  .vcs-header {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
+  .vcs-header,
+  .vcs-connect,
+  .vcs-account-bar,
+  .vcs-dropzone,
+  .vcs-library,
+  .vcs-queue,
+  .vcs-share-card,
+  .vcs-placeholder {
+    border: 2px solid var(--border-hard);
+    background: var(--surface-2);
+    border-radius: 16px;
+    box-shadow: 4px 4px 0 var(--border-hard);
+    padding: 18px;
   }
+
+  .vcs-header { display: flex; flex-direction: column; gap: 8px; }
 
   .vcs-kicker,
   .vcs-side-kicker,
@@ -682,40 +707,46 @@
   .vcs-title,
   .vcs-side-title {
     font-family: var(--font-display);
-    font-size: clamp(1.7rem, 2.5vw, 2.2rem);
-    line-height: 1.04;
-    letter-spacing: -0.03em;
+    font-size: clamp(1.7rem, 2.5vw, 2.25rem);
+    line-height: 1.02;
+    letter-spacing: -0.04em;
     color: var(--text-1);
     margin: 0;
     text-wrap: balance;
   }
 
-  .vcs-side-title {
-    font-size: clamp(1.35rem, 2vw, 1.75rem);
-  }
+  .vcs-side-title { font-size: clamp(1.3rem, 2vw, 1.7rem); }
 
   .vcs-subtitle,
   .vcs-side-copy,
   .vcs-connect-copy,
+  .vcs-account-copy,
   .vcs-dropzone-copy {
-    font-size: 14px;
-    line-height: 1.6;
-    color: var(--text-2);
     margin: 0;
-    max-width: 58ch;
+    font-size: 14px;
+    line-height: 1.65;
+    color: var(--text-2);
+  }
+
+  .vcs-limit-row,
+  .vcs-uploader,
+  .vcs-share-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-top: 18px;
   }
 
   .vcs-limit-row {
-    display: flex;
+    flex-direction: row;
     flex-wrap: wrap;
     gap: 8px;
-    margin-top: 18px;
   }
 
   .vcs-limit-chip {
     padding: 6px 10px;
     border: 1.5px solid var(--border-hard);
-    background: var(--surface-2);
+    background: var(--surface);
     border-radius: 999px;
     box-shadow: 2px 2px 0 var(--border-hard);
     font-family: var(--font-mono);
@@ -728,68 +759,107 @@
 
   .vcs-connect,
   .vcs-dropzone,
-  .vcs-library,
-  .vcs-queue,
-  .vcs-share-card,
-  .vcs-placeholder {
-    margin-top: 18px;
-    border: 2px solid var(--border-hard);
-    background: var(--surface-2);
-    border-radius: 16px;
-    box-shadow: 4px 4px 0 var(--border-hard);
-    padding: 18px;
+  .vcs-account-bar {
+    display: flex;
+    justify-content: space-between;
+    gap: 14px;
+    align-items: center;
   }
 
-  .vcs-connect,
-  .vcs-dropzone {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
+  .vcs-account-bar {
+    margin-top: 18px;
+    align-items: flex-start;
   }
 
   .vcs-connect-title,
+  .vcs-account-title,
   .vcs-dropzone-title,
-  .vcs-row-title {
+  .vcs-row-title,
+  .vcs-handoff-title {
     font-size: 16px;
     font-weight: 700;
     color: var(--text-1);
     margin: 0;
   }
 
-  .vcs-row-title {
-    font-size: 14px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
+  .vcs-account-title,
+  .vcs-handoff-title { font-family: var(--font-display); letter-spacing: -0.02em; }
 
   .vcs-dropzone-actions,
+  .vcs-section-head,
+  .vcs-handoff-row,
   .vcs-side-actions,
-  .vcs-section-head {
+  .vcs-handoff-head {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 10px;
-    flex-wrap: wrap;
   }
 
-  .vcs-section-meta,
-  .vcs-row-meta {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    color: var(--text-3);
-    margin: 0;
+  .vcs-dropzone-actions { flex-wrap: wrap; }
+  .vcs-section-head { margin-bottom: 10px; }
+  .vcs-handoff-head { align-items: flex-start; }
+
+  .vcs-primary-btn,
+  .vcs-secondary-btn,
+  .vcs-danger-btn,
+  .vcs-inline-btn,
+  .vcs-secondary-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 40px;
+    padding: 9px 15px;
+    border-radius: 999px;
+    border: 1.5px solid var(--border-hard);
+    box-shadow: 2px 2px 0 var(--border-hard);
+    font-family: var(--font-display);
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+    cursor: pointer;
+    transition: transform 150ms ease, box-shadow 150ms ease;
   }
 
-  .vcs-hidden-input {
-    display: none;
+  .vcs-primary-btn {
+    background: var(--accent);
+    color: var(--accent-contrast);
+  }
+
+  .vcs-secondary-btn,
+  .vcs-secondary-link,
+  .vcs-inline-btn {
+    background: var(--surface);
+    color: var(--text-1);
+  }
+
+  .vcs-danger-btn {
+    width: 100%;
+    background: color-mix(in srgb, var(--red) 10%, var(--surface));
+    color: var(--red);
+    margin-top: 18px;
+  }
+
+  .vcs-inline-btn {
+    min-height: 28px;
+    padding: 5px 10px;
+    font-size: 12px;
+    box-shadow: none;
+  }
+
+  .vcs-primary-btn:hover,
+  .vcs-secondary-btn:hover,
+  .vcs-danger-btn:hover,
+  .vcs-secondary-link:hover {
+    transform: translate(-1px, -1px);
+    box-shadow: 4px 4px 0 var(--border-hard);
   }
 
   .vcs-list {
     display: flex;
     flex-direction: column;
     gap: 10px;
-    margin-top: 14px;
   }
 
   .vcs-row,
@@ -798,325 +868,230 @@
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    padding: 12px 14px;
-    background: var(--surface);
-    border: 1.5px solid var(--border-hard);
-    border-radius: 12px;
+    padding: 14px 15px;
+    border-radius: 14px;
+    border: 1.5px solid var(--border);
+    background: color-mix(in srgb, var(--surface-2) 74%, var(--surface));
   }
 
   .vcs-file-card {
-    width: 100%;
-    text-align: left;
     cursor: pointer;
-    box-shadow: 2px 2px 0 var(--border-hard);
-    transition: transform 120ms ease, box-shadow 120ms ease, border-color 120ms ease;
+    text-align: left;
+    transition: transform 150ms ease, box-shadow 150ms ease, border-color 150ms ease;
   }
 
-  .vcs-file-card:hover,
-  .vcs-primary-btn:hover,
-  .vcs-secondary-btn:hover,
-  .vcs-secondary-link:hover,
-  .vcs-danger-btn:hover {
+  .vcs-file-card:hover {
     transform: translate(-1px, -1px);
-    box-shadow: 5px 5px 0 var(--border-hard);
+    border-color: var(--border-hard);
+    box-shadow: 4px 4px 0 var(--border-hard);
   }
 
   .vcs-file-card--active {
-    border-color: var(--accent);
-    box-shadow: 4px 4px 0 var(--accent);
+    border-color: color-mix(in srgb, var(--accent) 70%, var(--border-hard));
+    box-shadow: 4px 4px 0 var(--border-hard);
+    background: color-mix(in srgb, var(--accent) 12%, var(--surface));
   }
 
-  .vcs-row-copy {
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
+  .vcs-row-copy { min-width: 0; }
+  .vcs-row-title,
+  .vcs-row-meta,
+  .vcs-handoff-subtitle { margin: 0; }
+
+  .vcs-row-meta,
+  .vcs-handoff-subtitle,
+  .vcs-section-meta {
+    font-size: 12px;
+    color: var(--text-3);
+    line-height: 1.5;
   }
 
   .vcs-file-status,
-  .vcs-inline-btn,
-  .vcs-row-action {
-    font-family: var(--font-mono);
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--text-2);
-  }
-
-  .vcs-file-status {
-    color: var(--accent-text);
-  }
-
-  .vcs-inline-btn,
-  .vcs-row-action {
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    padding: 0;
-  }
-
-  .vcs-link-box {
-    width: 100%;
-    padding: 10px 12px;
-    border: 1.5px solid var(--border-hard);
-    background: var(--surface);
-    border-radius: 12px;
-    font-family: var(--font-mono);
-    font-size: 11px;
-    line-height: 1.6;
-    color: var(--text-2);
-    overflow-wrap: anywhere;
-  }
-
-  .vcs-qr-wrap {
-    display: flex;
-    justify-content: center;
-    margin-top: 18px;
-  }
-
-  .vcs-handoff-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    margin-top: 18px;
-  }
-
-  .vcs-handoff-card {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .vcs-handoff-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    flex-wrap: wrap;
-  }
-
-  .vcs-code-box,
-  .vcs-inline-btn {
-    display: inline-flex;
-    align-items: center;
-  }
-
-  .vcs-code-box {
-    width: 100%;
-    padding: 12px;
-    border: 1.5px solid var(--border-hard);
-    background: var(--surface);
-    border-radius: 12px;
-    font-family: var(--font-mono);
-    font-size: 1rem;
-    font-weight: 700;
-    letter-spacing: 0.22em;
-    color: var(--text-1);
-    justify-content: center;
-  }
-
-  .vcs-inline-btn {
-    justify-content: center;
-    min-height: 24px;
-    padding: 4px 10px;
+  .vcs-handoff-chip {
+    flex-shrink: 0;
+    padding: 6px 10px;
     border-radius: 999px;
     border: 1.5px solid var(--border-hard);
-    background: var(--surface-2);
+    background: var(--surface);
     font-family: var(--font-mono);
     font-size: 10px;
     font-weight: 700;
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--text-2);
-    cursor: pointer;
   }
 
-  .vcs-code-note {
-    margin: 0;
+  .vcs-progress {
+    margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .vcs-progress-top {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
     font-size: 12px;
-    line-height: 1.6;
-    color: var(--text-3);
+    color: var(--text-2);
   }
 
-  .vcs-code-note code {
-    font-family: var(--font-mono);
-    font-size: 11px;
+  .vcs-progress-bar {
+    width: 100%;
+    height: 10px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--border) 70%, transparent);
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+
+  .vcs-progress-fill {
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, var(--accent), color-mix(in srgb, var(--accent) 65%, white));
+  }
+
+  .vcs-hidden-input { display: none; }
+
+  .vcs-queue,
+  .vcs-library,
+  .vcs-share-card,
+  .vcs-placeholder {
+    margin-top: 18px;
+  }
+
+  .vcs-empty,
+  .vcs-error {
+    padding: 14px;
+    border-radius: 14px;
+    border: 1.5px solid var(--border);
+    background: color-mix(in srgb, var(--surface) 80%, var(--surface-2));
+    color: var(--text-2);
+    line-height: 1.6;
+  }
+
+  .vcs-error {
+    border-color: color-mix(in srgb, var(--red) 40%, var(--border));
+    color: var(--red);
+    margin-top: 14px;
   }
 
   .vcs-meta-grid {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 10px;
-    margin-top: 16px;
+    margin-top: 18px;
   }
 
   .vcs-meta-card {
     padding: 12px;
+    border-radius: 14px;
     border: 1.5px solid var(--border-hard);
     background: var(--surface);
-    border-radius: 12px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
+    box-shadow: 2px 2px 0 var(--border-hard);
   }
 
   .vcs-meta-card strong {
-    font-size: 12px;
-    line-height: 1.5;
-    color: var(--text-1);
-  }
-
-  .vcs-primary-btn,
-  .vcs-secondary-btn,
-  .vcs-secondary-link,
-  .vcs-danger-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    min-height: 44px;
-    padding: 10px 16px;
-    border-radius: 12px;
-    border: 2px solid var(--border-hard);
+    display: block;
+    margin-top: 8px;
     font-family: var(--font-display);
-    font-size: 14px;
-    font-weight: 700;
-    cursor: pointer;
-    text-decoration: none;
-    box-shadow: 3px 3px 0 var(--border-hard);
-    transition: transform 120ms ease, box-shadow 120ms ease;
-  }
-
-  .vcs-primary-btn {
-    background: var(--accent);
-    color: #111;
-  }
-
-  .vcs-secondary-btn,
-  .vcs-secondary-link {
-    background: var(--surface);
+    font-size: 16px;
     color: var(--text-1);
   }
 
-  .vcs-danger-btn {
-    background: #fff4f4;
-    color: #8f1f1f;
-    margin-top: 16px;
-  }
-
-  .vcs-primary-btn:disabled,
-  .vcs-secondary-btn:disabled {
-    opacity: 0.55;
-    cursor: not-allowed;
-    transform: none;
-    box-shadow: 3px 3px 0 var(--border-hard);
-  }
-
-  .vcs-empty,
-  .vcs-error {
-    font-size: 13px;
-    line-height: 1.7;
-    color: var(--text-2);
-    margin: 14px 0 0;
-  }
-
-  .vcs-error {
-    color: #b42318;
-  }
-
-  .vcs-fallback {
-    margin-top: 16px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
+  .vcs-handoff-card {
     padding: 16px;
     border-radius: 16px;
     border: 1.5px solid var(--border-hard);
-    background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+    background: var(--surface);
     box-shadow: 3px 3px 0 var(--border-hard);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
   }
 
-  .vcs-fallback-title {
-    margin: 0 0 6px;
-    font-family: var(--font-display);
-    font-size: 1rem;
-    font-weight: 700;
-    color: var(--text-1);
-    letter-spacing: -0.02em;
+  .vcs-handoff-grid {
+    display: grid;
+    grid-template-columns: 140px minmax(0, 1fr);
+    gap: 14px;
+    align-items: center;
   }
 
-  .vcs-fallback-copy {
-    margin: 0;
-    font-size: 13px;
-    line-height: 1.6;
-    color: var(--text-2);
-    max-width: 52ch;
-  }
-
-  .vcs-primary-link {
-    display: inline-flex;
+  .vcs-qr-wrap {
+    display: flex;
     align-items: center;
     justify-content: center;
-    min-height: 40px;
-    padding: 10px 16px;
-    border-radius: 999px;
+    padding: 12px;
+    border-radius: 16px;
     border: 1.5px solid var(--border-hard);
-    background: var(--text-1);
-    color: var(--text-inv);
-    box-shadow: 2px 2px 0 var(--border-hard);
-    font-family: var(--font-display);
-    font-size: 13px;
-    font-weight: 700;
-    text-decoration: none;
-    white-space: nowrap;
+    background: #fff;
+    min-height: 156px;
   }
 
-  @media (max-width: 1080px) {
+  .vcs-handoff-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 0;
+  }
+
+  .vcs-link-box,
+  .vcs-code-box {
+    padding: 12px 13px;
+    border-radius: 14px;
+    border: 1.5px solid var(--border-hard);
+    background: var(--surface-2);
+    color: var(--text-1);
+    font-size: 12px;
+    line-height: 1.55;
+    word-break: break-word;
+  }
+
+  .vcs-code-box {
+    font-family: var(--font-mono);
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+  }
+
+  .vcs-row-action {
+    border: 0;
+    background: transparent;
+    font: inherit;
+    color: var(--accent-text);
+    cursor: pointer;
+  }
+
+  @media (max-width: 960px) {
     .vcs-shell {
       grid-template-columns: 1fr;
     }
   }
 
-  @media (max-width: 640px) {
-    .vcs-main,
-    .vcs-side,
+  @media (max-width: 720px) {
     .vcs-connect,
+    .vcs-account-bar,
     .vcs-dropzone,
-    .vcs-library,
-    .vcs-queue,
-    .vcs-share-card,
-    .vcs-placeholder {
-      padding: 16px;
-    }
-
-    .vcs-title,
-    .vcs-side-title {
-      font-size: 1.7rem;
-    }
-
-    .vcs-dropzone-actions,
-    .vcs-side-actions,
-    .vcs-section-head {
+    .vcs-handoff-grid,
+    .vcs-meta-grid,
+    .vcs-side-actions {
+      grid-template-columns: 1fr;
       flex-direction: column;
       align-items: stretch;
     }
 
-    .vcs-fallback {
-      flex-direction: column;
-      align-items: stretch;
+    .vcs-handoff-grid {
+      display: flex;
     }
 
     .vcs-meta-grid {
+      display: grid;
       grid-template-columns: 1fr;
     }
 
     .vcs-primary-btn,
     .vcs-secondary-btn,
     .vcs-secondary-link,
-    .vcs-danger-btn,
-    .vcs-primary-link {
+    .vcs-inline-btn {
       width: 100%;
     }
   }

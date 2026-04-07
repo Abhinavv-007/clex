@@ -110,6 +110,10 @@ async function buildMasterKey(rawKey: ArrayBuffer): Promise<MasterKey> {
   }
 }
 
+export async function createMasterKeyFromRaw(rawKey: ArrayBuffer): Promise<MasterKey> {
+  return buildMasterKey(rawKey)
+}
+
 // ── Master Key Lifecycle ──────────────────────────────────────────────────────
 
 export async function getOrCreateMasterKey(): Promise<MasterKey> {
@@ -128,6 +132,12 @@ export async function getOrCreateMasterKey(): Promise<MasterKey> {
 }
 
 export async function storeMasterKeyFromRaw(raw: ArrayBuffer): Promise<MasterKey> {
+  await dbPut(MASTER_KEY_ID, raw)
+  return buildMasterKey(raw)
+}
+
+export async function persistMasterKey(masterKey: MasterKey): Promise<MasterKey> {
+  const raw = await crypto.subtle.exportKey('raw', masterKey.key)
   await dbPut(MASTER_KEY_ID, raw)
   return buildMasterKey(raw)
 }
@@ -190,7 +200,7 @@ export async function deriveGoogleKey(googleUid: string): Promise<MasterKey> {
     keyMaterial,
     256
   )
-  return storeMasterKeyFromRaw(derivedBits)
+  return buildMasterKey(derivedBits)
 }
 
 // ── Symmetric Encryption / Decryption ────────────────────────────────────────

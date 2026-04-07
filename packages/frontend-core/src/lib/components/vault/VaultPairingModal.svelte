@@ -105,7 +105,7 @@
 
     const localDevice = await getLocalDeviceInfo()
 
-    status = 'waiting'
+    status = 'connecting'
     error = ''
     pairingCode = ''
     pairingLink = ''

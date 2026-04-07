@@ -1,5 +1,18 @@
-export { clearToken, getStoredToken, hasToken, initiateGoogleAuth, pickupToken, storeToken, uploadToDrive } from './gdrive'
-export type { UploadResult } from './gdrive'
+export {
+  clearToken,
+  consumeDriveAuthError,
+  disconnectGoogleDrive,
+  getDriveApiBaseUrl,
+  getDriveSession,
+  getStoredToken,
+  hasToken,
+  initiateGoogleAuth,
+  pickupToken,
+  storeToken,
+  uploadDriveBatch,
+  uploadToDrive,
+} from './gdrive'
+export type { DriveUploadBatchResult, GoogleDriveUser, UploadResult } from './gdrive'
 
 export {
   classifyConnectionKind,

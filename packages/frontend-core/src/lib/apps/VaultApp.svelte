@@ -29,7 +29,7 @@
     storageUsed,
   } from '$stores/vault'
   import type { DecryptedNote } from '$stores/vault'
-  import { getOrCreateMasterKey } from '$lib/vault/crypto'
+  import { deriveGoogleKey, encryptText, getOrCreateMasterKey, persistMasterKey, type MasterKey } from '$lib/vault/crypto'
   import type { StoredFolder, StoredNote } from '$lib/vault/db'
   import {
     getAllNotes,
@@ -47,7 +47,7 @@
   import { decryptText } from '$lib/vault/crypto'
   import { buildSearchIndex, removeFromIndex, updateInIndex } from '$lib/vault/search'
   import { initSync, onSyncState, destroySync, runManualSync, setSyncHandlers } from '$lib/vault/sync'
-  import { onVaultAuthChanged } from '$lib/vault/auth'
+  import { onVaultAuthChanged, type VaultUser } from '$lib/vault/auth'
   import { fetchVaultBackup, pushVaultBackup, upsertAccountDevice, type BackupSnapshot } from '$lib/vault/backup'
 
   export let signalingUrl = 'wss://signal.clex.in'
@@ -63,6 +63,8 @@
   let syncInitVersion = 0
   let bootComplete = false
   let backupSyncPromise: Promise<void> | null = null
+  let backupSyncRoomId = ''
+  let authBindingPromise: Promise<void> | null = null
 
   function consumePairingCodeFromUrl() {
     const url = new URL(window.location.href)
@@ -231,7 +233,12 @@
   async function syncEncryptedBackup() {
     const mk = get(masterKeyStore)
     if (!mk) return
-    if (backupSyncPromise) return backupSyncPromise
+    if (backupSyncPromise) {
+      if (backupSyncRoomId === mk.roomId) return backupSyncPromise
+      await backupSyncPromise.catch(() => undefined)
+    }
+
+    backupSyncRoomId = mk.roomId
 
     backupSyncPromise = (async () => {
       try {
@@ -255,6 +262,7 @@
         console.warn('[vault] encrypted backup sync failed:', error)
       } finally {
         backupSyncPromise = null
+        backupSyncRoomId = ''
       }
     })()
 
@@ -278,6 +286,66 @@
     } catch (error) {
       console.warn('[vault] device registry sync failed:', error)
     }
+  }
+
+  async function migrateNotesToMasterKey(currentKey: MasterKey, nextKey: MasterKey) {
+    if (currentKey.fingerprint === nextKey.fingerprint) return
+
+    const [storedNotes, storedFolders] = await Promise.all([
+      getAllNotes(),
+      getAllFolders(),
+    ])
+
+    const migratedNotes = await Promise.all(storedNotes.map(async (note) => {
+      const [title, body] = await Promise.all([
+        decryptText(note.titleBlob, currentKey.key),
+        decryptText(note.bodyBlob, currentKey.key),
+      ])
+      const [titleBlob, bodyBlob] = await Promise.all([
+        encryptText(title, nextKey.key),
+        encryptText(body, nextKey.key),
+      ])
+
+      return {
+        ...note,
+        titleBlob,
+        bodyBlob,
+      } satisfies StoredNote
+    }))
+
+    await Promise.all(migratedNotes.map(note => saveNote(note)))
+    const decryptedNotes = await Promise.all(migratedNotes.map(note => decryptStoredNoteRecord(note, nextKey.key)))
+
+    vaultActions.setNotes(decryptedNotes)
+    vaultActions.setFolders(storedFolders)
+    buildSearchIndex(decryptedNotes.map(note => ({
+      id: note.id,
+      title: note.title,
+      body: note.body,
+      tags: note.tags,
+      updatedAt: note.updatedAt,
+    })))
+  }
+
+  async function bindGoogleVault(user: VaultUser | null) {
+    vaultActions.setGoogleUser(user)
+    if (!user?.uid) return
+
+    const currentKey = get(masterKeyStore)
+    if (!currentKey) return
+
+    const googleKey = await deriveGoogleKey(user.uid)
+    const nextKey = currentKey.fingerprint === googleKey.fingerprint
+      ? await persistMasterKey(googleKey)
+      : await (async () => {
+          await migrateNotesToMasterKey(currentKey, googleKey)
+          return persistMasterKey(googleKey)
+        })()
+
+    vaultActions.setMasterKey(nextKey)
+    await ensureSyncForRoom(nextKey.roomId)
+    await syncEncryptedBackup()
+    await syncSignedInDevice(user.uid)
   }
 
   onMount(async () => {
@@ -328,10 +396,15 @@
 
       // 5. Restore Firebase auth state (non-blocking — just populates UI)
       onVaultAuthChanged((user) => {
-        vaultActions.setGoogleUser(user)
-        if (user?.uid) {
-          void syncSignedInDevice(user.uid)
-        }
+        authBindingPromise = (async () => {
+          try {
+            await bindGoogleVault(user)
+          } catch (error) {
+            console.warn('[vault] google vault bind failed:', error)
+          } finally {
+            authBindingPromise = null
+          }
+        })()
       }).catch(() => {
         // Firebase unavailable — continue without Google auth
       })
@@ -369,14 +442,14 @@
     : panel === 'secrets'
       ? 'Private links with controls you choose'
       : panel === 'share'
-        ? 'Timed file relay with QR handoff'
+        ? 'Google Drive handoff with Vault links'
         : 'Devices, storage, encryption, and account controls'
   $: panelSubtitle = panel === 'notes'
     ? 'Keep notes local first, sync live over shared rooms, and fall back to encrypted room backups without leaving the same workspace shell.'
     : panel === 'secrets'
       ? 'Set expiry, choose the protections that actually matter, then hand off the full link or QR code.'
       : panel === 'share'
-        ? 'Signed-in uploads stay capped at 10 MB per file, 100 MB per day, and disappear automatically after 24 hours.'
+        ? 'Push files into your own Google Drive, hand off per-file links or a folder share, and let Vault clean the session up automatically after 24 hours.'
         : 'Pair devices, check storage, manage your relay access, and control the local key lifecycle from one place.'
 
   const panelTabs: { id: 'notes' | 'secrets' | 'share' | 'settings'; label: string }[] = [
@@ -444,7 +517,7 @@
 
       {:else if panel === 'share'}
         <div class="va-share-wrap">
-          <VaultCloudShare {vaultApiUrl} />
+          <VaultCloudShare />
         </div>
 
       {:else}
