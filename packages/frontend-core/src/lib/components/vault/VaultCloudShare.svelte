@@ -67,6 +67,54 @@
     })
   }
 
+  function mapApiError(
+    payload: unknown,
+    status: number,
+    fallback: string,
+    phase: 'load' | 'upload' | 'delete',
+    fileName?: string,
+  ): string {
+    const apiMessage = payload && typeof payload === 'object' && 'error' in payload && typeof payload.error === 'string'
+      ? payload.error
+      : ''
+
+    if (status === 401) {
+      return phase === 'load'
+        ? 'Sign in with Google to load your Vault relay files.'
+        : 'Sign in with Google before publishing Vault file links.'
+    }
+
+    if (status === 413) {
+      return apiMessage || `${fileName ?? 'This file'} exceeds the 10 MB Vault limit.`
+    }
+
+    if (status === 429) {
+      return apiMessage || 'Vault relay quota reached for today. Try again tomorrow or trim your upload batch.'
+    }
+
+    if (status === 400 || status === 411) {
+      return apiMessage || 'Vault rejected this upload request. Refresh and try again.'
+    }
+
+    if (status >= 500) {
+      if (apiMessage.includes('Supabase')) {
+        return 'Vault reached the relay, but Supabase storage rejected the upload. Check the bucket, credentials, and CORS settings.'
+      }
+
+      return apiMessage || 'Vault relay is unavailable right now. Try again in a moment.'
+    }
+
+    return apiMessage || fallback
+  }
+
+  function mapThrownError(err: unknown, fallback: string): string {
+    if (err instanceof TypeError) {
+      return 'Vault relay could not be reached. Check your connection or deployment and try again.'
+    }
+
+    return err instanceof Error ? err.message : fallback
+  }
+
   async function connectGoogle() {
     connectBusy = true
     error = ''
@@ -78,7 +126,7 @@
       const nextKey = await deriveGoogleKey(nextUser.uid)
       vaultActions.setMasterKey(nextKey)
     } catch (err) {
-      error = err instanceof Error ? err.message : 'Google sign-in failed'
+      error = mapThrownError(err, 'Google sign-in failed')
     } finally {
       connectBusy = false
     }
@@ -87,6 +135,7 @@
   async function loadFiles() {
     if (!user?.uid) return
     filesLoading = true
+    error = ''
 
     try {
       const res = await fetch(`${vaultApiUrl}/files`, {
@@ -94,7 +143,7 @@
       })
       const payload = await res.json().catch(() => ({}))
       if (!res.ok) {
-        throw new Error(payload.error ?? `Failed to load files (${res.status})`)
+        throw new Error(mapApiError(payload, res.status, `Failed to load files (${res.status})`, 'load'))
       }
 
       sharedFiles = (payload.files ?? []) as SharedFile[]
@@ -105,7 +154,7 @@
         activeFileId = ''
       }
     } catch (err) {
-      error = err instanceof Error ? err.message : 'Failed to load files'
+      error = mapThrownError(err, 'Failed to load files')
     } finally {
       filesLoading = false
     }
@@ -167,6 +216,7 @@
     try {
       for (const file of selectedFiles) {
         uploadIndex += 1
+
         const res = await fetch(`${vaultApiUrl}/files`, {
           method: 'POST',
           headers: {
@@ -180,7 +230,9 @@
 
         const payload = await res.json().catch(() => ({}))
         if (!res.ok) {
-          throw new Error(payload.error ?? `Upload failed for ${file.name}`)
+          throw new Error(
+            mapApiError(payload, res.status, `Upload failed for ${file.name}`, 'upload', file.name),
+          )
         }
 
         if (payload.id) {
@@ -191,7 +243,7 @@
       selectedFiles = []
       await loadFiles()
     } catch (err) {
-      error = err instanceof Error ? err.message : 'Upload failed'
+      error = mapThrownError(err, 'Upload failed')
     } finally {
       uploading = false
       uploadIndex = 0
@@ -220,7 +272,7 @@
       })
       const payload = await res.json().catch(() => ({}))
       if (!res.ok) {
-        throw new Error(payload.error ?? 'Failed to delete file')
+        throw new Error(mapApiError(payload, res.status, 'Failed to delete file', 'delete'))
       }
 
       sharedFiles = sharedFiles.filter((item) => item.id !== id)
@@ -229,7 +281,7 @@
       }
       await loadFiles()
     } catch (err) {
-      error = err instanceof Error ? err.message : 'Failed to delete file'
+      error = mapThrownError(err, 'Failed to delete file')
     } finally {
       deleteBusyId = ''
     }
@@ -241,24 +293,24 @@
     <section class="vcs-main">
       <div class="vcs-header">
         <p class="vcs-kicker">Cloud Share</p>
-        <h2 class="vcs-title">Short-lived file links with QR handoff.</h2>
+        <h2 class="vcs-title">Timed file relay with QR handoff</h2>
         <p class="vcs-subtitle">
-          Upload files into the Vault relay, keep every link temporary, and hand off downloads through a QR code or direct URL.
+          Upload inside Vault, share the link or QR code, and let the relay remove itself after 24 hours.
         </p>
       </div>
 
       <div class="vcs-limit-row">
         <span class="vcs-limit-chip">10 MB per file</span>
-        <span class="vcs-limit-chip">100 MB total per day</span>
+        <span class="vcs-limit-chip">100 MB per day</span>
         <span class="vcs-limit-chip">Auto-delete after 24 hours</span>
       </div>
 
       {#if !user}
         <div class="vcs-connect">
           <div>
-            <p class="vcs-connect-title">Google sign-in is required for uploads.</p>
+            <p class="vcs-connect-title">Sign in to publish file links</p>
             <p class="vcs-connect-copy">
-              Vault uses your Google identity as the upload owner for temporary file links and daily quota tracking.
+              Google sign-in lets Vault own the relay files, track the daily quota, and list active links on this device.
             </p>
           </div>
           <button class="vcs-primary-btn" disabled={connectBusy} on:click={connectGoogle}>
@@ -269,11 +321,12 @@
         <div class="vcs-uploader">
           <div class="vcs-dropzone">
             <div>
-              <p class="vcs-dropzone-title">Choose files to publish</p>
+              <p class="vcs-dropzone-title">Queue files</p>
               <p class="vcs-dropzone-copy">
-                Queue one or more files, then push them into the Vault relay. Each file gets its own share URL.
+                Each file gets its own temporary link. Files stay capped at 10 MB and expire automatically after 24 hours.
               </p>
             </div>
+
             <div class="vcs-dropzone-actions">
               <button class="vcs-secondary-btn" type="button" on:click={promptFilePicker}>
                 Select files
@@ -291,6 +344,7 @@
                 {/if}
               </button>
             </div>
+
             <input
               bind:this={fileInput}
               class="vcs-hidden-input"
@@ -354,9 +408,9 @@
         {:else}
           <div class="vcs-empty">
             {#if user}
-              No cloud files yet. Upload a file to create the first link.
+              No relay files yet. Upload a file to create the first timed link.
             {:else}
-              Sign in to load your file links.
+              Sign in to load your relay files.
             {/if}
           </div>
         {/if}
@@ -373,7 +427,7 @@
           <p class="vcs-side-kicker">Active share</p>
           <h3 class="vcs-side-title">{activeFile.filename}</h3>
           <p class="vcs-side-copy">
-            This link opens a timed download page. Anyone with the URL or QR code can fetch the file until it expires.
+            Anyone with the QR code or URL can open the timed download page until the relay record expires.
           </p>
 
           <div class="vcs-qr-wrap">
@@ -412,15 +466,15 @@
             disabled={deleteBusyId === activeFile.id}
             on:click={() => deleteFile(activeFile.id)}
           >
-            {deleteBusyId === activeFile.id ? 'Deleting…' : 'Delete file link'}
+            {deleteBusyId === activeFile.id ? 'Deleting…' : 'Delete link'}
           </button>
         </div>
       {:else}
         <div class="vcs-placeholder">
-          <p class="vcs-side-kicker">Cloud relay</p>
-          <h3 class="vcs-side-title">Pick a file to generate a share QR.</h3>
+          <p class="vcs-side-kicker">Relay flow</p>
+          <h3 class="vcs-side-title">Queue, publish, hand off</h3>
           <p class="vcs-side-copy">
-            The right rail mirrors the workspace handoff pattern: scan the QR code, open the link, then let the recipient download from the timed file page.
+            The right rail mirrors the workspace handoff pattern: pick a file, publish the link, then let the recipient scan or open it directly.
           </p>
         </div>
       {/if}
@@ -435,7 +489,7 @@
 
   .vcs-shell {
     display: grid;
-    grid-template-columns: minmax(0, 1.15fr) minmax(320px, 380px);
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 350px);
     gap: 20px;
     align-items: start;
   }
@@ -446,7 +500,7 @@
     border: 2px solid var(--border-hard);
     box-shadow: var(--shadow-md);
     border-radius: 16px;
-    padding: 24px;
+    padding: 22px;
   }
 
   .vcs-header {
@@ -471,16 +525,16 @@
   .vcs-title,
   .vcs-side-title {
     font-family: var(--font-display);
-    font-size: clamp(2rem, 3.4vw, 2.85rem);
-    line-height: 0.92;
-    letter-spacing: -0.045em;
+    font-size: clamp(2rem, 3vw, 2.75rem);
+    line-height: 0.94;
+    letter-spacing: -0.035em;
     color: var(--text-1);
     margin: 0;
-    text-transform: uppercase;
+    text-wrap: balance;
   }
 
   .vcs-side-title {
-    font-size: clamp(1.65rem, 2.8vw, 2.15rem);
+    font-size: clamp(1.5rem, 2.4vw, 2rem);
   }
 
   .vcs-subtitle,
@@ -488,7 +542,7 @@
   .vcs-connect-copy,
   .vcs-dropzone-copy {
     font-size: 14px;
-    line-height: 1.7;
+    line-height: 1.6;
     color: var(--text-2);
     margin: 0;
     max-width: 58ch;
@@ -505,7 +559,7 @@
     padding: 6px 10px;
     border: 1.5px solid var(--border-hard);
     background: var(--surface-2);
-    border-radius: 10px;
+    border-radius: 999px;
     box-shadow: 2px 2px 0 var(--border-hard);
     font-family: var(--font-mono);
     font-size: 10px;
@@ -521,7 +575,7 @@
   .vcs-queue,
   .vcs-share-card,
   .vcs-placeholder {
-    margin-top: 20px;
+    margin-top: 18px;
     border: 2px solid var(--border-hard);
     background: var(--surface-2);
     border-radius: 16px;
@@ -559,6 +613,7 @@
     align-items: center;
     justify-content: space-between;
     gap: 10px;
+    flex-wrap: wrap;
   }
 
   .vcs-section-meta,
@@ -600,9 +655,13 @@
     transition: transform 120ms ease, box-shadow 120ms ease, border-color 120ms ease;
   }
 
-  .vcs-file-card:hover {
+  .vcs-file-card:hover,
+  .vcs-primary-btn:hover,
+  .vcs-secondary-btn:hover,
+  .vcs-secondary-link:hover,
+  .vcs-danger-btn:hover {
     transform: translate(-1px, -1px);
-    box-shadow: 4px 4px 0 var(--border-hard);
+    box-shadow: 5px 5px 0 var(--border-hard);
   }
 
   .vcs-file-card--active {
@@ -651,17 +710,20 @@
     line-height: 1.6;
     color: var(--text-2);
     overflow-wrap: anywhere;
+    margin-top: 18px;
   }
 
   .vcs-qr-wrap {
     display: flex;
     justify-content: center;
+    margin-top: 18px;
   }
 
   .vcs-meta-grid {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 10px;
+    margin-top: 16px;
   }
 
   .vcs-meta-card {
@@ -701,14 +763,6 @@
     transition: transform 120ms ease, box-shadow 120ms ease;
   }
 
-  .vcs-primary-btn:hover,
-  .vcs-secondary-btn:hover,
-  .vcs-secondary-link:hover,
-  .vcs-danger-btn:hover {
-    transform: translate(-1px, -1px);
-    box-shadow: 5px 5px 0 var(--border-hard);
-  }
-
   .vcs-primary-btn {
     background: var(--accent);
     color: #111;
@@ -723,6 +777,7 @@
   .vcs-danger-btn {
     background: #fff4f4;
     color: #8f1f1f;
+    margin-top: 16px;
   }
 
   .vcs-primary-btn:disabled,
@@ -765,7 +820,7 @@
 
     .vcs-title,
     .vcs-side-title {
-      font-size: 1.8rem;
+      font-size: 1.7rem;
     }
 
     .vcs-dropzone-actions,

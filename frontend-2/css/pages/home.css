@@ -610,12 +610,13 @@
 .footer__signature-link {
   display: inline-flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   min-width: 0;
-  padding: 12px 16px;
-  border: var(--border-medium) solid color-mix(in srgb, var(--border-color) 70%, var(--border-bold));
-  background: color-mix(in srgb, var(--bg-card) 76%, transparent);
-  box-shadow: var(--shadow-sm) var(--shadow-color);
+  padding: 10px 14px;
+  border: 1px solid color-mix(in srgb, var(--border-color) 68%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--bg-card) 68%, transparent);
+  box-shadow: none;
   font-family: var(--font-mono);
   font-size: var(--text-xs);
   font-weight: var(--weight-bold);
@@ -627,8 +628,8 @@
 .footer__signature-link:hover {
   transform: translate(-2px, -2px);
   border-color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 10%, var(--bg-card));
-  box-shadow: var(--shadow-md) var(--shadow-color);
+  background: color-mix(in srgb, var(--accent) 8%, var(--bg-card));
+  box-shadow: var(--shadow-sm) var(--shadow-color);
   color: var(--text-primary);
 }
 
@@ -637,15 +638,22 @@
 }
 
 .footer__signature-icon {
-  width: 34px;
-  height: 34px;
+  width: 18px;
+  height: 18px;
   flex: 0 0 auto;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: var(--border-medium) solid var(--border-bold);
-  background: color-mix(in srgb, var(--accent) 14%, var(--bg-card));
-  color: var(--accent-text);
+  color: var(--text-primary);
+}
+
+.footer__signature-link[aria-label*='LinkedIn'] .footer__signature-icon rect {
+  display: none;
+}
+
+.footer__signature-icon svg {
+  width: 18px;
+  height: 18px;
 }
 
 .footer__col-title {

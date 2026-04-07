@@ -354,60 +354,77 @@
     flex-direction: column;
     height: 100%;
     min-height: 0;
+    gap: 16px;
   }
 
   .vst-header {
     display: flex;
     align-items: center;
     gap: 12px;
-    padding-bottom: 16px;
+    padding-bottom: 14px;
     border-bottom: 1px solid var(--border);
-    margin-bottom: 0;
     flex-shrink: 0;
   }
 
   .vst-title {
     font-family: var(--font-display);
-    font-size: 18px;
+    font-size: clamp(1.5rem, 2vw, 1.95rem);
     font-weight: 700;
     color: var(--text-1);
-    letter-spacing: -0.02em;
+    letter-spacing: -0.03em;
     margin: 0;
+    line-height: 0.96;
   }
 
   .vst-tabs {
     display: flex;
-    gap: 0;
+    gap: 8px;
     overflow-x: auto;
     flex-shrink: 0;
-    border-bottom: 1px solid var(--border);
+    padding-bottom: 2px;
   }
 
   .vst-tab {
+    min-height: 42px;
     padding: 10px 14px;
-    border: none;
-    border-bottom: 2px solid transparent;
-    background: none;
+    border: 1.5px solid var(--border-hard);
+    border-radius: 12px;
+    background: var(--surface-2);
+    box-shadow: 2px 2px 0 var(--border-hard);
     cursor: pointer;
     font-family: var(--font-display);
     font-size: 13px;
-    font-weight: 600;
+    font-weight: 700;
     color: var(--text-3);
-    transition: color 150ms, border-color 150ms;
+    transition: color 150ms, border-color 150ms, background 150ms, box-shadow 150ms, transform 150ms;
     white-space: nowrap;
   }
 
-  .vst-tab:hover { color: var(--text-2); }
+  .vst-tab:hover {
+    color: var(--text-1);
+    transform: translate(-1px, -1px);
+    box-shadow: 4px 4px 0 var(--border-hard);
+  }
 
   .vst-tab--active {
-    color: var(--text-1);
-    border-bottom-color: var(--accent);
+    color: #111;
+    background: var(--accent);
+    border-color: #111;
+    box-shadow: 4px 4px 0 #111;
   }
 
   .vst-body {
     flex: 1 1 0;
     overflow-y: auto;
-    padding: 20px 0 0;
+    padding: 4px 2px 0 0;
+    min-height: 0;
+  }
+
+  .vst-body > div {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-height: 100%;
   }
 
   .vst-section-label {
@@ -421,7 +438,7 @@
   }
 
   .vst-hint {
-    font-size: 13px;
+    font-size: 14px;
     color: var(--text-2);
     line-height: 1.6;
     margin: 0 0 12px;
@@ -431,7 +448,7 @@
   .vst-divider {
     height: 1px;
     background: var(--border);
-    margin: 20px 0;
+    margin: 4px 0;
   }
 
   .vst-notice {

@@ -6,7 +6,7 @@
   <link rel="icon" type="image/png" href="/brand/clex-logo.png">
   <link rel="apple-touch-icon" href="/brand/clex-logo.png">
   <title>Terms of Service — Clex</title>
-  <meta name="description" content="Terms of Service for Clex. Understand the terms and conditions of using the Clex file workspace.">
+  <meta name="description" content="Terms of Service for Clex Workspace and Vault, including direct transfer, Vault notes, secret links, timed relay storage, and user responsibilities.">
   <script>
     (() => {
       try {
@@ -77,7 +77,7 @@
     <div class="container">
       <span class="page-hero__label reveal">Legal</span>
       <h1 class="page-hero__title reveal">Terms of Service</h1>
-      <div class="legal-hero__meta page-hero__meta reveal">Last updated: April 5, 2025</div>
+      <div class="legal-hero__meta page-hero__meta reveal">Last updated: April 7, 2026</div>
     </div>
   </section>
 
@@ -87,18 +87,18 @@
       <div class="legal-highlights stagger-group">
         <div class="legal-highlight">
           <div class="legal-highlight__icon">✓</div>
-          <h3 class="legal-highlight__title">Free to Use</h3>
-          <p class="legal-highlight__text">Clex's core features are free — file processing, P2P transfer, local network transfer</p>
+          <h3 class="legal-highlight__title">Browser-First Service</h3>
+          <p class="legal-highlight__text">Clex runs as a browser workspace plus Vault for private notes, secret links, and timed handoffs</p>
         </div>
         <div class="legal-highlight">
           <div class="legal-highlight__icon">⚖</div>
           <h3 class="legal-highlight__title">Your Responsibility</h3>
-          <p class="legal-highlight__text">You're responsible for the content you share. Don't use Clex for illegal activity.</p>
+          <p class="legal-highlight__text">You remain responsible for the content, recipients, and legal use of anything you process or share</p>
         </div>
         <div class="legal-highlight">
           <div class="legal-highlight__icon">🔄</div>
-          <h3 class="legal-highlight__title">No Guarantees</h3>
-          <p class="legal-highlight__text">Service is provided as-is. We'll do our best, but we can't guarantee 100% uptime.</p>
+          <h3 class="legal-highlight__title">Service Limits</h3>
+          <p class="legal-highlight__text">Relay quotas, browser limits, and third-party infrastructure constraints are part of how the service works</p>
         </div>
       </div>
 
@@ -109,7 +109,7 @@
           <div class="legal-section__number">Section 01</div>
           <h2 class="legal-section__title">Acceptance of Terms</h2>
           <p class="legal-section__text">
-            By using Clex ("the Service"), you agree to these Terms of Service. If you don't agree, please don't use the Service. These terms apply to all users of clex.in and any related applications.
+            By using Clex ("the Service"), you agree to these Terms of Service. If you do not agree, do not use the Service. These terms apply to clex.in, the browser workspace, Vault, and related supporting services.
           </p>
         </div>
 
@@ -124,9 +124,10 @@
             <li>File sharing via direct P2P transfer (WebRTC)</li>
             <li>File sharing via local network transfer</li>
             <li>File sharing via Google Drive as a fallback mechanism</li>
+            <li>Vault for encrypted local notes, controlled secret links, and timed cloud relay links</li>
           </ul>
           <p class="legal-section__text">
-            All file processing occurs in your browser. For P2P and local network transfers, files are not stored on our servers. For Google Drive transfers, files are stored in your personal Google Drive account.
+            Most processing happens in your browser. Direct P2P and local transfers are not stored on our servers. Google Drive fallback stores files in your Google account. Vault Cloud Share uses temporary relay storage with explicit size, quota, and retention limits.
           </p>
         </div>
 
@@ -142,64 +143,110 @@
             <li>Not attempt to interfere with, compromise, or disrupt the Service</li>
             <li>Not use the Service to distribute malware, viruses, or other harmful software</li>
             <li>Not misuse the signaling server or attempt to overload the infrastructure</li>
-            <li>Accept responsibility for all content you process, share, or transfer through the Service</li>
+            <li>Accept responsibility for all content you process, store, reveal, share, or transfer through the Service</li>
+            <li>Share Vault secrets and timed relay links only with recipients you trust and intend to authorize</li>
           </ul>
         </div>
 
         <div class="legal-section reveal">
           <div class="legal-section__number">Section 04</div>
-          <h2 class="legal-section__title">Intellectual Property</h2>
+          <h2 class="legal-section__title">Vault Keys and Local Data</h2>
           <p class="legal-section__text">
-            The Clex brand, design, code, and interface are the intellectual property of Clex and its creators. You may not copy, modify, or redistribute the Service's code or design without explicit permission.
-          </p>
-          <p class="legal-section__text">
-            Your files remain your property at all times. Clex does not claim any ownership or license over files you process or transfer through the Service.
+            Vault depends on local keys, local storage, or keys you intentionally import or derive through supported flows. You are responsible for maintaining access to your Vault data, keeping backup material secure, and understanding that key rotation or data clearing may make existing encrypted content unreadable.
           </p>
         </div>
 
         <div class="legal-section reveal">
           <div class="legal-section__number">Section 05</div>
-          <h2 class="legal-section__title">Third-Party Services</h2>
+          <h2 class="legal-section__title">Vault Secret Share Terms</h2>
           <p class="legal-section__text">
-            When you use Google Drive as a transfer method, you are also subject to Google's Terms of Service and Privacy Policy. Clex is not responsible for Google's handling of your data once it's uploaded to your Drive account.
+            Secret Share allows you to publish an encrypted secret with an expiry and optional protections. By using Secret Share, you understand and accept the following:
           </p>
+          <ul class="legal-section__list">
+            <li>If <strong>View once</strong> is disabled, a recipient may reopen the secret until the expiry time is reached</li>
+            <li>Client-side protections such as no-select, tab-switch lock, and DevTools guard are best-effort browser controls, not absolute guarantees against capture or disclosure</li>
+            <li>Anyone with the complete secret URL may be able to reveal the content until the secret expires or is consumed under its policy</li>
+          </ul>
         </div>
 
         <div class="legal-section reveal">
           <div class="legal-section__number">Section 06</div>
+          <h2 class="legal-section__title">Vault Cloud Share Terms</h2>
+          <p class="legal-section__text">
+            Cloud Share is a timed relay feature and is subject to operational limits:
+          </p>
+          <ul class="legal-section__list">
+            <li>Google sign-in is required to upload and manage relay files</li>
+            <li>Each uploaded file is limited to 10 MB</li>
+            <li>Each signed-in Vault user is limited to 100 MB of relay uploads per day</li>
+            <li>Relay files are scheduled for deletion after 24 hours</li>
+            <li>Anyone with the relay link may download the file until it expires or is deleted</li>
+          </ul>
+          <p class="legal-section__text">
+            Relay storage is intended for temporary handoff, not archival use or guaranteed long-term storage.
+          </p>
+        </div>
+
+        <div class="legal-section reveal">
+          <div class="legal-section__number">Section 07</div>
+          <h2 class="legal-section__title">Intellectual Property</h2>
+          <p class="legal-section__text">
+            The Clex brand, design, code, and interface are the intellectual property of Clex and its creators. You may not copy, modify, or redistribute the Service's code or design without explicit permission.
+          </p>
+          <p class="legal-section__text">
+            Your files, notes, and content remain yours. Clex does not claim ownership of the material you process, store, or transfer through the Service.
+          </p>
+        </div>
+
+        <div class="legal-section reveal">
+          <div class="legal-section__number">Section 08</div>
+          <h2 class="legal-section__title">Third-Party Services</h2>
+          <p class="legal-section__text">
+            Parts of the Service rely on third-party providers. When you use those paths, their terms may also apply.
+          </p>
+          <ul class="legal-section__list">
+            <li>Google Drive fallback is subject to Google's terms and policies</li>
+            <li>Google/Firebase authentication is subject to Google's terms and policies</li>
+            <li>Supabase-backed relay storage is part of Vault Cloud Share's temporary infrastructure</li>
+          </ul>
+        </div>
+
+        <div class="legal-section reveal">
+          <div class="legal-section__number">Section 09</div>
           <h2 class="legal-section__title">Disclaimer of Warranties</h2>
           <p class="legal-section__text">
             The Service is provided <strong>"as is"</strong> and <strong>"as available"</strong> without warranties of any kind, either express or implied. We do not guarantee that:
           </p>
           <ul class="legal-section__list">
             <li>The Service will be uninterrupted or error-free</li>
-            <li>File transfers will always succeed</li>
-            <li>P2P connections will always be possible</li>
-            <li>File processing results will be perfectly accurate</li>
+            <li>File transfers, secret reveals, or relay uploads will always succeed</li>
+            <li>P2P connections will always be possible on every network</li>
+            <li>Browser-enforced protection features will defeat every capture method</li>
+            <li>Timed relay files will remain available beyond the intended retention window</li>
           </ul>
           <p class="legal-section__text">
-            We'll do our best to keep things working well, but the nature of browser-based P2P means some scenarios (strict firewalls, certain network configurations) may prevent direct transfers.
+            Browser limits, network conditions, and third-party infrastructure can affect how the Service behaves.
           </p>
         </div>
 
         <div class="legal-section reveal">
-          <div class="legal-section__number">Section 07</div>
+          <div class="legal-section__number">Section 10</div>
           <h2 class="legal-section__title">Limitation of Liability</h2>
           <p class="legal-section__text">
-            To the maximum extent permitted by law, Clex and its creators shall not be liable for any indirect, incidental, special, consequential, or punitive damages, including but not limited to loss of data, lost profits, or business interruption arising from your use of the Service.
+            To the maximum extent permitted by law, Clex and its creators shall not be liable for indirect, incidental, special, consequential, or punitive damages arising from your use of the Service, including loss of access to encrypted local data, failed transfers, expired relay links, or third-party service outages.
           </p>
         </div>
 
         <div class="legal-section reveal">
-          <div class="legal-section__number">Section 08</div>
+          <div class="legal-section__number">Section 11</div>
           <h2 class="legal-section__title">Termination</h2>
           <p class="legal-section__text">
-            We reserve the right to restrict or terminate access to the Service at any time if we believe you are violating these terms or using the Service in a way that could harm other users or the infrastructure.
+            We reserve the right to restrict or terminate access to the Service if we believe you are violating these terms or using the Service in a way that could harm other users or the infrastructure.
           </p>
         </div>
 
         <div class="legal-section reveal">
-          <div class="legal-section__number">Section 09</div>
+          <div class="legal-section__number">Section 12</div>
           <h2 class="legal-section__title">Changes to Terms</h2>
           <p class="legal-section__text">
             We may update these Terms from time to time. Changes will be posted on this page with an updated effective date. Your continued use of the Service after changes constitutes acceptance of the updated Terms.
@@ -207,7 +254,7 @@
         </div>
 
         <div class="legal-section reveal">
-          <div class="legal-section__number">Section 10</div>
+          <div class="legal-section__number">Section 13</div>
           <h2 class="legal-section__title">Contact</h2>
           <p class="legal-section__text">
             Questions about these Terms? Contact us at <a href="mailto:hello@clex.in" style="color: var(--accent-text); border-bottom: 1px solid var(--accent);">hello@clex.in</a>.

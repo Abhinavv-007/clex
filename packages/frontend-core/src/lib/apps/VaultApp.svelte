@@ -121,19 +121,19 @@
   $: pairingOpen = $ui.pairingModalOpen
   $: infoPanelCollapsed = $ui.infoPanelCollapsed
   $: panelTitle = panel === 'notes'
-    ? 'Encrypted notes, secrets, and file handoffs.'
+    ? 'Encrypted notes, private links, and timed handoffs'
     : panel === 'secrets'
-      ? 'Create a one-time link without leaving Vault.'
+      ? 'Private links with controls you choose'
       : panel === 'share'
-        ? 'Publish a short-lived file link with QR access.'
-        : 'Manage devices, storage, and recovery controls.'
+        ? 'Timed file relay with QR handoff'
+        : 'Devices, storage, encryption, and account controls'
   $: panelSubtitle = panel === 'notes'
-    ? 'Vault should feel like Workspace: direct, dense, and easy to move through.'
+    ? 'Keep notes local, move between folders quickly, and switch into secret or file sharing without leaving the same workspace shell.'
     : panel === 'secrets'
-      ? 'Short TTL links, QR handoff, and a wider layout for real use instead of a cramped modal.'
+      ? 'Set expiry, choose the protections that actually matter, then hand off the full link or QR code.'
       : panel === 'share'
-        ? 'The Supabase relay already exists on the backend. This surface puts the 10 MB and 100 MB/day rules into the product.'
-        : 'Pair devices, check storage, and control the key lifecycle from the same shell.'
+        ? 'Signed-in uploads stay capped at 10 MB per file, 100 MB per day, and disappear automatically after 24 hours.'
+        : 'Pair devices, check storage, manage your relay access, and control the local key lifecycle from one place.'
 
   const panelTabs: { id: 'notes' | 'secrets' | 'share' | 'settings'; label: string }[] = [
     { id: 'notes', label: 'Notes' },
@@ -286,10 +286,10 @@
 
   .va-shell-header {
     display: flex;
-    align-items: flex-end;
+    align-items: end;
     justify-content: space-between;
-    gap: 18px;
-    margin-bottom: 20px;
+    gap: 20px;
+    margin-bottom: 22px;
   }
 
   .va-title-block {
@@ -309,18 +309,18 @@
   .va-title {
     margin: 0;
     font-family: var(--font-display);
-    font-size: clamp(2rem, 3.5vw, 3.1rem);
-    line-height: 0.9;
-    letter-spacing: -0.05em;
-    text-transform: uppercase;
+    font-size: clamp(2.15rem, 3.8vw, 3.4rem);
+    line-height: 0.94;
+    letter-spacing: -0.045em;
     color: var(--text-1);
+    text-wrap: balance;
   }
 
   .va-sub {
-    margin: 10px 0 0;
+    margin: 12px 0 0;
     max-width: 64ch;
-    font-size: 14px;
-    line-height: 1.7;
+    font-size: 15px;
+    line-height: 1.65;
     color: var(--text-2);
   }
 
@@ -344,6 +344,7 @@
     color: var(--text-2);
     cursor: pointer;
     transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+    white-space: nowrap;
   }
 
   .va-panel-tab:hover {
@@ -416,7 +417,23 @@
   }
 
   .va-settings-wrap {
-    display: block;
+    display: flex;
+    align-items: stretch;
+    width: 100%;
+    height: calc(100vh - 210px);
+    min-height: 680px;
+    padding: 22px;
+    border: 2px solid var(--border-hard);
+    border-radius: 16px;
+    background: var(--surface);
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+  }
+
+  .va-settings-wrap :global(.vst-root) {
+    width: 100%;
+    flex: 1 1 auto;
+    min-height: 0;
   }
 
   .va-secrets-wrap,
@@ -520,6 +537,10 @@
     .va-grid {
       grid-template-columns: 220px minmax(320px, 1fr) 180px;
     }
+
+    .va-settings-wrap {
+      min-height: 620px;
+    }
   }
 
   @media (max-width: 767px) {
@@ -535,12 +556,21 @@
       height: auto;
     }
     .va-title {
-      font-size: 1.9rem;
+      font-size: 2rem;
     }
     .va-col-sidebar {
       display: none;
     }
     .va-col-info { display: none; }
     .va-mobile-tabs { display: flex; }
+    .va-settings-wrap,
+    .va-secrets-wrap,
+    .va-share-wrap {
+      min-height: auto;
+      height: auto;
+    }
+    .va-settings-wrap {
+      padding: 16px;
+    }
   }
 </style>

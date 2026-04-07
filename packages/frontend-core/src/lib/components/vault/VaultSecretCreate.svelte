@@ -7,6 +7,31 @@
 
   export let vaultApiUrl = '/vault/api'
 
+  interface SecretPolicy {
+    viewOnce: boolean
+    timedView: boolean
+    noSelect: boolean
+    tabSwitchLock: boolean
+    devtoolsGuard: boolean
+    memoryOnly: true
+    viewWindowSeconds: number
+  }
+
+  type SelectableProtectionKey =
+    | 'viewOnce'
+    | 'timedView'
+    | 'noSelect'
+    | 'tabSwitchLock'
+    | 'devtoolsGuard'
+
+  interface SecretStatusPayload {
+    exists?: boolean
+    alreadyOpened: boolean
+    openedAt: number | null
+    expiresAt?: number | null
+    policy?: Partial<SecretPolicy>
+  }
+
   const MAX_CHARS = 10_000
   const QUICK_TTL_OPTIONS = [
     { value: 60, label: '1 min' },
@@ -15,6 +40,46 @@
     { value: 1800, label: '30 min' },
     { value: 3600, label: '1 hour' },
   ]
+
+  const SELECTABLE_PROTECTIONS: {
+    key: SelectableProtectionKey
+    label: string
+    copy: string
+  }[] = [
+    {
+      key: 'viewOnce',
+      label: 'View once',
+      copy: 'Consume the link after the first reveal',
+    },
+    {
+      key: 'timedView',
+      label: '60s viewing window',
+      copy: 'Auto-hide the open page after 60 seconds',
+    },
+    {
+      key: 'noSelect',
+      label: 'No select',
+      copy: 'Disable selection and copy shortcuts on the reveal page',
+    },
+    {
+      key: 'tabSwitchLock',
+      label: 'Tab switch lock',
+      copy: 'Destroy the local reveal if the recipient changes tabs',
+    },
+    {
+      key: 'devtoolsGuard',
+      label: 'DevTools guard',
+      copy: 'Block common inspector shortcuts and detect an open panel',
+    },
+  ]
+
+  const DEFAULT_PROTECTIONS: Record<SelectableProtectionKey, boolean> = {
+    viewOnce: false,
+    timedView: false,
+    noSelect: false,
+    tabSwitchLock: false,
+    devtoolsGuard: false,
+  }
 
   let content = ''
   let quickTtl = 900
@@ -25,8 +90,9 @@
   let secretId = ''
   let error = ''
   let copied = false
-  let statusData: { exists?: boolean; alreadyOpened: boolean; openedAt: number | null; expiresAt?: number | null } | null = null
+  let statusData: SecretStatusPayload | null = null
   let statusPoller: ReturnType<typeof setInterval> | null = null
+  let protections = { ...DEFAULT_PROTECTIONS }
 
   $: remaining = MAX_CHARS - content.length
   $: ttlSeconds = useCustomTtl
@@ -35,6 +101,16 @@
   $: ttlLabel = formatTtl(ttlSeconds)
   $: canCreate = content.trim().length > 0 && !creating
   $: qrValue = secretUrl
+  $: selectedProtectionCount = Object.values(protections).filter(Boolean).length
+  $: policy = {
+    ...protections,
+    memoryOnly: true as const,
+    viewWindowSeconds: protections.timedView ? 60 : 0,
+  }
+  $: protectionLabels = SELECTABLE_PROTECTIONS.filter((item) => protections[item.key]).map((item) => item.label)
+  $: revealRuleLabel = policy.viewOnce ? 'Consumed on first reveal' : 'Reopens until link expiry'
+  $: viewWindowLabel = policy.timedView ? 'Open page closes after 60 seconds' : 'No forced close after reveal'
+  $: resultGuardLabel = protectionLabels.length > 0 ? protectionLabels.join(' • ') : 'No optional guards selected'
 
   onDestroy(() => {
     if (statusPoller) clearInterval(statusPoller)
@@ -46,8 +122,16 @@
       const hours = seconds / 3600
       return hours % 1 === 0 ? `${hours} hour${hours === 1 ? '' : 's'}` : `${hours.toFixed(1)} hours`
     }
+
     const days = seconds / 86400
     return `${days} day${days === 1 ? '' : 's'}`
+  }
+
+  function toggleProtection(key: SelectableProtectionKey) {
+    protections = {
+      ...protections,
+      [key]: !protections[key],
+    }
   }
 
   async function createSecret() {
@@ -64,6 +148,7 @@
           encryptedPayload: encrypted.ciphertextB64,
           iv: encrypted.ivB64,
           ttlSeconds,
+          policy,
         }),
       })
 
@@ -76,6 +161,7 @@
         alreadyOpened: false,
         openedAt: null,
         expiresAt: (payload.expiresAt as number | undefined) ?? Date.now() + ttlSeconds * 1000,
+        policy: (payload.policy as Partial<SecretPolicy> | undefined) ?? policy,
       }
       startStatusPolling()
     } catch (err) {
@@ -91,12 +177,12 @@
       try {
         const res = await fetch(`${vaultApiUrl}/secret/${secretId}/status`)
         if (!res.ok) return
-        statusData = await res.json() as { exists?: boolean; alreadyOpened: boolean; openedAt: number | null; expiresAt?: number | null }
-        if (statusData.alreadyOpened && statusPoller) {
+        statusData = await res.json() as SecretStatusPayload
+        if (statusData.alreadyOpened && statusPoller && policy.viewOnce) {
           clearInterval(statusPoller)
         }
       } catch {
-        // keep polling until a later successful response
+        // Keep polling until a later successful response.
       }
     }, 5000)
   }
@@ -123,6 +209,7 @@
     useCustomTtl = false
     quickTtl = 900
     customMinutes = 45
+    protections = { ...DEFAULT_PROTECTIONS }
   }
 </script>
 
@@ -131,31 +218,38 @@
     <section class="vsc-main" in:fade={{ duration: 180 }}>
       <div class="vsc-header">
         <p class="vsc-kicker">Secret Share</p>
-        <h2 class="vsc-title">One-time text links with room to work.</h2>
+        <h2 class="vsc-title">Private links with selectable protections</h2>
         <p class="vsc-subtitle">
-          Build the message in Vault, choose the expiry window you actually need, then hand off the one-time link through a URL or QR code.
+          Write the message, choose how long the link stays live, then turn on only the protections you want.
         </p>
       </div>
 
       {#if !secretUrl}
         <div class="vsc-section">
-          <label class="vsc-section-head" for="secret-content">Secret content</label>
+          <div class="vsc-section-row">
+            <label class="vsc-section-head" for="secret-content">Secret content</label>
+            <span class:vsc-char-count--warn={remaining < 500}>{remaining} chars left</span>
+          </div>
           <textarea
             id="secret-content"
             class="input vsc-textarea scroll-thin"
-            placeholder="Paste a password, API key, private note, or any text that should vanish after one reveal."
+            placeholder="Paste a password, API key, note, or any text that should stay private."
             bind:value={content}
             rows="12"
             maxlength={MAX_CHARS}
           ></textarea>
           <div class="vsc-field-meta">
-            <span>{ttlLabel} before expiry if unopened</span>
-            <span class:vsc-char-count--warn={remaining < 500}>{remaining} chars remaining</span>
+            <span>{ttlLabel} link expiry</span>
+            <span>{revealRuleLabel}</span>
           </div>
         </div>
 
-        <fieldset class="vsc-section">
-          <legend class="vsc-section-head">Link lifetime</legend>
+        <div class="vsc-section" role="group" aria-labelledby="secret-link-lifetime">
+          <div class="vsc-section-row">
+            <p id="secret-link-lifetime" class="vsc-section-head">Link lifetime</p>
+            <span class="vsc-section-meta">{ttlLabel}</span>
+          </div>
+
           <div class="vsc-ttl-grid">
             {#each QUICK_TTL_OPTIONS as option}
               <button
@@ -196,21 +290,36 @@
               <p class="vsc-custom-note">Allowed range: 1 minute to 7 days.</p>
             </div>
           {/if}
-        </fieldset>
+        </div>
 
         <div class="vsc-section">
-          <p class="vsc-section-head">Active protections</p>
+          <div class="vsc-section-row">
+            <p class="vsc-section-head">Selectable protections</p>
+            <span class="vsc-section-meta">{selectedProtectionCount} active</span>
+          </div>
+
           <div class="vsc-protection-grid">
-            {#each [
-              'View once',
-              '60s viewing window',
-              'No select',
-              'Tab switch lock',
-              'DevTools guard',
-              'Memory only',
-            ] as protection}
-              <span class="vsc-protection-badge">{protection}</span>
+            {#each SELECTABLE_PROTECTIONS as item}
+              <button
+                type="button"
+                class="vsc-protection-btn"
+                class:vsc-protection-btn--active={protections[item.key]}
+                on:click={() => toggleProtection(item.key)}
+              >
+                <span class="vsc-protection-title">{item.label}</span>
+                <span class="vsc-protection-copy">{item.copy}</span>
+              </button>
             {/each}
+          </div>
+
+          <div class="vsc-system-card">
+            <div>
+              <span class="vsc-system-label">Always on</span>
+              <strong class="vsc-system-title">Memory only</strong>
+            </div>
+            <p class="vsc-system-copy">
+              The decrypted secret stays out of local storage and cookies. The key remains in the URL hash until reveal.
+            </p>
           </div>
         </div>
 
@@ -218,28 +327,34 @@
           <p class="vsc-error" in:fly={{ y: 4, duration: 140 }}>{error}</p>
         {/if}
 
-        <button
-          class="vsc-primary-btn"
-          disabled={!canCreate}
-          type="button"
-          on:click={createSecret}
-        >
-          {#if creating}
-            <span class="vsc-spinner"></span>
-            Encrypting link...
-          {:else}
-            Create one-time link
-          {/if}
-        </button>
+        <div class="vsc-actions-row">
+          <button
+            class="vsc-primary-btn"
+            disabled={!canCreate}
+            type="button"
+            on:click={createSecret}
+          >
+            {#if creating}
+              <span class="vsc-spinner"></span>
+              Creating link…
+            {:else}
+              Create link
+            {/if}
+          </button>
+
+          <p class="vsc-actions-copy">{viewWindowLabel}</p>
+        </div>
       {:else}
         <div class="vsc-result-copy" in:scale={{ duration: 260, easing: quintOut, start: 0.98 }}>
           <div class="vsc-result-status">
             <p class="vsc-section-head">Recipient status</p>
             <p class="vsc-result-status-copy">
               {#if !statusData?.alreadyOpened}
-                Waiting for the recipient to open the link.
+                Waiting for the recipient to open the link
+              {:else if policy.viewOnce}
+                Opened {statusData.openedAt ? new Date(statusData.openedAt).toLocaleTimeString() : 'recently'} and consumed
               {:else}
-                Opened {statusData.openedAt ? new Date(statusData.openedAt).toLocaleTimeString() : 'recently'}.
+                Opened {statusData.openedAt ? new Date(statusData.openedAt).toLocaleTimeString() : 'recently'} and still reusable until expiry
               {/if}
             </p>
           </div>
@@ -263,9 +378,9 @@
       {#if secretUrl}
         <div class="vsc-side-card" in:scale={{ duration: 260, easing: quintOut, start: 0.97 }}>
           <p class="vsc-kicker">Ready to share</p>
-          <h3 class="vsc-side-title">Scan or send the full link.</h3>
+          <h3 class="vsc-side-title">Send the link or let them scan it</h3>
           <p class="vsc-side-copy">
-            The key stays in the URL hash, so the server never receives it. The recipient must open the exact link shown here.
+            The server never receives the hash-based decryption key. The recipient needs the full URL exactly as shown here.
           </p>
 
           <div class="vsc-qr-wrap">
@@ -280,35 +395,35 @@
               <strong>{ttlLabel}</strong>
             </div>
             <div class="vsc-meta-card">
-              <span class="vsc-meta-label">View window</span>
-              <strong>60 seconds once opened</strong>
+              <span class="vsc-meta-label">Reveal rule</span>
+              <strong>{revealRuleLabel}</strong>
             </div>
             <div class="vsc-meta-card">
-              <span class="vsc-meta-label">Status</span>
-              <strong>{statusData?.alreadyOpened ? 'Opened' : 'Not yet opened'}</strong>
+              <span class="vsc-meta-label">Optional guards</span>
+              <strong>{resultGuardLabel}</strong>
             </div>
           </div>
         </div>
       {:else}
         <div class="vsc-side-card">
           <p class="vsc-kicker">How it behaves</p>
-          <h3 class="vsc-side-title">Tighter timing, cleaner handoff.</h3>
+          <h3 class="vsc-side-title">You choose the policy for each link</h3>
           <p class="vsc-side-copy">
-            Once a recipient opens the secret, Vault starts a 60-second viewing timer and destroys the payload after the first reveal.
+            A secret can be strictly one-time, reusable until expiry, timer-limited after reveal, or any mix of those rules.
           </p>
 
           <div class="vsc-side-list">
             <div class="vsc-side-item">
-              <span class="vsc-meta-label">Fast presets</span>
-              <strong>1, 5, 15, and 30 minutes are built in.</strong>
+              <span class="vsc-meta-label">Expiry</span>
+              <strong>The link itself always expires on the timer you choose.</strong>
             </div>
             <div class="vsc-side-item">
-              <span class="vsc-meta-label">Custom range</span>
-              <strong>Any minute value from 1 to 10080 is accepted.</strong>
+              <span class="vsc-meta-label">Reveal behavior</span>
+              <strong>Enable only the protections you actually want the recipient to hit.</strong>
             </div>
             <div class="vsc-side-item">
-              <span class="vsc-meta-label">Share mode</span>
-              <strong>Copy the URL or let the recipient scan the QR code.</strong>
+              <span class="vsc-meta-label">Memory only</span>
+              <strong>Decrypted content never gets written into local storage.</strong>
             </div>
           </div>
         </div>
@@ -324,7 +439,7 @@
 
   .vsc-shell {
     display: grid;
-    grid-template-columns: minmax(0, 1.15fr) minmax(320px, 380px);
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
     gap: 20px;
     align-items: start;
   }
@@ -335,7 +450,7 @@
     border: 2px solid var(--border-hard);
     box-shadow: var(--shadow-md);
     border-radius: 16px;
-    padding: 24px;
+    padding: 22px;
   }
 
   .vsc-header {
@@ -346,7 +461,8 @@
 
   .vsc-kicker,
   .vsc-section-head,
-  .vsc-meta-label {
+  .vsc-meta-label,
+  .vsc-system-label {
     margin: 0;
     font-family: var(--font-mono);
     font-size: 11px;
@@ -360,31 +476,34 @@
   .vsc-side-title {
     margin: 0;
     font-family: var(--font-display);
-    font-size: clamp(2rem, 3.5vw, 2.95rem);
-    line-height: 0.92;
-    letter-spacing: -0.045em;
+    font-size: clamp(2rem, 3vw, 2.75rem);
+    line-height: 0.94;
+    letter-spacing: -0.035em;
     color: var(--text-1);
-    text-transform: uppercase;
+    text-wrap: balance;
   }
 
   .vsc-side-title {
-    font-size: clamp(1.6rem, 3vw, 2.15rem);
+    font-size: clamp(1.45rem, 2.4vw, 2rem);
   }
 
   .vsc-subtitle,
   .vsc-side-copy,
   .vsc-result-status-copy,
-  .vsc-custom-note {
+  .vsc-custom-note,
+  .vsc-protection-copy,
+  .vsc-system-copy,
+  .vsc-actions-copy {
     margin: 0;
     font-size: 14px;
-    line-height: 1.7;
+    line-height: 1.6;
     color: var(--text-2);
   }
 
   .vsc-section,
   .vsc-side-card,
   .vsc-result-copy {
-    margin-top: 20px;
+    margin-top: 18px;
     padding: 18px;
     border: 2px solid var(--border-hard);
     background: var(--surface-2);
@@ -398,11 +517,20 @@
     gap: 12px;
   }
 
-  .vsc-textarea {
-    min-height: 240px;
-    resize: vertical;
-    font-size: 15px;
-    line-height: 1.7;
+  .vsc-section-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .vsc-section-meta,
+  .vsc-field-meta,
+  .vsc-char-count--warn {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-3);
   }
 
   .vsc-field-meta {
@@ -410,13 +538,18 @@
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    font-family: var(--font-mono);
-    font-size: 11px;
-    color: var(--text-3);
+    flex-wrap: wrap;
   }
 
   .vsc-char-count--warn {
     color: var(--amber);
+  }
+
+  .vsc-textarea {
+    min-height: 240px;
+    resize: vertical;
+    font-size: 15px;
+    line-height: 1.7;
   }
 
   .vsc-ttl-grid {
@@ -440,12 +573,16 @@
     transition: transform 120ms ease, box-shadow 120ms ease;
   }
 
-  .vsc-ttl-btn:hover {
+  .vsc-ttl-btn:hover,
+  .vsc-protection-btn:hover,
+  .vsc-primary-btn:hover,
+  .vsc-secondary-btn:hover {
     transform: translate(-1px, -1px);
     box-shadow: 5px 5px 0 var(--border-hard);
   }
 
-  .vsc-ttl-btn--active {
+  .vsc-ttl-btn--active,
+  .vsc-protection-btn--active {
     background: var(--accent);
     border-color: #111;
     color: #111;
@@ -472,31 +609,72 @@
   }
 
   .vsc-protection-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .vsc-protection-btn {
     display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-
-  .vsc-protection-badge {
-    padding: 6px 10px;
-    border: 1.5px solid var(--border-hard);
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    min-height: 104px;
+    padding: 14px;
+    border-radius: 14px;
+    border: 2px solid var(--border-hard);
     background: var(--surface);
-    border-radius: 10px;
-    box-shadow: 2px 2px 0 var(--border-hard);
-    font-family: var(--font-mono);
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--text-2);
+    box-shadow: 3px 3px 0 var(--border-hard);
+    text-align: left;
+    cursor: pointer;
+    transition: transform 120ms ease, box-shadow 120ms ease, border-color 120ms ease;
   }
 
+  .vsc-protection-title {
+    font-family: var(--font-display);
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: inherit;
+    line-height: 0.98;
+    letter-spacing: -0.02em;
+  }
+
+  .vsc-protection-btn--active .vsc-protection-copy {
+    color: rgba(17, 17, 17, 0.78);
+  }
+
+  .vsc-system-card {
+    display: grid;
+    grid-template-columns: minmax(0, 180px) 1fr;
+    gap: 14px;
+    padding: 14px;
+    border-radius: 14px;
+    border: 1.5px solid var(--border-hard);
+    background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+  }
+
+  .vsc-system-title {
+    display: block;
+    margin-top: 4px;
+    font-family: var(--font-display);
+    font-size: 1.08rem;
+    line-height: 0.98;
+    color: var(--text-1);
+    letter-spacing: -0.02em;
+  }
+
+  .vsc-actions-row,
   .vsc-result-actions,
   .vsc-side-meta {
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
+    align-items: center;
     margin-top: 16px;
+  }
+
+  .vsc-actions-copy {
+    flex: 1 1 220px;
   }
 
   .vsc-link-box {
@@ -540,7 +718,7 @@
   .vsc-meta-card strong,
   .vsc-side-item strong {
     font-size: 13px;
-    line-height: 1.6;
+    line-height: 1.55;
     color: var(--text-1);
   }
 
@@ -560,12 +738,6 @@
     cursor: pointer;
     box-shadow: 3px 3px 0 var(--border-hard);
     transition: transform 120ms ease, box-shadow 120ms ease;
-  }
-
-  .vsc-primary-btn:hover,
-  .vsc-secondary-btn:hover {
-    transform: translate(-1px, -1px);
-    box-shadow: 5px 5px 0 var(--border-hard);
   }
 
   .vsc-primary-btn {
@@ -612,6 +784,16 @@
     }
   }
 
+  @media (max-width: 720px) {
+    .vsc-protection-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .vsc-system-card {
+      grid-template-columns: 1fr;
+    }
+  }
+
   @media (max-width: 640px) {
     .vsc-main,
     .vsc-side,
@@ -623,10 +805,11 @@
 
     .vsc-title,
     .vsc-side-title {
-      font-size: 1.8rem;
+      font-size: 1.7rem;
     }
 
     .vsc-field-meta,
+    .vsc-actions-row,
     .vsc-result-actions {
       flex-direction: column;
       align-items: stretch;

@@ -184,10 +184,59 @@ interface SecretRecord {
   expiresAt: number
   alreadyOpened: boolean
   openedAt?: number
+  policy: SecretPolicy
+}
+
+interface SecretPolicy {
+  viewOnce: boolean
+  timedView: boolean
+  noSelect: boolean
+  tabSwitchLock: boolean
+  devtoolsGuard: boolean
+  memoryOnly: true
+  viewWindowSeconds: number
+}
+
+function normalizeSecretPolicy(input?: Partial<SecretPolicy>): SecretPolicy {
+  if (!input) {
+    // Backward-compatible default for secrets created before policy support.
+    return {
+      viewOnce: true,
+      timedView: true,
+      noSelect: true,
+      tabSwitchLock: true,
+      devtoolsGuard: true,
+      memoryOnly: true,
+      viewWindowSeconds: 60,
+    }
+  }
+
+  const viewOnce = Boolean(input.viewOnce)
+  const timedView = Boolean(input.timedView)
+  const requestedWindow = Math.floor(Number(input.viewWindowSeconds ?? 60))
+  const viewWindowSeconds = timedView
+    ? Math.min(3600, Math.max(15, Number.isFinite(requestedWindow) ? requestedWindow : 60))
+    : 0
+
+  return {
+    viewOnce,
+    timedView,
+    noSelect: Boolean(input.noSelect),
+    tabSwitchLock: Boolean(input.tabSwitchLock),
+    devtoolsGuard: Boolean(input.devtoolsGuard),
+    memoryOnly: true,
+    viewWindowSeconds,
+  }
 }
 
 async function handleSecretCreate(req: Request, env: Env, cors: Record<string, string>): Promise<Response> {
-  let body: { encryptedPayload?: string; iv?: string; title?: string; ttlSeconds?: number }
+  let body: {
+    encryptedPayload?: string
+    iv?: string
+    title?: string
+    ttlSeconds?: number
+    policy?: Partial<SecretPolicy>
+  }
   try { body = await req.json() } catch { return err('Invalid JSON', 400, cors) }
 
   const { encryptedPayload, iv, title, ttlSeconds = 86400 } = body
@@ -196,6 +245,7 @@ async function handleSecretCreate(req: Request, env: Env, cors: Record<string, s
   const maxSize = parseInt(env.MAX_SECRET_SIZE ?? '50000')
   if (encryptedPayload.length > maxSize * 1.4) return err('Payload too large', 413, cors)
 
+  const policy = normalizeSecretPolicy(body.policy)
   const parsedTtl = Math.floor(Number(ttlSeconds))
   const ttl = Number.isFinite(parsedTtl)
     ? Math.min(604800, Math.max(60, parsedTtl))
@@ -209,10 +259,11 @@ async function handleSecretCreate(req: Request, env: Env, cors: Record<string, s
     createdAt: now,
     expiresAt: now + ttl * 1000,
     alreadyOpened: false,
+    policy,
   }
 
   await env.VAULT_SECRETS.put(`secret:${id}`, JSON.stringify(record), { expirationTtl: ttl })
-  return json({ id, expiresAt: record.expiresAt }, 201, cors)
+  return json({ id, expiresAt: record.expiresAt, policy }, 201, cors)
 }
 
 async function handleSecretFetch(id: string, env: Env, cors: Record<string, string>): Promise<Response> {
@@ -220,7 +271,8 @@ async function handleSecretFetch(id: string, env: Env, cors: Record<string, stri
   if (!raw) return json({ gone: true, reason: 'not_found' }, 410, cors)
 
   const record: SecretRecord = JSON.parse(raw)
-  if (record.alreadyOpened) {
+  const policy = normalizeSecretPolicy(record.policy)
+  if (record.alreadyOpened && policy.viewOnce) {
     return json({ gone: true, reason: 'already_opened', openedAt: record.openedAt }, 410, cors)
   }
   if (Date.now() > record.expiresAt) {
@@ -228,14 +280,16 @@ async function handleSecretFetch(id: string, env: Env, cors: Record<string, stri
     return json({ gone: true, reason: 'expired' }, 410, cors)
   }
 
-  const openedAt = Date.now()
-  const updated: SecretRecord = { ...record, alreadyOpened: true, openedAt }
-  const remainingTtl = Math.ceil((record.expiresAt - Date.now()) / 1000)
-  await env.VAULT_SECRETS.put(
-    `secret:${id}`,
-    JSON.stringify(updated),
-    { expirationTtl: Math.max(remainingTtl, 300) },
-  )
+  if (!record.alreadyOpened || !record.openedAt) {
+    const openedAt = Date.now()
+    const updated: SecretRecord = { ...record, alreadyOpened: true, openedAt, policy }
+    const remainingTtl = Math.ceil((record.expiresAt - Date.now()) / 1000)
+    await env.VAULT_SECRETS.put(
+      `secret:${id}`,
+      JSON.stringify(updated),
+      { expirationTtl: Math.max(remainingTtl, 300) },
+    )
+  }
 
   return json({
     encryptedPayload: record.encryptedPayload,
@@ -243,6 +297,7 @@ async function handleSecretFetch(id: string, env: Env, cors: Record<string, stri
     ...(record.title ? { title: record.title } : {}),
     createdAt: record.createdAt,
     expiresAt: record.expiresAt,
+    policy,
   }, 200, cors)
 }
 
@@ -250,11 +305,13 @@ async function handleSecretStatus(id: string, env: Env, cors: Record<string, str
   const raw = await env.VAULT_SECRETS.get(`secret:${id}`)
   if (!raw) return json({ exists: false }, 200, cors)
   const record: SecretRecord = JSON.parse(raw)
+  const policy = normalizeSecretPolicy(record.policy)
   return json({
     exists: true,
     alreadyOpened: record.alreadyOpened,
     openedAt: record.openedAt ?? null,
     expiresAt: record.expiresAt,
+    policy,
   }, 200, cors)
 }
 
@@ -268,12 +325,11 @@ async function handleSecretStatus(id: string, env: Env, cors: Record<string, str
  *   X-Subscription-ID:  subscription / workspace id
  *   X-Filename:         original filename (URL-encoded if needed)
  *   Content-Type:       MIME type of the file
- *   Content-Length:     byte size (required for quota check)
  *
  * Body: raw file bytes
  *
  * Rules enforced:
- *   1. Content-Length > 10MB → 413
+ *   1. File body > 10MB → 413
  *   2. Daily quota (100MB/user/day) → 429
  *   3. Upload to Supabase using service_role key
  *   4. Insert into D1 attachments + pending_deletions
@@ -289,12 +345,11 @@ async function handleFileUpload(req: Request, env: Env, cors: Record<string, str
   const filename = decodeURIComponent(rawFilename)
 
   const contentType = req.headers.get('Content-Type') ?? 'application/octet-stream'
-  const contentLength = req.headers.get('Content-Length')
+  const buffer = await req.arrayBuffer()
+  const fileBytes = buffer.byteLength
 
   // ── Rule 1: file size check ──────────────────────────────────────────────
-  if (!contentLength) return err('Content-Length header required', 411, cors)
-  const fileBytes = parseInt(contentLength, 10)
-  if (isNaN(fileBytes) || fileBytes <= 0) return err('Invalid Content-Length', 400, cors)
+  if (fileBytes <= 0) return err('Empty request body', 400, cors)
   if (fileBytes > MAX_FILE_BYTES) {
     return err(`File exceeds 10MB limit (got ${(fileBytes / 1024 / 1024).toFixed(1)}MB)`, 413, cors)
   }
@@ -309,11 +364,9 @@ async function handleFileUpload(req: Request, env: Env, cors: Record<string, str
   // ── Rule 3: upload to Supabase ───────────────────────────────────────────
   const timestamp = Date.now()
   const storagePath = `${userId}/${subscriptionId}/${timestamp}_${filename}`
-  const body = req.body
-  if (!body) return err('Empty request body', 400, cors)
 
   try {
-    await supabaseUpload(env, storagePath, body, contentType)
+    await supabaseUpload(env, storagePath, buffer, contentType)
   } catch (e: unknown) {
     // Roll back quota increment on upload failure
     const key = `upload_quota:${userId}:${utcDate()}`

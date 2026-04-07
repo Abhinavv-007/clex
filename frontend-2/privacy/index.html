@@ -6,7 +6,7 @@
   <link rel="icon" type="image/png" href="/brand/clex-logo.png">
   <link rel="apple-touch-icon" href="/brand/clex-logo.png">
   <title>Privacy Policy — Clex</title>
-  <meta name="description" content="Clex's privacy policy. We don't store your files on our servers during P2P transfers. No tracking, no accounts required, privacy-first architecture.">
+  <meta name="description" content="Clex privacy policy covering Workspace, Vault notes, secret links, temporary relay storage, Google auth, and public transfer-chain boundaries.">
   <script>
     (() => {
       try {
@@ -77,7 +77,7 @@
     <div class="container">
       <span class="page-hero__label reveal">Legal</span>
       <h1 class="page-hero__title reveal">Privacy Policy</h1>
-      <div class="legal-hero__meta page-hero__meta reveal">Last updated: April 5, 2025</div>
+      <div class="legal-hero__meta page-hero__meta reveal">Last updated: April 7, 2026</div>
     </div>
   </section>
 
@@ -87,18 +87,18 @@
       <div class="legal-highlights stagger-group">
         <div class="legal-highlight">
           <div class="legal-highlight__icon">🔒</div>
-          <h3 class="legal-highlight__title">No File Storage</h3>
-          <p class="legal-highlight__text">P2P and local transfers never store files on our servers</p>
+          <h3 class="legal-highlight__title">No P2P File Storage</h3>
+          <p class="legal-highlight__text">Direct and local transfers do not store file contents on Clex servers</p>
         </div>
         <div class="legal-highlight">
           <div class="legal-highlight__icon">👤</div>
-          <h3 class="legal-highlight__title">No Account Required</h3>
-          <p class="legal-highlight__text">Use Clex's core features without creating any account</p>
+          <h3 class="legal-highlight__title">Local Vault Encryption</h3>
+          <p class="legal-highlight__text">Vault notes stay encrypted on your device, with keys derived or stored locally</p>
         </div>
         <div class="legal-highlight">
           <div class="legal-highlight__icon">📊</div>
-          <h3 class="legal-highlight__title">Minimal Analytics</h3>
-          <p class="legal-highlight__text">We collect only what's needed to keep the service running</p>
+          <h3 class="legal-highlight__title">Scoped Relay Metadata</h3>
+          <p class="legal-highlight__text">Temporary relay files, quotas, and auth signals are limited to what Vault needs to work</p>
         </div>
       </div>
 
@@ -109,94 +109,130 @@
           <div class="legal-section__number">Section 01</div>
           <h2 class="legal-section__title">Overview</h2>
           <p class="legal-section__text">
-            Clex ("we", "us", "our") is a browser-based file workspace that helps users prepare and share files. This Privacy Policy explains how we collect, use, and protect information when you use our service at clex.in.
+            Clex ("we", "us", "our") is a browser-based workspace for preparing and sharing files, plus Vault for encrypted notes, secret links, and timed relay links. This Privacy Policy explains how we collect, use, and protect information when you use clex.in and its related services.
           </p>
           <p class="legal-section__text">
-            Our core design principle is privacy-first. For direct P2P and local network transfers, your files never leave your browser and are never stored on our servers. We believe your files are your business.
+            Our default position is to keep content in your browser whenever possible. Direct P2P transfers, local network transfers, browser-side file processing, and local Vault notes are all designed to minimize server involvement.
           </p>
         </div>
 
         <div class="legal-section reveal">
           <div class="legal-section__number">Section 02</div>
           <h2 class="legal-section__title">What We Don't Collect</h2>
-          <p class="legal-section__text">Let's start with what we <strong>don't</strong> do. This is the important part:</p>
+          <p class="legal-section__text">The following boundaries are core to how Clex and Vault are built:</p>
           <ul class="legal-section__list">
             <li>We do not store your files on any Clex server during P2P or local transfers</li>
             <li>We do not read, scan, analyze, or inspect the content of your files</li>
-            <li>We do not require you to create an account for core file transfer functionality</li>
+            <li>We do not store Vault note plaintext or secret decryption keys on our servers</li>
+            <li>We do not require an account for core browser-side preparation, P2P transfer, or local transfer functionality</li>
             <li>We do not sell or share personal data with third parties for advertising</li>
             <li>We do not use tracking cookies for behavioral advertising</li>
-            <li>We do not retain file metadata after your transfer session ends</li>
+            <li>We do not publish Vault notes, secret-link content, or timed relay file contents to the public Transfer Chain</li>
           </ul>
         </div>
 
         <div class="legal-section reveal">
           <div class="legal-section__number">Section 03</div>
           <h2 class="legal-section__title">What We Do Collect</h2>
-          <p class="legal-section__text">To keep the service running and improve the experience, we may collect:</p>
+          <p class="legal-section__text">To operate the service, we may process or store the following limited categories of data:</p>
           <ul class="legal-section__list">
-            <li><strong>Signaling data:</strong> Temporary session identifiers used to establish P2P connections. These are ephemeral and discarded after the connection is established.</li>
-            <li><strong>Basic analytics:</strong> Page views, feature usage counts, and error reports — anonymized and aggregated. We use this to understand which features are used and fix bugs.</li>
-            <li><strong>Google Account data (Drive transfers only):</strong> When you choose to use Google Drive as a fallback, we request access to your Google Drive to upload files. We do not store your Google credentials — authentication is handled by Google's OAuth flow.</li>
+            <li><strong>Signaling and routing data:</strong> Temporary identifiers and network metadata used to establish P2P sessions and route transfers.</li>
+            <li><strong>Basic service analytics:</strong> Aggregated page views, feature usage counts, and error reports used to keep the product stable.</li>
+            <li><strong>Google account data:</strong> When you choose Google Drive fallback or Vault Cloud Share, authentication is handled through Google/Firebase flows. We may receive identifiers such as UID, email address, display name, and avatar URL that are necessary to show account state and apply quotas.</li>
+            <li><strong>Temporary relay metadata:</strong> For Vault Cloud Share we store file metadata such as file name, size, MIME type, upload time, delete time, owner UID, and storage path so the timed relay can function and clean itself up.</li>
+            <li><strong>Secret status metadata:</strong> For Vault Secret Share we store encrypted payloads, expiry timestamps, open-status metadata, and the selected protection policy until the secret expires or is consumed.</li>
           </ul>
         </div>
 
         <div class="legal-section reveal">
           <div class="legal-section__number">Section 04</div>
-          <h2 class="legal-section__title">How P2P Transfer Works (Privacy Perspective)</h2>
+          <h2 class="legal-section__title">Direct Transfer Privacy</h2>
           <p class="legal-section__text">
-            When you share files via P2P, Clex uses <strong>WebRTC</strong> to create a direct browser-to-browser connection. Here's what happens:
+            When you share files via direct P2P or local network transfer, Clex uses browser networking primitives such as <strong>WebRTC</strong> to create a direct connection between devices.
           </p>
           <ul class="legal-section__list">
-            <li>A lightweight signaling server helps the two browsers discover each other (this is the only server involvement)</li>
-            <li>The signaling server sees only connection metadata (session IDs, network information) — never file content</li>
-            <li>Once the P2P connection is established, the signaling server is no longer involved</li>
-            <li>File data travels directly from browser to browser, encrypted via DTLS</li>
-            <li>When the transfer completes or either browser tab closes, the data is gone</li>
+            <li>A lightweight signaling layer helps the browsers discover each other</li>
+            <li>The signaling layer processes connection metadata, not file contents</li>
+            <li>Once the direct path is established, file data moves between browsers rather than through a Clex content relay</li>
+            <li>Direct transfer traffic is encrypted in transit via the underlying browser protocols</li>
+            <li>When the transfer completes or the tabs close, browser-held transfer data is discarded unless you intentionally save or export it</li>
           </ul>
         </div>
 
         <div class="legal-section reveal">
           <div class="legal-section__number">Section 05</div>
-          <h2 class="legal-section__title">Google Drive Transfers</h2>
+          <h2 class="legal-section__title">Vault Notes and Local Encryption</h2>
           <p class="legal-section__text">
-            When you choose to use Google Drive as a fallback transfer method:
+            Vault notes are designed to remain primarily on your device. Notes, folders, search state, and interface preferences may be written to local browser storage or IndexedDB so Vault can work offline and reopen quickly.
           </p>
           <ul class="legal-section__list">
-            <li>Files are uploaded to <strong>your personal Google Drive account</strong>, not to any Clex-controlled storage</li>
-            <li>We use Google's OAuth 2.0 for authentication — we never see or store your Google password</li>
-            <li>We request only the permissions needed to upload files to your Drive</li>
-            <li>File management (deletion, sharing settings) is under your control in Google Drive</li>
-            <li>Google's own privacy policy applies to data stored in your Drive</li>
+            <li>Vault note content is encrypted before local persistence</li>
+            <li>Vault keys are generated, imported, or derived locally on the device</li>
+            <li>If you use Google-backed pairing or recovery flows, the derivation happens locally; your raw encryption key is not uploaded to Google by Clex</li>
+            <li>Device sync behavior depends on the features you enable and the devices you pair</li>
           </ul>
         </div>
 
         <div class="legal-section reveal">
           <div class="legal-section__number">Section 06</div>
-          <h2 class="legal-section__title">File Processing Privacy</h2>
+          <h2 class="legal-section__title">Vault Secret Share</h2>
           <p class="legal-section__text">
-            All file processing tools (image compression, PDF operations, DOCX conversion, ZIP bundling) run <strong>entirely in your browser</strong>. Your files are processed using client-side JavaScript and never sent to any server for processing. This is by design — it's core to our privacy architecture.
+            Secret Share stores an <strong>encrypted payload</strong> plus its expiry and policy metadata until the link expires or is consumed. The decryption key is intended to stay in the URL fragment so it is not included in normal server requests.
           </p>
+          <ul class="legal-section__list">
+            <li>We store the encrypted secret body, creation time, expiry, open state, and selected protection policy</li>
+            <li>We do not store the hash-fragment decryption key as part of normal secret creation or viewing requests</li>
+            <li>If you disable view-once protection, the secret may remain re-openable until its expiry time</li>
+            <li>Protection features such as no-select or DevTools guard are client-side controls and should be understood as best-effort browser safeguards</li>
+          </ul>
         </div>
 
         <div class="legal-section reveal">
           <div class="legal-section__number">Section 07</div>
-          <h2 class="legal-section__title">Cookies & Local Storage</h2>
+          <h2 class="legal-section__title">Vault Cloud Share and Temporary Relay Storage</h2>
           <p class="legal-section__text">
-            We use browser local storage to save your preferences (theme, settings). We do not use cookies for tracking or advertising. No third-party tracking scripts are loaded.
+            Vault Cloud Share is different from direct transfer. It is a temporary relay feature backed by <strong>Supabase storage</strong> and related metadata tables so files can be picked up later through a timed link.
           </p>
+          <ul class="legal-section__list">
+            <li>Google sign-in is required for Cloud Share so Vault can associate relay files with an owner and enforce daily quotas</li>
+            <li>Relay files are limited to 10 MB per file and 100 MB per day per signed-in Vault user</li>
+            <li>Relay files are scheduled for deletion after 24 hours</li>
+            <li>Recipients who have the relay link may access the file until the file expires or is deleted</li>
+            <li>Supabase infrastructure processes the temporary stored file and signed download URLs on our behalf</li>
+          </ul>
         </div>
 
         <div class="legal-section reveal">
           <div class="legal-section__number">Section 08</div>
-          <h2 class="legal-section__title">Changes to This Policy</h2>
+          <h2 class="legal-section__title">Google Auth, Cookies, and Local Storage</h2>
           <p class="legal-section__text">
-            We may update this policy from time to time. Changes will be reflected on this page with an updated "Last updated" date. Significant changes will be communicated through the application.
+            We use local browser storage for preferences such as theme and for Vault's local state. We do not use advertising cookies or third-party behavioral trackers as part of the core product.
           </p>
+          <ul class="legal-section__list">
+            <li>Google OAuth or Firebase-based sign-in is used only when you choose features that require it, such as Google Drive fallback or Vault Cloud Share</li>
+            <li>We do not receive or store your Google password</li>
+            <li>Local browser storage may retain preferences, local Vault state, and other product settings until you clear it</li>
+          </ul>
         </div>
 
         <div class="legal-section reveal">
           <div class="legal-section__number">Section 09</div>
+          <h2 class="legal-section__title">Chain Boundary</h2>
+          <p class="legal-section__text">
+            The public Transfer Chain exists for workspace transfer-session metadata. Vault notes, secret-link content, secret policies, and timed cloud relay file contents are not written to that public ledger.
+          </p>
+        </div>
+
+        <div class="legal-section reveal">
+          <div class="legal-section__number">Section 10</div>
+          <h2 class="legal-section__title">Changes to This Policy</h2>
+          <p class="legal-section__text">
+            We may update this policy from time to time. Changes will be reflected on this page with an updated "Last updated" date. Significant changes may also be communicated through the product.
+          </p>
+        </div>
+
+        <div class="legal-section reveal">
+          <div class="legal-section__number">Section 11</div>
           <h2 class="legal-section__title">Contact</h2>
           <p class="legal-section__text">
             Questions about this privacy policy? Contact us at <a href="mailto:hello@clex.in" style="color: var(--accent-text); border-bottom: 1px solid var(--accent);">hello@clex.in</a>.

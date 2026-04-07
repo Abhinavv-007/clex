@@ -1,95 +1,168 @@
 <script lang="ts">
-  /**
-   * VaultSecretApp — view-once secret share recipient page
-   *
-   * URL format: /vault/secret/[id]#key=[keyB64]
-   *
-   * Privacy protections (all active simultaneously once content renders):
-   * 1. Tab visibility blur  — switching tabs permanently locks the secret
-   * 2. Right-click disabled — no context menu
-   * 3. Text selection disabled — user-select: none + selectstart prevent
-   * 4. DevTools detection   — size heuristic + console timing trick
-   * 5. PrintScreen detection — keyup blur
-   * 6. Keyboard blocking    — Ctrl+S/A/C/P/U, Shift+I/J, F12, etc.
-   * 7. 60s self-destruct    — wipes content from DOM + nulls vars
-   * 8. Memory-only          — never touches localStorage / sessionStorage
-   */
-  import { onMount, onDestroy, tick } from 'svelte'
+  import { onDestroy, onMount, tick } from 'svelte'
   import { fade, scale } from 'svelte/transition'
   import { quintOut } from 'svelte/easing'
   import { decryptSecret } from '$lib/vault/crypto'
 
   export let vaultApiUrl = '/vault/api'
 
-  // ── State ──────────────────────────────────────────────────────────────────
   type Phase = 'loading' | 'confirm' | 'viewing' | 'destroyed' | 'error' | 'missing-key'
-  let phase: Phase = 'loading'
 
+  interface SecretPolicy {
+    viewOnce: boolean
+    timedView: boolean
+    noSelect: boolean
+    tabSwitchLock: boolean
+    devtoolsGuard: boolean
+    memoryOnly: true
+    viewWindowSeconds: number
+  }
+
+  interface SecretStatusPayload {
+    exists?: boolean
+    alreadyOpened: boolean
+    openedAt: number | null
+    expiresAt?: number | null
+    policy?: Partial<SecretPolicy>
+  }
+
+  interface SecretFetchPayload {
+    encryptedPayload: string
+    iv: string
+    expiresAt: number
+    createdAt: number
+    policy?: Partial<SecretPolicy>
+  }
+
+  const LEGACY_POLICY: SecretPolicy = {
+    viewOnce: true,
+    timedView: true,
+    noSelect: true,
+    tabSwitchLock: true,
+    devtoolsGuard: true,
+    memoryOnly: true,
+    viewWindowSeconds: 60,
+  }
+
+  let phase: Phase = 'loading'
   let secretContent: string | null = null
   let errorMsg = ''
-  let countdown = 60
+  let countdown = LEGACY_POLICY.viewWindowSeconds
   let countdownTimer: ReturnType<typeof setInterval> | null = null
   let devtoolsTimer: ReturnType<typeof setInterval> | null = null
-  let locked = false   // set when tab blur or devtools detected
+  let locked = false
   let lockReason = ''
+  let secretPolicy: SecretPolicy = LEGACY_POLICY
 
-  // Extract secret ID from URL path (/vault/secret/<id>)
+  function normalizePolicy(input?: Partial<SecretPolicy>): SecretPolicy {
+    if (!input) return LEGACY_POLICY
+
+    const timedView = Boolean(input.timedView)
+    const requestedWindow = Math.floor(Number(input.viewWindowSeconds ?? 60))
+
+    return {
+      viewOnce: Boolean(input.viewOnce),
+      timedView,
+      noSelect: Boolean(input.noSelect),
+      tabSwitchLock: Boolean(input.tabSwitchLock),
+      devtoolsGuard: Boolean(input.devtoolsGuard),
+      memoryOnly: true,
+      viewWindowSeconds: timedView
+        ? Math.min(3600, Math.max(15, Number.isFinite(requestedWindow) ? requestedWindow : 60))
+        : 0,
+    }
+  }
+
   function extractId(): string {
     const parts = window.location.pathname.split('/').filter(Boolean)
     return parts[parts.length - 1] ?? ''
   }
 
-  // Extract key from hash (#key=<b64>)
   function extractKey(): string {
-    const hash = window.location.hash.slice(1)  // remove leading #
+    const hash = window.location.hash.slice(1)
     const params = new URLSearchParams(hash)
     return params.get('key') ?? ''
   }
 
-  // ── Privacy guard handlers ─────────────────────────────────────────────────
+  function describePolicy(policy: SecretPolicy): string {
+    const rules: string[] = []
 
-  function onContextMenu(e: MouseEvent) {
-    e.preventDefault()
-    e.stopPropagation()
-    return false
-  }
+    rules.push(policy.viewOnce ? 'One reveal only' : 'Reopens until link expiry')
 
-  function onSelectStart(e: Event) {
-    if (phase === 'viewing') {
-      e.preventDefault()
-      return false
+    if (policy.timedView) {
+      rules.push(`${policy.viewWindowSeconds}s viewing window`)
     }
+    if (policy.noSelect) {
+      rules.push('No text selection')
+    }
+    if (policy.tabSwitchLock) {
+      rules.push('Tab switch destroys access')
+    }
+    if (policy.devtoolsGuard) {
+      rules.push('DevTools guard enabled')
+    }
+
+    rules.push('Memory only')
+    return rules.join(' • ')
   }
 
-  function onKeyDown(e: KeyboardEvent) {
+  function policyBadges(policy: SecretPolicy): string[] {
+    const badges: string[] = []
+
+    if (policy.viewOnce) badges.push('View once')
+    if (policy.timedView) badges.push(`${policy.viewWindowSeconds}s window`)
+    if (policy.noSelect) badges.push('No select')
+    if (policy.tabSwitchLock) badges.push('Tab switch lock')
+    if (policy.devtoolsGuard) badges.push('DevTools guard')
+    badges.push('Memory only')
+
+    return badges
+  }
+
+  function onContextMenu(event: MouseEvent) {
+    if (!(phase === 'viewing' && secretPolicy.noSelect)) return
+    event.preventDefault()
+    event.stopPropagation()
+  }
+
+  function onSelectStart(event: Event) {
+    if (!(phase === 'viewing' && secretPolicy.noSelect)) return
+    event.preventDefault()
+  }
+
+  function onKeyDown(event: KeyboardEvent) {
     if (phase !== 'viewing') return
-    const ctrl = e.ctrlKey || e.metaKey
-    const shift = e.shiftKey
-    // Block: Ctrl+S/A/C/P/U, Ctrl+Shift+I/J/C/S, F12
-    if (ctrl && ['s','a','c','p','u'].includes(e.key.toLowerCase())) {
-      e.preventDefault(); e.stopPropagation(); return
-    }
-    if (ctrl && shift && ['i','j','c','s','e'].includes(e.key.toLowerCase())) {
-      e.preventDefault(); e.stopPropagation(); return
-    }
-    if (e.key === 'F12') {
-      e.preventDefault(); e.stopPropagation(); return
-    }
-    // PrintScreen / PrtSc
-    if (e.key === 'PrintScreen' || e.key === 'Print') {
-      permanentLock('PrintScreen detected')
-    }
-  }
 
-  function onKeyUp(e: KeyboardEvent) {
-    // Some browsers only fire keyup for PrintScreen
-    if (e.key === 'PrintScreen' || e.key === 'Print') {
-      permanentLock('PrintScreen detected')
+    const ctrl = event.ctrlKey || event.metaKey
+    const shift = event.shiftKey
+    const key = event.key.toLowerCase()
+
+    if (secretPolicy.noSelect && ctrl && ['a', 'c', 'x'].includes(key)) {
+      event.preventDefault()
+      event.stopPropagation()
+      return
+    }
+
+    if (secretPolicy.devtoolsGuard && ctrl && shift && ['i', 'j', 'c'].includes(key)) {
+      event.preventDefault()
+      event.stopPropagation()
+      return
+    }
+
+    if (secretPolicy.devtoolsGuard && ctrl && key === 'u') {
+      event.preventDefault()
+      event.stopPropagation()
+      return
+    }
+
+    if (secretPolicy.devtoolsGuard && event.key === 'F12') {
+      event.preventDefault()
+      event.stopPropagation()
     }
   }
 
   function onVisibilityChange() {
-    if (phase === 'viewing' && document.hidden) {
+    if (phase === 'viewing' && secretPolicy.tabSwitchLock && document.hidden) {
       permanentLock('Tab switched — secret destroyed for safety')
     }
   }
@@ -101,10 +174,9 @@
     destroySecret()
   }
 
-  // ── DevTools detection ─────────────────────────────────────────────────────
-
   function startDevtoolsDetection() {
-    // Method 1: window size heuristic (DevTools open widens the delta)
+    if (!secretPolicy.devtoolsGuard) return
+
     devtoolsTimer = setInterval(() => {
       const widthDelta = window.outerWidth - window.innerWidth
       const heightDelta = window.outerHeight - window.innerHeight
@@ -113,7 +185,6 @@
       }
     }, 1000)
 
-    // Method 2: console getter timing trick
     let devtoolsOpen = false
     const checkConsole = () => {
       const start = performance.now()
@@ -124,7 +195,7 @@
         devtoolsOpen = true
       }
     }
-    // Run once after mount
+
     setTimeout(() => {
       checkConsole()
       if (devtoolsOpen && phase === 'viewing') {
@@ -133,10 +204,10 @@
     }, 200)
   }
 
-  // ── Countdown ─────────────────────────────────────────────────────────────
-
   function startCountdown() {
-    countdown = 60
+    if (!secretPolicy.timedView || secretPolicy.viewWindowSeconds <= 0) return
+
+    countdown = secretPolicy.viewWindowSeconds
     countdownTimer = setInterval(() => {
       countdown -= 1
       if (countdown <= 0) {
@@ -146,26 +217,22 @@
     }, 1000)
   }
 
-  // ── Secret lifecycle ───────────────────────────────────────────────────────
-
   function destroySecret() {
-    if (countdownTimer) { clearInterval(countdownTimer); countdownTimer = null }
-    if (devtoolsTimer) { clearInterval(devtoolsTimer); devtoolsTimer = null }
-    // Overwrite string in memory (best-effort; GC determines actual clearing)
+    if (countdownTimer) {
+      clearInterval(countdownTimer)
+      countdownTimer = null
+    }
+    if (devtoolsTimer) {
+      clearInterval(devtoolsTimer)
+      devtoolsTimer = null
+    }
     secretContent = null
     phase = 'destroyed'
-    // Remove URL hash so key is gone from URL bar
     history.replaceState(null, '', window.location.pathname)
   }
 
-  async function loadAndReveal() {
+  async function loadSecretStatus() {
     const secretId = extractId()
-    const keyB64 = extractKey()
-
-    if (!keyB64) {
-      phase = 'missing-key'
-      return
-    }
 
     if (!secretId) {
       errorMsg = 'Invalid secret URL'
@@ -174,29 +241,71 @@
     }
 
     try {
+      const res = await fetch(`${vaultApiUrl}/secret/${secretId}/status`)
+      const data = await res.json().catch(() => null) as SecretStatusPayload | null
+
+      if (!res.ok || !data?.exists) {
+        errorMsg = 'This secret is no longer available'
+        phase = 'error'
+        return
+      }
+
+      secretPolicy = normalizePolicy(data.policy)
+
+      if (data.alreadyOpened && secretPolicy.viewOnce) {
+        errorMsg = 'This secret has already been opened and destroyed'
+        phase = 'error'
+        return
+      }
+
+      phase = 'confirm'
+    } catch (error) {
+      errorMsg = error instanceof Error ? error.message : 'Could not verify this secret'
+      phase = 'error'
+    }
+  }
+
+  async function loadAndReveal() {
+    const secretId = extractId()
+    const keyB64 = extractKey()
+
+    if (!secretId) {
+      errorMsg = 'Invalid secret URL'
+      phase = 'error'
+      return
+    }
+
+    if (!keyB64) {
+      phase = 'missing-key'
+      return
+    }
+
+    try {
       const res = await fetch(`${vaultApiUrl}/secret/${secretId}`)
+
       if (res.status === 404) {
-        errorMsg = 'This secret does not exist or has already been viewed.'
+        errorMsg = 'This secret does not exist'
         phase = 'error'
         return
       }
+
       if (res.status === 410) {
-        errorMsg = 'This secret has already been opened and destroyed.'
+        errorMsg = 'This secret has already been opened or expired'
         phase = 'error'
         return
       }
+
       if (!res.ok) {
-        errorMsg = `Server error (${res.status})`
+        errorMsg = `Vault could not open this secret (${res.status})`
         phase = 'error'
         return
       }
 
-      const data = await res.json() as { encryptedPayload: string; iv: string }
-
-      // Decrypt in memory — never store result anywhere persistent
+      const data = await res.json() as SecretFetchPayload
+      secretPolicy = normalizePolicy(data.policy)
       const decrypted = await decryptSecret(
         { ciphertextB64: data.encryptedPayload, ivB64: data.iv },
-        keyB64
+        keyB64,
       )
 
       secretContent = decrypted
@@ -206,34 +315,33 @@
       startCountdown()
       startDevtoolsDetection()
 
-      // Wipe key from URL bar immediately after decrypt
-      history.replaceState(null, '', window.location.pathname + '#')
-
-    } catch (e: unknown) {
-      errorMsg = e instanceof Error ? e.message : 'Failed to decrypt secret'
+      history.replaceState(null, '', `${window.location.pathname}#`)
+    } catch (error) {
+      errorMsg = error instanceof Error ? error.message : 'Failed to decrypt this secret'
       phase = 'error'
     }
   }
 
-  // ── Mount ──────────────────────────────────────────────────────────────────
-
   onMount(async () => {
-    // Register privacy guards immediately (even before content loads)
     document.addEventListener('contextmenu', onContextMenu)
     document.addEventListener('selectstart', onSelectStart)
     document.addEventListener('keydown', onKeyDown)
-    document.addEventListener('keyup', onKeyUp)
     document.addEventListener('visibilitychange', onVisibilityChange)
 
-    phase = 'confirm'
+    if (!extractKey()) {
+      phase = 'missing-key'
+      return
+    }
+
+    await loadSecretStatus()
   })
 
   onDestroy(() => {
     document.removeEventListener('contextmenu', onContextMenu)
     document.removeEventListener('selectstart', onSelectStart)
     document.removeEventListener('keydown', onKeyDown)
-    document.removeEventListener('keyup', onKeyUp)
     document.removeEventListener('visibilitychange', onVisibilityChange)
+
     if (countdownTimer) clearInterval(countdownTimer)
     if (devtoolsTimer) clearInterval(devtoolsTimer)
     secretContent = null
@@ -241,78 +349,77 @@
 
   $: countdownUrgent = countdown <= 10
   $: countdownWarning = countdown <= 30 && countdown > 10
+  $: activeGuardLabels = policyBadges(secretPolicy)
+  $: confirmSummary = describePolicy(secretPolicy)
+  $: revealRule = secretPolicy.viewOnce
+    ? 'The first reveal consumes this link'
+    : 'This link can reopen until the expiry timer ends'
+  $: viewingCaution = secretPolicy.timedView
+    ? 'Move this into your own password manager or notes app before the timer ends'
+    : 'This page stays open until you close it, but the link still expires on schedule'
 </script>
 
-<div class="vsa-page" class:vsa-page--locked={locked}>
-
-  <!-- ── Loading ─────────────────────────────────────────────────── -->
+<div
+  class="vsa-page"
+  class:vsa-page--locked={locked}
+  class:vsa-page--no-select={phase === 'viewing' && secretPolicy.noSelect}
+>
   {#if phase === 'loading'}
     <div class="vsa-center" in:fade={{ duration: 160 }}>
       <div class="vsa-spinner-lg"></div>
     </div>
 
-  <!-- ── Confirm / Warning screen ───────────────────────────────── -->
   {:else if phase === 'confirm'}
     <div class="vsa-center" in:scale={{ duration: 280, easing: quintOut, start: 0.95 }}>
       <div class="vsa-card">
         <div class="vsa-kicker">Secret Link</div>
-        <h1 class="vsa-title">Open once. Then it is gone.</h1>
+        <h1 class="vsa-title">Reveal Secret</h1>
         <p class="vsa-desc">
-          You are about to view a one-time secret. Once opened, it will be <strong>permanently destroyed</strong> after 60 seconds.
+          {revealRule}. Selected protections apply only if they were enabled by the sender.
         </p>
 
         <div class="vsa-warn-grid">
-          {#each [
-            '60s countdown',
-            'View once',
-            'Copy disabled',
-            'Tab switch locks',
-            'DevTools blocked',
-            'Memory only',
-          ] as w}
+          {#each activeGuardLabels as badge}
             <div class="vsa-warn-badge">
-              <span>{w}</span>
+              <span>{badge}</span>
             </div>
           {/each}
         </div>
 
-        <p class="vsa-warn-note">
-          Do not switch tabs or open DevTools — the secret will be immediately destroyed.
-        </p>
+        <p class="vsa-warn-note">{confirmSummary}</p>
 
         <button class="btn-accent vsa-reveal-btn" on:click={loadAndReveal}>
-          Reveal Secret
+          Reveal secret
         </button>
       </div>
     </div>
 
-  <!-- ── Viewing ─────────────────────────────────────────────────── -->
   {:else if phase === 'viewing'}
     <div class="vsa-view" in:fade={{ duration: 200 }}>
-
-      <!-- Countdown bar -->
-      <div class="vsa-countdown-wrap">
-        <div
-          class="vsa-countdown-bar"
-          class:vsa-countdown-bar--warn={countdownWarning}
-          class:vsa-countdown-bar--urgent={countdownUrgent}
-          style="width: {(countdown / 60) * 100}%"
-        ></div>
-      </div>
+      {#if secretPolicy.timedView}
+        <div class="vsa-countdown-wrap">
+          <div
+            class="vsa-countdown-bar"
+            class:vsa-countdown-bar--warn={countdownWarning}
+            class:vsa-countdown-bar--urgent={countdownUrgent}
+            style="width: {(countdown / secretPolicy.viewWindowSeconds) * 100}%"
+          ></div>
+        </div>
+      {/if}
 
       <div class="vsa-view-inner">
-        <!-- Timer display -->
-        <div
-          class="vsa-timer"
-          class:vsa-timer--warn={countdownWarning}
-          class:vsa-timer--urgent={countdownUrgent}
-        >
-          <span class="vsa-timer-icon">⏱</span>
-          <span class="vsa-timer-num">{countdown}s</span>
-          <span class="vsa-timer-label">until destroyed</span>
-        </div>
+        {#if secretPolicy.timedView}
+          <div
+            class="vsa-timer"
+            class:vsa-timer--warn={countdownWarning}
+            class:vsa-timer--urgent={countdownUrgent}
+          >
+            <span class="vsa-timer-icon">⏱</span>
+            <span class="vsa-timer-num">{countdown}s</span>
+            <span class="vsa-timer-label">until hidden</span>
+          </div>
+        {/if}
 
-        <!-- Secret content -->
         <div class="vsa-content-card">
           <div class="vsa-content-label">Secret content</div>
           <div class="vsa-content" aria-label="Secret content">
@@ -320,38 +427,35 @@
           </div>
         </div>
 
-        <!-- Protection badges -->
         <div class="vsa-active-guards">
           <span class="vsa-guards-label">Active guards</span>
           <div class="vsa-guards-row">
-            {#each ['Tab blur', 'No copy', 'No select', 'Anti-DevTools', 'Memory-only'] as g}
-              <span class="vsa-guard-dot">{g}</span>
+            {#each activeGuardLabels as badge}
+              <span class="vsa-guard-dot">{badge}</span>
             {/each}
           </div>
         </div>
 
-        <p class="vsa-caution">
-          Copy this now — it cannot be recovered after the timer expires.
-        </p>
+        <p class="vsa-caution">{viewingCaution}</p>
       </div>
     </div>
 
-  <!-- ── Destroyed ──────────────────────────────────────────────── -->
   {:else if phase === 'destroyed'}
     <div class="vsa-center" in:scale={{ duration: 300, easing: quintOut, start: 0.93 }}>
       <div class="vsa-card vsa-card--destroyed">
         <div class="vsa-icon vsa-icon--red">🗑</div>
-        <h1 class="vsa-title">Secret Destroyed</h1>
+        <h1 class="vsa-title">Secret Removed</h1>
         {#if lockReason}
           <p class="vsa-desc vsa-desc--red">{lockReason}</p>
+        {:else if secretPolicy.timedView}
+          <p class="vsa-desc">The viewing window ended and this local reveal was cleared.</p>
         {:else}
-          <p class="vsa-desc">The 60-second viewing window has elapsed. This secret has been permanently wiped.</p>
+          <p class="vsa-desc">This secret is no longer available on this page.</p>
         {/if}
         <a href="/vault" class="btn-ghost vsa-back-btn">← Back to Vault</a>
       </div>
     </div>
 
-  <!-- ── Already opened / not found ─────────────────────────────── -->
   {:else if phase === 'error'}
     <div class="vsa-center" in:scale={{ duration: 280, easing: quintOut, start: 0.95 }}>
       <div class="vsa-card">
@@ -362,33 +466,27 @@
       </div>
     </div>
 
-  <!-- ── Missing key in hash ────────────────────────────────────── -->
   {:else if phase === 'missing-key'}
     <div class="vsa-center" in:fade={{ duration: 200 }}>
       <div class="vsa-card">
         <div class="vsa-icon">🔑</div>
         <h1 class="vsa-title">Incomplete Link</h1>
         <p class="vsa-desc">
-          The decryption key is missing from this URL. Make sure you copied the full link including the <code>#key=…</code> portion.
+          The decryption key is missing from this URL. Make sure you copied the full link including the <code>#key=…</code> fragment.
         </p>
-        <p class="vsa-desc vsa-desc--mono">The key is in the URL fragment after the <code>#</code> symbol.</p>
+        <p class="vsa-desc vsa-desc--mono">The secret cannot be opened without the hash-based key.</p>
         <a href="/vault" class="btn-ghost vsa-back-btn">← Back to Vault</a>
       </div>
     </div>
   {/if}
-
 </div>
 
 <style>
-  /* ── Page shell ─────────────────────────────────────────────────────────── */
   .vsa-page {
     min-height: 100vh;
     background: var(--canvas);
     padding: calc(80px + env(safe-area-inset-top, 0px)) 16px 40px;
     transition: filter 0.3s;
-    /* text selection disabled globally on this page */
-    user-select: none;
-    -webkit-user-select: none;
   }
 
   .vsa-page--locked {
@@ -396,7 +494,12 @@
     pointer-events: none;
   }
 
-  /* ── Centered card layout ───────────────────────────────────────────────── */
+  .vsa-page--no-select,
+  .vsa-page--no-select * {
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
   .vsa-center {
     display: flex;
     align-items: center;
@@ -410,7 +513,7 @@
     box-shadow: var(--shadow-md);
     border-radius: 20px;
     padding: 40px 36px;
-    max-width: 460px;
+    max-width: 520px;
     width: 100%;
     display: flex;
     flex-direction: column;
@@ -434,19 +537,16 @@
     box-shadow: 6px 6px 0 var(--red, #ff4444);
   }
 
-  .vsa-icon--red {
-    filter: hue-rotate(0deg); /* keep red emoji */
-  }
-
   .vsa-title {
     font-family: var(--font-display);
-    font-size: clamp(2rem, 4vw, 2.6rem);
+    font-size: clamp(2rem, 4vw, 2.8rem);
     font-weight: 800;
     color: var(--text-1);
     letter-spacing: -0.03em;
     margin: 0;
-    line-height: 0.92;
+    line-height: 0.96;
     text-transform: uppercase;
+    text-wrap: balance;
   }
 
   .vsa-desc {
@@ -454,14 +554,14 @@
     color: var(--text-2);
     line-height: 1.7;
     margin: 0;
-    max-width: 400px;
+    max-width: 420px;
   }
 
   .vsa-desc--red {
     color: var(--red, #ff4444);
   }
 
-  .vsa-desc--mono code {
+  .vsa-desc code {
     font-family: var(--font-mono);
     font-size: 12px;
     background: var(--surface-2);
@@ -470,7 +570,6 @@
     border: 1px solid var(--border);
   }
 
-  /* ── Warning grid ───────────────────────────────────────────────────────── */
   .vsa-warn-grid {
     display: flex;
     flex-wrap: wrap;
@@ -487,20 +586,20 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.07em;
-    color: var(--amber, #ffaa00);
-    background: rgba(255, 170, 0, 0.08);
-    border: 1px solid rgba(255, 170, 0, 0.25);
-    border-radius: 5px;
-    padding: 3px 9px;
+    color: var(--accent-text);
+    background: rgba(255, 230, 0, 0.08);
+    border: 1px solid rgba(255, 230, 0, 0.22);
+    border-radius: 999px;
+    padding: 5px 10px;
   }
 
   .vsa-warn-note {
     font-family: var(--font-mono);
     font-size: 11px;
-    color: var(--text-3);
+    color: var(--text-2);
     background: var(--surface-2);
     border: 1.5px solid var(--border);
-    border-radius: 8px;
+    border-radius: 10px;
     padding: 10px 14px;
     line-height: 1.6;
     margin: 0;
@@ -514,13 +613,11 @@
     padding: 12px 20px;
   }
 
-  /* ── Viewing state ──────────────────────────────────────────────────────── */
   .vsa-view {
-    max-width: 620px;
+    max-width: 720px;
     margin: 0 auto;
   }
 
-  /* Countdown progress bar at top */
   .vsa-countdown-wrap {
     position: fixed;
     top: 0;
@@ -554,7 +651,6 @@
     padding-top: 16px;
   }
 
-  /* Timer badge */
   .vsa-timer {
     display: flex;
     align-items: center;
@@ -579,7 +675,9 @@
     animation: shake-timer 0.4s ease-in-out;
   }
 
-  .vsa-timer-icon { font-size: 16px; }
+  .vsa-timer-icon {
+    font-size: 16px;
+  }
 
   .vsa-timer-num {
     font-family: var(--font-mono);
@@ -598,7 +696,6 @@
     letter-spacing: 0.08em;
   }
 
-  /* Secret content card */
   .vsa-content-card {
     background: var(--surface);
     border: 2px solid var(--border-hard);
@@ -626,13 +723,9 @@
     color: var(--text-1);
     padding: 20px;
     white-space: pre-wrap;
-    word-break: break-all;
-    /* Prevent screenshot via CSS (cosmetic only — not a real security measure) */
-    -webkit-user-select: none;
-    user-select: none;
+    overflow-wrap: anywhere;
   }
 
-  /* Active guards row */
   .vsa-active-guards {
     display: flex;
     align-items: center;
@@ -653,7 +746,7 @@
   .vsa-guards-row {
     display: flex;
     flex-wrap: wrap;
-    gap: 5px;
+    gap: 6px;
   }
 
   .vsa-guard-dot {
@@ -665,8 +758,8 @@
     color: var(--green, #00e570);
     background: rgba(0, 229, 112, 0.08);
     border: 1px solid rgba(0, 229, 112, 0.2);
-    border-radius: 4px;
-    padding: 2px 8px;
+    border-radius: 999px;
+    padding: 4px 10px;
   }
 
   .vsa-caution {
@@ -675,14 +768,13 @@
     color: var(--text-3);
     text-align: center;
     margin: 0;
+    line-height: 1.6;
   }
 
-  /* ── Back button ─────────────────────────────────────────────────────────── */
   .vsa-back-btn {
     font-size: 13px;
   }
 
-  /* ── Loading spinner ─────────────────────────────────────────────────────── */
   .vsa-spinner-lg {
     width: 36px;
     height: 36px;
@@ -692,27 +784,27 @@
     animation: spin-slow 0.8s linear infinite;
   }
 
-  /* ── Keyframes ───────────────────────────────────────────────────────────── */
   @keyframes urgent-pulse {
     from { opacity: 1; }
-    to   { opacity: 0.5; }
+    to { opacity: 0.5; }
   }
 
   @keyframes shake-timer {
-    0%  { transform: translateX(0); }
+    0% { transform: translateX(0); }
     25% { transform: translateX(-4px); }
     75% { transform: translateX(4px); }
-    100%{ transform: translateX(0); }
+    100% { transform: translateX(0); }
   }
 
-  /* ── Mobile ──────────────────────────────────────────────────────────────── */
   @media (max-width: 640px) {
     .vsa-card {
       padding: 28px 20px;
       border-radius: 16px;
     }
 
-    .vsa-title { font-size: 22px; }
+    .vsa-title {
+      font-size: 22px;
+    }
 
     .vsa-content {
       font-size: 13px;
