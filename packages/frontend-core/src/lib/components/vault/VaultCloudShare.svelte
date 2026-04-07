@@ -3,6 +3,7 @@
   import QRCode from '$components/sharing/QRCode.svelte'
   import { googleUser, masterKey, vaultActions, formatBytes } from '$stores/vault'
   import { signInWithGoogle } from '$lib/vault/auth'
+  import type { VaultUser } from '$lib/vault/auth'
   import { deriveGoogleKey } from '$lib/vault/crypto'
   import { formatGroupedCode } from '$lib/vault/handoff'
 
@@ -135,18 +136,48 @@
     return fallback
   }
 
-  async function connectGoogle() {
+  function mapAuthError(err: unknown): string {
+    const code = err && typeof err === 'object' && 'code' in err && typeof err.code === 'string'
+      ? err.code
+      : ''
+
+    if (!code) {
+      return err instanceof Error ? err.message : 'Google sign-in failed'
+    }
+
+    if (code === 'auth/network-request-failed') {
+      return 'Google sign-in could not reach Firebase. Check popup blockers, your connection, and the live auth domain settings.'
+    }
+
+    if (code === 'auth/popup-blocked') {
+      return 'The Google sign-in popup was blocked. Allow popups for clex.in and try again.'
+    }
+
+    if (code === 'auth/unauthorized-domain') {
+      return 'This Vault deployment is not approved in Firebase Auth. Add the live domain before using Google sign-in.'
+    }
+
+    if (code === 'auth/operation-not-allowed') {
+      return 'Google sign-in is disabled in Firebase Auth for this project.'
+    }
+
+    return err instanceof Error ? err.message : 'Google sign-in failed'
+  }
+
+  async function connectGoogle(): Promise<VaultUser | null> {
     connectBusy = true
     error = ''
 
     try {
       const nextUser = await signInWithGoogle()
-      if (!nextUser) return
+      if (!nextUser) return null
       vaultActions.setGoogleUser(nextUser)
       const nextKey = await deriveGoogleKey(nextUser.uid)
       vaultActions.setMasterKey(nextKey)
+      return nextUser
     } catch (err) {
-      error = mapThrownError(err, 'Google sign-in failed')
+      error = mapAuthError(err)
+      return null
     } finally {
       connectBusy = false
     }
@@ -221,12 +252,13 @@
   }
 
   async function uploadSelected() {
-    if (!user?.uid) {
-      await connectGoogle()
-      return
-    }
-
     if (selectedFiles.length === 0 || uploading) return
+
+    let uploadUser = user
+    if (!uploadUser?.uid) {
+      uploadUser = await connectGoogle()
+      if (!uploadUser?.uid) return
+    }
 
     uploading = true
     uploadTotal = selectedFiles.length
@@ -243,7 +275,7 @@
             'Content-Type': file.type || 'application/octet-stream',
             'X-Filename': encodeURIComponent(file.name),
             'X-Subscription-ID': key?.roomId ?? 'vault',
-            'X-Vault-UID': user.uid,
+            'X-Vault-UID': uploadUser.uid,
           },
           body: file,
         })

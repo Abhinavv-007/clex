@@ -1,8 +1,9 @@
 <script lang="ts">
   import { rootFolders, folders, notes, ui, vaultActions, generateId } from '$stores/vault'
   import type { StoredFolder } from '$lib/vault/db'
-  import { saveFolder, deleteFolder as dbDeleteFolder } from '$lib/vault/db'
-  import { fly, slide } from 'svelte/transition'
+  import { getNotesByFolder, saveFolder, saveNote, deleteFolder as dbDeleteFolder } from '$lib/vault/db'
+  import { syncDeleteFolder, syncFolderRecord, syncNoteRecord } from '$lib/vault/sync'
+  import { slide } from 'svelte/transition'
   import { flip } from 'svelte/animate'
 
   let newFolderName = ''
@@ -29,6 +30,7 @@
       sortOrder: $folders.length,
     }
     await saveFolder(folder)
+    syncFolderRecord(folder)
     vaultActions.upsertFolder(folder)
     newFolderName = ''
     creatingFolder = false
@@ -40,12 +42,28 @@
     if (!folder) return
     const updated = { ...folder, name: editName.trim() }
     await saveFolder(updated)
+    syncFolderRecord(updated)
     vaultActions.upsertFolder(updated)
     editingFolderId = null
   }
 
   async function removeFolder(id: string) {
+    const now = Date.now()
+    const storedNotes = await getNotesByFolder(id)
+    for (const note of storedNotes) {
+      const updatedNote = { ...note, folderId: null, updatedAt: now }
+      await saveNote(updatedNote)
+      syncNoteRecord(updatedNote)
+    }
+
+    $notes
+      .filter(note => note.folderId === id)
+      .forEach((note) => {
+        vaultActions.upsertNote({ ...note, folderId: null, updatedAt: now })
+      })
+
     await dbDeleteFolder(id)
+    syncDeleteFolder(id)
     vaultActions.removeFolder(id)
   }
 

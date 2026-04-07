@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { masterKey, googleUser, devices, ui, vaultActions, formatBytes, generateId } from '$stores/vault'
-  import { getAllDevices, saveDevice, deleteDevice as dbDeleteDevice, clearAllData, detectDeviceName, getDeviceFingerprint } from '$lib/vault/db'
+  import { masterKey, googleUser, devices, ui, syncState, vaultActions, formatBytes } from '$stores/vault'
+  import { getAllDevices, deleteDevice as dbDeleteDevice, clearAllData } from '$lib/vault/db'
   import { exportKeyAsJson, importKeyFromJson, rotateMasterKey, deriveGoogleKey } from '$lib/vault/crypto'
   import { signInWithGoogle, signOutGoogle } from '$lib/vault/auth'
-  import { fly, fade, slide } from 'svelte/transition'
+  import { fade, slide } from 'svelte/transition'
 
   export let storageUsed = 0
   const STORAGE_QUOTA = 1_073_741_824 // 1 GB
@@ -81,6 +81,19 @@
   let authBusy = false
   let authError = ''
   $: user = $googleUser
+  $: sync = $syncState
+  $: storagePercent = Math.min(100, (storageUsed / STORAGE_QUOTA) * 100)
+  $: syncSummary = sync.peerCount > 0
+    ? `${sync.peerCount} live peer${sync.peerCount === 1 ? '' : 's'}`
+    : sync.connected
+      ? 'Ready for peer sync'
+      : sync.syncing
+        ? 'Syncing local journal'
+        : 'Local only'
+  $: relaySummary = user ? 'Google connected' : 'Local key only'
+  $: lastSyncLabel = sync.lastSync
+    ? new Date(sync.lastSync).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    : 'Not yet'
 
   async function handleGoogleSignIn() {
     authBusy = true
@@ -115,8 +128,6 @@
   }
 
   async function exportAllNotes() {
-    const { notes: $notes } = await import('$stores/vault')
-    // Export as markdown zip (simplified: newline-delimited text blob)
     const { getAllNotes } = await import('$lib/vault/db')
     const { decryptText } = await import('$lib/vault/crypto')
     const mk = $masterKey
@@ -150,7 +161,10 @@
         <path d="M10 3L6 8l4 5"/>
       </svg>
     </button>
-    <h2 class="vst-title">Settings</h2>
+    <div class="vst-header-copy">
+      <h2 class="vst-title">Settings</h2>
+      <p class="vst-subtitle">Devices, relay access, encryption, and local Vault controls.</p>
+    </div>
   </div>
 
   <!-- Tab nav -->
@@ -164,10 +178,33 @@
     {/each}
   </div>
 
+  <div class="vst-summary-grid">
+    <div class="vst-summary-card">
+      <span class="vst-summary-label">Sync</span>
+      <strong class="vst-summary-value">{syncSummary}</strong>
+      <p class="vst-summary-copy">Last sync {lastSyncLabel}</p>
+    </div>
+    <div class="vst-summary-card">
+      <span class="vst-summary-label">Devices</span>
+      <strong class="vst-summary-value">{$devices.length + 1} known</strong>
+      <p class="vst-summary-copy">This browser plus paired Vault devices</p>
+    </div>
+    <div class="vst-summary-card">
+      <span class="vst-summary-label">Relay</span>
+      <strong class="vst-summary-value">{relaySummary}</strong>
+      <p class="vst-summary-copy">Cloud Share requires Google sign-in</p>
+    </div>
+    <div class="vst-summary-card">
+      <span class="vst-summary-label">Storage</span>
+      <strong class="vst-summary-value">{formatBytes(storageUsed)}</strong>
+      <p class="vst-summary-copy">{storagePercent.toFixed(1)}% of local Vault allocation</p>
+    </div>
+  </div>
+
   <div class="vst-body scroll-thin">
     <!-- ── Devices ──────────────────────────────────────────────────────── -->
     {#if tab === 'devices'}
-      <div in:fade={{ duration: 160 }}>
+      <div class="vst-pane" in:fade={{ duration: 160 }}>
         <div class="vst-section-label">Paired Devices</div>
 
         <div class="vst-notice">
@@ -201,12 +238,12 @@
 
     <!-- ── Storage ─────────────────────────────────────────────────────── -->
     {:else if tab === 'storage'}
-      <div in:fade={{ duration: 160 }}>
+      <div class="vst-pane" in:fade={{ duration: 160 }}>
         <div class="vst-section-label">R2 Storage</div>
 
         <div class="vst-storage-bar">
           <div class="progress-bar">
-            <div class="progress-fill" style="width: {Math.min(100, (storageUsed / STORAGE_QUOTA) * 100).toFixed(1)}%"></div>
+            <div class="progress-fill" style="width: {storagePercent.toFixed(1)}%"></div>
           </div>
           <div class="vst-storage-meta">
             <span>{formatBytes(storageUsed)} used</span>
@@ -219,7 +256,7 @@
 
     <!-- ── Encryption ─────────────────────────────────────────────────── -->
     {:else if tab === 'encryption'}
-      <div in:fade={{ duration: 160 }}>
+      <div class="vst-pane" in:fade={{ duration: 160 }}>
         <div class="vst-section-label">Key Fingerprint</div>
         {#if key}
           <div class="vst-fingerprint-row">
@@ -272,7 +309,7 @@
 
     <!-- ── Account ────────────────────────────────────────────────────── -->
     {:else if tab === 'account'}
-      <div in:fade={{ duration: 160 }}>
+      <div class="vst-pane" in:fade={{ duration: 160 }}>
         <div class="vst-section-label">Google Account</div>
 
         {#if user}
@@ -316,7 +353,7 @@
 
     <!-- ── Data ───────────────────────────────────────────────────────── -->
     {:else if tab === 'data'}
-      <div in:fade={{ duration: 160 }}>
+      <div class="vst-pane" in:fade={{ duration: 160 }}>
         <div class="vst-section-label">Export</div>
         <p class="vst-hint">Download all your notes as a ZIP of Markdown files.</p>
         <button class="btn-secondary vst-action-btn" on:click={exportAllNotes}>
@@ -359,11 +396,17 @@
 
   .vst-header {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 12px;
     padding-bottom: 14px;
     border-bottom: 1px solid var(--border);
     flex-shrink: 0;
+  }
+
+  .vst-header-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
   }
 
   .vst-title {
@@ -376,9 +419,16 @@
     line-height: 0.96;
   }
 
+  .vst-subtitle {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--text-2);
+  }
+
   .vst-tabs {
     display: flex;
-    gap: 8px;
+    gap: 10px;
     overflow-x: auto;
     flex-shrink: 0;
     padding-bottom: 2px;
@@ -407,10 +457,52 @@
   }
 
   .vst-tab--active {
-    color: #111;
-    background: var(--accent);
-    border-color: #111;
-    box-shadow: 4px 4px 0 #111;
+    color: var(--text-1);
+    background: color-mix(in srgb, var(--accent) 14%, var(--surface));
+    border-color: color-mix(in srgb, var(--accent) 68%, var(--border-hard));
+    box-shadow: 4px 4px 0 var(--border-hard);
+  }
+
+  .vst-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .vst-summary-card {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 124px;
+    padding: 14px;
+    border-radius: 16px;
+    border: 1.5px solid var(--border-hard);
+    background: var(--surface-2);
+    box-shadow: 3px 3px 0 var(--border-hard);
+  }
+
+  .vst-summary-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-3);
+  }
+
+  .vst-summary-value {
+    font-family: var(--font-display);
+    font-size: 1.05rem;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    color: var(--text-1);
+  }
+
+  .vst-summary-copy {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.55;
+    color: var(--text-2);
   }
 
   .vst-body {
@@ -420,11 +512,16 @@
     min-height: 0;
   }
 
-  .vst-body > div {
+  .vst-pane {
     display: flex;
     flex-direction: column;
     gap: 16px;
     min-height: 100%;
+    padding: 18px;
+    border-radius: 18px;
+    border: 1.5px solid var(--border-hard);
+    background: color-mix(in srgb, var(--surface-2) 88%, var(--surface));
+    box-shadow: 3px 3px 0 var(--border-hard);
   }
 
   .vst-section-label {
@@ -453,7 +550,7 @@
 
   .vst-notice {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 8px;
     font-size: 12px;
     color: var(--amber);
@@ -663,5 +760,26 @@
     color: var(--green);
     background: rgba(0, 200, 120, 0.06);
     border-color: rgba(0, 200, 120, 0.2);
+  }
+
+  @media (max-width: 1080px) {
+    .vst-summary-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 720px) {
+    .vst-summary-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .vst-pane {
+      padding: 16px;
+    }
+
+    .vst-fingerprint-row {
+      flex-direction: column;
+      align-items: flex-start;
+    }
   }
 </style>

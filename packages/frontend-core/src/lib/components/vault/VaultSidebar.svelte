@@ -1,10 +1,12 @@
 <script lang="ts">
-  import { ui, vaultActions, notes, generateId } from '$stores/vault'
+  import { ui, vaultActions, generateId } from '$stores/vault'
   import type { DecryptedNote } from '$stores/vault'
+  import type { StoredNote } from '$lib/vault/db'
   import { masterKey } from '$stores/vault'
   import { saveNote } from '$lib/vault/db'
   import { encryptText } from '$lib/vault/crypto'
   import { search, updateInIndex } from '$lib/vault/search'
+  import { syncNoteRecord } from '$lib/vault/sync'
   import FolderTree from './FolderTree.svelte'
   import NoteList from './NoteList.svelte'
   import { fly } from 'svelte/transition'
@@ -43,6 +45,7 @@
     const id = generateId()
     const titleBlob = await encryptText('', key.key)
     const bodyBlob = await encryptText('', key.key)
+    const nextFolderId = $ui.activeFolderId === '__pinned__' ? null : $ui.activeFolderId
 
     const newNote: DecryptedNote = {
       id,
@@ -51,22 +54,25 @@
       createdAt: now,
       updatedAt: now,
       tags: [],
-      folderId: $ui.activeFolderId,
+      folderId: nextFolderId,
       isPinned: false,
       attachmentIds: [],
     }
 
-    await saveNote({
+    const storedNote: StoredNote = {
       id,
       titleBlob,
       bodyBlob,
       createdAt: now,
       updatedAt: now,
       tags: [],
-      folderId: $ui.activeFolderId,
+      folderId: nextFolderId,
       isPinned: false,
       attachmentIds: [],
-    })
+    }
+
+    await saveNote(storedNote)
+    syncNoteRecord(storedNote)
 
     updateInIndex({ id, title: '', body: '', tags: [], updatedAt: now })
     vaultActions.upsertNote(newNote)

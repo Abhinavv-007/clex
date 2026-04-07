@@ -12,6 +12,8 @@
  * that share the same key will find each other.
  */
 
+import type { StoredFolder, StoredNote } from './db'
+
 export interface SyncState {
   connected: boolean
   peerCount: number
@@ -24,6 +26,8 @@ export type SyncListener = (state: SyncState) => void
 
 let provider: unknown = null
 let ydoc: unknown = null
+let notesMap: SyncMap<StoredNote> | null = null
+let foldersMap: SyncMap<StoredFolder> | null = null
 const listeners = new Set<SyncListener>()
 let currentState: SyncState = {
   connected: false,
@@ -31,6 +35,38 @@ let currentState: SyncState = {
   syncing: false,
   lastSync: null,
   error: null,
+}
+let syncHandlers: SyncHandlers = {}
+let reconciled = false
+
+const LOCAL_SYNC_ORIGIN = 'vault-local-sync'
+
+type MapChangeAction = 'add' | 'update' | 'delete'
+
+interface SyncMapEvent {
+  changes: { keys: Map<string, { action: MapChangeAction }> }
+  transaction: { origin: unknown }
+}
+
+interface SyncMap<T> {
+  size: number
+  get: (key: string) => T | undefined
+  set: (key: string, value: T) => void
+  delete: (key: string) => void
+  forEach: (callback: (value: T, key: string) => void) => void
+  observe: (callback: (event: SyncMapEvent) => void) => void
+}
+
+interface SyncSeedState {
+  notes: StoredNote[]
+  folders: StoredFolder[]
+}
+
+interface SyncHandlers {
+  upsertNote?: (note: StoredNote) => Promise<void> | void
+  deleteNote?: (id: string) => Promise<void> | void
+  upsertFolder?: (folder: StoredFolder) => Promise<void> | void
+  deleteFolder?: (id: string) => Promise<void> | void
 }
 
 function notify(partial: Partial<SyncState>): void {
@@ -47,6 +83,113 @@ export function onSyncState(fn: SyncListener): () => void {
 export function getSyncState(): SyncState {
   return currentState }
 
+function cloneRecord<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value)) as T
+}
+
+function snapshotMap<T>(map: SyncMap<T> | null): Map<string, T> {
+  const snapshot = new Map<string, T>()
+  map?.forEach((value, key) => {
+    snapshot.set(key, cloneRecord(value))
+  })
+  return snapshot
+}
+
+function transactLocal(fn: () => void): void {
+  const doc = ydoc as { transact?: (callback: () => void, origin?: unknown) => void } | null
+  if (doc?.transact) {
+    doc.transact(fn, LOCAL_SYNC_ORIGIN)
+    return
+  }
+  fn()
+}
+
+async function handleNoteMapChange(event: SyncMapEvent): Promise<void> {
+  if (event.transaction.origin === LOCAL_SYNC_ORIGIN) return
+  notify({ syncing: true, error: null })
+
+  for (const [id, change] of event.changes.keys) {
+    if (change.action === 'delete') {
+      await syncHandlers.deleteNote?.(id)
+      continue
+    }
+
+    const record = notesMap?.get(id)
+    if (record) {
+      await syncHandlers.upsertNote?.(cloneRecord(record))
+    }
+  }
+
+  notify({ syncing: false, lastSync: Date.now(), connected: true, error: null })
+}
+
+async function handleFolderMapChange(event: SyncMapEvent): Promise<void> {
+  if (event.transaction.origin === LOCAL_SYNC_ORIGIN) return
+  notify({ syncing: true, error: null })
+
+  for (const [id, change] of event.changes.keys) {
+    if (change.action === 'delete') {
+      await syncHandlers.deleteFolder?.(id)
+      continue
+    }
+
+    const record = foldersMap?.get(id)
+    if (record) {
+      await syncHandlers.upsertFolder?.(cloneRecord(record))
+    }
+  }
+
+  notify({ syncing: false, lastSync: Date.now(), connected: true, error: null })
+}
+
+async function reconcileSeed(seed: SyncSeedState): Promise<void> {
+  if (!notesMap || !foldersMap || reconciled) return
+  reconciled = true
+
+  const remoteNotes = snapshotMap(notesMap)
+  const remoteFolders = snapshotMap(foldersMap)
+  const localNotes = new Map(seed.notes.map((note) => [note.id, cloneRecord(note)]))
+  const localFolders = new Map(seed.folders.map((folder) => [folder.id, cloneRecord(folder)]))
+
+  for (const [id, localNote] of localNotes) {
+    const remoteNote = remoteNotes.get(id)
+    if (!remoteNote) {
+      transactLocal(() => notesMap?.set(id, cloneRecord(localNote)))
+      continue
+    }
+
+    if (localNote.updatedAt > remoteNote.updatedAt) {
+      transactLocal(() => notesMap?.set(id, cloneRecord(localNote)))
+    } else if (remoteNote.updatedAt > localNote.updatedAt) {
+      await syncHandlers.upsertNote?.(cloneRecord(remoteNote))
+    }
+  }
+
+  for (const [id, remoteNote] of remoteNotes) {
+    if (!localNotes.has(id)) {
+      await syncHandlers.upsertNote?.(cloneRecord(remoteNote))
+    }
+  }
+
+  for (const [id, localFolder] of localFolders) {
+    if (!remoteFolders.has(id)) {
+      transactLocal(() => foldersMap?.set(id, cloneRecord(localFolder)))
+    }
+  }
+
+  for (const [id, remoteFolder] of remoteFolders) {
+    if (!localFolders.has(id)) {
+      await syncHandlers.upsertFolder?.(cloneRecord(remoteFolder))
+    }
+  }
+
+  notify({ syncing: false, lastSync: Date.now(), error: null })
+}
+
+export function setSyncHandlers(nextHandlers: SyncHandlers): void {
+  syncHandlers = nextHandlers
+}
+
 /**
  * Initialize yjs doc with IndexedDB persistence + WebRTC provider.
  * Safe to call multiple times — will reuse existing provider.
@@ -54,7 +197,11 @@ export function getSyncState(): SyncState {
  * @param roomId  First 32 chars of key hash (vault room namespace prefix: "vault:")
  * @param signalingUrl  Existing clex signaling server URL
  */
-export async function initSync(roomId: string, signalingUrl: string): Promise<void> {
+export async function initSync(
+  roomId: string,
+  signalingUrl: string,
+  seedState?: SyncSeedState,
+): Promise<void> {
   if (provider) return // already initialized
 
   try {
@@ -67,11 +214,18 @@ export async function initSync(roomId: string, signalingUrl: string): Promise<vo
 
     ydoc = new Doc()
     const fullRoomId = `vault:${roomId}`
+    notesMap = (ydoc as InstanceType<typeof Doc>).getMap('notes') as SyncMap<StoredNote>
+    foldersMap = (ydoc as InstanceType<typeof Doc>).getMap('folders') as SyncMap<StoredFolder>
+    notesMap.observe((event) => { void handleNoteMapChange(event) })
+    foldersMap.observe((event) => { void handleFolderMapChange(event) })
 
     // IndexedDB persistence — loads instantly from local state
     const persistence = new IndexeddbPersistence(fullRoomId, ydoc as InstanceType<typeof Doc>)
     persistence.on('synced', () => {
       notify({ syncing: false, lastSync: Date.now() })
+      if (seedState) {
+        void reconcileSeed(seedState)
+      }
     })
 
     // WebRTC provider using existing clex signaling server
@@ -111,6 +265,38 @@ export function getYDoc(): unknown {
   return ydoc
 }
 
+export function syncNoteRecord(note: StoredNote): void {
+  if (!notesMap) return
+  transactLocal(() => {
+    notesMap?.set(note.id, cloneRecord(note))
+  })
+  notify({ lastSync: Date.now(), error: null })
+}
+
+export function syncDeleteNote(id: string): void {
+  if (!notesMap) return
+  transactLocal(() => {
+    notesMap?.delete(id)
+  })
+  notify({ lastSync: Date.now(), error: null })
+}
+
+export function syncFolderRecord(folder: StoredFolder): void {
+  if (!foldersMap) return
+  transactLocal(() => {
+    foldersMap?.set(folder.id, cloneRecord(folder))
+  })
+  notify({ lastSync: Date.now(), error: null })
+}
+
+export function syncDeleteFolder(id: string): void {
+  if (!foldersMap) return
+  transactLocal(() => {
+    foldersMap?.delete(id)
+  })
+  notify({ lastSync: Date.now(), error: null })
+}
+
 export function destroySync(): void {
   if (provider) {
     const p = provider as { destroy?: () => void }
@@ -122,5 +308,8 @@ export function destroySync(): void {
     d.destroy?.()
     ydoc = null
   }
+  notesMap = null
+  foldersMap = null
+  reconciled = false
   notify({ connected: false, peerCount: 0, syncing: false })
 }

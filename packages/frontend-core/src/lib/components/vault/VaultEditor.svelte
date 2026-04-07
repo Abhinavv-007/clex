@@ -1,24 +1,36 @@
 <script lang="ts">
-  import { activeNote, masterKey, ui, vaultActions, generateId, wordCount, readTimeMins, relativeTime } from '$stores/vault'
+  import { activeNote, masterKey, ui, vaultActions } from '$stores/vault'
   import type { DecryptedNote } from '$stores/vault'
-  import { saveNote } from '$lib/vault/db'
+  import type { StoredNote } from '$lib/vault/db'
+  import { saveNote, deleteNote as deleteStoredNote } from '$lib/vault/db'
   import { encryptText } from '$lib/vault/crypto'
-  import { updateInIndex } from '$lib/vault/search'
+  import { removeFromIndex, updateInIndex } from '$lib/vault/search'
+  import { syncDeleteNote, syncNoteRecord } from '$lib/vault/sync'
   import MarkdownEditor from './MarkdownEditor.svelte'
-  import { fly, fade } from 'svelte/transition'
-  import { tick } from 'svelte'
+  import { fade } from 'svelte/transition'
 
   let titleInput: HTMLInputElement
   let saving = false
   let saveError = false
+  let confirmDelete = false
+  let deletePromptNoteId = ''
+
+  $: if (($activeNote?.id ?? '') !== deletePromptNoteId) {
+    deletePromptNoteId = $activeNote?.id ?? ''
+    confirmDelete = false
+  }
+
+  $: if (!$activeNote) {
+    confirmDelete = false
+  }
 
   async function handleTitleInput(e: Event) {
     const note = $activeNote
-    const key = $masterKey
-    if (!note || !key) return
+    if (!note) return
     const title = (e.target as HTMLInputElement).value
     const updated: DecryptedNote = { ...note, title, updatedAt: Date.now() }
     vaultActions.upsertNote(updated)
+    confirmDelete = false
     scheduleNoteSave(updated)
   }
 
@@ -27,6 +39,7 @@
     if (!note) return
     const updated: DecryptedNote = { ...note, body, updatedAt: Date.now() }
     vaultActions.upsertNote(updated)
+    confirmDelete = false
     scheduleNoteSave(updated)
   }
 
@@ -42,21 +55,9 @@
     saving = true
     saveError = false
     try {
-      const [titleBlob, bodyBlob] = await Promise.all([
-        encryptText(note.title, key.key),
-        encryptText(note.body, key.key),
-      ])
-      await saveNote({
-        id: note.id,
-        titleBlob,
-        bodyBlob,
-        createdAt: note.createdAt,
-        updatedAt: note.updatedAt,
-        tags: note.tags,
-        folderId: note.folderId,
-        isPinned: note.isPinned,
-        attachmentIds: note.attachmentIds,
-      })
+      const storedNote = await buildStoredNote(note, key.key)
+      await saveNote(storedNote)
+      syncNoteRecord(storedNote)
       updateInIndex({ id: note.id, title: note.title, body: note.body, tags: note.tags, updatedAt: note.updatedAt })
     } catch (e) {
       saveError = true
@@ -72,6 +73,7 @@
     if (!note || !key) return
     const updated: DecryptedNote = { ...note, isPinned: !note.isPinned, updatedAt: Date.now() }
     vaultActions.upsertNote(updated)
+    confirmDelete = false
     await persistNote(updated)
   }
 
@@ -80,6 +82,7 @@
     if (!note || note.tags.includes(tag)) return
     const updated: DecryptedNote = { ...note, tags: [...note.tags, tag], updatedAt: Date.now() }
     vaultActions.upsertNote(updated)
+    confirmDelete = false
     await persistNote(updated)
   }
 
@@ -88,6 +91,7 @@
     if (!note) return
     const updated: DecryptedNote = { ...note, tags: note.tags.filter(t => t !== tag), updatedAt: Date.now() }
     vaultActions.upsertNote(updated)
+    confirmDelete = false
     await persistNote(updated)
   }
 
@@ -95,8 +99,53 @@
   function handleTagKey(e: KeyboardEvent) {
     if ((e.key === 'Enter' || e.key === ',') && tagInput.trim()) {
       e.preventDefault()
-      addTag(tagInput.trim().toLowerCase().replace(/\s+/g, '-'))
+      void addTag(tagInput.trim().toLowerCase().replace(/\s+/g, '-'))
       tagInput = ''
+    }
+  }
+
+  async function buildStoredNote(note: DecryptedNote, key: CryptoKey): Promise<StoredNote> {
+    const [titleBlob, bodyBlob] = await Promise.all([
+      encryptText(note.title, key),
+      encryptText(note.body, key),
+    ])
+
+    return {
+      id: note.id,
+      titleBlob,
+      bodyBlob,
+      createdAt: note.createdAt,
+      updatedAt: note.updatedAt,
+      tags: note.tags,
+      folderId: note.folderId,
+      isPinned: note.isPinned,
+      attachmentIds: note.attachmentIds,
+    }
+  }
+
+  async function deleteNote() {
+    const note = $activeNote
+    if (!note) return
+
+    if (!confirmDelete) {
+      confirmDelete = true
+      return
+    }
+
+    clearTimeout(saveTimer)
+    saving = false
+    saveError = false
+
+    try {
+      await deleteStoredNote(note.id)
+      syncDeleteNote(note.id)
+      removeFromIndex(note.id)
+      vaultActions.removeNote(note.id)
+      confirmDelete = false
+      tagInput = ''
+    } catch (e) {
+      saveError = true
+      console.error('[vault] delete failed:', e)
     }
   }
 </script>
@@ -120,6 +169,29 @@
       </div>
 
       <div class="ved-toolbar-actions">
+        {#if confirmDelete}
+          <div class="ved-delete-confirm" in:fade={{ duration: 120 }}>
+            <span class="ved-delete-copy">Delete this note</span>
+            <button class="ved-confirm-btn" type="button" on:click={() => (confirmDelete = false)}>
+              Cancel
+            </button>
+            <button class="ved-confirm-btn ved-confirm-btn--danger" type="button" on:click={deleteNote}>
+              Delete
+            </button>
+          </div>
+        {:else}
+          <button
+            class="btn-icon ved-danger-icon"
+            on:click={deleteNote}
+            title="Delete note"
+            aria-label="Delete note"
+          >
+            <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3.5 4.5h8M6 4.5V3h3v1.5M5 6.5v4M7.5 6.5v4M10 6.5v4M4.5 4.5l.5 7h5l.5-7"/>
+            </svg>
+          </button>
+        {/if}
+
         <!-- Pin -->
         <button
           class="btn-icon"
@@ -230,6 +302,7 @@
     align-items: center;
     justify-content: space-between;
     gap: 12px;
+    flex-wrap: wrap;
     padding-bottom: 12px;
     border-bottom: 1px solid var(--border);
     margin-bottom: 12px;
@@ -271,7 +344,55 @@
   .ved-toolbar-actions {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .ved-delete-confirm {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    padding: 6px 8px 6px 10px;
+    border: 1.5px solid rgba(255, 68, 102, 0.4);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--red) 8%, var(--surface));
+  }
+
+  .ved-delete-copy {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--red);
+  }
+
+  .ved-confirm-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 28px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    border: 1.5px solid var(--border-hard);
+    background: var(--surface);
+    color: var(--text-1);
+    font-family: var(--font-display);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .ved-confirm-btn--danger,
+  .ved-danger-icon {
+    color: var(--red);
+  }
+
+  .ved-confirm-btn--danger {
+    border-color: var(--red);
+    background: color-mix(in srgb, var(--red) 10%, var(--surface));
   }
 
   .ved-pinned {

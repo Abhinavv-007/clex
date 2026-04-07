@@ -323,7 +323,12 @@
               >
                 <span class="vsc-protection-top">
                   <span class="vsc-protection-title">{item.label}</span>
-                  <span class="vsc-protection-state">{protections[item.key] ? 'On' : 'Off'}</span>
+                  <span
+                    class="vsc-protection-state"
+                    class:vsc-protection-state--active={protections[item.key]}
+                  >
+                    {protections[item.key] ? 'Selected' : 'Off'}
+                  </span>
                 </span>
                 <span class="vsc-protection-copy">{item.copy}</span>
               </button>
@@ -622,10 +627,10 @@
 
   .vsc-ttl-btn--active,
   .vsc-protection-btn--active {
-    background: var(--accent);
-    border-color: #111;
-    color: #111;
-    box-shadow: 4px 4px 0 #111;
+    background: color-mix(in srgb, var(--accent) 14%, var(--surface));
+    border-color: color-mix(in srgb, var(--accent) 68%, var(--border-hard));
+    color: var(--text-1);
+    box-shadow: 4px 4px 0 var(--border-hard);
   }
 
   .vsc-custom-wrap {
@@ -667,6 +672,7 @@
     text-align: left;
     cursor: pointer;
     transition: transform 120ms ease, box-shadow 120ms ease, border-color 120ms ease;
+    color: var(--text-1);
   }
 
   .vsc-protection-top {
@@ -694,7 +700,7 @@
     min-height: 24px;
     padding: 4px 10px;
     border-radius: 999px;
-    border: 1.5px solid var(--border-hard);
+    border: 1.5px solid var(--border);
     background: var(--surface-2);
     font-family: var(--font-mono);
     font-size: 10px;
@@ -708,14 +714,11 @@
     cursor: pointer;
   }
 
-  .vsc-protection-btn--active .vsc-protection-copy {
-    color: rgba(17, 17, 17, 0.78);
-  }
-
-  .vsc-protection-btn--active .vsc-protection-state {
-    background: rgba(17, 17, 17, 0.12);
-    color: #111;
-    border-color: rgba(17, 17, 17, 0.36);
+  .vsc-protection-state--active {
+    background: var(--accent);
+    color: var(--accent-fg);
+    border-color: #111;
+    box-shadow: 2px 2px 0 #111;
   }
 
   .vsc-system-card {

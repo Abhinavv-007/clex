@@ -10,6 +10,7 @@
    * 5. Mount three-panel UI
    */
   import { onMount, onDestroy } from 'svelte'
+  import { get } from 'svelte/store'
   import { fade } from 'svelte/transition'
   import VaultSidebar from '$components/vault/VaultSidebar.svelte'
   import VaultEditor from '$components/vault/VaultEditor.svelte'
@@ -23,18 +24,27 @@
   import {
     masterKey as masterKeyStore,
     notes,
-    folders,
-    devices,
     ui,
-    syncState,
     vaultActions,
     storageUsed,
   } from '$stores/vault'
+  import type { DecryptedNote } from '$stores/vault'
   import { getOrCreateMasterKey } from '$lib/vault/crypto'
-  import { getAllNotes, getAllFolders, getAllDevices, openVaultDb } from '$lib/vault/db'
+  import type { StoredFolder, StoredNote } from '$lib/vault/db'
+  import {
+    getAllNotes,
+    getAllFolders,
+    getAllDevices,
+    getNotesByFolder,
+    openVaultDb,
+    saveNote,
+    saveFolder,
+    deleteNote as dbDeleteNote,
+    deleteFolder as dbDeleteFolder,
+  } from '$lib/vault/db'
   import { decryptText } from '$lib/vault/crypto'
-  import { buildSearchIndex } from '$lib/vault/search'
-  import { initSync, onSyncState, destroySync } from '$lib/vault/sync'
+  import { buildSearchIndex, removeFromIndex, updateInIndex } from '$lib/vault/search'
+  import { initSync, onSyncState, destroySync, setSyncHandlers } from '$lib/vault/sync'
   import { onVaultAuthChanged } from '$lib/vault/auth'
 
   export let signalingUrl = 'wss://signal.clex.in'
@@ -46,6 +56,9 @@
   let pairingInitialTab: 'sender' | 'receiver' = 'sender'
   let pairingPrefillCode = ''
   let pairingAutoConnect = false
+  let activeSyncRoomId = ''
+  let syncInitVersion = 0
+  let bootComplete = false
 
   function consumePairingCodeFromUrl() {
     const url = new URL(window.location.href)
@@ -71,6 +84,103 @@
     pairingAutoConnect = false
   }
 
+  async function decryptStoredNoteRecord(note: StoredNote, key: CryptoKey): Promise<DecryptedNote> {
+    try {
+      const [title, body] = await Promise.all([
+        decryptText(note.titleBlob, key),
+        decryptText(note.bodyBlob, key),
+      ])
+
+      return {
+        id: note.id,
+        title,
+        body,
+        createdAt: note.createdAt,
+        updatedAt: note.updatedAt,
+        tags: note.tags,
+        folderId: note.folderId,
+        isPinned: note.isPinned,
+        attachmentIds: note.attachmentIds,
+      }
+    } catch {
+      return {
+        id: note.id,
+        title: '[Encrypted]',
+        body: '',
+        createdAt: note.createdAt,
+        updatedAt: note.updatedAt,
+        tags: note.tags,
+        folderId: note.folderId,
+        isPinned: note.isPinned,
+        attachmentIds: note.attachmentIds,
+      }
+    }
+  }
+
+  async function applySyncedNote(note: StoredNote) {
+    await saveNote(note)
+
+    const mk = get(masterKeyStore)
+    if (!mk) return
+
+    const decrypted = await decryptStoredNoteRecord(note, mk.key)
+    vaultActions.upsertNote(decrypted)
+    updateInIndex({
+      id: decrypted.id,
+      title: decrypted.title,
+      body: decrypted.body,
+      tags: decrypted.tags,
+      updatedAt: decrypted.updatedAt,
+    })
+  }
+
+  async function removeSyncedNote(id: string) {
+    await dbDeleteNote(id)
+    vaultActions.removeNote(id)
+    removeFromIndex(id)
+  }
+
+  async function applySyncedFolder(folder: StoredFolder) {
+    await saveFolder(folder)
+    vaultActions.upsertFolder(folder)
+  }
+
+  async function removeSyncedFolder(id: string) {
+    const storedNotes = await getNotesByFolder(id)
+    const localNotes = get(notes).filter((note) => note.folderId === id)
+
+    for (const note of storedNotes) {
+      await saveNote({ ...note, folderId: null })
+    }
+
+    for (const note of localNotes) {
+      vaultActions.upsertNote({ ...note, folderId: null })
+    }
+
+    await dbDeleteFolder(id)
+    vaultActions.removeFolder(id)
+  }
+
+  async function ensureSyncForRoom(roomId: string) {
+    if (!roomId || activeSyncRoomId === roomId) return
+
+    const version = ++syncInitVersion
+    activeSyncRoomId = roomId
+    destroySync()
+
+    const [storedNotes, storedFolders] = await Promise.all([
+      getAllNotes(),
+      getAllFolders(),
+    ])
+
+    await initSync(roomId, signalingUrl, {
+      notes: storedNotes,
+      folders: storedFolders,
+    })
+
+    if (version !== syncInitVersion) return
+  }
+
   onMount(async () => {
     vaultActions.setLoading(true)
 
@@ -80,6 +190,13 @@
 
     try {
       await openVaultDb()
+
+      setSyncHandlers({
+        upsertNote: (note) => applySyncedNote(note),
+        deleteNote: (id) => removeSyncedNote(id),
+        upsertFolder: (folder) => applySyncedFolder(folder),
+        deleteFolder: (id) => removeSyncedFolder(id),
+      })
 
       // 1. Load/generate master key
       const mk = await getOrCreateMasterKey()
@@ -93,19 +210,7 @@
       ])
 
       // Decrypt all notes
-      const decryptedNotes = await Promise.all(
-        storedNotes.map(async (n) => {
-          try {
-            const [title, body] = await Promise.all([
-              decryptText(n.titleBlob, mk.key),
-              decryptText(n.bodyBlob, mk.key),
-            ])
-            return { id: n.id, title, body, createdAt: n.createdAt, updatedAt: n.updatedAt, tags: n.tags, folderId: n.folderId, isPinned: n.isPinned, attachmentIds: n.attachmentIds }
-          } catch {
-            return { id: n.id, title: '[Encrypted]', body: '', createdAt: n.createdAt, updatedAt: n.updatedAt, tags: n.tags, folderId: n.folderId, isPinned: n.isPinned, attachmentIds: n.attachmentIds }
-          }
-        })
-      )
+      const decryptedNotes = await Promise.all(storedNotes.map((note) => decryptStoredNoteRecord(note, mk.key)))
 
       vaultActions.setNotes(decryptedNotes)
       vaultActions.setFolders(storedFolders)
@@ -115,9 +220,7 @@
       buildSearchIndex(decryptedNotes.map(n => ({ id: n.id, title: n.title, body: n.body, tags: n.tags, updatedAt: n.updatedAt })))
 
       // 4. Initialize P2P sync (non-blocking)
-      initSync(mk.roomId, signalingUrl).catch(() => {
-        // Sync unavailable — local-only mode (yjs packages may not be installed)
-      })
+      await ensureSyncForRoom(mk.roomId)
 
       unsubSync = onSyncState((state) => {
         vaultActions.setSyncState(state)
@@ -134,6 +237,7 @@
       bootError = e instanceof Error ? e.message : 'Failed to initialize Vault'
       console.error('[vault] boot error:', e)
     } finally {
+      bootComplete = true
       vaultActions.setLoading(false)
       consumePairingCodeFromUrl()
     }
@@ -142,7 +246,13 @@
   onDestroy(() => {
     unsubSync?.()
     destroySync()
+    activeSyncRoomId = ''
+    bootComplete = false
   })
+
+  $: if (bootComplete && $masterKeyStore?.roomId && $masterKeyStore.roomId !== activeSyncRoomId) {
+    void ensureSyncForRoom($masterKeyStore.roomId)
+  }
 
   $: loading = $ui.loading
   $: panel = $ui.activePanel
@@ -320,7 +430,7 @@
 
   .va-shell-header {
     display: flex;
-    align-items: flex-end;
+    align-items: flex-start;
     justify-content: space-between;
     gap: 18px;
     margin-bottom: 24px;
@@ -360,20 +470,21 @@
   }
 
   .va-panel-switch {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    padding: 4px;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+    width: min(100%, 560px);
+    padding: 6px;
     border: 2px solid var(--border-hard);
     background: var(--surface-2);
     box-shadow: 2px 2px 0 var(--border-hard);
     border-radius: 14px;
-    flex: 0 0 auto;
+    flex: 0 0 min(100%, 560px);
   }
 
   .va-panel-tab {
     min-height: 46px;
-    min-width: 132px;
+    min-width: 0;
     padding: 10px 16px;
     border-radius: 10px;
     border: 2px solid transparent;
@@ -570,9 +681,9 @@
     }
 
     .va-panel-switch {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
       width: 100%;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      flex-basis: auto;
     }
 
     .va-grid {
