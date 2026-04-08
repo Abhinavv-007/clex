@@ -9,6 +9,7 @@ export {
   getStoredToken,
   hasToken,
   initiateGoogleAuth,
+  markDriveAuthCallbackSeen,
   persistPendingDriveReturnTo,
   pickupToken,
   storeToken,

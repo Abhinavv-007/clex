@@ -12,12 +12,16 @@ const DRIVE_ROOT_FOLDER_NAME = 'Clex Share'
 const TOKEN_KEY = 'clex_gdrive_token'
 const PENDING_AUTH_KEY = 'clex_gdrive_auth_pending'
 const RETURN_TO_KEY = 'clex_gdrive_return_to'
+const AUTH_STARTED_AT_KEY = 'clex_gdrive_auth_started_at'
+const CALLBACK_SEEN_AT_KEY = 'clex_gdrive_callback_seen_at'
 const DRIVE_AUTH_DB_NAME = 'clex_drive_auth'
 const DRIVE_AUTH_STORE_NAME = 'workspace_state'
 const DRIVE_AUTH_STATE_KEY = 'pending_google_drive_auth'
 const VAULT_DRIVE_AUTH_STATE_KEY = 'pending_vault_google_drive_auth'
 const DRIVE_AUTH_ERROR_KEY = 'clex_gdrive_callback_error'
-const PICKUP_RETRY_DELAYS_MS = [0, 150, 350, 700, 1400, 2400]
+const PICKUP_RETRY_DELAYS_MS = [0, 150, 350, 700, 1400, 2400, 3600, 5200, 7000]
+const RECENT_CALLBACK_WINDOW_MS = 60_000
+const RECENT_AUTH_WINDOW_MS = 5 * 60_000
 
 type PersistedDriveEntry = {
   id: string
@@ -135,6 +139,21 @@ export function clearPendingDriveReturnTo(): void {
   clearStorageValue(RETURN_TO_KEY)
 }
 
+function getStoredTimestamp(key: string): number | null {
+  const raw = getSessionStorage()?.getItem(key) ?? getLocalStorage()?.getItem(key) ?? null
+  if (!raw) return null
+  const parsed = Number(raw)
+  return Number.isFinite(parsed) ? parsed : null
+}
+
+function storeTimestamp(key: string, value = Date.now()): void {
+  persistStorageValue(key, String(value))
+}
+
+function clearTimestamp(key: string): void {
+  clearStorageValue(key)
+}
+
 export function storeToken(token: string): void {
   getSessionStorage()?.setItem(TOKEN_KEY, token)
   getLocalStorage()?.setItem(TOKEN_KEY, token)
@@ -157,10 +176,27 @@ export function hasPendingAuth(): boolean {
 
 function markPendingAuth(): void {
   persistStorageValue(PENDING_AUTH_KEY, '1')
+  storeTimestamp(AUTH_STARTED_AT_KEY)
 }
 
 function clearPendingAuth(): void {
   clearStorageValue(PENDING_AUTH_KEY)
+  clearTimestamp(AUTH_STARTED_AT_KEY)
+  clearTimestamp(CALLBACK_SEEN_AT_KEY)
+}
+
+export function markDriveAuthCallbackSeen(): void {
+  storeTimestamp(CALLBACK_SEEN_AT_KEY)
+}
+
+function hasRecentDriveAuthCallback(now = Date.now()): boolean {
+  const seenAt = getStoredTimestamp(CALLBACK_SEEN_AT_KEY)
+  return seenAt !== null && now - seenAt <= RECENT_CALLBACK_WINDOW_MS
+}
+
+function hasRecentPendingDriveAuth(now = Date.now()): boolean {
+  const startedAt = getStoredTimestamp(AUTH_STARTED_AT_KEY)
+  return startedAt !== null && now - startedAt <= RECENT_AUTH_WINDOW_MS
 }
 
 function setCallbackError(code: string): void {
@@ -221,8 +257,11 @@ function mapCallbackError(code: string | null): string | null {
 
 export async function getDriveSession(): Promise<{ connected: boolean; user: GoogleDriveUser | null }> {
   try {
-    const response = await fetch(`${getDriveApiBaseUrl()}/api/auth/gdrive/session`, {
+    const sessionUrl = new URL(`${getDriveApiBaseUrl()}/api/auth/gdrive/session`, typeof window !== 'undefined' ? window.location.origin : 'http://localhost')
+    sessionUrl.searchParams.set('_ts', String(Date.now()))
+    const response = await fetch(sessionUrl.toString(), {
       credentials: 'include',
+      cache: 'no-store',
     })
     if (!response.ok) {
       return { connected: false, user: null }
@@ -263,8 +302,11 @@ export async function pickupToken(): Promise<string | null> {
     }
 
     try {
-      const response = await fetch(`${getDriveApiBaseUrl()}/api/auth/gdrive/token`, {
+      const tokenUrl = new URL(`${getDriveApiBaseUrl()}/api/auth/gdrive/token`, typeof window !== 'undefined' ? window.location.origin : 'http://localhost')
+      tokenUrl.searchParams.set('_ts', String(Date.now()))
+      const response = await fetch(tokenUrl.toString(), {
         credentials: 'include',
+        cache: 'no-store',
       })
       if (!response.ok) {
         const session = await getDriveSession()
@@ -316,6 +358,11 @@ export async function pickupToken(): Promise<string | null> {
       clearPendingAuth()
       await restorePendingDriveAuthState()
       return getStoredToken()
+    }
+    if (!hasRecentDriveAuthCallback() && !hasRecentPendingDriveAuth()) {
+      clearPendingAuth()
+      clearPendingDriveReturnTo()
+      return null
     }
     throw new Error(lastError ?? 'Google Drive finished redirecting, but Clex could not restore the connection or your pending files.')
   }

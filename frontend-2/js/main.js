@@ -4,7 +4,7 @@
    ============================================ */
 
 import '@clex/frontend-core/styles.css';
-import { clearPendingDriveReturnTo, getPendingDriveReturnTo } from '@clex/frontend-core';
+import { clearPendingDriveReturnTo, getPendingDriveReturnTo, markDriveAuthCallbackSeen } from '@clex/frontend-core';
 
 import { initTheme, toggleTheme } from './theme.js';
 import { initNav } from './nav.js';
@@ -38,6 +38,8 @@ async function handleGoogleDriveOAuthCallback() {
   const errorCode = url.searchParams.get('error');
 
   if (!connected && !errorCode) return;
+
+  markDriveAuthCallbackSeen();
 
   if (errorCode) {
     try {
