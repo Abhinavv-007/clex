@@ -1,7 +1,7 @@
 <script lang="ts">
   import { rootFolders, folders, notes, ui, vaultActions, generateId } from '$stores/vault'
   import type { StoredFolder } from '$lib/vault/db'
-  import { getNotesByFolder, saveFolder, saveNote, deleteFolder as dbDeleteFolder } from '$lib/vault/db'
+  import { getNotesByFolder, saveFolder, saveNote, saveDeletionTombstone, deleteFolder as dbDeleteFolder } from '$lib/vault/db'
   import { syncDeleteFolder, syncFolderRecord, syncNoteRecord } from '$lib/vault/sync'
   import { slide } from 'svelte/transition'
   import { flip } from 'svelte/animate'
@@ -62,6 +62,7 @@
         vaultActions.upsertNote({ ...note, folderId: null, updatedAt: now })
       })
 
+    await saveDeletionTombstone('folder', id, now)
     await dbDeleteFolder(id)
     syncDeleteFolder(id)
     vaultActions.removeFolder(id)

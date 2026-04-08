@@ -2,7 +2,7 @@
   import { activeNote, masterKey, ui, vaultActions } from '$stores/vault'
   import type { DecryptedNote } from '$stores/vault'
   import type { StoredNote } from '$lib/vault/db'
-  import { saveNote, deleteNote as deleteStoredNote } from '$lib/vault/db'
+  import { saveNote, deleteNote as deleteStoredNote, saveDeletionTombstone } from '$lib/vault/db'
   import { encryptText } from '$lib/vault/crypto'
   import { removeFromIndex, updateInIndex } from '$lib/vault/search'
   import { syncDeleteNote, syncNoteRecord } from '$lib/vault/sync'
@@ -137,6 +137,7 @@
     saveError = false
 
     try {
+      await saveDeletionTombstone('note', note.id)
       await deleteStoredNote(note.id)
       syncDeleteNote(note.id)
       removeFromIndex(note.id)

@@ -15,7 +15,7 @@
 import type { EncryptedBlob } from './crypto'
 
 export const DB_NAME = 'vault-data-v1'
-const DB_VERSION = 1
+const DB_VERSION = 2
 
 export interface StoredNote {
   id: string
@@ -61,6 +61,13 @@ export interface StoredAttachment {
   uploadedAt: number
 }
 
+export interface StoredDeletionTombstone {
+  id: string
+  kind: 'note' | 'folder'
+  targetId: string
+  deletedAt: number
+}
+
 // ── DB Initialization ─────────────────────────────────────────────────────────
 
 let _db: IDBDatabase | null = null
@@ -93,6 +100,12 @@ export function openVaultDb(): Promise<IDBDatabase> {
       if (!db.objectStoreNames.contains('vault-attachments')) {
         const att = db.createObjectStore('vault-attachments', { keyPath: 'id' })
         att.createIndex('by-note', 'noteId')
+      }
+
+      if (!db.objectStoreNames.contains('vault-tombstones')) {
+        const tombstones = db.createObjectStore('vault-tombstones', { keyPath: 'id' })
+        tombstones.createIndex('by-kind', 'kind')
+        tombstones.createIndex('by-target', 'targetId')
       }
     }
 
@@ -216,6 +229,41 @@ export async function getAttachmentsForNote(noteId: string): Promise<StoredAttac
 
 export async function saveAttachment(att: StoredAttachment): Promise<void> {
   await tx<IDBValidKey>('vault-attachments', 'readwrite', store => store.put(att))
+}
+
+// ── Deletion tombstones ──────────────────────────────────────────────────────
+
+function tombstoneKey(kind: StoredDeletionTombstone['kind'], targetId: string): string {
+  return `${kind}:${targetId}`
+}
+
+export async function getAllDeletionTombstones(): Promise<StoredDeletionTombstone[]> {
+  return txAll<StoredDeletionTombstone>('vault-tombstones')
+}
+
+export async function getDeletionTombstone(
+  kind: StoredDeletionTombstone['kind'],
+  targetId: string,
+): Promise<StoredDeletionTombstone | null> {
+  const result = await tx<StoredDeletionTombstone | undefined>('vault-tombstones', 'readonly', store =>
+    store.get(tombstoneKey(kind, targetId)),
+  )
+  return result ?? null
+}
+
+export async function saveDeletionTombstone(
+  kind: StoredDeletionTombstone['kind'],
+  targetId: string,
+  deletedAt = Date.now(),
+): Promise<StoredDeletionTombstone> {
+  const tombstone: StoredDeletionTombstone = {
+    id: tombstoneKey(kind, targetId),
+    kind,
+    targetId,
+    deletedAt,
+  }
+  await tx<IDBValidKey>('vault-tombstones', 'readwrite', store => store.put(tombstone))
+  return tombstone
 }
 
 export async function deleteAttachment(id: string): Promise<void> {

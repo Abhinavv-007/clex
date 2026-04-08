@@ -1,11 +1,13 @@
 import { decryptText, encryptText, type EncryptedBlob, type MasterKey } from './crypto'
-import type { StoredFolder, StoredNote } from './db'
+import type { StoredDeletionTombstone, StoredFolder, StoredNote } from './db'
 
 export interface BackupSnapshot {
-  schemaVersion: 1
+  schemaVersion: 1 | 2
   savedAt: number
   notes: StoredNote[]
   folders: StoredFolder[]
+  deletedNotes: StoredDeletionTombstone[]
+  deletedFolders: StoredDeletionTombstone[]
 }
 
 interface StoredBackupRecord {
@@ -31,12 +33,15 @@ export async function pushVaultBackup(
   masterKey: MasterKey,
   notes: StoredNote[],
   folders: StoredFolder[],
+  tombstones: StoredDeletionTombstone[],
 ): Promise<void> {
   const snapshot: BackupSnapshot = {
-    schemaVersion: 1,
+    schemaVersion: 2,
     savedAt: Date.now(),
     notes,
     folders,
+    deletedNotes: tombstones.filter((entry) => entry.kind === 'note'),
+    deletedFolders: tombstones.filter((entry) => entry.kind === 'folder'),
   }
 
   const encryptedSnapshot = await encryptText(JSON.stringify(snapshot), masterKey.key)
@@ -75,15 +80,17 @@ export async function fetchVaultBackup(
   const decrypted = await decryptText(payload.snapshot, masterKey.key)
   const parsed = JSON.parse(decrypted) as Partial<BackupSnapshot>
 
-  if (parsed.schemaVersion !== 1 || !Array.isArray(parsed.notes) || !Array.isArray(parsed.folders)) {
+  if ((parsed.schemaVersion !== 1 && parsed.schemaVersion !== 2) || !Array.isArray(parsed.notes) || !Array.isArray(parsed.folders)) {
     throw new Error('Vault backup payload is invalid')
   }
 
   return {
-    schemaVersion: 1,
+    schemaVersion: parsed.schemaVersion,
     savedAt: typeof parsed.savedAt === 'number' ? parsed.savedAt : payload.updatedAt,
     notes: parsed.notes as StoredNote[],
     folders: parsed.folders as StoredFolder[],
+    deletedNotes: Array.isArray(parsed.deletedNotes) ? parsed.deletedNotes as StoredDeletionTombstone[] : [],
+    deletedFolders: Array.isArray(parsed.deletedFolders) ? parsed.deletedFolders as StoredDeletionTombstone[] : [],
   }
 }
 

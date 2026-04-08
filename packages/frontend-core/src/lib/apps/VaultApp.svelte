@@ -37,11 +37,14 @@
   import {
     getAllNotes,
     getAllFolders,
+    getAllDeletionTombstones,
+    getDeletionTombstone,
     getAllDevices,
     getNotesByFolder,
     openVaultDb,
     detectDeviceName,
     getDeviceFingerprint,
+    saveDeletionTombstone,
     saveNote,
     saveFolder,
     deleteNote as dbDeleteNote,
@@ -49,7 +52,7 @@
   } from '$lib/vault/db'
   import { decryptText } from '$lib/vault/crypto'
   import { buildSearchIndex, removeFromIndex, updateInIndex } from '$lib/vault/search'
-  import { initSync, onSyncState, destroySync, runManualSync, setSyncHandlers } from '$lib/vault/sync'
+  import { initSync, onSyncState, destroySync, runManualSync, setSyncHandlers, syncDeleteFolder, syncDeleteNote } from '$lib/vault/sync'
   import { onVaultAuthChanged, type VaultUser } from '$lib/vault/auth'
   import { fetchVaultBackup, pushVaultBackup, upsertAccountDevice, type BackupSnapshot } from '$lib/vault/backup'
 
@@ -139,6 +142,12 @@
   }
 
   async function applySyncedNote(note: StoredNote) {
+    const noteTombstone = await getDeletionTombstone('note', note.id)
+    if (noteTombstone) {
+      syncDeleteNote(note.id)
+      return
+    }
+
     await saveNote(note)
 
     const mk = get(masterKeyStore)
@@ -156,17 +165,25 @@
   }
 
   async function removeSyncedNote(id: string) {
+    await saveDeletionTombstone('note', id)
     await dbDeleteNote(id)
     vaultActions.removeNote(id)
     removeFromIndex(id)
   }
 
   async function applySyncedFolder(folder: StoredFolder) {
+    const folderTombstone = await getDeletionTombstone('folder', folder.id)
+    if (folderTombstone) {
+      syncDeleteFolder(folder.id)
+      return
+    }
+
     await saveFolder(folder)
     vaultActions.upsertFolder(folder)
   }
 
   async function removeSyncedFolder(id: string) {
+    await saveDeletionTombstone('folder', id)
     const storedNotes = await getNotesByFolder(id)
     const localNotes = get(notes).filter((note) => note.folderId === id)
 
@@ -226,16 +243,17 @@
 
     try {
       await ensureSyncForRoom(mk.roomId)
-      const [storedNotes, storedFolders] = await Promise.all([
+      await syncEncryptedBackup({ silent: false })
+
+      const [mergedNotes, mergedFolders] = await Promise.all([
         getAllNotes(),
         getAllFolders(),
       ])
-      await runManualSync({
-        notes: storedNotes,
-        folders: storedFolders,
-      }, { authoritative: true })
 
-      await syncEncryptedBackup({ silent: false, pushOnly: true })
+      await runManualSync({
+        notes: mergedNotes,
+        folders: mergedFolders,
+      }, { authoritative: true })
 
       const googleUser = get(googleUserStore)
       if (googleUser?.uid) {
@@ -276,7 +294,25 @@
     const localNoteMap = new Map(localNotes.map((note) => [note.id, note]))
     const localFolderIds = new Set(localFolders.map((folder) => folder.id))
 
+    for (const deletedNote of snapshot.deletedNotes) {
+      await saveDeletionTombstone('note', deletedNote.targetId, deletedNote.deletedAt)
+      if (localNoteMap.has(deletedNote.targetId)) {
+        await removeSyncedNote(deletedNote.targetId)
+        localNoteMap.delete(deletedNote.targetId)
+      }
+    }
+
+    for (const deletedFolder of snapshot.deletedFolders) {
+      await saveDeletionTombstone('folder', deletedFolder.targetId, deletedFolder.deletedAt)
+      if (localFolderIds.has(deletedFolder.targetId)) {
+        await removeSyncedFolder(deletedFolder.targetId)
+        localFolderIds.delete(deletedFolder.targetId)
+      }
+    }
+
     for (const remoteNote of snapshot.notes) {
+      const noteTombstone = await getDeletionTombstone('note', remoteNote.id)
+      if (noteTombstone) continue
       const localNote = localNoteMap.get(remoteNote.id)
       if (!localNote || remoteNote.updatedAt > localNote.updatedAt) {
         await applySyncedNote(remoteNote)
@@ -284,6 +320,8 @@
     }
 
     for (const remoteFolder of snapshot.folders) {
+      const folderTombstone = await getDeletionTombstone('folder', remoteFolder.id)
+      if (folderTombstone) continue
       if (!localFolderIds.has(remoteFolder.id)) {
         await applySyncedFolder(remoteFolder)
       }
@@ -314,12 +352,13 @@
           }
         }
 
-        const [latestNotes, latestFolders] = await Promise.all([
+        const [latestNotes, latestFolders, tombstones] = await Promise.all([
           getAllNotes(),
           getAllFolders(),
+          getAllDeletionTombstones(),
         ])
 
-        await pushVaultBackup(vaultApiUrl, mk, latestNotes, latestFolders)
+        await pushVaultBackup(vaultApiUrl, mk, latestNotes, latestFolders, tombstones)
       } catch (error) {
         if (silent) {
           console.warn('[vault] encrypted backup sync failed:', error)
