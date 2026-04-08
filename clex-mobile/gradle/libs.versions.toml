@@ -1,0 +1,165 @@
+[versions]
+# ── Android ───────────────────────────────────────────────────────────────────
+agp                     = "8.5.2"
+minSdk                  = "26"
+compileSdk              = "35"
+targetSdk               = "35"
+
+# ── Kotlin ────────────────────────────────────────────────────────────────────
+kotlin                  = "2.0.21"
+ksp                     = "2.0.21-1.0.27"
+kotlinxCoroutines       = "1.9.0"
+kotlinxSerializationJson = "1.7.3"
+
+# ── Compose ───────────────────────────────────────────────────────────────────
+composeBom              = "2024.12.01"
+composeCompiler         = "1.5.15"
+
+# ── AndroidX ──────────────────────────────────────────────────────────────────
+coreKtx                 = "1.15.0"
+lifecycleRuntimeKtx     = "2.8.7"
+activityCompose         = "1.10.0"
+navigationCompose       = "2.8.5"
+viewmodelCompose        = "2.8.7"
+datastorePreferences    = "1.1.1"
+room                    = "2.6.1"
+workManager             = "2.10.0"
+
+# ── DI ────────────────────────────────────────────────────────────────────────
+hilt                    = "2.52"
+hiltNavigationCompose   = "1.2.0"
+
+# ── Network ───────────────────────────────────────────────────────────────────
+okhttp                  = "4.12.0"
+retrofit                = "2.11.0"
+ktorClient              = "2.3.12"
+
+# ── WebRTC ────────────────────────────────────────────────────────────────────
+googleWebrtc            = "1.0.32006"
+
+# ── Image / Tools ─────────────────────────────────────────────────────────────
+# PdfBox-Android (Apache 2.0) — safe for both open and closed source
+pdfboxAndroid           = "2.0.27.0"
+# Apache POI for Word (OOXML support)
+apachePoi               = "5.3.0"
+# Google ML Kit for QR scan
+mlkitBarcodeScanning    = "17.3.0"
+camerax                 = "1.4.0"
+
+# ── ZXing / QR ────────────────────────────────────────────────────────────────
+zxingCore               = "3.5.3"
+
+# ── Fonts ─────────────────────────────────────────────────────────────────────
+googleFonts             = "1.7.6"
+
+# ── Testing ───────────────────────────────────────────────────────────────────
+junit4                  = "4.13.2"
+junitExt                = "1.2.1"
+espressoCore            = "3.6.1"
+paparazzi               = "1.3.4"
+roborazzi               = "1.29.0"
+turbine                 = "1.2.0"
+
+[libraries]
+# ── Core ──────────────────────────────────────────────────────────────────────
+androidx-core-ktx               = { group = "androidx.core",         name = "core-ktx",                      version.ref = "coreKtx" }
+androidx-lifecycle-runtime      = { group = "androidx.lifecycle",    name = "lifecycle-runtime-ktx",          version.ref = "lifecycleRuntimeKtx" }
+androidx-activity-compose       = { group = "androidx.activity",     name = "activity-compose",               version.ref = "activityCompose" }
+
+# ── Compose BOM + essentials ──────────────────────────────────────────────────
+compose-bom                     = { group = "androidx.compose",      name = "compose-bom",                    version.ref = "composeBom" }
+compose-ui                      = { group = "androidx.compose.ui",   name = "ui" }
+compose-ui-graphics             = { group = "androidx.compose.ui",   name = "ui-graphics" }
+compose-ui-tooling-preview      = { group = "androidx.compose.ui",   name = "ui-tooling-preview" }
+compose-ui-tooling              = { group = "androidx.compose.ui",   name = "ui-tooling" }
+compose-material3               = { group = "androidx.compose.material3", name = "material3" }
+compose-animation               = { group = "androidx.compose.animation", name = "animation" }
+compose-foundation              = { group = "androidx.compose.foundation", name = "foundation" }
+compose-runtime                 = { group = "androidx.compose.runtime", name = "runtime" }
+
+# ── Navigation ────────────────────────────────────────────────────────────────
+navigation-compose              = { group = "androidx.navigation",   name = "navigation-compose",             version.ref = "navigationCompose" }
+viewmodel-compose               = { group = "androidx.lifecycle",    name = "lifecycle-viewmodel-compose",    version.ref = "viewmodelCompose" }
+viewmodel-savedstate            = { group = "androidx.lifecycle",    name = "lifecycle-viewmodel-savedstate", version.ref = "viewmodelCompose" }
+
+# ── DI (Hilt) ────────────────────────────────────────────────────────────────
+hilt-android                    = { group = "com.google.dagger",     name = "hilt-android",                   version.ref = "hilt" }
+hilt-compiler                   = { group = "com.google.dagger",     name = "hilt-android-compiler",          version.ref = "hilt" }
+hilt-navigation-compose         = { group = "androidx.hilt",         name = "hilt-navigation-compose",        version.ref = "hiltNavigationCompose" }
+
+# ── Coroutines ────────────────────────────────────────────────────────────────
+kotlinx-coroutines-android      = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android",     version.ref = "kotlinxCoroutines" }
+kotlinx-coroutines-test         = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test",        version.ref = "kotlinxCoroutines" }
+
+# ── Serialization ────────────────────────────────────────────────────────────
+kotlinx-serialization-json      = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json",     version.ref = "kotlinxSerializationJson" }
+
+# ── Network ───────────────────────────────────────────────────────────────────
+okhttp-core                     = { group = "com.squareup.okhttp3",  name = "okhttp",                         version.ref = "okhttp" }
+okhttp-logging                  = { group = "com.squareup.okhttp3",  name = "logging-interceptor",            version.ref = "okhttp" }
+retrofit-core                   = { group = "com.squareup.retrofit2", name = "retrofit",                      version.ref = "retrofit" }
+retrofit-kotlinx-serialization  = { group = "com.squareup.retrofit2", name = "converter-kotlinx-serialization", version.ref = "retrofit" }
+
+# ── DataStore ────────────────────────────────────────────────────────────────
+datastore-preferences           = { group = "androidx.datastore",    name = "datastore-preferences",          version.ref = "datastorePreferences" }
+
+# ── Room ─────────────────────────────────────────────────────────────────────
+room-runtime                    = { group = "androidx.room",         name = "room-runtime",                   version.ref = "room" }
+room-ktx                        = { group = "androidx.room",         name = "room-ktx",                       version.ref = "room" }
+room-compiler                   = { group = "androidx.room",         name = "room-compiler",                   version.ref = "room" }
+
+# ── WorkManager ──────────────────────────────────────────────────────────────
+workmanager-ktx                 = { group = "androidx.work",         name = "work-runtime-ktx",               version.ref = "workManager" }
+
+# ── WebRTC ───────────────────────────────────────────────────────────────────
+google-webrtc                   = { group = "io.getstream",          name = "stream-webrtc-android",          version = "1.3.8" }
+
+# ── File Tools ───────────────────────────────────────────────────────────────
+pdfbox-android                  = { group = "com.tom-roush",         name = "pdfbox-android",                 version.ref = "pdfboxAndroid" }
+# Apache POI for Word-to-PDF (OOXML)
+apache-poi-ooxml                = { group = "org.apache.poi",        name = "poi-ooxml",                      version.ref = "apachePoi" }
+
+# ── Camera / QR ──────────────────────────────────────────────────────────────
+camerax-core                    = { group = "androidx.camera",       name = "camera-core",                    version.ref = "camerax" }
+camerax-camera2                 = { group = "androidx.camera",       name = "camera-camera2",                 version.ref = "camerax" }
+camerax-lifecycle               = { group = "androidx.camera",       name = "camera-lifecycle",               version.ref = "camerax" }
+camerax-view                    = { group = "androidx.camera",       name = "camera-view",                    version.ref = "camerax" }
+mlkit-barcode-scanning          = { group = "com.google.mlkit",      name = "barcode-scanning",               version.ref = "mlkitBarcodeScanning" }
+zxing-core                      = { group = "com.google.zxing",      name = "core",                           version.ref = "zxingCore" }
+
+# ── Fonts ────────────────────────────────────────────────────────────────────
+compose-googlefonts              = { group = "androidx.compose.ui",  name = "ui-text-google-fonts",           version.ref = "googleFonts" }
+
+# ── Testing ───────────────────────────────────────────────────────────────────
+junit4                           = { group = "junit",                name = "junit",                          version.ref = "junit4" }
+junit-ext                        = { group = "androidx.test.ext",    name = "junit",                          version.ref = "junitExt" }
+espresso-core                    = { group = "androidx.test.espresso", name = "espresso-core",                version.ref = "espressoCore" }
+compose-ui-test-junit4           = { group = "androidx.compose.ui",  name = "ui-test-junit4" }
+compose-ui-test-manifest         = { group = "androidx.compose.ui",  name = "ui-test-manifest" }
+turbine                          = { group = "app.cash.turbine",     name = "turbine",                        version.ref = "turbine" }
+paparazzi                        = { group = "app.cash.paparazzi",   name = "paparazzi",                      version.ref = "paparazzi" }
+
+[plugins]
+android-application             = { id = "com.android.application",        version.ref = "agp" }
+android-library                 = { id = "com.android.library",             version.ref = "agp" }
+kotlin-android                  = { id = "org.jetbrains.kotlin.android",    version.ref = "kotlin" }
+kotlin-compose                  = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+kotlin-serialization            = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+ksp                             = { id = "com.google.devtools.ksp",         version.ref = "ksp" }
+hilt                            = { id = "com.google.dagger.hilt.android",  version.ref = "hilt" }
+paparazzi                       = { id = "app.cash.paparazzi",              version.ref = "paparazzi" }
+
+[bundles]
+compose-core = [
+    "compose-ui",
+    "compose-ui-graphics",
+    "compose-ui-tooling-preview",
+    "compose-material3",
+    "compose-animation",
+    "compose-foundation",
+    "compose-runtime",
+]
+network = ["okhttp-core", "okhttp-logging", "retrofit-core", "retrofit-kotlinx-serialization"]
+camerax = ["camerax-core", "camerax-camera2", "camerax-lifecycle", "camerax-view"]
+testing-unit = ["junit4", "kotlinx-coroutines-test", "turbine"]
+testing-android = ["junit-ext", "espresso-core", "compose-ui-test-junit4"]

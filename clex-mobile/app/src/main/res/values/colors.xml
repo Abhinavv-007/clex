@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Dark theme defaults — match ClexColorsDark tokens -->
+    <color name="bg_primary">#0A0A0A</color>
+    <color name="bg_secondary">#111111</color>
+    <color name="accent">#C8FF00</color>
+</resources>
