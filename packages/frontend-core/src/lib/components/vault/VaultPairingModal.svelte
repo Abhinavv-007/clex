@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { createEventDispatcher, onDestroy, onMount } from 'svelte'
+  import { createEventDispatcher, onDestroy, onMount, tick } from 'svelte'
   import { masterKey, vaultActions } from '$stores/vault'
   import { startPairingAsSender, completePairingAsReceiver, type PairingDeviceInfo } from '$lib/vault/pairing'
   import { storeMasterKeyFromRaw } from '$lib/vault/crypto'
@@ -33,6 +33,7 @@
 
   let countdownTimer: ReturnType<typeof setInterval> | null = null
   let localDeviceFingerprint = ''
+  let senderBusy = false
 
   onMount(() => {
     tab = initialTab
@@ -97,13 +98,13 @@
   }
 
   async function startSender() {
+    if (status === 'connecting' || status === 'waiting' || status === 'connected') return
+
     const key = $masterKey
     if (!key) {
       error = 'No master key found. Reload Vault and try again.'
       return
     }
-
-    const localDevice = await getLocalDeviceInfo()
 
     status = 'connecting'
     error = ''
@@ -112,8 +113,10 @@
     qrPayload = ''
     codeCopied = false
     linkCopied = false
+    await tick()
 
     try {
+      const localDevice = await getLocalDeviceInfo()
       const result = await startPairingAsSender(
         vaultApiUrl,
         key,
@@ -244,6 +247,7 @@
   }
 
   $: groupedPairingCode = formatGroupedCode(pairingCode)
+  $: senderBusy = status === 'connecting' || status === 'waiting' || status === 'connected'
 </script>
 
 <!-- svelte-ignore a11y-click-events-have-key-events a11y-no-static-element-interactions -->
@@ -299,8 +303,13 @@
                 Open Vault on the new device, then scan the QR code, open the quick-connect link, or paste the 8-digit code manually.
               </p>
             </div>
-            <button class="btn-primary vpm-start-btn" on:click={startSender}>
-              Generate pairing handoff
+            <button
+              class="btn-primary vpm-start-btn"
+              type="button"
+              disabled={senderBusy}
+              on:click={startSender}
+            >
+              {senderBusy ? 'Generating…' : 'Generate pairing handoff'}
             </button>
           </div>
 

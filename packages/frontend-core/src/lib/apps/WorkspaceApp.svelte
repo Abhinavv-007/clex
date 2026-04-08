@@ -2,6 +2,7 @@
   import { onMount, onDestroy } from 'svelte'
   import { uiStore } from '$stores/ui'
   import { siteRoutes } from '$utils'
+  import { pickupToken } from '$transfer/gdrive'
   import FileList from '$components/workspace/FileList.svelte'
   import ToolChain from '$components/workspace/ToolChain.svelte'
   import SharePanel from '$components/workspace/SharePanel.svelte'
@@ -19,6 +20,11 @@
   let unsubChain: (() => void) | undefined
 
   onMount(() => {
+    void pickupToken().catch((error) => {
+      const message = error instanceof Error ? error.message : 'Google Drive connection could not be restored'
+      uiStore.toast({ type: 'error', message })
+    })
+
     const client = createChainClient(chainApiUrl)
     unsubChain = initChainInstrumentation(client)
   })

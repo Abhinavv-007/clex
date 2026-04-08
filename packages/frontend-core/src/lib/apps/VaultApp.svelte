@@ -21,9 +21,12 @@
   import VaultSecretCreate from '$components/vault/VaultSecretCreate.svelte'
   import VaultCloudShare from '$components/vault/VaultCloudShare.svelte'
   import Toast from '$components/ui/Toast.svelte'
+  import { uiStore } from '$stores/ui'
   import {
+    googleUser as googleUserStore,
     masterKey as masterKeyStore,
     notes,
+    syncState as syncStateStore,
     ui,
     vaultActions,
     storageUsed,
@@ -65,6 +68,7 @@
   let backupSyncPromise: Promise<void> | null = null
   let backupSyncRoomId = ''
   let authBindingPromise: Promise<void> | null = null
+  const VAULT_SHARE_RESUME_KEY = 'clex_vault_resume_share'
 
   function consumePairingCodeFromUrl() {
     const url = new URL(window.location.href)
@@ -88,6 +92,17 @@
     pairingInitialTab = 'sender'
     pairingPrefillCode = ''
     pairingAutoConnect = false
+  }
+
+  function consumeVaultShareResumeIntent() {
+    try {
+      if (sessionStorage.getItem(VAULT_SHARE_RESUME_KEY) === '1') {
+        sessionStorage.removeItem(VAULT_SHARE_RESUME_KEY)
+        vaultActions.setPanel('share')
+      }
+    } catch {
+      // ignore storage failures
+    }
   }
 
   async function decryptStoredNoteRecord(note: StoredNote, key: CryptoKey): Promise<DecryptedNote> {
@@ -188,8 +203,26 @@
   }
 
   async function handleManualSync() {
+    if (authBindingPromise) {
+      await authBindingPromise.catch(() => undefined)
+    }
+
     const mk = get(masterKeyStore)
-    if (!mk) return
+    if (!mk) {
+      uiStore.toast({ type: 'error', message: 'Vault key is not ready yet. Reload Vault and try again.' })
+      return
+    }
+
+    vaultActions.setSyncState({
+      ...get(syncStateStore),
+      syncing: true,
+      error: null,
+    })
+    uiStore.toast({
+      type: 'info',
+      message: 'Syncing Vault notes and refreshing the encrypted backup…',
+      duration: 2200,
+    })
 
     try {
       await ensureSyncForRoom(mk.roomId)
@@ -201,8 +234,35 @@
         notes: storedNotes,
         folders: storedFolders,
       })
-      await syncEncryptedBackup()
+
+      await syncEncryptedBackup({ silent: false })
+
+      const googleUser = get(googleUserStore)
+      if (googleUser?.uid) {
+        await syncSignedInDevice(googleUser.uid)
+      }
+
+      vaultActions.setSyncState({
+        ...get(syncStateStore),
+        syncing: false,
+        connected: true,
+        lastSync: Date.now(),
+        error: null,
+      })
+      uiStore.toast({
+        type: 'success',
+        message: googleUser?.uid
+          ? 'Vault sync complete. This account backup is now refreshed.'
+          : 'Vault sync complete. Local notes and the encrypted backup are up to date.',
+      })
     } catch (error) {
+      const message = error instanceof Error ? error.message : 'Vault sync failed'
+      vaultActions.setSyncState({
+        ...get(syncStateStore),
+        syncing: false,
+        error: message,
+      })
+      uiStore.toast({ type: 'error', message })
       console.error('[vault] manual sync failed:', error)
     }
   }
@@ -230,7 +290,8 @@
     }
   }
 
-  async function syncEncryptedBackup() {
+  async function syncEncryptedBackup(options: { silent?: boolean } = {}) {
+    const { silent = true } = options
     const mk = get(masterKeyStore)
     if (!mk) return
     if (backupSyncPromise) {
@@ -244,8 +305,7 @@
       try {
         const remote = await fetchVaultBackup(vaultApiUrl, mk).catch((error) => {
           if (error instanceof Error && /404/.test(error.message)) return null
-          console.warn('[vault] backup fetch failed:', error)
-          return null
+          throw error
         })
 
         if (remote) {
@@ -259,7 +319,11 @@
 
         await pushVaultBackup(vaultApiUrl, mk, latestNotes, latestFolders)
       } catch (error) {
-        console.warn('[vault] encrypted backup sync failed:', error)
+        if (silent) {
+          console.warn('[vault] encrypted backup sync failed:', error)
+          return
+        }
+        throw error
       } finally {
         backupSyncPromise = null
         backupSyncRoomId = ''
@@ -413,6 +477,7 @@
       bootError = e instanceof Error ? e.message : 'Failed to initialize Vault'
       console.error('[vault] boot error:', e)
     } finally {
+      consumeVaultShareResumeIntent()
       bootComplete = true
       vaultActions.setLoading(false)
       consumePairingCodeFromUrl()

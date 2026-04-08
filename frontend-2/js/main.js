@@ -4,7 +4,7 @@
    ============================================ */
 
 import '@clex/frontend-core/styles.css';
-import { pickupToken } from '@clex/frontend-core';
+import { clearPendingDriveReturnTo, getPendingDriveReturnTo } from '@clex/frontend-core';
 
 import { initTheme, toggleTheme } from './theme.js';
 import { initNav } from './nav.js';
@@ -39,21 +39,7 @@ async function handleGoogleDriveOAuthCallback() {
 
   if (!connected && !errorCode) return;
 
-  let shouldCleanUrl = Boolean(errorCode);
-
-  if (connected) {
-    try {
-      const token = await pickupToken();
-      if (token) {
-        shouldCleanUrl = true;
-      } else {
-        console.warn('Google Drive OAuth callback completed, but no token was picked up.');
-      }
-    } catch (error) {
-      console.warn('Google Drive OAuth callback restore failed:', error);
-      shouldCleanUrl = true;
-    }
-  } else if (errorCode) {
+  if (errorCode) {
     try {
       sessionStorage.setItem('clex_gdrive_callback_error', errorCode);
     } catch {
@@ -62,11 +48,27 @@ async function handleGoogleDriveOAuthCallback() {
     console.warn(`Google Drive OAuth failed: ${errorCode}`);
   }
 
-  if (!shouldCleanUrl) return;
-
   url.searchParams.delete('gdrive');
   url.searchParams.delete('error');
   const cleanedUrl = `${url.pathname}${url.search}${url.hash}`;
+
+  const returnTo = getPendingDriveReturnTo();
+  if (returnTo) {
+    clearPendingDriveReturnTo();
+    try {
+      const targetUrl = new URL(returnTo, window.location.origin);
+      targetUrl.searchParams.delete('gdrive');
+      targetUrl.searchParams.delete('error');
+      const targetPath = `${targetUrl.pathname}${targetUrl.search}${targetUrl.hash}`;
+      if (targetPath !== cleanedUrl) {
+        window.location.replace(targetPath);
+        return;
+      }
+    } catch {
+      // fall through to local URL cleanup
+    }
+  }
+
   window.history.replaceState({}, '', cleanedUrl);
 }
 

@@ -62,6 +62,7 @@
 
   const MAX_FILE_BYTES = 1024 * 1024 * 1024
   const DAILY_QUOTA_BYTES = 10 * 1024 * 1024 * 1024
+  const VAULT_SHARE_RESUME_KEY = 'clex_vault_resume_share'
 
   let fileInput: HTMLInputElement | null = null
   let driveUser: DriveSessionUser | null = null
@@ -196,6 +197,11 @@
       if (tokenPresent || token) {
         await loadSessions()
         return
+      }
+      try {
+        sessionStorage.setItem(VAULT_SHARE_RESUME_KEY, '1')
+      } catch {
+        // ignore storage failures
       }
       await persistPendingVaultDriveFiles(selectedFiles)
       await initiateGoogleAuth()

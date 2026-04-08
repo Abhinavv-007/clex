@@ -11,6 +11,7 @@ const DRIVE_ROOT_FOLDER_NAME = 'Clex Share'
 
 const TOKEN_KEY = 'clex_gdrive_token'
 const PENDING_AUTH_KEY = 'clex_gdrive_auth_pending'
+const RETURN_TO_KEY = 'clex_gdrive_return_to'
 const DRIVE_AUTH_DB_NAME = 'clex_drive_auth'
 const DRIVE_AUTH_STORE_NAME = 'workspace_state'
 const DRIVE_AUTH_STATE_KEY = 'pending_google_drive_auth'
@@ -111,6 +112,29 @@ export function getStoredToken(): string | null {
   return getSessionStorage()?.getItem(TOKEN_KEY) ?? getLocalStorage()?.getItem(TOKEN_KEY) ?? null
 }
 
+function persistStorageValue(key: string, value: string): void {
+  getSessionStorage()?.setItem(key, value)
+  getLocalStorage()?.setItem(key, value)
+}
+
+function clearStorageValue(key: string): void {
+  getSessionStorage()?.removeItem(key)
+  getLocalStorage()?.removeItem(key)
+}
+
+export function getPendingDriveReturnTo(): string | null {
+  return getSessionStorage()?.getItem(RETURN_TO_KEY) ?? getLocalStorage()?.getItem(RETURN_TO_KEY) ?? null
+}
+
+export function persistPendingDriveReturnTo(value: string): void {
+  if (!value) return
+  persistStorageValue(RETURN_TO_KEY, value)
+}
+
+export function clearPendingDriveReturnTo(): void {
+  clearStorageValue(RETURN_TO_KEY)
+}
+
 export function storeToken(token: string): void {
   getSessionStorage()?.setItem(TOKEN_KEY, token)
   getLocalStorage()?.setItem(TOKEN_KEY, token)
@@ -132,13 +156,11 @@ export function hasPendingAuth(): boolean {
 }
 
 function markPendingAuth(): void {
-  getSessionStorage()?.setItem(PENDING_AUTH_KEY, '1')
-  getLocalStorage()?.setItem(PENDING_AUTH_KEY, '1')
+  persistStorageValue(PENDING_AUTH_KEY, '1')
 }
 
 function clearPendingAuth(): void {
-  getSessionStorage()?.removeItem(PENDING_AUTH_KEY)
-  getLocalStorage()?.removeItem(PENDING_AUTH_KEY)
+  clearStorageValue(PENDING_AUTH_KEY)
 }
 
 function setCallbackError(code: string): void {
@@ -219,6 +241,7 @@ export async function getDriveSession(): Promise<{ connected: boolean; user: Goo
 export async function disconnectGoogleDrive(): Promise<void> {
   clearToken()
   clearPendingAuth()
+  clearPendingDriveReturnTo()
   await fetch(`${getDriveApiBaseUrl()}/api/auth/gdrive/session`, {
     method: 'DELETE',
     credentials: 'include',
@@ -319,6 +342,9 @@ export async function initiateGoogleAuth(): Promise<void> {
 
   const apiBase = getDriveApiBaseUrl()
   const returnTo = typeof window !== 'undefined' ? window.location.href : ''
+  if (returnTo) {
+    persistPendingDriveReturnTo(returnTo)
+  }
   const authUrl = new URL(`${apiBase}/api/auth/google`, typeof window !== 'undefined' ? window.location.origin : 'http://localhost')
   if (returnTo) {
     authUrl.searchParams.set('return_to', returnTo)
