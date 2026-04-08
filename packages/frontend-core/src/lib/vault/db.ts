@@ -45,6 +45,11 @@ export interface StoredDevice {
   roomVersion: number   // incremented on unpair to rotate room ID
 }
 
+interface SelfDeviceRecord {
+  id: '__self__'
+  fingerprint: string
+}
+
 export interface StoredAttachment {
   id: string
   noteId: string
@@ -185,7 +190,14 @@ export async function deleteFolder(id: string): Promise<void> {
 // ── Devices ───────────────────────────────────────────────────────────────────
 
 export async function getAllDevices(): Promise<StoredDevice[]> {
-  return txAll<StoredDevice>('vault-devices')
+  const records = await txAll<StoredDevice | SelfDeviceRecord>('vault-devices')
+  return records.filter((record): record is StoredDevice =>
+    record.id !== '__self__' &&
+    typeof (record as StoredDevice).name === 'string' &&
+    typeof (record as StoredDevice).pairedAt === 'number' &&
+    typeof (record as StoredDevice).lastSeen === 'number' &&
+    typeof (record as StoredDevice).roomVersion === 'number',
+  )
 }
 
 export async function saveDevice(device: StoredDevice): Promise<void> {
@@ -246,7 +258,7 @@ export async function getDeviceFingerprint(): Promise<string> {
   const stored = await new Promise<string | null>((resolve, reject) => {
     const tx = db.transaction('vault-devices', 'readonly')
     const req = tx.objectStore('vault-devices').get('__self__')
-    req.onsuccess = () => resolve(req.result?.fingerprint ?? null)
+    req.onsuccess = () => resolve((req.result as SelfDeviceRecord | undefined)?.fingerprint ?? null)
     req.onerror = () => reject(req.error)
   })
   if (stored) return stored
@@ -255,7 +267,7 @@ export async function getDeviceFingerprint(): Promise<string> {
     .map(b => b.toString(16).padStart(2, '0')).join('')
 
   await tx<IDBValidKey>('vault-devices', 'readwrite', store =>
-    store.put({ id: '__self__', fingerprint: fp }, '__self__')
+    store.put({ id: '__self__', fingerprint: fp } satisfies SelfDeviceRecord)
   )
   return fp
 }
