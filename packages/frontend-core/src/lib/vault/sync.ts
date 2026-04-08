@@ -142,7 +142,7 @@ async function handleFolderMapChange(event: SyncMapEvent): Promise<void> {
   notify({ syncing: false, lastSync: Date.now(), connected: true, error: null })
 }
 
-async function reconcileSeed(seed: SyncSeedState, force = false): Promise<void> {
+async function reconcileSeed(seed: SyncSeedState, force = false, authoritative = false): Promise<void> {
   if (!notesMap || !foldersMap) return
   if (!force && reconciled) return
   if (!force) {
@@ -168,9 +168,17 @@ async function reconcileSeed(seed: SyncSeedState, force = false): Promise<void> 
     }
   }
 
-  for (const [id, remoteNote] of remoteNotes) {
-    if (!localNotes.has(id)) {
-      await syncHandlers.upsertNote?.(cloneRecord(remoteNote))
+  if (authoritative) {
+    for (const [id] of remoteNotes) {
+      if (!localNotes.has(id)) {
+        transactLocal(() => notesMap?.delete(id))
+      }
+    }
+  } else {
+    for (const [id, remoteNote] of remoteNotes) {
+      if (!localNotes.has(id)) {
+        await syncHandlers.upsertNote?.(cloneRecord(remoteNote))
+      }
     }
   }
 
@@ -180,9 +188,17 @@ async function reconcileSeed(seed: SyncSeedState, force = false): Promise<void> 
     }
   }
 
-  for (const [id, remoteFolder] of remoteFolders) {
-    if (!localFolders.has(id)) {
-      await syncHandlers.upsertFolder?.(cloneRecord(remoteFolder))
+  if (authoritative) {
+    for (const [id] of remoteFolders) {
+      if (!localFolders.has(id)) {
+        transactLocal(() => foldersMap?.delete(id))
+      }
+    }
+  } else {
+    for (const [id, remoteFolder] of remoteFolders) {
+      if (!localFolders.has(id)) {
+        await syncHandlers.upsertFolder?.(cloneRecord(remoteFolder))
+      }
     }
   }
 
@@ -300,14 +316,14 @@ export function syncDeleteFolder(id: string): void {
   notify({ lastSync: Date.now(), error: null })
 }
 
-export async function runManualSync(seed: SyncSeedState): Promise<void> {
+export async function runManualSync(seed: SyncSeedState, options: { authoritative?: boolean } = {}): Promise<void> {
   if (!notesMap || !foldersMap) {
     notify({ error: 'Sync room is not ready yet', connected: false })
     return
   }
 
   notify({ syncing: true, error: null })
-  await reconcileSeed(seed, true)
+  await reconcileSeed(seed, true, options.authoritative === true)
   notify({ syncing: false, lastSync: Date.now(), error: null })
 }
 

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { activeNote, ui, vaultActions, wordCount, readTimeMins, relativeTime, attachments, formatBytes } from '$stores/vault'
+  import { activeNote, ui, wordCount, readTimeMins, relativeTime, attachments, formatBytes } from '$stores/vault'
   import { fly, fade } from 'svelte/transition'
 
   $: note = $activeNote
@@ -77,18 +77,6 @@
         <p class="vip-empty-text">Select a note to see details.</p>
       </div>
     {/if}
-
-    <!-- Collapse button -->
-    <button
-      class="vip-collapse-btn btn-icon"
-      on:click={vaultActions.toggleInfoPanel}
-      title="Hide info panel"
-      aria-label="Hide info panel"
-    >
-      <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
-        <path d="M9 3l-4 4.5 4 4.5"/>
-      </svg>
-    </button>
   </div>
 {/if}
 
@@ -225,9 +213,4 @@
     padding: 20px 0;
   }
 
-  .vip-collapse-btn {
-    position: absolute;
-    top: 0;
-    right: 0;
-  }
 </style>

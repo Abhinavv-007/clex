@@ -233,9 +233,9 @@
       await runManualSync({
         notes: storedNotes,
         folders: storedFolders,
-      })
+      }, { authoritative: true })
 
-      await syncEncryptedBackup({ silent: false })
+      await syncEncryptedBackup({ silent: false, pushOnly: true })
 
       const googleUser = get(googleUserStore)
       if (googleUser?.uid) {
@@ -290,8 +290,8 @@
     }
   }
 
-  async function syncEncryptedBackup(options: { silent?: boolean } = {}) {
-    const { silent = true } = options
+  async function syncEncryptedBackup(options: { silent?: boolean; pushOnly?: boolean } = {}) {
+    const { silent = true, pushOnly = false } = options
     const mk = get(masterKeyStore)
     if (!mk) return
     if (backupSyncPromise) {
@@ -303,13 +303,15 @@
 
     backupSyncPromise = (async () => {
       try {
-        const remote = await fetchVaultBackup(vaultApiUrl, mk).catch((error) => {
-          if (error instanceof Error && /404/.test(error.message)) return null
-          throw error
-        })
+        if (!pushOnly) {
+          const remote = await fetchVaultBackup(vaultApiUrl, mk).catch((error) => {
+            if (error instanceof Error && /404/.test(error.message)) return null
+            throw error
+          })
 
-        if (remote) {
-          await mergeBackupSnapshot(remote)
+          if (remote) {
+            await mergeBackupSnapshot(remote)
+          }
         }
 
         const [latestNotes, latestFolders] = await Promise.all([

@@ -265,9 +265,27 @@
     filesLoading = true
     error = ''
     try {
-      const response = await fetch(`${getDriveApiBaseUrl()}/api/drive/vault/sessions`, {
+      await syncDriveConnection()
+      if (!tokenPresent) {
+        sessions = []
+        activeSessionId = ''
+        return
+      }
+
+      const controller = typeof AbortController === 'undefined' ? null : new AbortController()
+      const timeoutId = controller
+        ? window.setTimeout(() => controller.abort(), 12000)
+        : null
+      const url = new URL(`${getDriveApiBaseUrl()}/api/drive/vault/sessions`, window.location.origin)
+      url.searchParams.set('_ts', String(Date.now()))
+      const response = await fetch(url.toString(), {
         credentials: 'include',
+        cache: 'no-store',
+        signal: controller?.signal,
       })
+      if (timeoutId !== null) {
+        clearTimeout(timeoutId)
+      }
       const payload = await response.json().catch(() => null) as { sessions?: VaultDriveSessionRecord[]; error?: string } | null
       if (!response.ok) {
         throw new Error(payload?.error ?? `Could not load Vault Drive sessions (${response.status})`)
@@ -281,7 +299,9 @@
         activeSessionId = sessions[0]?.id ?? ''
       }
     } catch (err) {
-      error = err instanceof Error ? err.message : 'Could not load Vault Drive sessions'
+      error = err instanceof Error
+        ? (err.name === 'AbortError' ? 'Vault Drive sessions took too long to load. Try again.' : err.message)
+        : 'Could not load Vault Drive sessions'
     } finally {
       filesLoading = false
     }

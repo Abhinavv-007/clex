@@ -187,10 +187,10 @@
             aria-label="Delete note"
           >
             <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M3.5 4.5h9"/>
-              <path d="M6 4.5V3.25h4v1.25"/>
-              <path d="M5.25 6.25v5.25M8 6.25v5.25M10.75 6.25v5.25"/>
-              <path d="M4.5 4.5l.6 8h5.8l.6-8"/>
+              <path d="M2.75 4.5h10.5"/>
+              <path d="M6.1 2.75h3.8a.55.55 0 0 1 .55.55V4.5H5.55V3.3a.55.55 0 0 1 .55-.55Z"/>
+              <path d="M4.5 5.5 5 12.4a.9.9 0 0 0 .9.8h4.2a.9.9 0 0 0 .9-.8l.5-6.9"/>
+              <path d="M6.5 7.1v4.1M9.5 7.1v4.1"/>
             </svg>
             <span>Delete</span>
           </button>
@@ -204,7 +204,7 @@
           aria-label="Toggle pin"
         >
           <svg width="15" height="15" viewBox="0 0 16 16" fill={note.isPinned ? 'currentColor' : 'none'} stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M10.5 2.5L9 6.5h-3L4 8l3 1 .9 3.5 1.6-2.4 2.8 1.2 .7-1.7-2.5-1.6z"/>
+            <path d="M5.25 2.75h5.5a.8.8 0 0 1 .8.8v8.9l-3.55-2.05-3.55 2.05v-8.9a.8.8 0 0 1 .8-.8Z"/>
           </svg>
           <span>{note.isPinned ? 'Pinned' : 'Pin'}</span>
         </button>
