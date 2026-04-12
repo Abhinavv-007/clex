@@ -162,6 +162,14 @@ async function handleAppendEvent(req: Request, env: Env, cors: HeadersInit, sess
     `UPDATE transfer_sessions SET ${parts.join(', ')} WHERE id = ?`
   ).bind(...binds).run()
 
+  const previousEvent = await env.DB.prepare(
+    `SELECT status FROM transfer_events WHERE session_id = ? ORDER BY ts DESC, id DESC LIMIT 1`
+  ).bind(sessionId).first<{ status: string }>()
+
+  if (previousEvent?.status === body.status) {
+    return json({ ok: true, deduped: true }, { headers: cors })
+  }
+
   await env.DB.prepare(
     `INSERT INTO transfer_events (session_id, status, ts) VALUES (?, ?, ?)`
   ).bind(sessionId, body.status, now).run()

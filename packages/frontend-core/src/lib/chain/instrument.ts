@@ -36,6 +36,7 @@ export function initChainInstrumentation(client: ChainClient): () => void {
   let prevState: TransferState = 'idle'
   let registered = false
   let lastEventStatus: string | null = null
+  let lastPeerChainId: string | null = null
 
   async function createSessionForTransfer(method: string): Promise<ActiveSession | null> {
     const route = method === 'drive' ? 'drive' : method === 'local' ? 'local' : 'webrtc'
@@ -97,10 +98,18 @@ export function initChainInstrumentation(client: ChainClient): () => void {
   })()
 
   const unsub = transferStore.subscribe(async store => {
-    const { state, method, roomCode } = store
+    const { state, method, peerChainId } = store
 
-    // No-op when state hasn't changed
-    if (state === prevState) return
+    if (state === prevState) {
+      if (peerChainId && peerChainId !== lastPeerChainId && lastEventStatus) {
+        const session = active ?? await activePromise
+        if (session) {
+          lastPeerChainId = peerChainId
+          void client.appendEvent(session.sessionId, lastEventStatus, peerChainId)
+        }
+      }
+      return
+    }
     const prev = prevState
     prevState = state
 
@@ -119,13 +128,17 @@ export function initChainInstrumentation(client: ChainClient): () => void {
     if (!session) return
 
     lastEventStatus = chainStatus
-    const receiverChainId = chainStatus === 'completed' ? store.peerChainId ?? undefined : undefined
+    const receiverChainId = store.peerChainId ?? undefined
+    if (receiverChainId) {
+      lastPeerChainId = receiverChainId
+    }
     void client.appendEvent(session.sessionId, chainStatus, receiverChainId)
 
     // Clear session on terminal states
     if (['completed', 'failed', 'cancelled', 'abandoned'].includes(chainStatus)) {
       active = null
       lastEventStatus = null
+      lastPeerChainId = null
     }
   })
 
