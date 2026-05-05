@@ -88,7 +88,7 @@ export class WebRTCTransfer {
     this.setupSenderDC()
     this.bindSignalingEvents()
 
-    await this.signaling.connect('sender', this.profile)
+    await this.signaling.connect('sender', this.profile, getChainId())
     transferStore.setState('waiting_peer')
     this.logDiagnostic('sender_joined')
   }
@@ -103,7 +103,7 @@ export class WebRTCTransfer {
     this.setupPC()
     this.bindSignalingEvents()
 
-    await this.signaling.connect('receiver', this.profile)
+    await this.signaling.connect('receiver', this.profile, getChainId())
     transferStore.setState('waiting_peer')
     this.logDiagnostic('receiver_joined')
   }
@@ -201,10 +201,16 @@ export class WebRTCTransfer {
     let totalBytesReceived = 0
     let grandTotalSize = 0
 
+    const announceChainId = () => {
+      try {
+        const receiverChainId = getChainId()
+        dc.send(JSON.stringify({ type: 'receiver-chain', chainId: receiverChainId } satisfies DCControlMessage))
+      } catch { /* peer may have closed */ }
+    }
+
     dc.onopen = () => {
       void this.handleDataChannelOpen()
-      const receiverChainId = getChainId()
-      dc.send(JSON.stringify({ type: 'receiver-chain', chainId: receiverChainId } satisfies DCControlMessage))
+      announceChainId()
     }
 
     dc.onmessage = ({ data }) => {
@@ -254,6 +260,13 @@ export class WebRTCTransfer {
 
     dc.onerror = () => {
       this.failTransfer('Receive channel error.', 'receiver_dc_error')
+    }
+
+    // Rare race: if the channel was already open by the time we attached handlers,
+    // onopen will not fire. Trigger open-handling and announce chain ID manually.
+    if (dc.readyState === 'open') {
+      void this.handleDataChannelOpen()
+      announceChainId()
     }
   }
 
@@ -402,6 +415,11 @@ export class WebRTCTransfer {
 
           case 'peer_joined':
             this.profile = event.mode
+            // Learn peer chain ID from signaling — reliable, arrives before WebRTC negotiation.
+            // The DC fallback (receiver-chain control message) still applies for older signaling.
+            if (event.peerChainId) {
+              transferStore.setPeerChainId(event.peerChainId)
+            }
             transferStore.setState('connecting')
             this.logDiagnostic('peer_joined')
             this.startConnectionTimer()

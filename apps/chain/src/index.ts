@@ -1,5 +1,5 @@
 export { ChainLedger } from './ledger'
-import { isFinalStatus, VALID_ROUTES, VALID_STATUSES, type Env, type TransferFile } from './types'
+import { isFinalStatus, shouldAdvanceStatus, VALID_ROUTES, VALID_STATUSES, type Env, type TransferFile } from './types'
 
 // ── Singleton ledger DO name ──────────────────────────────────────────────────
 const LEDGER_NAME = 'global'
@@ -140,27 +140,47 @@ async function handleAppendEvent(req: Request, env: Env, cors: HeadersInit, sess
   if (!session) return json({ error: 'Session not found' }, { status: 404, headers: cors })
 
   const now = Date.now()
-  const parts: string[] = ['status = ?']
-  const binds: unknown[] = [body.status]
+  const parts: string[] = []
+  const binds: unknown[] = []
 
+  // Status only moves forward. Out-of-order or duplicate posts (network race)
+  // must never regress a completed session back to "connecting", and the
+  // terminal state is sticky.
+  const advanceStatus = shouldAdvanceStatus(session.status, body.status)
+  if (advanceStatus) {
+    parts.push('status = ?')
+    binds.push(body.status)
+  }
+
+  // receiver_chain_id is additive — record it whenever a valid one arrives,
+  // regardless of whether the status advanced. This is the fix for the
+  // "receiver hash shows as —" bug.
   if (isValidChainId(body.receiver_chain_id)) {
     await env.DB.prepare(
       `INSERT INTO chain_ids (id, first_seen, last_seen) VALUES (?, ?, ?)
        ON CONFLICT(id) DO UPDATE SET last_seen = excluded.last_seen`
     ).bind(body.receiver_chain_id, now, now).run()
-    parts.push('receiver_chain_id = ?')
+    parts.push('receiver_chain_id = COALESCE(receiver_chain_id, ?)')
     binds.push(body.receiver_chain_id)
   }
 
-  if (isFinalStatus(body.status)) {
+  if (advanceStatus && isFinalStatus(body.status)) {
     parts.push('completed_at = ?', 'duration_ms = ?')
     binds.push(now, now - session.started_at)
   }
 
-  binds.push(sessionId)
-  await env.DB.prepare(
-    `UPDATE transfer_sessions SET ${parts.join(', ')} WHERE id = ?`
-  ).bind(...binds).run()
+  if (parts.length > 0) {
+    binds.push(sessionId)
+    await env.DB.prepare(
+      `UPDATE transfer_sessions SET ${parts.join(', ')} WHERE id = ?`
+    ).bind(...binds).run()
+  }
+
+  // Only record a status-transition event when the status actually advanced;
+  // dedupe identical consecutive statuses.
+  if (!advanceStatus) {
+    return json({ ok: true, deduped: true }, { headers: cors })
+  }
 
   const previousEvent = await env.DB.prepare(
     `SELECT status FROM transfer_events WHERE session_id = ? ORDER BY ts DESC, id DESC LIMIT 1`

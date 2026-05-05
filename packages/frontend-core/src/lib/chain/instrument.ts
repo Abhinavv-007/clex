@@ -37,6 +37,11 @@ export function initChainInstrumentation(client: ChainClient): () => void {
   let registered = false
   let lastEventStatus: string | null = null
   let lastPeerChainId: string | null = null
+  // Retain the session id after a terminal state so that a peer chain id
+  // arriving late (e.g. via the DataChannel fallback after we've already
+  // marked completed) can still backfill receiver_chain_id on the server.
+  let lastTerminalSessionId: string | null = null
+  let lastTerminalStatus: string | null = null
 
   async function createSessionForTransfer(method: string): Promise<ActiveSession | null> {
     const route = method === 'drive' ? 'drive' : method === 'local' ? 'local' : 'webrtc'
@@ -65,7 +70,9 @@ export function initChainInstrumentation(client: ChainClient): () => void {
           }
 
           return {
-            category: fileCategory(f.type),
+            // Filename is used only for client-side category fallback; it is
+            // never sent to the chain server (privacy-preserving).
+            category: fileCategory(f.type, f.name),
             type: f.type || 'application/octet-stream',
             size: f.size,
             hash,
@@ -81,6 +88,10 @@ export function initChainInstrumentation(client: ChainClient): () => void {
       const nextSession = { sessionId: result.session_id, route, startedAt: Date.now() }
       active = nextSession
       lastEventStatus = 'waiting_peer'
+      // New session starting — drop any backfill pointers from the prior one.
+      lastTerminalSessionId = null
+      lastTerminalStatus = null
+      lastPeerChainId = null
       await client.appendEvent(result.session_id, 'waiting_peer')
       return nextSession
     })().finally(() => {
@@ -101,11 +112,21 @@ export function initChainInstrumentation(client: ChainClient): () => void {
     const { state, method, peerChainId } = store
 
     if (state === prevState) {
-      if (peerChainId && peerChainId !== lastPeerChainId && lastEventStatus) {
+      // peerChainId can arrive at any point — early via signaling tags or
+      // late via the DataChannel fallback. We backfill it on the active
+      // session if there is one, or on the last terminal session if the
+      // transfer has already finished.
+      if (peerChainId && peerChainId !== lastPeerChainId) {
         const session = active ?? await activePromise
-        if (session) {
+        if (session && lastEventStatus) {
           lastPeerChainId = peerChainId
           void client.appendEvent(session.sessionId, lastEventStatus, peerChainId)
+        } else if (lastTerminalSessionId && lastTerminalStatus) {
+          // Late receiver-chain after we've already posted a terminal status.
+          // Server uses COALESCE for receiver_chain_id and refuses to regress
+          // status, so this is safe.
+          lastPeerChainId = peerChainId
+          void client.appendEvent(lastTerminalSessionId, lastTerminalStatus, peerChainId)
         }
       }
       return
@@ -134,11 +155,15 @@ export function initChainInstrumentation(client: ChainClient): () => void {
     }
     void client.appendEvent(session.sessionId, chainStatus, receiverChainId)
 
-    // Clear session on terminal states
+    // On terminal status, retain the session id so a late-arriving peer
+    // chain id (DC fallback path) can still attach receiver_chain_id.
     if (['completed', 'failed', 'cancelled', 'abandoned'].includes(chainStatus)) {
+      lastTerminalSessionId = session.sessionId
+      lastTerminalStatus = chainStatus
       active = null
       lastEventStatus = null
-      lastPeerChainId = null
+      // Note: we deliberately do NOT clear lastPeerChainId or
+      // lastTerminalSessionId here — they remain valid backfill targets.
     }
   })
 
