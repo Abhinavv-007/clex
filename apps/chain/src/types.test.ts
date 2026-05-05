@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { isFinalStatus, shouldAdvanceStatus, statusRank } from './types'
+import { isFinalStatus, shouldAdvanceStatus, statusRank, statusesBelow } from './types'
 
 describe('chain status precedence', () => {
   it('ranks the lifecycle in order', () => {
@@ -40,5 +40,29 @@ describe('chain status precedence', () => {
   it('treats identical consecutive statuses as no-advance (dedupe)', () => {
     expect(shouldAdvanceStatus('connecting', 'connecting')).toBe(false)
     expect(shouldAdvanceStatus('completed', 'completed')).toBe(false)
+  })
+})
+
+describe('statusesBelow — atomic UPDATE guard set', () => {
+  it('lists every strictly-lower-ranked status', () => {
+    expect(statusesBelow('registered')).toEqual([])
+    expect(statusesBelow('waiting_peer')).toEqual(['registered'])
+    expect(statusesBelow('connecting')).toEqual(['registered', 'waiting_peer'])
+    expect(statusesBelow('transferring')).toEqual(['registered', 'waiting_peer', 'connecting'])
+  })
+
+  it('lets terminal statuses advance from any non-terminal status', () => {
+    const expected = ['registered', 'waiting_peer', 'connecting', 'transferring']
+    expect(statusesBelow('completed')).toEqual(expected)
+    expect(statusesBelow('failed')).toEqual(expected)
+    expect(statusesBelow('cancelled')).toEqual(expected)
+    expect(statusesBelow('abandoned')).toEqual(expected)
+  })
+
+  it('never includes a peer terminal status (sticky terminals)', () => {
+    // Same rank → not strictly below, so an "abandoned" cannot replace a
+    // "completed" via this guard set.
+    expect(statusesBelow('completed')).not.toContain('failed')
+    expect(statusesBelow('failed')).not.toContain('completed')
   })
 })
