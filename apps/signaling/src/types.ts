@@ -19,7 +19,7 @@ export type ClientMessage =
 // ─── Server → Client ─────────────────────────────────────────────────────────
 export type ServerMessage =
   | { type: 'joined'; role: TransferRole; mode: TransferProfile }
-  | { type: 'peer_joined'; mode: TransferProfile }
+  | { type: 'peer_joined'; mode: TransferProfile; peerChainId?: string }
   | { type: 'offer'; sdp: string }
   | { type: 'answer'; sdp: string }
   | { type: 'ice'; candidate: IceCandidatePayload }

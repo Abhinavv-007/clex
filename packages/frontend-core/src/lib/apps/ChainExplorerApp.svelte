@@ -538,13 +538,25 @@
     white-space: nowrap;
   }
 
-  .cex-file-badge--image    { border-color: #3b82f6; color: #3b82f6; }
-  .cex-file-badge--pdf      { border-color: #ef4444; color: #ef4444; }
-  .cex-file-badge--document { border-color: #8b5cf6; color: #8b5cf6; }
-  .cex-file-badge--video    { border-color: #f59e0b; color: #f59e0b; }
-  .cex-file-badge--audio    { border-color: #06b6d4; color: #06b6d4; }
-  .cex-file-badge--archive  { border-color: #f97316; color: #f97316; }
-  .cex-file-badge--other    { border-color: var(--border-color); }
+  .cex-file-badge--image        { border-color: #3b82f6; color: #3b82f6; }
+  .cex-file-badge--pdf          { border-color: #ef4444; color: #ef4444; }
+  .cex-file-badge--document     { border-color: #8b5cf6; color: #8b5cf6; }
+  .cex-file-badge--spreadsheet  { border-color: #10b981; color: #10b981; }
+  .cex-file-badge--presentation { border-color: #eab308; color: #eab308; }
+  .cex-file-badge--video        { border-color: #f59e0b; color: #f59e0b; }
+  .cex-file-badge--audio        { border-color: #06b6d4; color: #06b6d4; }
+  .cex-file-badge--archive      { border-color: #f97316; color: #f97316; }
+  .cex-file-badge--code         { border-color: #22d3ee; color: #22d3ee; }
+  .cex-file-badge--text         { border-color: #94a3b8; color: #94a3b8; }
+  .cex-file-badge--data         { border-color: #84cc16; color: #84cc16; }
+  .cex-file-badge--font         { border-color: #c084fc; color: #c084fc; }
+  .cex-file-badge--ebook        { border-color: #a855f7; color: #a855f7; }
+  .cex-file-badge--apk          { border-color: #34d399; color: #34d399; }
+  .cex-file-badge--ios          { border-color: #60a5fa; color: #60a5fa; }
+  .cex-file-badge--executable   { border-color: #f43f5e; color: #f43f5e; }
+  .cex-file-badge--design       { border-color: #ec4899; color: #ec4899; }
+  .cex-file-badge--model        { border-color: #facc15; color: #facc15; }
+  .cex-file-badge--other        { border-color: var(--border-color); }
 
   /* ── Status ───────────────────────────────────────────────────────────────── */
   .cex-status {

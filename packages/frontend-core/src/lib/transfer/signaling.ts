@@ -9,7 +9,7 @@ export type ClientMessage =
 
 export type ServerMessage =
   | { type: 'joined'; role: 'sender' | 'receiver'; mode: TransferProfile }
-  | { type: 'peer_joined'; mode: TransferProfile }
+  | { type: 'peer_joined'; mode: TransferProfile; peerChainId?: string }
   | { type: 'offer'; sdp: string }
   | { type: 'answer'; sdp: string }
   | { type: 'ice'; candidate: IceCandidatePayload }
@@ -94,13 +94,14 @@ export class SignalingClient {
     this.url = `${baseUrl}/room/${roomCode}`
   }
 
-  connect(role: 'sender' | 'receiver', mode?: TransferProfile): Promise<void> {
+  connect(role: 'sender' | 'receiver', mode?: TransferProfile, chainId?: string): Promise<void> {
     return new Promise((resolve, reject) => {
       this.joinedResolve = resolve
       this.joinedReject = reject
 
       const params = new URLSearchParams({ role })
       if (mode) params.set('mode', mode)
+      if (chainId) params.set('chainId', chainId)
 
       const ws = new WebSocket(`${this.url}?${params.toString()}`)
       this.ws = ws

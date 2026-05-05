@@ -653,52 +653,132 @@
 }
 
 .footer__signature-link {
+  --signature-tint: var(--accent);
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 10px;
   min-width: 0;
-  padding: 10px 14px;
+  padding: 10px 16px;
   border: 1px solid color-mix(in srgb, var(--border-color) 68%, transparent);
   border-radius: 999px;
   background: color-mix(in srgb, var(--bg-card) 68%, transparent);
-  box-shadow: none;
+  box-shadow: 0 1px 0 0 color-mix(in srgb, var(--shadow-color) 20%, transparent);
   font-family: var(--font-mono);
   font-size: var(--text-xs);
   font-weight: var(--weight-bold);
   color: var(--text-secondary);
   letter-spacing: 0.04em;
-  transition: transform var(--duration-fast), border-color var(--duration-fast), color var(--duration-fast), background var(--duration-fast), box-shadow var(--duration-fast);
+  overflow: hidden;
+  transition:
+    transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    border-color 220ms ease,
+    color 220ms ease,
+    background 220ms ease,
+    box-shadow 260ms ease;
+  isolation: isolate;
 }
 
-.footer__signature-link:hover {
-  transform: translate(-2px, -2px);
-  border-color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 8%, var(--bg-card));
-  box-shadow: var(--shadow-sm) var(--shadow-color);
+/* Brand-tinted glow that fades in behind the label on hover. */
+.footer__signature-link::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    140% 100% at 0% 50%,
+    color-mix(in srgb, var(--signature-tint) 32%, transparent) 0%,
+    transparent 70%
+  );
+  opacity: 0;
+  transition: opacity 260ms ease;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.footer__signature-link:hover,
+.footer__signature-link:focus-visible {
+  transform: translateY(-3px);
+  border-color: color-mix(in srgb, var(--signature-tint) 55%, var(--border-color));
+  background: color-mix(in srgb, var(--signature-tint) 9%, var(--bg-card));
+  box-shadow:
+    0 10px 24px -10px color-mix(in srgb, var(--signature-tint) 55%, transparent),
+    0 1px 0 0 color-mix(in srgb, var(--shadow-color) 30%, transparent);
   color: var(--text-primary);
+}
+
+.footer__signature-link:hover::before,
+.footer__signature-link:focus-visible::before {
+  opacity: 1;
+}
+
+.footer__signature-link:active {
+  transform: translateY(-1px);
+  transition-duration: 120ms;
+}
+
+.footer__signature-link:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--signature-tint) 60%, transparent);
+  outline-offset: 3px;
 }
 
 .footer__signature-link span:last-child {
   overflow-wrap: anywhere;
 }
 
+/* Per-brand accent tints. Drives ::before glow, border, and hover bg. */
+.footer__signature-link--linkedin { --signature-tint: #0a66c2; }
+.footer__signature-link--mail     { --signature-tint: #ef4444; }
+.footer__signature-link--site     { --signature-tint: #14b8a6; }
+.footer__signature-link--me       { --signature-tint: #a855f7; }
+
 .footer__signature-icon {
   width: 18px;
   height: 18px;
   flex: 0 0 auto;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   color: var(--text-primary);
+  transition: color 220ms ease, transform 320ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-.footer__signature-link[aria-label*='LinkedIn'] .footer__signature-icon rect {
-  display: none;
+.footer__signature-link:hover .footer__signature-icon,
+.footer__signature-link:focus-visible .footer__signature-icon {
+  color: var(--signature-tint);
+  transform: scale(1.08);
+}
+
+.footer__signature-link--linkedin:hover .footer__signature-icon,
+.footer__signature-link--linkedin:focus-visible .footer__signature-icon {
+  transform: scale(1.08) rotate(-2deg);
+}
+
+.footer__signature-link--site:hover .footer__signature-icon,
+.footer__signature-link--site:focus-visible .footer__signature-icon {
+  transform: scale(1.08) rotate(8deg);
 }
 
 .footer__signature-icon svg {
   width: 18px;
   height: 18px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .footer__signature-link,
+  .footer__signature-link::before,
+  .footer__signature-icon {
+    transition: none;
+  }
+  .footer__signature-link:hover,
+  .footer__signature-link:focus-visible,
+  .footer__signature-link:active {
+    transform: none;
+  }
+  .footer__signature-link:hover .footer__signature-icon,
+  .footer__signature-link:focus-visible .footer__signature-icon {
+    transform: none;
+  }
 }
 
 .footer__col-title {

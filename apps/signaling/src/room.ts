@@ -3,6 +3,21 @@ import type { ClientMessage, ServerMessage, TransferProfile, TransferRole } from
 
 const ROOM_TTL_MS = 30 * 60 * 1000 // 30 minutes
 const ROOM_MODE_KEY = 'mode'
+const CHAIN_TAG_PREFIX = 'chain:'
+const CHAIN_ID_RE = /^[0-9a-f]{32}$/
+
+function normalizeChainId(raw: string | null): string | null {
+  if (!raw) return null
+  const trimmed = raw.trim().toLowerCase()
+  return CHAIN_ID_RE.test(trimmed) ? trimmed : null
+}
+
+function extractChainId(tags: readonly string[]): string | undefined {
+  for (const tag of tags) {
+    if (tag.startsWith(CHAIN_TAG_PREFIX)) return tag.slice(CHAIN_TAG_PREFIX.length)
+  }
+  return undefined
+}
 
 export class Room implements DurableObject {
   private state: DurableObjectState
@@ -33,18 +48,27 @@ export class Room implements DurableObject {
 
     await this.writeRoomMode(joinPlan.mode)
 
+    // Optional chain ID for the public ledger — opaque, no PII.
+    const chainId = normalizeChainId(url.searchParams.get('chainId'))
+
     const [client, server] = Object.values(new WebSocketPair()) as [WebSocket, WebSocket]
 
-    // Hibernatable WebSocket API — survives DO hibernation
-    this.state.acceptWebSocket(server, [role])
+    // Hibernatable WebSocket API — survives DO hibernation. Tags are persisted with the WS.
+    const tags = chainId ? [role, `${CHAIN_TAG_PREFIX}${chainId}`] : [role]
+    this.state.acceptWebSocket(server, tags)
 
     // Confirm join to new client
     this.send(server, { type: 'joined', role, mode: joinPlan.mode })
 
-    // Notify both peers when the room becomes complete.
+    // Notify both peers when the room becomes complete. Each side learns the OTHER
+    // peer's chain ID (if shared) so the public ledger can record receiver_chain_id
+    // without depending on data-channel timing.
     if (joinPlan.becameReady) {
-      this.state.getWebSockets().forEach(ws => {
-        this.send(ws, { type: 'peer_joined', mode: joinPlan.mode })
+      const sockets = this.state.getWebSockets()
+      sockets.forEach(ws => {
+        const peerWs = sockets.find(other => other !== ws)
+        const peerChainId = peerWs ? extractChainId(this.state.getTags(peerWs)) : undefined
+        this.send(ws, { type: 'peer_joined', mode: joinPlan.mode, ...(peerChainId ? { peerChainId } : {}) })
       })
     }
 

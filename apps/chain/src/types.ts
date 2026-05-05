@@ -32,6 +32,31 @@ export const VALID_STATUSES = [
   'completed', 'cancelled', 'failed', 'abandoned',
 ] as const
 
+// Monotonic precedence so out-of-order or duplicate event posts can never
+// regress a session's status (e.g. a late "connecting" can't overwrite "completed").
+// All terminal statuses share the highest rank — once any terminal state is
+// recorded it stays sticky.
+const STATUS_RANK: Record<string, number> = {
+  registered:   0,
+  waiting_peer: 1,
+  connecting:   2,
+  transferring: 3,
+  completed:    4,
+  cancelled:    4,
+  failed:       4,
+  abandoned:    4,
+}
+
+export function statusRank(status: string): number {
+  return STATUS_RANK[status] ?? 0
+}
+
+export function shouldAdvanceStatus(current: string, next: string): boolean {
+  // Terminal status is sticky.
+  if (isFinalStatus(current)) return false
+  return statusRank(next) > statusRank(current)
+}
+
 export const VALID_ROUTES = ['webrtc', 'local', 'drive'] as const
 
 export type D1Row = Record<string, string | number | null>
