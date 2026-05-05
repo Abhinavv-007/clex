@@ -1,5 +1,5 @@
 export { ChainLedger } from './ledger'
-import { isFinalStatus, shouldAdvanceStatus, VALID_ROUTES, VALID_STATUSES, type Env, type TransferFile } from './types'
+import { isFinalStatus, statusesBelow, VALID_ROUTES, VALID_STATUSES, type Env, type TransferFile } from './types'
 
 // ── Singleton ledger DO name ──────────────────────────────────────────────────
 const LEDGER_NAME = 'global'
@@ -131,68 +131,77 @@ async function handleAppendEvent(req: Request, env: Env, cors: HeadersInit, sess
   if (typeof body.status !== 'string' || !VALID_STATUSES.includes(body.status as never)) {
     return json({ error: `status must be one of: ${VALID_STATUSES.join(', ')}` }, { status: 400, headers: cors })
   }
+  const nextStatus = body.status
 
-  type SessionRow = { id: string; status: string; started_at: number }
+  // Existence check is the only read we keep. We deliberately do NOT read
+  // `status` here: the precedence guard is baked into the UPDATE's WHERE
+  // clause so concurrent requests can't race each other into regressing.
   const session = await env.DB.prepare(
-    `SELECT id, status, started_at FROM transfer_sessions WHERE id = ?`
-  ).bind(sessionId).first<SessionRow>()
+    `SELECT id FROM transfer_sessions WHERE id = ?`
+  ).bind(sessionId).first<{ id: string }>()
 
   if (!session) return json({ error: 'Session not found' }, { status: 404, headers: cors })
 
   const now = Date.now()
-  const parts: string[] = []
-  const binds: unknown[] = []
+  const receiverChainId = isValidChainId(body.receiver_chain_id) ? body.receiver_chain_id : null
 
-  // Status only moves forward. Out-of-order or duplicate posts (network race)
-  // must never regress a completed session back to "connecting", and the
-  // terminal state is sticky.
-  const advanceStatus = shouldAdvanceStatus(session.status, body.status)
-  if (advanceStatus) {
-    parts.push('status = ?')
-    binds.push(body.status)
-  }
-
-  // receiver_chain_id is additive — record it whenever a valid one arrives,
-  // regardless of whether the status advanced. This is the fix for the
-  // "receiver hash shows as —" bug.
-  if (isValidChainId(body.receiver_chain_id)) {
+  // receiver_chain_id is additive across the lifetime of a session and is
+  // never overwritten once set. Update it independently of the status
+  // advance so a late-arriving peer chain id can still attach even if the
+  // status is already terminal.
+  if (receiverChainId) {
     await env.DB.prepare(
       `INSERT INTO chain_ids (id, first_seen, last_seen) VALUES (?, ?, ?)
        ON CONFLICT(id) DO UPDATE SET last_seen = excluded.last_seen`
-    ).bind(body.receiver_chain_id, now, now).run()
-    parts.push('receiver_chain_id = COALESCE(receiver_chain_id, ?)')
-    binds.push(body.receiver_chain_id)
-  }
-
-  if (advanceStatus && isFinalStatus(body.status)) {
-    parts.push('completed_at = ?', 'duration_ms = ?')
-    binds.push(now, now - session.started_at)
-  }
-
-  if (parts.length > 0) {
-    binds.push(sessionId)
+    ).bind(receiverChainId, now, now).run()
     await env.DB.prepare(
-      `UPDATE transfer_sessions SET ${parts.join(', ')} WHERE id = ?`
-    ).bind(...binds).run()
+      `UPDATE transfer_sessions SET receiver_chain_id = COALESCE(receiver_chain_id, ?) WHERE id = ?`
+    ).bind(receiverChainId, sessionId).run()
   }
 
-  // Only record a status-transition event when the status actually advanced;
-  // dedupe identical consecutive statuses.
-  if (!advanceStatus) {
+  // Atomic status advance. The WHERE clause restricts the UPDATE to rows
+  // whose current status has a strictly lower rank than the new status, so
+  // out-of-order requests cannot overwrite a higher-ranked status.
+  // `meta.changes` tells us whether the row was actually modified — that
+  // is the source of truth for "did the status advance" downstream.
+  const lowerStatuses = statusesBelow(nextStatus)
+  let advanced = false
+  if (lowerStatuses.length > 0) {
+    const placeholders = lowerStatuses.map(() => '?').join(',')
+    const finalSetters = isFinalStatus(nextStatus)
+      ? ', completed_at = ?, duration_ms = ? - started_at'
+      : ''
+    const sql = `
+      UPDATE transfer_sessions
+      SET status = ?${finalSetters}
+      WHERE id = ? AND status IN (${placeholders})
+    `
+    const binds: unknown[] = [nextStatus]
+    if (isFinalStatus(nextStatus)) binds.push(now, now)
+    binds.push(sessionId, ...lowerStatuses)
+
+    const result = await env.DB.prepare(sql).bind(...binds).run()
+    advanced = (result.meta?.changes ?? 0) > 0
+  }
+
+  if (!advanced) {
     return json({ ok: true, deduped: true }, { headers: cors })
   }
 
+  // Dedupe consecutive identical events. We only get here when the status
+  // genuinely advanced, but two interleaved advances (e.g. very fast
+  // transfers where the same status is posted twice) could still race.
   const previousEvent = await env.DB.prepare(
     `SELECT status FROM transfer_events WHERE session_id = ? ORDER BY ts DESC, id DESC LIMIT 1`
   ).bind(sessionId).first<{ status: string }>()
 
-  if (previousEvent?.status === body.status) {
+  if (previousEvent?.status === nextStatus) {
     return json({ ok: true, deduped: true }, { headers: cors })
   }
 
   await env.DB.prepare(
     `INSERT INTO transfer_events (session_id, status, ts) VALUES (?, ?, ?)`
-  ).bind(sessionId, body.status, now).run()
+  ).bind(sessionId, nextStatus, now).run()
 
   return json({ ok: true }, { headers: cors })
 }

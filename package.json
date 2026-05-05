@@ -6,7 +6,8 @@
       "esbuild",
       "svelte-preprocess",
       "workerd",
-      "sharp"
+      "sharp",
+      "better-sqlite3"
     ]
   },
   "scripts": {

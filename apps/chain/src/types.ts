@@ -57,6 +57,16 @@ export function shouldAdvanceStatus(current: string, next: string): boolean {
   return statusRank(next) > statusRank(current)
 }
 
+// Statuses strictly below the given rank — used to build atomic UPDATE
+// guards. The current status must be in this set for the update to
+// commit, which prevents two concurrent requests from regressing each
+// other (e.g. a late "transferring" overwriting a "completed" because
+// both read the same pre-update status before either UPDATE landed).
+export function statusesBelow(status: string): string[] {
+  const rank = statusRank(status)
+  return Object.keys(STATUS_RANK).filter(s => STATUS_RANK[s] < rank)
+}
+
 export const VALID_ROUTES = ['webrtc', 'local', 'drive'] as const
 
 export type D1Row = Record<string, string | number | null>
