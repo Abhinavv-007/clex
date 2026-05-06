@@ -2,16 +2,38 @@ import { transferStore } from '$stores/transfer'
 import { getChainId } from '$utils/chainId'
 
 import { getConnectionKindFromStats } from './network'
+import {
+  buildCapabilityMessage,
+  buildManifest,
+  buildReceipt,
+  ChunkTracker,
+  computeHealthScore,
+  decodeChunkFrame,
+  digestSha256,
+  encodeChunkFrame,
+  frameFlags,
+  isControlMessage,
+  negotiateCapabilities,
+  safeParseControl,
+  transferQueueStore,
+} from './reliable'
 import { SignalingClient } from './signaling'
 import {
+  CAPABILITY_GRACE_MS,
   CHUNK_SIZE,
   DC_LABEL,
+  DEFAULT_RELIABLE_CAPS,
+  RECEIVER_PROGRESS_INTERVAL_MS,
   getRTCConfig,
   type ConnectionKind,
   type DCControlMessage,
   type IceCandidatePayload,
+  type ReliableCapabilities,
   type TransferFile,
+  type TransferHealth,
+  type TransferManifest,
   type TransferProfile,
+  type TransferReceipt,
 } from './types'
 
 const BUFFER_HIGH_WATERMARK = 1 * 1024 * 1024 // 1 MB — stop sending
@@ -27,6 +49,35 @@ function wait(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms))
 }
 
+interface ReliableSenderState {
+  manifest: TransferManifest
+  tracker: ChunkTracker
+  files: TransferFile[]
+  startedAt: number
+  paused: boolean
+  cancelled: boolean
+  /** Resolves once the receiver acknowledges the manifest. */
+  manifestAcked: Promise<void>
+  resolveManifestAck: (() => void) | null
+  rejectManifestAck: ((err: Error) => void) | null
+  /** Resolves once verify_success is received. */
+  verifyResolved: Promise<void>
+  resolveVerify: (() => void) | null
+  rejectVerify: ((err: Error) => void) | null
+  rootHash?: string
+}
+
+interface ReliableReceiverState {
+  manifest: TransferManifest
+  tracker: ChunkTracker
+  startedAt: number
+  /** Per-file accumulator of chunks at known indices. */
+  chunkBuffers: Map<number, ArrayBuffer[]>
+  bytesReceived: number
+  paused: boolean
+  cancelled: boolean
+}
+
 export class WebRTCTransfer {
   private pc: RTCPeerConnection | null = null
   private dc: RTCDataChannel | null = null
@@ -37,12 +88,12 @@ export class WebRTCTransfer {
   private profile: TransferProfile
   private signalingUnsubscribe: (() => void) | null = null
 
-  // Sender state
+  // Sender state (legacy)
   private sendQueue: TransferFile[] = []
   private sendStarted = false
   private offerSent = false
 
-  // Receiver state
+  // Receiver state (legacy)
   private receiveBuffers = new Map<string, ArrayBuffer[]>()
   private receiveMeta = new Map<
     string,
@@ -61,6 +112,26 @@ export class WebRTCTransfer {
   private lastBytesSent = 0
   private lastSpeedTs = Date.now()
   private speedTimer: ReturnType<typeof setInterval> | null = null
+  private speedSamples: number[] = []
+
+  // Reliable protocol state
+  private localCaps: ReliableCapabilities = DEFAULT_RELIABLE_CAPS
+  private remoteCaps: ReliableCapabilities | null = null
+  private negotiatedCaps: ReliableCapabilities | null = null
+  private capabilityResolved = false
+  private capabilityWaiters: Array<() => void> = []
+  private capabilityTimeout: ReturnType<typeof setTimeout> | null = null
+  private reliableSender: ReliableSenderState | null = null
+  private reliableReceiver: ReliableReceiverState | null = null
+  private healthTimer: ReturnType<typeof setInterval> | null = null
+  private receiverProgressTimer: ReturnType<typeof setInterval> | null = null
+  private queueEntryId: string | null = null
+  /** Re-entry guard for driveReliableSendLoop. Multiple resume/retry events can
+   *  race onto the loop kick — without this, two loops would race to send the
+   *  same pending chunk twice. */
+  private sendLoopRunning = false
+  /** Resolver waiting for `bufferedamountlow` events instead of polling. */
+  private bufferedDrainResolvers: Array<() => void> = []
 
   constructor(
     signalingUrl: string,
@@ -83,6 +154,22 @@ export class WebRTCTransfer {
     transferStore.setPeerChainId(null)
     transferStore.setConnectionKind('unknown')
     transferStore.setDiagnosticCode(null)
+    transferStore.setProtocol('legacy')
+    transferStore.setReceipt(null)
+    transferStore.setReliableCounts({ totalChunks: 0, ackedChunks: 0, verifiedChunks: 0, retries: 0, failedChunks: 0 })
+
+    // Pre-register the queue entry so the UI shows "pending" before signaling
+    // even succeeds; we'll attach the manifest's transferId once it's built.
+    this.queueEntryId = transferQueueStore.enqueue({
+      transferId: null,
+      direction: 'send',
+      fileNames: files.map(f => f.name),
+      totalSize: files.reduce((sum, f) => sum + f.size, 0),
+      totalChunks: 0,
+      route: this.profile,
+      status: 'pending',
+      resumable: false,
+    }).id
 
     this.setupPC()
     this.setupSenderDC()
@@ -99,6 +186,20 @@ export class WebRTCTransfer {
     transferStore.setPeerChainId(null)
     transferStore.setConnectionKind('unknown')
     transferStore.setDiagnosticCode(null)
+    transferStore.setProtocol('legacy')
+    transferStore.setReceipt(null)
+    transferStore.setReliableCounts({ totalChunks: 0, ackedChunks: 0, verifiedChunks: 0, retries: 0, failedChunks: 0 })
+
+    this.queueEntryId = transferQueueStore.enqueue({
+      transferId: null,
+      direction: 'receive',
+      fileNames: [],
+      totalSize: 0,
+      totalChunks: 0,
+      route: this.profile,
+      status: 'pending',
+      resumable: false,
+    }).id
 
     this.setupPC()
     this.bindSignalingEvents()
@@ -108,9 +209,69 @@ export class WebRTCTransfer {
     this.logDiagnostic('receiver_joined')
   }
 
+  /** Pause the active transfer (sender or receiver). */
+  pause(): void {
+    if (this.transferCompleted || this.failed) return
+    if (this.reliableSender) {
+      this.reliableSender.paused = true
+      transferStore.setPaused(true, this.role)
+      this.sendControl({ type: 'pause', transferId: this.reliableSender.manifest.transferId, by: 'sender' })
+      this.logDiagnostic('paused_by_sender')
+    } else if (this.reliableReceiver) {
+      this.reliableReceiver.paused = true
+      transferStore.setPaused(true, this.role)
+      this.sendControl({ type: 'pause', transferId: this.reliableReceiver.manifest.transferId, by: 'receiver' })
+      this.logDiagnostic('paused_by_receiver')
+    }
+  }
+
+  /** Resume a paused transfer. Sender continues; receiver resumes acks. */
+  resume(): void {
+    if (this.reliableSender) {
+      const wasPaused = this.reliableSender.paused
+      this.reliableSender.paused = false
+      transferStore.setPaused(false)
+      this.sendControl({ type: 'resume', transferId: this.reliableSender.manifest.transferId, by: 'sender' })
+      this.logDiagnostic('resumed_by_sender')
+      if (wasPaused) void this.driveReliableSendLoop()
+    } else if (this.reliableReceiver) {
+      this.reliableReceiver.paused = false
+      transferStore.setPaused(false)
+      this.sendControl({ type: 'resume', transferId: this.reliableReceiver.manifest.transferId, by: 'receiver' })
+      this.logDiagnostic('resumed_by_receiver')
+    }
+  }
+
+  /** Cancel an active transfer. */
+  cancel(): void {
+    if (this.transferCompleted || this.failed) return
+    const transferId =
+      this.reliableSender?.manifest.transferId ?? this.reliableReceiver?.manifest.transferId ?? null
+    if (this.reliableSender) this.reliableSender.cancelled = true
+    if (this.reliableReceiver) this.reliableReceiver.cancelled = true
+    if (transferId) {
+      this.sendControl({ type: 'cancel', transferId, reason: `cancelled_by_${this.role}` })
+    }
+    if (this.queueEntryId) {
+      transferQueueStore.setStatus(this.queueEntryId, 'cancelled')
+    }
+    this.failTransfer('Transfer cancelled.', `cancelled_by_${this.role}`)
+  }
+
   destroy(): void {
     this.clearConnectionTimer()
     this.stopSpeedTimer()
+    this.stopHealthTimer()
+    this.stopReceiverProgressTimer()
+    this.clearCapabilityTimeout()
+
+    // Release any send-loop awaiters waiting on backpressure drain so the
+    // loop unwinds cleanly instead of hanging on a Promise that will never
+    // resolve once the data channel is gone.
+    const waiters = this.bufferedDrainResolvers.splice(0)
+    for (const w of waiters) {
+      try { w() } catch { /* ignore */ }
+    }
 
     this.signalingUnsubscribe?.()
     this.signalingUnsubscribe = null
@@ -173,20 +334,13 @@ export class WebRTCTransfer {
   private setupSenderDC(): void {
     this.dc = this.pc!.createDataChannel(DC_LABEL, { ordered: true })
     this.dc.binaryType = 'arraybuffer'
+    this.dc.bufferedAmountLowThreshold = BUFFER_HIGH_WATERMARK / 2
+    this.attachBufferedAmountLow(this.dc)
     this.dc.onopen = () => {
       void this.handleDataChannelOpen()
     }
     this.dc.onmessage = ({ data }) => {
-      if (typeof data !== 'string') return
-
-      try {
-        const msg = JSON.parse(data) as DCControlMessage
-        if (msg.type === 'receiver-chain') {
-          transferStore.setPeerChainId(msg.chainId)
-        }
-      } catch {
-        // Ignore malformed peer metadata without interrupting the transfer.
-      }
+      this.handleSenderMessage(data)
     }
     this.dc.onerror = () => {
       this.failTransfer('Data channel error. Transfer failed.', 'sender_dc_error')
@@ -196,10 +350,8 @@ export class WebRTCTransfer {
   private setupReceiverDC(): void {
     const dc = this.dc!
     dc.binaryType = 'arraybuffer'
-
-    let currentFileId: string | null = null
-    let totalBytesReceived = 0
-    let grandTotalSize = 0
+    dc.bufferedAmountLowThreshold = BUFFER_HIGH_WATERMARK / 2
+    this.attachBufferedAmountLow(dc)
 
     const announceChainId = () => {
       try {
@@ -214,56 +366,13 @@ export class WebRTCTransfer {
     }
 
     dc.onmessage = ({ data }) => {
-      if (typeof data === 'string') {
-        const msg = JSON.parse(data) as DCControlMessage
-
-        if (msg.type === 'file-start') {
-          currentFileId = msg.fileId
-          grandTotalSize += msg.totalSize
-          this.receiveBuffers.set(msg.fileId, [])
-          this.receiveMeta.set(msg.fileId, {
-            name: msg.name,
-            type: msg.mimeType,
-            totalChunks: msg.totalChunks,
-            totalSize: msg.totalSize,
-            received: 0,
-          })
-          transferStore.setCurrentFile({
-            id: msg.fileId,
-            name: msg.name,
-            type: msg.mimeType,
-            size: msg.totalSize,
-          })
-          if (this.speedTimer === null) {
-            this.startSpeedTimer(() => totalBytesReceived)
-          }
-          transferStore.setState('transferring')
-        } else if (msg.type === 'file-end') {
-          if (msg.fileId) this.assembleAndDownload(msg.fileId)
-        } else if (msg.type === 'transfer-complete') {
-          this.transferCompleted = true
-          transferStore.setCurrentFile(null)
-          transferStore.setState('complete')
-          this.stopSpeedTimer()
-        }
-      } else if (currentFileId) {
-        const chunk = data as ArrayBuffer
-        this.receiveBuffers.get(currentFileId)?.push(chunk)
-        const meta = this.receiveMeta.get(currentFileId)
-        if (meta) {
-          meta.received += chunk.byteLength
-          totalBytesReceived += chunk.byteLength
-          transferStore.setProgress(totalBytesReceived, grandTotalSize)
-        }
-      }
+      this.handleReceiverMessage(data)
     }
 
     dc.onerror = () => {
       this.failTransfer('Receive channel error.', 'receiver_dc_error')
     }
 
-    // Rare race: if the channel was already open by the time we attached handlers,
-    // onopen will not fire. Trigger open-handling and announce chain ID manually.
     if (dc.readyState === 'open') {
       void this.handleDataChannelOpen()
       announceChainId()
@@ -283,11 +392,17 @@ export class WebRTCTransfer {
     }
 
     this.acceptConnection()
+    this.startHealthTimer()
+
+    // Capability handshake: announce ours, then either wait for the peer's caps
+    // or fall back to legacy after the grace window.
+    this.announceCapabilities()
+    this.armCapabilityTimeout()
 
     if (this.role === 'sender' && !this.sendStarted) {
       this.sendStarted = true
       transferStore.setState('transferring')
-      void this.startSending()
+      void this.startSendingAfterNegotiation()
     }
   }
 
@@ -297,9 +412,688 @@ export class WebRTCTransfer {
     this.clearConnectionTimer()
   }
 
-  // ─── Sending ───────────────────────────────────────────────────────────────
+  // ─── Capability negotiation ────────────────────────────────────────────────
 
-  private async startSending(): Promise<void> {
+  private announceCapabilities(): void {
+    this.sendControl(buildCapabilityMessage(this.localCaps))
+  }
+
+  private armCapabilityTimeout(): void {
+    if (this.capabilityResolved || this.capabilityTimeout) return
+    this.capabilityTimeout = setTimeout(() => {
+      this.resolveCapabilities()
+    }, CAPABILITY_GRACE_MS)
+  }
+
+  private clearCapabilityTimeout(): void {
+    if (this.capabilityTimeout) {
+      clearTimeout(this.capabilityTimeout)
+      this.capabilityTimeout = null
+    }
+  }
+
+  private resolveCapabilities(): void {
+    if (this.capabilityResolved) return
+    this.capabilityResolved = true
+    this.clearCapabilityTimeout()
+
+    const negotiated = negotiateCapabilities(this.localCaps, this.remoteCaps)
+    this.negotiatedCaps = negotiated
+    transferStore.setCapabilities(negotiated)
+    transferStore.setProtocol(negotiated ? 'reliable' : 'legacy')
+    this.logDiagnostic(negotiated ? 'reliable_negotiated' : 'reliable_unavailable_legacy')
+
+    const waiters = this.capabilityWaiters.splice(0)
+    for (const w of waiters) {
+      try { w() } catch { /* ignore */ }
+    }
+  }
+
+  private waitForCapabilities(): Promise<void> {
+    if (this.capabilityResolved) return Promise.resolve()
+    return new Promise(resolve => this.capabilityWaiters.push(resolve))
+  }
+
+  // ─── Sender wiring ─────────────────────────────────────────────────────────
+
+  private async startSendingAfterNegotiation(): Promise<void> {
+    await this.waitForCapabilities()
+
+    if (this.negotiatedCaps) {
+      await this.startReliableSending()
+    } else {
+      await this.startLegacySending()
+    }
+  }
+
+  private async startReliableSending(): Promise<void> {
+    const manifest = await buildManifest(this.sendQueue, {
+      chunkSize: CHUNK_SIZE,
+      perChunkHash: this.negotiatedCaps?.supportsChunkHash ?? false,
+      computeRootHash: true,
+      route: this.profile,
+    })
+
+    transferStore.setTransferId(manifest.transferId)
+    transferStore.setReliableCounts({ totalChunks: manifest.totalChunks })
+
+    if (this.queueEntryId) {
+      transferQueueStore.update(this.queueEntryId, {
+        transferId: manifest.transferId,
+        totalChunks: manifest.totalChunks,
+        status: 'active',
+      })
+    }
+
+    const tracker = new ChunkTracker(manifest)
+    let resolveAck: (() => void) | null = null
+    let rejectAck: ((err: Error) => void) | null = null
+    const manifestAcked = new Promise<void>((resolve, reject) => {
+      resolveAck = () => resolve()
+      rejectAck = reject
+    })
+    let resolveVerify: (() => void) | null = null
+    let rejectVerify: ((err: Error) => void) | null = null
+    const verifyResolved = new Promise<void>((resolve, reject) => {
+      resolveVerify = () => resolve()
+      rejectVerify = reject
+    })
+
+    this.reliableSender = {
+      manifest,
+      tracker,
+      files: this.sendQueue,
+      startedAt: Date.now(),
+      paused: false,
+      cancelled: false,
+      manifestAcked,
+      resolveManifestAck: resolveAck,
+      rejectManifestAck: rejectAck,
+      verifyResolved,
+      resolveVerify,
+      rejectVerify,
+    }
+
+    // Send manifest header
+    this.sendControl({ type: 'manifest', manifest })
+
+    try {
+      await Promise.race([
+        manifestAcked,
+        wait(8000).then(() => { throw new Error('manifest_ack_timeout') }),
+      ])
+    } catch {
+      this.failTransfer('Receiver did not acknowledge the manifest in time.', 'manifest_ack_timeout')
+      return
+    }
+
+    transferStore.setState('transferring')
+    transferStore.setSpeed(0)
+    this.startSpeedTimer(() => tracker.snapshot().bytesAcked)
+
+    await this.driveReliableSendLoop()
+
+    if (this.reliableSender?.cancelled || this.failed) return
+
+    this.sendControl({ type: 'transfer-complete' })
+
+    // Wait for verify_success / verify_failed
+    try {
+      await Promise.race([
+        verifyResolved,
+        wait(15_000).then(() => { throw new Error('verify_timeout') }),
+      ])
+    } catch (err) {
+      const reason = err instanceof Error ? err.message : 'verify_timeout'
+      this.failTransfer('Receiver did not verify the transfer in time.', reason)
+      return
+    }
+
+    this.finalizeReliableSender()
+  }
+
+  private async driveReliableSendLoop(): Promise<void> {
+    const sender = this.reliableSender
+    if (!sender) return
+    if (this.sendLoopRunning) return
+    this.sendLoopRunning = true
+    try {
+      await this.runReliableSendLoop(sender)
+    } finally {
+      this.sendLoopRunning = false
+    }
+  }
+
+  private async runReliableSendLoop(sender: ReliableSenderState): Promise<void> {
+    const { manifest, tracker, files } = sender
+
+    // Concurrency is not added on purpose — datachannel ordering already
+    // serializes binary writes; the buffered-amount knob below provides
+    // backpressure without the complexity of a windowed scheduler.
+    while (!sender.cancelled && !this.failed) {
+      if (sender.paused) {
+        await wait(120)
+        continue
+      }
+
+      const next = tracker.pickNextSendable()
+      if (!next) {
+        if (tracker.isComplete()) break
+        // No retransmits ready yet — wait briefly for the retry timer.
+        await wait(80)
+        continue
+      }
+
+      await this.drainBuffer()
+      if (this.failed || sender.cancelled) return
+
+      const file = files[next.fileIndex]
+      if (!file) {
+        // Should never happen, but bail safely.
+        tracker.scheduleRetry(next.fileIndex, next.chunkIndex)
+        continue
+      }
+
+      const chunkSize = manifest.chunkSize
+      const start = next.chunkIndex * chunkSize
+      const end = Math.min(start + chunkSize, file.size)
+      const slice = file.blob.slice(start, end)
+      let payload: ArrayBuffer
+      try {
+        payload = await slice.arrayBuffer()
+      } catch {
+        tracker.scheduleRetry(next.fileIndex, next.chunkIndex)
+        continue
+      }
+
+      const isLast = next.chunkIndex === manifest.files[next.fileIndex].totalChunks - 1
+      const flags = frameFlags({
+        retransmit: next.attempts > 0,
+        last: isLast,
+      })
+      const frame = encodeChunkFrame({
+        fileIndex: next.fileIndex,
+        chunkIndex: next.chunkIndex,
+        chunkLength: payload.byteLength,
+        flags,
+        payload,
+      })
+
+      try {
+        this.dc!.send(frame)
+        tracker.markSent(next.fileIndex, next.chunkIndex)
+        const snap = tracker.snapshot()
+        transferStore.setReliableCounts({
+          totalChunks: snap.totalChunks,
+          retries: snap.retries,
+          failedChunks: snap.failedChunks,
+        })
+        transferStore.setProgress(snap.bytesAcked, snap.bytesTotal)
+      } catch {
+        tracker.scheduleRetry(next.fileIndex, next.chunkIndex)
+        if (this.dc?.readyState !== 'open') {
+          this.failTransfer('Data channel closed mid-transfer.', 'dc_closed_during_send')
+          return
+        }
+      }
+    }
+  }
+
+  private finalizeReliableSender(): void {
+    const sender = this.reliableSender
+    if (!sender) return
+
+    const snap = sender.tracker.snapshot()
+    const completedAt = Date.now()
+    const health = computeHealthScore({
+      totalChunks: snap.totalChunks,
+      ackedChunks: snap.acked + snap.verified,
+      verifiedChunks: snap.verified,
+      retries: snap.retries,
+      failedChunks: snap.failedChunks,
+      bufferedAmount: this.dc?.bufferedAmount ?? 0,
+      bufferedHigh: false,
+      averageSpeedBps: this.averageSpeedBps(),
+      connectionKind: this.connectionKind,
+      connectionStable: !this.failed,
+      paused: sender.paused,
+      state: 'complete',
+    })
+
+    const receipt: TransferReceipt = buildReceipt({
+      manifest: sender.manifest,
+      health,
+      startedAt: sender.startedAt,
+      completedAt,
+      route: sender.manifest.route ?? this.profile,
+      retryCount: snap.retries,
+      failedChunkCount: snap.failedChunks,
+      verified: sender.tracker.isComplete() && snap.failed === 0,
+      rootHash: sender.rootHash ?? sender.manifest.rootHash,
+    })
+
+    transferStore.setReceipt(receipt)
+    transferStore.setHealth(health)
+    if (this.queueEntryId) {
+      transferQueueStore.attachReceipt(this.queueEntryId, receipt)
+    }
+
+    this.transferCompleted = true
+    this.stopSpeedTimer()
+    transferStore.setCurrentFile(null)
+    transferStore.setState('complete')
+  }
+
+  // ─── Sender DC message handling ────────────────────────────────────────────
+
+  private handleSenderMessage(data: unknown): void {
+    if (!isControlMessage(data)) return
+    const msg = safeParseControl(data)
+    if (!msg) return
+
+    switch (msg.type) {
+      case 'receiver-chain':
+        transferStore.setPeerChainId(msg.chainId)
+        return
+      case 'capability':
+        this.remoteCaps = msg.caps
+        this.resolveCapabilities()
+        return
+    }
+
+    const sender = this.reliableSender
+    if (!sender) return
+
+    switch (msg.type) {
+      case 'manifest_ack':
+        if (msg.transferId !== sender.manifest.transferId) return
+        if (msg.ok) {
+          sender.resolveManifestAck?.()
+        } else {
+          sender.rejectManifestAck?.(new Error(msg.error ?? 'manifest_rejected'))
+        }
+        sender.resolveManifestAck = null
+        sender.rejectManifestAck = null
+        return
+      case 'chunk_ack':
+        if (msg.transferId !== sender.manifest.transferId) return
+        sender.tracker.markAcked(msg.fileIndex, msg.chunkIndex)
+        this.refreshHealthFromTracker(sender.tracker)
+        return
+      case 'chunk_nack':
+        if (msg.transferId !== sender.manifest.transferId) return
+        sender.tracker.scheduleRetry(msg.fileIndex, msg.chunkIndex)
+        this.refreshHealthFromTracker(sender.tracker)
+        return
+      case 'retry_request':
+        if (msg.transferId !== sender.manifest.transferId) return
+        for (const chunk of msg.chunks) {
+          sender.tracker.forceResend(chunk.fileIndex, chunk.chunkIndex)
+        }
+        // Kick the loop: in case it's currently sleeping on a retry timer.
+        if (!sender.paused) void this.driveReliableSendLoop()
+        return
+      case 'receiver_progress':
+        if (msg.transferId !== sender.manifest.transferId) return
+        // Receiver reports its own verifiedChunks as a stable ground truth.
+        transferStore.setReliableCounts({
+          totalChunks: sender.tracker.snapshot().totalChunks,
+          verifiedChunks: msg.verifiedChunks,
+          ackedChunks: msg.receivedChunks,
+        })
+        return
+      case 'verify_success':
+        if (msg.transferId !== sender.manifest.transferId) return
+        sender.rootHash = msg.rootHash
+        sender.resolveVerify?.()
+        sender.resolveVerify = null
+        return
+      case 'verify_failed':
+        if (msg.transferId !== sender.manifest.transferId) return
+        // Receiver still wants chunks — schedule them and keep going.
+        if (msg.missing && msg.missing.length > 0) {
+          for (const idx of msg.missing) {
+            // missing[] uses an absolute chunk index across the manifest; map
+            // back to (fileIndex, chunkIndex) by walking files in order.
+            this.forceResendByGlobalIndex(idx)
+          }
+          if (!sender.paused) void this.driveReliableSendLoop()
+        } else {
+          sender.rejectVerify?.(new Error(msg.reason ?? 'verify_failed'))
+        }
+        return
+      case 'pause':
+        sender.paused = true
+        transferStore.setPaused(true, msg.by)
+        return
+      case 'resume':
+        sender.paused = false
+        transferStore.setPaused(false)
+        if (!sender.cancelled) void this.driveReliableSendLoop()
+        return
+      case 'cancel':
+        sender.cancelled = true
+        this.failTransfer('Transfer cancelled by peer.', 'cancelled_by_peer')
+        return
+    }
+  }
+
+  private forceResendByGlobalIndex(absoluteIndex: number): void {
+    const sender = this.reliableSender
+    if (!sender) return
+    let cursor = 0
+    for (const file of sender.manifest.files) {
+      if (absoluteIndex < cursor + file.totalChunks) {
+        sender.tracker.forceResend(file.fileIndex, absoluteIndex - cursor)
+        return
+      }
+      cursor += file.totalChunks
+    }
+  }
+
+  // ─── Receiver DC message handling ──────────────────────────────────────────
+
+  private handleReceiverMessage(data: unknown): void {
+    if (typeof data === 'string') {
+      const msg = safeParseControl(data)
+      if (!msg) return
+      this.handleReceiverControlMessage(msg)
+      return
+    }
+
+    if (this.reliableReceiver) {
+      void this.handleReliableChunkBinary(data as ArrayBuffer)
+      return
+    }
+
+    // Legacy binary path: chunk for the active file
+    void this.handleLegacyChunkBinary(data as ArrayBuffer)
+  }
+
+  private handleReceiverControlMessage(msg: DCControlMessage): void {
+    switch (msg.type) {
+      case 'capability':
+        this.remoteCaps = msg.caps
+        this.resolveCapabilities()
+        return
+
+      case 'manifest':
+        void this.handleManifestReceived(msg.manifest)
+        return
+
+      case 'transfer-complete':
+        if (this.reliableReceiver) {
+          void this.finalizeReliableReceiver()
+        } else {
+          this.transferCompleted = true
+          transferStore.setCurrentFile(null)
+          transferStore.setState('complete')
+          this.stopSpeedTimer()
+          if (this.queueEntryId) {
+            transferQueueStore.setStatus(this.queueEntryId, 'completed')
+          }
+        }
+        return
+
+      case 'pause':
+        if (this.reliableReceiver) {
+          this.reliableReceiver.paused = true
+          transferStore.setPaused(true, msg.by)
+        }
+        return
+
+      case 'resume':
+        if (this.reliableReceiver) {
+          this.reliableReceiver.paused = false
+          transferStore.setPaused(false)
+        }
+        return
+
+      case 'cancel':
+        if (this.reliableReceiver) this.reliableReceiver.cancelled = true
+        this.failTransfer('Sender cancelled the transfer.', 'cancelled_by_peer')
+        return
+
+      // Legacy path messages (only valid when reliable not negotiated)
+      case 'file-start':
+        if (this.reliableReceiver) return
+        this.handleLegacyFileStart(msg)
+        return
+      case 'file-end':
+        if (this.reliableReceiver) return
+        if (msg.fileId) this.assembleAndDownload(msg.fileId)
+        return
+    }
+  }
+
+  private async handleManifestReceived(manifest: TransferManifest): Promise<void> {
+    if (this.reliableReceiver) return // ignore duplicates
+
+    const tracker = new ChunkTracker(manifest)
+    this.reliableReceiver = {
+      manifest,
+      tracker,
+      startedAt: Date.now(),
+      chunkBuffers: new Map(manifest.files.map(f => [f.fileIndex, new Array(f.totalChunks)])),
+      bytesReceived: 0,
+      paused: false,
+      cancelled: false,
+    }
+
+    transferStore.setTransferId(manifest.transferId)
+    transferStore.setReliableCounts({
+      totalChunks: manifest.totalChunks,
+      ackedChunks: 0,
+      verifiedChunks: 0,
+      retries: 0,
+      failedChunks: 0,
+    })
+    transferStore.setProgress(0, manifest.totalSize)
+    transferStore.setState('transferring')
+
+    if (this.queueEntryId) {
+      transferQueueStore.update(this.queueEntryId, {
+        transferId: manifest.transferId,
+        fileNames: manifest.files.map(f => f.name),
+        totalSize: manifest.totalSize,
+        totalChunks: manifest.totalChunks,
+        status: 'active',
+      })
+    }
+
+    this.sendControl({ type: 'manifest_ack', transferId: manifest.transferId, ok: true })
+    this.startSpeedTimer(() => this.reliableReceiver?.bytesReceived ?? 0)
+    this.startReceiverProgressTimer()
+  }
+
+  private async handleReliableChunkBinary(buf: ArrayBuffer): Promise<void> {
+    const receiver = this.reliableReceiver
+    if (!receiver) return
+
+    const frame = decodeChunkFrame(buf)
+    if (!frame) return
+
+    const file = receiver.manifest.files[frame.fileIndex]
+    if (!file) return
+
+    const expectedSize = (() => {
+      const last = frame.chunkIndex === file.totalChunks - 1
+      return last ? file.size - frame.chunkIndex * receiver.manifest.chunkSize : receiver.manifest.chunkSize
+    })()
+
+    if (expectedSize !== frame.chunkLength) {
+      this.sendControl({
+        type: 'chunk_nack',
+        transferId: receiver.manifest.transferId,
+        fileIndex: frame.fileIndex,
+        chunkIndex: frame.chunkIndex,
+        reason: 'size_mismatch',
+      })
+      return
+    }
+
+    if (this.negotiatedCaps?.supportsChunkHash && file.chunkHashes && file.chunkHashes[frame.chunkIndex]) {
+      const expected = file.chunkHashes[frame.chunkIndex]
+      const computed = await digestSha256(frame.payload)
+      if (computed !== expected) {
+        this.sendControl({
+          type: 'chunk_nack',
+          transferId: receiver.manifest.transferId,
+          fileIndex: frame.fileIndex,
+          chunkIndex: frame.chunkIndex,
+          reason: 'hash_mismatch',
+        })
+        return
+      }
+    }
+
+    if (receiver.tracker.hasReceived(frame.fileIndex, frame.chunkIndex)) {
+      // Duplicate retransmit; ack again to keep sender's state in sync.
+      this.sendControl({
+        type: 'chunk_ack',
+        transferId: receiver.manifest.transferId,
+        fileIndex: frame.fileIndex,
+        chunkIndex: frame.chunkIndex,
+      })
+      return
+    }
+
+    const buffers = receiver.chunkBuffers.get(frame.fileIndex)
+    if (buffers) buffers[frame.chunkIndex] = frame.payload
+
+    receiver.tracker.markVerified(frame.fileIndex, frame.chunkIndex)
+    receiver.bytesReceived += frame.chunkLength
+
+    transferStore.setProgress(receiver.bytesReceived, receiver.manifest.totalSize)
+
+    this.sendControl({
+      type: 'chunk_ack',
+      transferId: receiver.manifest.transferId,
+      fileIndex: frame.fileIndex,
+      chunkIndex: frame.chunkIndex,
+    })
+
+    const snap = receiver.tracker.snapshot()
+    transferStore.setReliableCounts({
+      totalChunks: snap.totalChunks,
+      ackedChunks: snap.acked + snap.verified,
+      verifiedChunks: snap.verified,
+    })
+  }
+
+  private async finalizeReliableReceiver(): Promise<void> {
+    const receiver = this.reliableReceiver
+    if (!receiver) return
+
+    if (!receiver.tracker.isComplete()) {
+      const missing = receiver.tracker.missingChunks()
+      const absoluteMissing = missing.map(m => this.toAbsoluteIndex(receiver.manifest, m.fileIndex, m.chunkIndex))
+      this.sendControl({
+        type: 'verify_failed',
+        transferId: receiver.manifest.transferId,
+        reason: 'missing_chunks',
+        missing: absoluteMissing,
+      })
+      this.sendControl({
+        type: 'retry_request',
+        transferId: receiver.manifest.transferId,
+        chunks: missing,
+      })
+      return
+    }
+
+    // Assemble + download each file. We compute the file hash on the fly when
+    // feasible — the manifest's per-chunk hashes already covered correctness;
+    // the file-level hash is recorded in the receipt for cross-checking.
+    let aggregatedSize = 0
+    const root = receiver.manifest.rootHash
+    for (const file of receiver.manifest.files) {
+      const buffers = receiver.chunkBuffers.get(file.fileIndex) ?? []
+      const blob = new Blob(buffers, { type: file.mimeType || 'application/octet-stream' })
+      aggregatedSize += blob.size
+
+      transferStore.addReceivedFile({
+        id: file.fileId,
+        name: file.name,
+        type: file.mimeType,
+        size: file.size,
+        blob,
+      })
+
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = file.name
+      a.style.display = 'none'
+      a.rel = 'noopener'
+      document.body.appendChild(a)
+      a.click()
+      setTimeout(() => {
+        try { document.body.removeChild(a) } catch { /* ignore */ }
+        URL.revokeObjectURL(url)
+      }, 1000)
+    }
+
+    this.sendControl({
+      type: 'verify_success',
+      transferId: receiver.manifest.transferId,
+      rootHash: root,
+    })
+
+    const snap = receiver.tracker.snapshot()
+    const completedAt = Date.now()
+    const health = computeHealthScore({
+      totalChunks: snap.totalChunks,
+      ackedChunks: snap.acked + snap.verified,
+      verifiedChunks: snap.verified,
+      retries: snap.retries,
+      failedChunks: snap.failedChunks,
+      bufferedAmount: this.dc?.bufferedAmount ?? 0,
+      bufferedHigh: false,
+      averageSpeedBps: this.averageSpeedBps(),
+      connectionKind: this.connectionKind,
+      connectionStable: !this.failed,
+      paused: receiver.paused,
+      state: 'complete',
+    })
+
+    const receipt = buildReceipt({
+      manifest: receiver.manifest,
+      health,
+      startedAt: receiver.startedAt,
+      completedAt,
+      route: receiver.manifest.route ?? this.profile,
+      retryCount: snap.retries,
+      failedChunkCount: snap.failedChunks,
+      verified: aggregatedSize === receiver.manifest.totalSize && snap.failed === 0,
+      rootHash: root,
+    })
+
+    transferStore.setReceipt(receipt)
+    transferStore.setHealth(health)
+    if (this.queueEntryId) {
+      transferQueueStore.attachReceipt(this.queueEntryId, receipt)
+    }
+
+    this.transferCompleted = true
+    transferStore.setCurrentFile(null)
+    transferStore.setState('complete')
+    this.stopSpeedTimer()
+    this.stopReceiverProgressTimer()
+  }
+
+  private toAbsoluteIndex(manifest: TransferManifest, fileIndex: number, chunkIndex: number): number {
+    let cursor = 0
+    for (const file of manifest.files) {
+      if (file.fileIndex === fileIndex) return cursor + chunkIndex
+      cursor += file.totalChunks
+    }
+    return cursor
+  }
+
+  // ─── Legacy sender/receiver path (preserved for old peers) ─────────────────
+
+  private async startLegacySending(): Promise<void> {
     const totalBytes = this.sendQueue.reduce((sum, file) => sum + file.size, 0)
     let bytesSent = 0
 
@@ -344,30 +1138,49 @@ export class WebRTCTransfer {
     this.stopSpeedTimer()
     transferStore.setCurrentFile(null)
     transferStore.setState('complete')
+
+    if (this.queueEntryId) {
+      transferQueueStore.setStatus(this.queueEntryId, 'completed')
+    }
   }
 
-  private drainBuffer(): Promise<void> {
-    const dc = this.dc
-    if (!dc || dc.bufferedAmount < BUFFER_HIGH_WATERMARK) return Promise.resolve()
+  private legacyCurrentFileId: string | null = null
+  private legacyTotalReceived = 0
+  private legacyGrandTotal = 0
 
-    return new Promise(resolve => {
-      const check = () => {
-        if (!dc || dc.readyState !== 'open') {
-          resolve()
-          return
-        }
-        if (dc.bufferedAmount < BUFFER_HIGH_WATERMARK) {
-          resolve()
-          return
-        }
-        setTimeout(check, BUFFER_DRAIN_INTERVAL)
-      }
-
-      setTimeout(check, BUFFER_DRAIN_INTERVAL)
+  private handleLegacyFileStart(msg: Extract<DCControlMessage, { type: 'file-start' }>): void {
+    this.legacyCurrentFileId = msg.fileId
+    this.legacyGrandTotal += msg.totalSize
+    this.receiveBuffers.set(msg.fileId, [])
+    this.receiveMeta.set(msg.fileId, {
+      name: msg.name,
+      type: msg.mimeType,
+      totalChunks: msg.totalChunks,
+      totalSize: msg.totalSize,
+      received: 0,
     })
+    transferStore.setCurrentFile({
+      id: msg.fileId,
+      name: msg.name,
+      type: msg.mimeType,
+      size: msg.totalSize,
+    })
+    if (this.speedTimer === null) {
+      this.startSpeedTimer(() => this.legacyTotalReceived)
+    }
+    transferStore.setState('transferring')
   }
 
-  // ─── Receiving ─────────────────────────────────────────────────────────────
+  private async handleLegacyChunkBinary(chunk: ArrayBuffer): Promise<void> {
+    if (!this.legacyCurrentFileId) return
+    this.receiveBuffers.get(this.legacyCurrentFileId)?.push(chunk)
+    const meta = this.receiveMeta.get(this.legacyCurrentFileId)
+    if (meta) {
+      meta.received += chunk.byteLength
+      this.legacyTotalReceived += chunk.byteLength
+      transferStore.setProgress(this.legacyTotalReceived, this.legacyGrandTotal)
+    }
+  }
 
   private assembleAndDownload(fileId: string): void {
     const buffers = this.receiveBuffers.get(fileId) ?? []
@@ -400,6 +1213,60 @@ export class WebRTCTransfer {
     this.receiveMeta.delete(fileId)
   }
 
+  // ─── Sending helpers ───────────────────────────────────────────────────────
+
+  private sendControl(msg: DCControlMessage): void {
+    if (this.dc?.readyState !== 'open') return
+    try {
+      this.dc.send(JSON.stringify(msg))
+    } catch {
+      // The DC may have closed between the readyState check and send(); the
+      // upstream onerror handler will surface the failure.
+    }
+  }
+
+  private attachBufferedAmountLow(dc: RTCDataChannel): void {
+    dc.onbufferedamountlow = () => {
+      const waiters = this.bufferedDrainResolvers.splice(0)
+      for (const w of waiters) {
+        try { w() } catch { /* ignore */ }
+      }
+    }
+  }
+
+  private drainBuffer(): Promise<void> {
+    const dc = this.dc
+    if (!dc || dc.bufferedAmount < BUFFER_HIGH_WATERMARK) return Promise.resolve()
+
+    // Prefer the native bufferedamountlow event over polling. A short
+    // safety-net interval handles the rare case where the event is missed
+    // (DC closed mid-backpressure, browser bug, etc.) so the send loop
+    // doesn't deadlock.
+    return new Promise(resolve => {
+      let resolved = false
+      let safetyTimer: ReturnType<typeof setTimeout> | null = null
+
+      const finish = () => {
+        if (resolved) return
+        resolved = true
+        if (safetyTimer) clearTimeout(safetyTimer)
+        resolve()
+      }
+
+      const tick = () => {
+        if (resolved) return
+        if (!dc || dc.readyState !== 'open' || dc.bufferedAmount < BUFFER_HIGH_WATERMARK) {
+          finish()
+          return
+        }
+        safetyTimer = setTimeout(tick, BUFFER_DRAIN_INTERVAL)
+      }
+
+      this.bufferedDrainResolvers.push(finish)
+      safetyTimer = setTimeout(tick, BUFFER_DRAIN_INTERVAL)
+    })
+  }
+
   // ─── Signaling events ──────────────────────────────────────────────────────
 
   private bindSignalingEvents(): void {
@@ -415,8 +1282,6 @@ export class WebRTCTransfer {
 
           case 'peer_joined':
             this.profile = event.mode
-            // Learn peer chain ID from signaling — reliable, arrives before WebRTC negotiation.
-            // The DC fallback (receiver-chain control message) still applies for older signaling.
             if (event.peerChainId) {
               transferStore.setPeerChainId(event.peerChainId)
             }
@@ -557,7 +1422,7 @@ export class WebRTCTransfer {
     return nextKind
   }
 
-  // ─── Diagnostics ───────────────────────────────────────────────────────────
+  // ─── Diagnostics & timers ──────────────────────────────────────────────────
 
   private logDiagnostic(code: string): void {
     transferStore.setDiagnosticCode(code)
@@ -576,8 +1441,13 @@ export class WebRTCTransfer {
     this.failed = true
     this.clearConnectionTimer()
     this.stopSpeedTimer()
+    this.stopHealthTimer()
+    this.stopReceiverProgressTimer()
     transferStore.setCurrentFile(null)
     transferStore.setError(message, diagnosticCode)
+    if (this.queueEntryId) {
+      transferQueueStore.setStatus(this.queueEntryId, 'failed', { error: message })
+    }
     this.logDiagnostic(diagnosticCode)
     this.destroy()
   }
@@ -595,17 +1465,19 @@ export class WebRTCTransfer {
     }
   }
 
-  // ─── Speed tracking ────────────────────────────────────────────────────────
-
   private startSpeedTimer(getBytesSent: () => number): void {
     this.lastBytesSent = 0
     this.lastSpeedTs = Date.now()
+    this.speedSamples = []
     this.speedTimer = setInterval(() => {
       const now = Date.now()
       const elapsed = (now - this.lastSpeedTs) / 1000
       const sent = getBytesSent()
       const speed = elapsed > 0 ? (sent - this.lastBytesSent) / elapsed : 0
       transferStore.setSpeed(speed)
+      // Track a small rolling window for the average shown in the health card.
+      this.speedSamples.push(speed)
+      if (this.speedSamples.length > 12) this.speedSamples.shift()
       this.lastBytesSent = sent
       this.lastSpeedTs = now
     }, 800)
@@ -617,4 +1489,87 @@ export class WebRTCTransfer {
       this.speedTimer = null
     }
   }
+
+  private averageSpeedBps(): number {
+    if (this.speedSamples.length === 0) return 0
+    let sum = 0
+    for (const s of this.speedSamples) sum += s
+    return sum / this.speedSamples.length
+  }
+
+  private startHealthTimer(): void {
+    if (this.healthTimer) return
+    this.healthTimer = setInterval(() => {
+      this.refreshHealth()
+    }, 700)
+  }
+
+  private stopHealthTimer(): void {
+    if (this.healthTimer) {
+      clearInterval(this.healthTimer)
+      this.healthTimer = null
+    }
+  }
+
+  private refreshHealth(): void {
+    const tracker = this.reliableSender?.tracker ?? this.reliableReceiver?.tracker
+    if (!tracker) return
+    this.refreshHealthFromTracker(tracker)
+  }
+
+  private refreshHealthFromTracker(tracker: ChunkTracker): void {
+    const snap = tracker.snapshot()
+    const buffered = this.dc?.bufferedAmount ?? 0
+    const bufferedHigh = buffered >= BUFFER_HIGH_WATERMARK
+    const paused = this.reliableSender?.paused ?? this.reliableReceiver?.paused ?? false
+    const stateNow = this.failed
+      ? 'failed'
+      : this.transferCompleted
+        ? 'complete'
+        : 'transferring'
+    const health = computeHealthScore({
+      totalChunks: snap.totalChunks,
+      ackedChunks: snap.acked + snap.verified,
+      verifiedChunks: snap.verified,
+      retries: snap.retries,
+      failedChunks: snap.failedChunks,
+      bufferedAmount: buffered,
+      bufferedHigh,
+      averageSpeedBps: this.averageSpeedBps(),
+      connectionKind: this.connectionKind,
+      connectionStable: !this.failed,
+      paused,
+      state: stateNow,
+    })
+    transferStore.setHealth(health)
+  }
+
+  private startReceiverProgressTimer(): void {
+    if (this.receiverProgressTimer) return
+    this.receiverProgressTimer = setInterval(() => {
+      const receiver = this.reliableReceiver
+      if (!receiver) return
+      const snap = receiver.tracker.snapshot()
+      this.sendControl({
+        type: 'receiver_progress',
+        transferId: receiver.manifest.transferId,
+        receivedChunks: snap.acked + snap.verified,
+        verifiedChunks: snap.verified,
+        bytesReceived: receiver.bytesReceived,
+        lastChunkIndex: 0,
+        lastFileIndex: 0,
+      })
+    }, RECEIVER_PROGRESS_INTERVAL_MS)
+  }
+
+  private stopReceiverProgressTimer(): void {
+    if (this.receiverProgressTimer) {
+      clearInterval(this.receiverProgressTimer)
+      this.receiverProgressTimer = null
+    }
+  }
 }
+
+// Re-export the queue store so consumers don't need to reach into reliable/.
+export { transferQueueStore } from './reliable'
+export type { TransferHealth }

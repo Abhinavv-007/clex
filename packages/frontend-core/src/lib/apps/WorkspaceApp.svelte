@@ -7,6 +7,7 @@
   import ToolChain from '$components/workspace/ToolChain.svelte'
   import SharePanel from '$components/workspace/SharePanel.svelte'
   import ReceiveAccessCard from '$components/sharing/ReceiveAccessCard.svelte'
+  import TransferQueue from '$components/sharing/TransferQueue.svelte'
   import { initChainInstrumentation, createChainClient } from '$chain/instrument'
 
   export let receiveBasePath = siteRoutes.receive
@@ -89,6 +90,10 @@
           <SharePanel {receiveBasePath} {receivePathFormat} />
         {/if}
       </div>
+    </div>
+
+    <div class="ws-queue-row">
+      <TransferQueue />
     </div>
   </div>
 </div>
@@ -214,6 +219,10 @@
     top: 80px;
     align-self: start;
     min-width: 0;
+  }
+
+  .ws-queue-row {
+    margin-top: 16px;
   }
 
   .ws-mobile-panel { display: block; }

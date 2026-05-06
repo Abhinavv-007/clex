@@ -9,8 +9,21 @@ export type {
   ToolsStore,
 } from './tools'
 
-export { isTransferring, transferComplete, transferFailed, transferStore } from './transfer'
-export type { ReceivedFile, TransferMethod, TransferState, TransferStore } from './transfer'
+export {
+  isTransferring,
+  transferComplete,
+  transferFailed,
+  transferHealth,
+  transferPaused,
+  transferStore,
+} from './transfer'
+export type {
+  ReceivedFile,
+  TransferMethod,
+  TransferProtocol,
+  TransferState,
+  TransferStore,
+} from './transfer'
 
 export { uiStore } from './ui'
 export type { ModalContent, Toast as UIToast, UIStore, WorkspacePanel } from './ui'
