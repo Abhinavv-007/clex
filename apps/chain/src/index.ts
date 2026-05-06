@@ -342,9 +342,69 @@ export default {
       return handleStats(env, cors)
     }
 
-    // GET /chain/health
-    if (request.method === 'GET' && url.pathname === '/chain/health') {
-      return json({ ok: true }, { headers: cors })
+    // GET /chain/health, /api/health, /health
+    // Standardized payload consumed by lnch.in's LaunchOps health probe.
+    if (
+      request.method === 'GET' &&
+      (url.pathname === '/chain/health' ||
+        url.pathname === '/api/health' ||
+        url.pathname === '/health')
+    ) {
+      return json(
+        {
+          ok: true,
+          service: 'clex-chain',
+          ts: Math.floor(Date.now() / 1000),
+          version: 'phase-1-public-face',
+        },
+        {
+          headers: { ...cors, 'cache-control': 'public, max-age=10, s-maxage=30' },
+        },
+      )
+    }
+
+    // GET /api/public/summary — public-safe ledger stats for lnch.in.
+    if (request.method === 'GET' && url.pathname === '/api/public/summary') {
+      try {
+        const total = await env.DB.prepare(
+          'SELECT COUNT(*) AS n FROM transfer_sessions',
+        ).first<{ n: number }>()
+        const completed = await env.DB.prepare(
+          "SELECT COUNT(*) AS n FROM transfer_sessions WHERE status = 'completed'",
+        ).first<{ n: number }>()
+        const chainIds = await env.DB.prepare(
+          'SELECT COUNT(*) AS n FROM chain_ids',
+        ).first<{ n: number }>()
+        const since = Math.floor(Date.now() / 1000) - 24 * 60 * 60
+        const recent = await env.DB.prepare(
+          'SELECT COUNT(*) AS n FROM transfer_sessions WHERE started_at >= ?',
+        )
+          .bind(since)
+          .first<{ n: number }>()
+        return json(
+          {
+            service: 'clex-chain',
+            generatedAt: Math.floor(Date.now() / 1000),
+            counts: {
+              transfers: total?.n ?? null,
+              completed_transfers: completed?.n ?? null,
+              chain_ids: chainIds?.n ?? null,
+            },
+            last24h: { transfers: recent?.n ?? null },
+          },
+          {
+            headers: {
+              ...cors,
+              'cache-control': 'public, max-age=30, s-maxage=60, stale-while-revalidate=300',
+            },
+          },
+        )
+      } catch {
+        return json(
+          { service: 'clex-chain', generatedAt: Math.floor(Date.now() / 1000), counts: {}, last24h: {} },
+          { headers: { ...cors, 'cache-control': 'public, max-age=30' } },
+        )
+      }
     }
 
     return new Response('Not found', { status: 404 })

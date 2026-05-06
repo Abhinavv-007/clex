@@ -867,14 +867,15 @@ export default {
       return err('Method not allowed', 405, cors)
     }
 
-    // Health
-    if (path === '/vault/api/health' || path === '/health') {
+    // Health — consumed by lnch.in's LaunchOps health probe.
+    if (path === '/vault/api/health' || path === '/health' || path === '/api/health') {
       return json({
         ok: true,
-        service: 'vault',
-        ts: Date.now(),
+        service: 'clex-vault',
+        ts: Math.floor(Date.now() / 1000),
+        version: 'phase-1-public-face',
         storageConfigured: Boolean(env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY),
-      }, 200, cors)
+      }, 200, { ...cors, 'cache-control': 'public, max-age=10, s-maxage=30' })
     }
 
     // ── Secret Share ──────────────────────────────────────────────────────────

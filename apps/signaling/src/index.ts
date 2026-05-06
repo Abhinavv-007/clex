@@ -35,11 +35,23 @@ export default {
       })
     }
 
-    // Health check
-    if (url.pathname === '/health') {
-      return new Response(JSON.stringify({ ok: true }), {
-        headers: { 'Content-Type': 'application/json', ...corsHeaders(origin, env.ALLOWED_ORIGIN) },
-      })
+    // Health check — consumed by lnch.in's LaunchOps health probe.
+    if (url.pathname === '/health' || url.pathname === '/api/health') {
+      return new Response(
+        JSON.stringify({
+          ok: true,
+          service: 'clex-signaling',
+          ts: Math.floor(Date.now() / 1000),
+          version: 'phase-1-public-face',
+        }),
+        {
+          headers: {
+            'Content-Type': 'application/json; charset=utf-8',
+            'cache-control': 'public, max-age=10, s-maxage=30',
+            ...corsHeaders(origin, env.ALLOWED_ORIGIN),
+          },
+        },
+      )
     }
 
     // Route: /room/:code?role=sender|receiver
