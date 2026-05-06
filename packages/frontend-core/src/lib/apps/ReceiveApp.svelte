@@ -8,6 +8,9 @@
   import { detectReceivedFileFacts, formatBytes, saveBlobWithSystemFallback, siteRoutes, truncateName, triggerBlobDownload } from '$utils'
   import type { TransferProfile } from '$transfer/types'
   import TransferProgress from '$components/sharing/TransferProgress.svelte'
+  import TransferControls from '$components/sharing/TransferControls.svelte'
+  import TransferHealthCard from '$components/sharing/TransferHealthCard.svelte'
+  import TransferReceiptCard from '$components/sharing/TransferReceiptCard.svelte'
 
   export let initialCode = ''
   export let initialMode: TransferProfile = 'webrtc'
@@ -277,6 +280,8 @@
             </div>
           </div>
           <TransferProgress />
+          <TransferHealthCard />
+          <TransferControls {transfer} />
         </div>
 
       {:else if state === 'complete'}
@@ -288,6 +293,7 @@
               Your browser may have saved the files automatically. If not, use the save controls below.
             </p>
           </div>
+          <TransferReceiptCard />
           {#if receivedFiles.length > 0}
             <div class="receive-save-panel">
               <button class="btn-primary receive-save-primary" on:click={saveAllReceivedFiles} disabled={saving}>

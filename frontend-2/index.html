@@ -6,8 +6,8 @@
   <link rel="icon" type="image/png" href="/brand/clex-logo.png">
   <link rel="apple-touch-icon" href="/brand/clex-logo.png">
   <title>Clex — Drop Prepare Share One workspace for all your files</title>
-  <meta name="description" content="Clex is a smart file workspace. Drop files, prepare them with built-in tools, and share them through the fastest route — direct P2P, local network, or Google Drive. No accounts, no server storage, privacy-first.">
-  <meta name="keywords" content="file sharing, P2P transfer, WebRTC, file workspace, PDF tools, image compression, privacy">
+  <meta name="description" content="Clex is a smart file workspace with the new Clex Direct+ reliability layer — verified chunk transfers, ACK/retry, pause/resume, and a privacy-safe transfer receipt. Drop files, prepare them with built-in tools, and share them through the fastest route — direct P2P, local network, or Google Drive. No accounts, no server storage, privacy-first.">
+  <meta name="keywords" content="file sharing, P2P transfer, WebRTC, Clex Direct+, reliable transfer, chunk verification, transfer receipt, file workspace, PDF tools, image compression, privacy">
   <script>
     (() => {
       try {
@@ -186,7 +186,7 @@
           <div class="card__icon">→</div>
           <h3 class="card__title">Share</h3>
           <p class="card__text">
-            Clex finds the fastest route. Direct P2P when possible, local network for speed, Drive as a fallback. You stay in control.
+            Clex finds the fastest route. Direct P2P when possible, local network for speed, Drive as a fallback. <strong class="text-mono text-accent">Now with Clex Direct+</strong> — chunk-level verification, ACK/retry, and pause/resume keep the transfer stable on flaky networks.
           </p>
         </div>
       </div>
@@ -269,6 +269,35 @@
     </div>
   </div>
 
+  <!-- ═══ Direct+ Reliability Callout ═══ -->
+  <section class="section direct-plus-callout" id="direct-plus" aria-labelledby="direct-plus-title">
+    <div class="container">
+      <div class="dpc-card reveal">
+        <div class="dpc-eyebrow">
+          <span class="dpc-tag">New</span>
+          <span class="dpc-label">Reliability layer</span>
+        </div>
+        <h2 id="direct-plus-title" class="dpc-title">
+          Meet <span class="dpc-wordmark">Clex&nbsp;Direct+</span>
+        </h2>
+        <p class="dpc-sub">
+          AirDrop-simple. Torrent-stable. Privacy-first. Direct+ adds chunk-level verification, ACK/retry, pause/resume, and a verified transfer receipt to every direct transfer — without changing the privacy model.
+        </p>
+        <ul class="dpc-grid stagger-group" role="list">
+          <li class="dpc-cell"><span class="dpc-cell-key">Chunk manifest</span><span class="dpc-cell-val">Per-chunk SHA-256 + root hash</span></li>
+          <li class="dpc-cell"><span class="dpc-cell-key">ACK / retry</span><span class="dpc-cell-val">Resends only the failed chunks</span></li>
+          <li class="dpc-cell"><span class="dpc-cell-key">Pause &amp; resume</span><span class="dpc-cell-val">Mid-transfer, no restart from zero</span></li>
+          <li class="dpc-cell"><span class="dpc-cell-key">Health score</span><span class="dpc-cell-val">Live 0&ndash;100 transfer health</span></li>
+          <li class="dpc-cell"><span class="dpc-cell-key">Verified receipt</span><span class="dpc-cell-val">Proof root hash, no file content</span></li>
+          <li class="dpc-cell"><span class="dpc-cell-key">Cross-device queue</span><span class="dpc-cell-val">Pending, active, recent transfers</span></li>
+        </ul>
+        <p class="dpc-foot">
+          Older Clex peers stay compatible — Direct+ only turns on when both devices support it.
+        </p>
+      </div>
+    </div>
+  </section>
+
   <!-- ═══ Routing Panel ═══ -->
   <section class="section routing" id="routing">
     <div class="container">
@@ -294,22 +323,22 @@
               Primary
             </span>
           </div>
-          <h3 class="routing__method-title">Direct P2P</h3>
+          <h3 class="routing__method-title">Direct P2P <span class="routing__method-tag">Direct+</span></h3>
           <p class="routing__method-desc">
-            Browser-to-browser transfer via WebRTC. Files go straight from you to them. No server in between.
+            Browser-to-browser transfer via WebRTC, now with the Clex&nbsp;Direct+ reliability layer — chunk verification, ACK/retry, pause/resume, and a verified receipt. Files go straight from you to them. No server in between.
           </p>
           <div class="routing__method-stats">
             <div class="routing__method-stat">
               <span>Protocol</span>
-              <span class="routing__method-stat-value">WebRTC</span>
+              <span class="routing__method-stat-value">WebRTC + Direct+</span>
+            </div>
+            <div class="routing__method-stat">
+              <span>Reliability</span>
+              <span class="routing__method-stat-value">Chunk ACK / retry</span>
             </div>
             <div class="routing__method-stat">
               <span>Server Storage</span>
               <span class="routing__method-stat-value">None</span>
-            </div>
-            <div class="routing__method-stat">
-              <span>Account</span>
-              <span class="routing__method-stat-value">Not Required</span>
             </div>
             <div class="routing__method-stat">
               <span>Privacy</span>

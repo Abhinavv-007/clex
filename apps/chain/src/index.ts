@@ -69,7 +69,10 @@ async function handleRegister(req: Request, env: Env, cors: HeadersInit): Promis
 }
 
 async function handleCreateSession(req: Request, env: Env, cors: HeadersInit): Promise<Response> {
-  let body: { sender_chain_id?: unknown; route?: unknown; files?: unknown }
+  // `meta` is an optional, additive client-supplied bag (e.g. the privacy-safe
+  // receipt summary from Clex Direct+). Older deployments simply ignore it.
+  // We only enforce a soft size cap so a malformed client can't bloat a row.
+  let body: { sender_chain_id?: unknown; route?: unknown; files?: unknown; meta?: unknown }
   try { body = await req.json() } catch { return json({ error: 'Bad JSON' }, { status: 400, headers: cors }) }
 
   if (!isValidChainId(body.sender_chain_id)) {
@@ -80,6 +83,12 @@ async function handleCreateSession(req: Request, env: Env, cors: HeadersInit): P
   }
   if (!Array.isArray(body.files) || body.files.length === 0) {
     return json({ error: 'files must be a non-empty array' }, { status: 400, headers: cors })
+  }
+
+  // Reject implausibly large meta payloads but otherwise let new fields through
+  // without storing them — the client persists receipts locally for now.
+  if (body.meta != null && JSON.stringify(body.meta).length > 4096) {
+    return json({ error: 'meta payload too large (>4096 bytes)' }, { status: 400, headers: cors })
   }
 
   // Sanitize files — never store filenames
@@ -125,11 +134,17 @@ async function handleCreateSession(req: Request, env: Env, cors: HeadersInit): P
 }
 
 async function handleAppendEvent(req: Request, env: Env, cors: HeadersInit, sessionId: string): Promise<Response> {
-  let body: { status?: unknown; receiver_chain_id?: unknown }
+  // `meta` is an optional, additive client-supplied receipt summary (Clex
+  // Direct+). Accepted for forward-compat; not persisted yet.
+  let body: { status?: unknown; receiver_chain_id?: unknown; meta?: unknown }
   try { body = await req.json() } catch { return json({ error: 'Bad JSON' }, { status: 400, headers: cors }) }
 
   if (typeof body.status !== 'string' || !VALID_STATUSES.includes(body.status as never)) {
     return json({ error: `status must be one of: ${VALID_STATUSES.join(', ')}` }, { status: 400, headers: cors })
+  }
+
+  if (body.meta != null && JSON.stringify(body.meta).length > 4096) {
+    return json({ error: 'meta payload too large (>4096 bytes)' }, { status: 400, headers: cors })
   }
   const nextStatus = body.status
 

@@ -13,6 +13,7 @@ import { get } from 'svelte/store'
 import { transferStore, type TransferState } from '$stores/transfer'
 import { filesStore } from '$stores/files'
 import { getChainId } from '$utils/chainId'
+import { receiptToChainMeta } from '$transfer/reliable'
 import { ChainClient, hashBlob, fileCategory, type ChainFile } from './client'
 
 // Map internal transfer states to chain statuses
@@ -153,11 +154,15 @@ export function initChainInstrumentation(client: ChainClient): () => void {
     if (receiverChainId) {
       lastPeerChainId = receiverChainId
     }
-    void client.appendEvent(session.sessionId, chainStatus, receiverChainId)
 
-    // On terminal status, retain the session id so a late-arriving peer
-    // chain id (DC fallback path) can still attach receiver_chain_id.
-    if (['completed', 'failed', 'cancelled', 'abandoned'].includes(chainStatus)) {
+    // Attach the privacy-safe receipt summary on terminal events when one is
+    // available. The Chain worker accepts this `meta` field additively; older
+    // deployments simply ignore it.
+    const isTerminal = ['completed', 'failed', 'cancelled', 'abandoned'].includes(chainStatus)
+    const meta = isTerminal && store.receipt ? receiptToChainMeta(store.receipt) : undefined
+    void client.appendEvent(session.sessionId, chainStatus, receiverChainId, meta)
+
+    if (isTerminal) {
       lastTerminalSessionId = session.sessionId
       lastTerminalStatus = chainStatus
       active = null

@@ -7,16 +7,25 @@
   $: bytesTotal = $transferStore.bytesTotal
   $: bytesSent = $transferStore.bytesSent
   $: currentFile = $transferStore.currentFile
+  $: protocol = $transferStore.protocol
+  $: paused = $transferStore.paused
+  $: totalChunks = $transferStore.totalChunks
+  $: verifiedChunks = $transferStore.verifiedChunks
+  $: retries = $transferStore.retries
 
+  $: verifiedPct = totalChunks > 0 ? Math.min(100, Math.round((verifiedChunks / totalChunks) * 100)) : 0
   $: eta = formatETA(bytesTotal - bytesSent, speed)
   $: currentFileFacts = currentFile
     ? [currentFile.type.split('/')[0]?.toUpperCase() || 'FILE', formatBytes(currentFile.size)]
     : []
 </script>
 
-<div class="tp-root">
+<div class="tp-root" class:tp-paused={paused}>
   <div class="tp-bar">
     <div class="tp-fill" style="width: {progress}%;" />
+    {#if protocol === 'reliable' && totalChunks > 0}
+      <div class="tp-verified" style="width: {verifiedPct}%;" />
+    {/if}
     <div class="tp-beam" />
 
     <div class="tp-labels">
@@ -27,6 +36,15 @@
 
   <div class="tp-stats">
     <span class="tp-stat">{formatSpeed(speed)}</span>
+    {#if protocol === 'reliable' && totalChunks > 0}
+      <span class="tp-stat">Verified {verifiedChunks}/{totalChunks}</span>
+      {#if retries > 0}
+        <span class="tp-stat tp-stat--retry">{retries} retr{retries === 1 ? 'y' : 'ies'}</span>
+      {/if}
+    {/if}
+    {#if paused}
+      <span class="tp-stat tp-stat--paused">Paused</span>
+    {/if}
     <span class="tp-stat tp-stat--eta">
       <span class="tp-dot" />
       ETA {eta}
@@ -84,6 +102,31 @@
       inset 0 0 24px rgba(255,255,255,0.15),
       0 0 0 1px rgba(255,255,255,0.12);
   }
+
+  .tp-verified {
+    position: absolute;
+    inset: 0 auto 0 0;
+    border-radius: 16px;
+    transition: width 260ms ease;
+    background:
+      repeating-linear-gradient(
+        45deg,
+        rgba(34, 197, 94, 0.20) 0 6px,
+        rgba(34, 197, 94, 0.05) 6px 12px
+      );
+    pointer-events: none;
+    mix-blend-mode: screen;
+  }
+
+  .tp-paused .tp-fill,
+  .tp-paused .tp-beam {
+    filter: grayscale(0.4) opacity(0.85);
+  }
+
+  .tp-paused .tp-beam { animation-play-state: paused; }
+
+  .tp-stat--paused { color: #f59e0b; font-weight: 600; }
+  .tp-stat--retry  { color: #f59e0b; }
 
   .tp-beam {
     position: absolute;

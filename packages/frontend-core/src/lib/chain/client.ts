@@ -80,12 +80,16 @@ export class ChainClient {
   async createSession(
     senderChainId: string,
     route: string,
-    files: ChainFile[]
+    files: ChainFile[],
+    meta?: Record<string, unknown>
   ): Promise<CreateSessionResult | null> {
     const res = await this.post('/chain/session', {
       sender_chain_id: senderChainId,
       route,
       files,
+      // `meta` is an additive, optional payload — older Chain workers silently
+      // ignore it; newer ones may persist a summary in the future.
+      ...(meta ? { meta } : {}),
     })
     if (!res) return null
     return res as CreateSessionResult
@@ -94,11 +98,13 @@ export class ChainClient {
   async appendEvent(
     sessionId: string,
     status: string,
-    receiverChainId?: string
+    receiverChainId?: string,
+    meta?: Record<string, unknown>
   ): Promise<void> {
     await this.post(`/chain/session/${sessionId}/event`, {
       status,
       ...(receiverChainId ? { receiver_chain_id: receiverChainId } : {}),
+      ...(meta ? { meta } : {}),
     })
   }
 

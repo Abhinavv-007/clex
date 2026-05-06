@@ -1,6 +1,11 @@
 import { writable, derived } from 'svelte/store'
 import { generateRoomCode } from '$utils/crypto'
-import type { ConnectionKind } from '$transfer/types'
+import type {
+  ConnectionKind,
+  ReliableCapabilities,
+  TransferHealth,
+  TransferReceipt,
+} from '$transfer/types'
 
 export type TransferState =
   | 'idle'
@@ -12,6 +17,9 @@ export type TransferState =
   | 'failed'
 
 export type TransferMethod = 'webrtc' | 'local' | 'drive'
+
+/** Which on-wire protocol the active transfer is using. */
+export type TransferProtocol = 'legacy' | 'reliable'
 
 export interface ReceivedFile {
   id: string
@@ -26,6 +34,20 @@ export interface TransferPreviewFile {
   name: string
   type: string
   size: number
+}
+
+const IDLE_HEALTH: TransferHealth = {
+  score: 0,
+  label: 'idle',
+  retries: 0,
+  failedChunks: 0,
+  verifiedChunks: 0,
+  ackedChunks: 0,
+  totalChunks: 0,
+  bufferedAmount: 0,
+  bufferedHigh: false,
+  averageSpeedBps: 0,
+  connectionStable: true,
 }
 
 export interface TransferStore {
@@ -44,6 +66,19 @@ export interface TransferStore {
   driveLink: string | null
   currentFile: TransferPreviewFile | null
   receivedFiles: ReceivedFile[]
+  /** Reliable transfer additions — all default to safe values for legacy mode. */
+  protocol: TransferProtocol
+  paused: boolean
+  pausedBy: 'sender' | 'receiver' | null
+  health: TransferHealth
+  totalChunks: number
+  ackedChunks: number
+  verifiedChunks: number
+  retries: number
+  failedChunks: number
+  receipt: TransferReceipt | null
+  capabilities: ReliableCapabilities | null
+  transferId: string | null
 }
 
 function makeInitial(): TransferStore {
@@ -63,6 +98,18 @@ function makeInitial(): TransferStore {
     driveLink: null,
     currentFile: null,
     receivedFiles: [],
+    protocol: 'legacy',
+    paused: false,
+    pausedBy: null,
+    health: { ...IDLE_HEALTH },
+    totalChunks: 0,
+    ackedChunks: 0,
+    verifiedChunks: 0,
+    retries: 0,
+    failedChunks: 0,
+    receipt: null,
+    capabilities: null,
+    transferId: null,
   }
 }
 
@@ -87,6 +134,18 @@ function createTransferStore() {
         peerChainId: null,
         currentFile: null,
         receivedFiles: [],
+        protocol: 'legacy',
+        paused: false,
+        pausedBy: null,
+        health: { ...IDLE_HEALTH },
+        totalChunks: 0,
+        ackedChunks: 0,
+        verifiedChunks: 0,
+        retries: 0,
+        failedChunks: 0,
+        receipt: null,
+        capabilities: null,
+        transferId: null,
       }))
     },
     setRoomCode(roomCode: string) {
@@ -139,6 +198,49 @@ function createTransferStore() {
     clearReceivedFiles() {
       update(s => ({ ...s, receivedFiles: [] }))
     },
+    // ── Reliable transfer setters ──────────────────────────────────────────
+    setProtocol(protocol: TransferProtocol) {
+      update(s => ({ ...s, protocol }))
+    },
+    setCapabilities(capabilities: ReliableCapabilities | null) {
+      update(s => ({ ...s, capabilities }))
+    },
+    setTransferId(transferId: string | null) {
+      update(s => ({ ...s, transferId }))
+    },
+    setPaused(paused: boolean, by: 'sender' | 'receiver' | null = null) {
+      update(s => ({ ...s, paused, pausedBy: paused ? by : null }))
+    },
+    setHealth(health: TransferHealth) {
+      update(s => ({
+        ...s,
+        health,
+        retries: health.retries,
+        failedChunks: health.failedChunks,
+        verifiedChunks: health.verifiedChunks,
+        ackedChunks: health.ackedChunks,
+        totalChunks: health.totalChunks,
+      }))
+    },
+    setReliableCounts(counts: {
+      totalChunks: number
+      ackedChunks?: number
+      verifiedChunks?: number
+      retries?: number
+      failedChunks?: number
+    }) {
+      update(s => ({
+        ...s,
+        totalChunks: counts.totalChunks,
+        ackedChunks: counts.ackedChunks ?? s.ackedChunks,
+        verifiedChunks: counts.verifiedChunks ?? s.verifiedChunks,
+        retries: counts.retries ?? s.retries,
+        failedChunks: counts.failedChunks ?? s.failedChunks,
+      }))
+    },
+    setReceipt(receipt: TransferReceipt | null) {
+      update(s => ({ ...s, receipt }))
+    },
     reset() {
       set(makeInitial())
     },
@@ -149,3 +251,5 @@ export const transferStore = createTransferStore()
 export const isTransferring = derived(transferStore, $t => $t.state === 'transferring')
 export const transferFailed = derived(transferStore, $t => $t.state === 'failed')
 export const transferComplete = derived(transferStore, $t => $t.state === 'complete')
+export const transferPaused = derived(transferStore, $t => $t.paused)
+export const transferHealth = derived(transferStore, $t => $t.health)

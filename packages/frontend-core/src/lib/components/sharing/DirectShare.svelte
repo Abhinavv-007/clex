@@ -9,6 +9,9 @@
   import { siteRoutes } from '$utils'
   import { formatBytes } from '$utils/format'
   import TransferProgress from './TransferProgress.svelte'
+  import TransferControls from './TransferControls.svelte'
+  import TransferHealthCard from './TransferHealthCard.svelte'
+  import TransferReceiptCard from './TransferReceiptCard.svelte'
   import ReceiveAccessCard from './ReceiveAccessCard.svelte'
 
   export let receiveBasePath = siteRoutes.receive
@@ -150,6 +153,8 @@
         {/if}
       </div>
       <TransferProgress />
+      <TransferHealthCard />
+      <TransferControls {transfer} />
     </div>
 
   {:else if state === 'complete'}
@@ -163,6 +168,7 @@
       <p class="ds-state-sub">
         {$filesStore.length} file{$filesStore.length !== 1 ? 's' : ''} delivered
       </p>
+      <TransferReceiptCard />
       <button class="btn-primary ds-cancel-btn" on:click={reset}>Send more files</button>
     </div>
 
