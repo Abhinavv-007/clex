@@ -42,7 +42,17 @@ export interface Env {
   // Config
   ALLOWED_ORIGIN: string
   MAX_SECRET_SIZE: string
+  /**
+   * Server-side admin secret consumed by /vault/api/admin/* and forwarded
+   * by lnch.in's `CLEX_ADMIN_SECRET` proxy. Falls back to `ADMIN_SECRET`.
+   */
+  CLEX_ADMIN_SECRET?: string
+  ADMIN_SECRET?: string
 }
+
+// ── Boot timestamp (per-instance, resets on cold start) ───────────────────────
+
+const VAULT_BOOTED_AT = Date.now()
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -833,6 +843,170 @@ async function handlePairingDelete(code: string, env: Env, cors: Record<string, 
   return json({ ok: true }, 200, cors)
 }
 
+// ── Admin (gated by CLEX_ADMIN_SECRET) ────────────────────────────────────────
+
+function safeEqual(a: string, b: string): boolean {
+  if (typeof a !== 'string' || typeof b !== 'string') return false
+  if (a.length !== b.length) return false
+  let mismatch = 0
+  for (let i = 0; i < a.length; i += 1) mismatch |= a.charCodeAt(i) ^ b.charCodeAt(i)
+  return mismatch === 0
+}
+
+function isAdminAuthorized(req: Request, env: Env): boolean {
+  const expected = env.CLEX_ADMIN_SECRET || env.ADMIN_SECRET || ''
+  if (!expected) return false
+  const provided = req.headers.get('x-admin-secret') || ''
+  if (!provided) return false
+  return safeEqual(provided, expected)
+}
+
+const VAULT_ADMIN_HEADERS: Record<string, string> = { 'Cache-Control': 'private, no-store' }
+
+async function handleVaultAdminSummary(req: Request, env: Env, cors: Record<string, string>): Promise<Response> {
+  if (!isAdminAuthorized(req, env)) {
+    return json({ error: 'unauthorized' }, 401, { ...cors, ...VAULT_ADMIN_HEADERS })
+  }
+  let attachments = 0
+  let pendingDeletions = 0
+  let activeShares = 0
+  let dbReachable = false
+  try {
+    const [att, pend, shares] = await Promise.all([
+      env.DB.prepare('SELECT COUNT(*) AS n FROM attachments').first<{ n: number }>(),
+      env.DB.prepare('SELECT COUNT(*) AS n FROM pending_deletions').first<{ n: number }>(),
+      env.DB.prepare("SELECT COUNT(*) AS n FROM attachments WHERE deleted_at IS NULL OR deleted_at > strftime('%s','now')*1000").first<{ n: number }>(),
+    ])
+    attachments = att?.n ?? 0
+    pendingDeletions = pend?.n ?? 0
+    activeShares = shares?.n ?? 0
+    dbReachable = true
+  } catch {
+    // Older databases may not have `deleted_at` — fall back to the simpler query.
+    try {
+      const att = await env.DB.prepare('SELECT COUNT(*) AS n FROM attachments').first<{ n: number }>()
+      attachments = att?.n ?? 0
+      dbReachable = true
+    } catch { /* ignore */ }
+  }
+  return json(
+    {
+      service: 'clex-vault',
+      generatedAt: Math.floor(Date.now() / 1000),
+      process: {
+        booted_at: Math.floor(VAULT_BOOTED_AT / 1000),
+        uptime_ms: Date.now() - VAULT_BOOTED_AT,
+        runtime: 'cloudflare-workers',
+      },
+      bindings: {
+        d1: dbReachable,
+        kv_vault_secrets: typeof env.VAULT_SECRETS?.put === 'function',
+        kv_vault_tokens: typeof env.VAULT_TOKENS?.put === 'function',
+        kv_vault_signals: typeof env.VAULT_SIGNALS?.put === 'function',
+        kv_upload_quota: typeof env.UPLOAD_QUOTA?.put === 'function',
+      },
+      config: {
+        supabase_configured: Boolean(env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY),
+        allowed_origin: env.ALLOWED_ORIGIN ?? null,
+        max_secret_size: env.MAX_SECRET_SIZE ?? null,
+        admin_secret_set: Boolean(env.CLEX_ADMIN_SECRET || env.ADMIN_SECRET),
+      },
+      counts: {
+        attachments,
+        pending_deletions: pendingDeletions,
+        active_shares: activeShares,
+      },
+    },
+    200,
+    { ...cors, ...VAULT_ADMIN_HEADERS },
+  )
+}
+
+async function handleVaultAdminHealth(req: Request, env: Env, cors: Record<string, string>): Promise<Response> {
+  if (!isAdminAuthorized(req, env)) {
+    return json({ error: 'unauthorized' }, 401, { ...cors, ...VAULT_ADMIN_HEADERS })
+  }
+  let dbReachable = false
+  try {
+    await env.DB.prepare('SELECT 1').first()
+    dbReachable = true
+  } catch { /* ignore */ }
+  return json(
+    {
+      ok: true,
+      service: 'clex-vault',
+      ts: Math.floor(Date.now() / 1000),
+      version: 'phase-2-admin-api',
+      booted_at: Math.floor(VAULT_BOOTED_AT / 1000),
+      uptime_ms: Date.now() - VAULT_BOOTED_AT,
+      bindings: {
+        d1: dbReachable,
+        kv: typeof env.VAULT_SECRETS?.put === 'function',
+      },
+      storage_configured: Boolean(env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY),
+    },
+    200,
+    { ...cors, ...VAULT_ADMIN_HEADERS },
+  )
+}
+
+interface VaultAdminAttachmentRow {
+  id: string
+  user_id: string | null
+  size_bytes: number | null
+  mime_type: string | null
+  created_at: number | null
+}
+
+async function handleVaultAdminAttachments(req: Request, env: Env, cors: Record<string, string>): Promise<Response> {
+  if (!isAdminAuthorized(req, env)) {
+    return json({ error: 'unauthorized' }, 401, { ...cors, ...VAULT_ADMIN_HEADERS })
+  }
+  const url = new URL(req.url)
+  const limit = Math.min(100, Math.max(1, parseInt(url.searchParams.get('limit') || '20')))
+  let rows: VaultAdminAttachmentRow[] = []
+  try {
+    const res = await env.DB.prepare(
+      `SELECT id, user_id, size_bytes, mime_type, created_at
+         FROM attachments
+         ORDER BY created_at DESC
+         LIMIT ?`,
+    ).bind(limit).all<VaultAdminAttachmentRow>()
+    rows = res.results ?? []
+  } catch { /* ignore */ }
+  return json(
+    {
+      service: 'clex-vault',
+      generatedAt: Math.floor(Date.now() / 1000),
+      count: rows.length,
+      attachments: rows,
+    },
+    200,
+    { ...cors, ...VAULT_ADMIN_HEADERS },
+  )
+}
+
+async function handleVaultAdminAudit(req: Request, env: Env, cors: Record<string, string>): Promise<Response> {
+  if (!isAdminAuthorized(req, env)) {
+    return json({ error: 'unauthorized' }, 401, { ...cors, ...VAULT_ADMIN_HEADERS })
+  }
+  return json(
+    {
+      service: 'clex-vault',
+      generatedAt: Math.floor(Date.now() / 1000),
+      events: [
+        {
+          type: 'process.boot',
+          ts: Math.floor(VAULT_BOOTED_AT / 1000),
+          details: { runtime: 'cloudflare-workers' },
+        },
+      ],
+    },
+    200,
+    { ...cors, ...VAULT_ADMIN_HEADERS },
+  )
+}
+
 // ── Main Handler ──────────────────────────────────────────────────────────────
 
 export default {
@@ -865,6 +1039,26 @@ export default {
     if (accountDeviceMatch) {
       if (method === 'DELETE') return handleAccountDeviceDelete(decodeURIComponent(accountDeviceMatch[1]), request, env, cors)
       return err('Method not allowed', 405, cors)
+    }
+
+    // ─── Admin (gated by CLEX_ADMIN_SECRET) ────────────────────────────────
+    // Mounted under /vault/api/admin/* and /api/admin/* so the lnch.in proxy
+    // can target either prefix.
+    if (method === 'GET' &&
+        (path === '/vault/api/admin/summary' || path === '/api/admin/summary')) {
+      return handleVaultAdminSummary(request, env, cors)
+    }
+    if (method === 'GET' &&
+        (path === '/vault/api/admin/health' || path === '/api/admin/health')) {
+      return handleVaultAdminHealth(request, env, cors)
+    }
+    if (method === 'GET' &&
+        (path === '/vault/api/admin/attachments' || path === '/api/admin/attachments')) {
+      return handleVaultAdminAttachments(request, env, cors)
+    }
+    if (method === 'GET' &&
+        (path === '/vault/api/admin/audit' || path === '/api/admin/audit')) {
+      return handleVaultAdminAudit(request, env, cors)
     }
 
     // Health — consumed by lnch.in's LaunchOps health probe.
