@@ -1009,6 +1009,29 @@ export default {
       return new Response(null, { status: 204, headers })
     }
 
+    // Public liveness probe consumed by lnch.in's LaunchOps health probe and
+    // by external uptime monitors. Cheap, never reveals secrets.
+    if (
+      (url.pathname === '/api/health' || url.pathname === '/health') &&
+      (request.method === 'GET' || request.method === 'HEAD')
+    ) {
+      const body = JSON.stringify({
+        ok: true,
+        service: 'clex-api',
+        ts: Math.floor(Date.now() / 1000),
+        version: 'phase-1-public-face',
+        bindings: {
+          kv: typeof (env as { DRIVE_SESSION_STORE?: { put?: unknown } }).DRIVE_SESSION_STORE?.put === 'function',
+        },
+      })
+      const headers = new Headers({
+        'content-type': 'application/json; charset=utf-8',
+        'cache-control': 'public, max-age=10, s-maxage=30',
+      })
+      appendCors(headers, request, env)
+      return new Response(request.method === 'HEAD' ? null : body, { status: 200, headers })
+    }
+
     if (url.pathname === '/api/auth/google/status' && request.method === 'GET') {
       return handleGoogleStatus(request, env)
     }
