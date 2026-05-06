@@ -12,6 +12,13 @@ export interface Env {
   GOOGLE_DRIVE_SCOPE?: string
   OAUTH_TOKEN_ENCRYPTION_SECRET?: string
   DRIVE_SESSION_STORE: KVNamespace
+  /**
+   * Server-side admin secret consumed by /api/admin/* and forwarded by
+   * lnch.in's `CLEX_ADMIN_SECRET` proxy. Falls back to `ADMIN_SECRET` for
+   * backward-compat with any pre-existing wrangler config.
+   */
+  CLEX_ADMIN_SECRET?: string
+  ADMIN_SECRET?: string
 }
 
 export function getGoogleOAuthConfigStatus(source: Env): GoogleOAuthConfigStatus {

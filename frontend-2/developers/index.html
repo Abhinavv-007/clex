@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/png" href="/brand/clex-logo.png">
+  <link rel="apple-touch-icon" href="/brand/clex-logo.png">
+  <title>Developers — Clex | Public file-transfer API</title>
+  <meta name="description" content="Build with Clex — the public file-transfer API. Create transfers, get a 6-character room code and a receive link, and ship files browser-to-browser without ever uploading to a server.">
+  <script>
+    (() => {
+      try {
+        const theme = localStorage.getItem('clex-theme') === 'light' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', theme);
+        document.documentElement.classList.toggle('dark', theme === 'dark');
+        document.documentElement.style.colorScheme = theme;
+      } catch {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        document.documentElement.classList.add('dark');
+        document.documentElement.style.colorScheme = 'dark';
+      }
+    })();
+  </script>
+
+  <link rel="stylesheet" href="/css/reset.css">
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/animations.css">
+  <link rel="stylesheet" href="/css/pages/home.css">
+  <link rel="stylesheet" href="/css/pages/developers.css">
+
+  <script type="module" src="/js/main.js"></script>
+</head>
+<body data-page="developers">
+
+  <!-- ═══ Navigation ═══ -->
+  <nav class="nav" id="main-nav">
+    <div class="nav__inner">
+      <a href="/" class="nav__logo" aria-label="Clex home">
+        <img src="/brand/clex-logo.png" alt="" class="nav__logo-image">
+        <span class="nav__logo-wordmark">Clex</span>
+      </a>
+      <div class="nav__links">
+        <a href="/features" class="nav__link" data-page="features">Features</a>
+        <a href="/vault" class="nav__link" data-page="vault">Vault</a>
+        <a href="/how-it-works" class="nav__link" data-page="how-it-works">How It Works</a>
+        <a href="/chain" class="nav__link" data-page="chain">Chain</a>
+        <a href="/developers" class="nav__link" data-page="developers">Developers</a>
+        <a href="/getting-started" class="nav__link" data-page="getting-started">Get Started</a>
+        <a href="/faq" class="nav__link" data-page="faq">FAQ</a>
+      </div>
+      <div class="nav__actions">
+        <button class="nav__theme-toggle" id="theme-toggle" aria-label="Toggle theme">☀</button>
+        <a href="/workspace" class="btn btn--primary btn--small desktop-only">Open Workspace →</a>
+      </div>
+      <button class="nav__hamburger" id="nav-hamburger" aria-label="Toggle menu">
+        <span class="nav__hamburger-line"></span>
+        <span class="nav__hamburger-line"></span>
+        <span class="nav__hamburger-line"></span>
+      </button>
+    </div>
+  </nav>
+  <div class="nav__mobile-menu" id="nav-mobile-menu">
+    <a href="/" class="nav__mobile-link">Home</a>
+    <a href="/features" class="nav__mobile-link">Features</a>
+    <a href="/vault" class="nav__mobile-link">Vault</a>
+    <a href="/how-it-works" class="nav__mobile-link">How It Works</a>
+    <a href="/chain" class="nav__mobile-link">Chain</a>
+    <a href="/developers" class="nav__mobile-link">Developers</a>
+    <a href="/getting-started" class="nav__mobile-link">Get Started</a>
+    <a href="/faq" class="nav__mobile-link">FAQ</a>
+    <a href="/workspace" class="nav__mobile-link" style="color: var(--accent-text);">Open Workspace →</a>
+  </div>
+
+  <!-- ═══ Hero ═══ -->
+  <section class="dev-hero">
+    <div class="container">
+      <span class="page-hero__label reveal">Public API · Open Source</span>
+      <h1 class="page-hero__title reveal">Build on Clex.</h1>
+      <p class="page-hero__subtitle reveal">
+        A small, honest public API for browser-to-browser file transfer. Create a transfer from your terminal, get a 6-character room code and a receive link, and let the receiver pull the file straight from your machine. No accounts, no servers in the middle, no API keys to manage.
+      </p>
+      <pre class="dev-hero__terminal reveal" aria-label="Terminal example"><span class="dev-hero__terminal-prompt">$</span> curl -sS -X POST https://clex.in/api/transfers \
+    -H 'content-type: application/json' \
+    -d '{"file_name":"design.zip","file_size_bytes":4823491}'
+
+{
+  "transfer_id": "f4a3e9b1c8…",
+  "code":        "X7K92Q",
+  "receive_url": "https://clex.in/receive?code=X7K92Q",
+  "status":      "created",
+  "expires_at":  1762542901
+}</pre>
+    </div>
+  </section>
+
+  <!-- ═══ How transfers work ═══ -->
+  <section class="dev-section">
+    <div class="container">
+      <h2 class="dev-section__title">How a transfer works</h2>
+      <p class="dev-section__lede">
+        Clex is privacy-first. The API only stores transfer <em>metadata</em> — a short room code, a receive URL, optional file metadata, and a status timeline. The actual file bytes never touch our servers; they go peer-to-peer over WebRTC, with a same-LAN shortcut when both sides are on the same network.
+      </p>
+
+      <ol style="display: flex; flex-direction: column; gap: var(--space-md); padding-left: 1.4rem; color: var(--text-secondary); line-height: var(--leading-relaxed);">
+        <li><strong>Create.</strong> You <code>POST /api/transfers</code>. We mint a <code>transfer_id</code>, a short <code>code</code>, and a <code>receive_url</code>. Default expiry is 24h (you can override 60s–7d).</li>
+        <li><strong>Hand off.</strong> Share the <code>code</code> or <code>receive_url</code> with the receiver. Anyone with the link can join.</li>
+        <li><strong>Connect.</strong> The browser opens a WebRTC connection through the Clex signaling worker. The room code matches the two peers.</li>
+        <li><strong>Transfer.</strong> Bytes flow sender→receiver directly. No server-side relay unless P2P is impossible, in which case Clex offers a Drive-backed fallback.</li>
+        <li><strong>Mark complete.</strong> The sender (or your CLI) <code>POST</code>s an <code>events</code> entry — <code>connected</code>, <code>completed</code>, <code>cancelled</code>, etc. — so the public chain ledger has an honest record.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- ═══ Privacy model ═══ -->
+  <section class="dev-section">
+    <div class="container">
+      <h2 class="dev-section__title">Privacy model</h2>
+      <p class="dev-section__lede">
+        Everything that's stored on our side is what you'd be comfortable putting on a sticky note: a code, a status, optional non-sensitive file metadata you chose to share. File contents never enter our servers. Transfers auto-expire and are deleted from KV when the TTL fires.
+      </p>
+      <ul style="display: flex; flex-direction: column; gap: var(--space-sm); padding-left: 1.4rem; color: var(--text-secondary); line-height: var(--leading-relaxed);">
+        <li><strong>No file payloads</strong> on Clex servers (P2P or LAN routes).</li>
+        <li><strong>No auth tokens</strong> in the public API. Codes are short-lived and single-purpose.</li>
+        <li><strong>Optional fallback</strong> via Google Drive (signed by the sender, deleted in 24h).</li>
+        <li><strong>Public ledger</strong> on <a href="/chain" class="link-underline">/chain</a> records hashes &amp; routes, never file bytes or names if you don't share them.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ═══ Endpoints ═══ -->
+  <section class="dev-section">
+    <div class="container">
+      <h2 class="dev-section__title">Endpoints</h2>
+      <p class="dev-section__lede">
+        All endpoints live on <code>https://clex.in</code>, return JSON, and accept JSON request bodies. CORS is open. No keys required for the public surface.
+      </p>
+
+      <!-- POST /api/transfers -->
+      <article class="dev-endpoint">
+        <header class="dev-endpoint__head">
+          <span class="dev-endpoint__method dev-endpoint__method--post">POST</span>
+          <code class="dev-endpoint__path">/api/transfers</code>
+        </header>
+        <p class="dev-endpoint__desc">
+          Create a new transfer session. Returns a <code>transfer_id</code>, a 6-character <code>code</code>, and the canonical <code>receive_url</code>.
+        </p>
+        <span class="dev-endpoint__codeblock-label">Request body (all fields optional)</span>
+        <pre class="dev-endpoint__codeblock">{
+  "ttl_seconds":     86400,            // 60 .. 604800; default 86400 (24h)
+  "file_name":       "design.zip",     // optional metadata for the receiver UI
+  "file_size_bytes": 4823491,          // optional, for progress UI
+  "file_mime":       "application/zip",
+  "client_label":    "clex CLI v1.2"
+}</pre>
+        <span class="dev-endpoint__codeblock-label">Response 200</span>
+        <pre class="dev-endpoint__codeblock">{
+  "transfer_id": "f4a3e9b1c8…",
+  "code":        "X7K92Q",
+  "receive_url": "https://clex.in/receive?code=X7K92Q",
+  "status":      "created",
+  "expires_at":  1762542901,
+  "created_at":  1762456501
+}</pre>
+      </article>
+
+      <!-- GET /api/transfers/:id -->
+      <article class="dev-endpoint">
+        <header class="dev-endpoint__head">
+          <span class="dev-endpoint__method dev-endpoint__method--get">GET</span>
+          <code class="dev-endpoint__path">/api/transfers/&lt;id_or_code&gt;</code>
+        </header>
+        <p class="dev-endpoint__desc">
+          Read the current state of a transfer. Pass either the <code>transfer_id</code> or the 6-character <code>code</code>.
+        </p>
+        <span class="dev-endpoint__codeblock-label">Response 200</span>
+        <pre class="dev-endpoint__codeblock">{
+  "transfer_id": "f4a3e9b1c8…",
+  "code":        "X7K92Q",
+  "receive_url": "https://clex.in/receive?code=X7K92Q",
+  "status":      "connected",
+  "route":       "p2p",
+  "file_name":   "design.zip",
+  "file_size_bytes": 4823491,
+  "file_mime":   "application/zip",
+  "events": [
+    { "type": "created",   "ts": 1762456501 },
+    { "type": "connected", "ts": 1762456538, "details": { "peer": "browser" } }
+  ],
+  "expires_at": 1762542901,
+  "created_at": 1762456501
+}</pre>
+      </article>
+
+      <!-- POST /api/transfers/:id/events -->
+      <article class="dev-endpoint">
+        <header class="dev-endpoint__head">
+          <span class="dev-endpoint__method dev-endpoint__method--post">POST</span>
+          <code class="dev-endpoint__path">/api/transfers/&lt;id_or_code&gt;/events</code>
+        </header>
+        <p class="dev-endpoint__desc">
+          Append a lifecycle event. Useful from a CLI or browser client for keeping the public chain ledger honest.
+        </p>
+        <span class="dev-endpoint__codeblock-label">Request body</span>
+        <pre class="dev-endpoint__codeblock">{
+  "type":    "completed",          // created | connected | completed | cancelled | expired | error
+  "details": { "bytes_sent": 4823491, "duration_ms": 9421 }
+}</pre>
+        <span class="dev-endpoint__codeblock-label">Response 200</span>
+        <pre class="dev-endpoint__codeblock">{ "ok": true, "status": "completed" }</pre>
+      </article>
+
+      <!-- DELETE /api/transfers/:id -->
+      <article class="dev-endpoint">
+        <header class="dev-endpoint__head">
+          <span class="dev-endpoint__method dev-endpoint__method--delete">DELETE</span>
+          <code class="dev-endpoint__path">/api/transfers/&lt;id_or_code&gt;</code>
+        </header>
+        <p class="dev-endpoint__desc">
+          Cancel a transfer that hasn't completed yet. Already-completed transfers stay marked completed and are not retroactively erased from the chain ledger.
+        </p>
+        <span class="dev-endpoint__codeblock-label">Response 200</span>
+        <pre class="dev-endpoint__codeblock">{ "ok": true, "status": "cancelled" }</pre>
+      </article>
+
+      <!-- GET /api/health -->
+      <article class="dev-endpoint">
+        <header class="dev-endpoint__head">
+          <span class="dev-endpoint__method dev-endpoint__method--get">GET</span>
+          <code class="dev-endpoint__path">/api/health</code>
+        </header>
+        <p class="dev-endpoint__desc">
+          Public liveness probe. Used by status pages and the lnch.in registry. Cacheable.
+        </p>
+        <span class="dev-endpoint__codeblock-label">Response 200</span>
+        <pre class="dev-endpoint__codeblock">{
+  "ok":      true,
+  "service": "clex-api",
+  "ts":      1762456501,
+  "version": "phase-2-admin-api"
+}</pre>
+      </article>
+    </div>
+  </section>
+
+  <!-- ═══ Code samples ═══ -->
+  <section class="dev-section">
+    <div class="container">
+      <h2 class="dev-section__title">Snippets</h2>
+      <p class="dev-section__lede">
+        Drop-in examples for the most common flow: create a transfer, then poll until it's marked <code>completed</code> or <code>cancelled</code>.
+      </p>
+
+      <div class="dev-tabs" role="tablist" aria-label="Code language">
+        <button class="dev-tabs__btn" role="tab" aria-selected="true" data-target="curl">curl</button>
+        <button class="dev-tabs__btn" role="tab" aria-selected="false" data-target="js">javascript</button>
+        <button class="dev-tabs__btn" role="tab" aria-selected="false" data-target="python">python</button>
+      </div>
+
+      <div class="dev-tabs__panel" data-active="true" data-id="curl">
+        <pre class="dev-endpoint__codeblock"># Create a transfer
+curl -sS -X POST https://clex.in/api/transfers \
+  -H 'content-type: application/json' \
+  -d '{"file_name":"design.zip","file_size_bytes":4823491}' \
+  | tee /tmp/clex.json
+
+CODE=$(jq -r .code /tmp/clex.json)
+echo "Share https://clex.in/receive?code=$CODE"
+
+# Poll status
+while :; do
+  STATUS=$(curl -sS https://clex.in/api/transfers/$CODE | jq -r .status)
+  echo "$STATUS"
+  case "$STATUS" in completed|cancelled|expired) break;; esac
+  sleep 2
+done</pre>
+      </div>
+
+      <div class="dev-tabs__panel" data-active="false" data-id="js">
+        <pre class="dev-endpoint__codeblock">async function shareFile({ name, size }) {
+  const r = await fetch('https://clex.in/api/transfers', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ file_name: name, file_size_bytes: size }),
+  });
+  const t = await r.json();
+  console.log(`Receive: ${t.receive_url}`);
+  console.log(`Code:    ${t.code}`);
+  return t;
+}
+
+async function pollUntilDone(code) {
+  while (true) {
+    const t = await fetch(`https://clex.in/api/transfers/${code}`).then(r => r.json());
+    console.log(t.status);
+    if (['completed', 'cancelled', 'expired'].includes(t.status)) return t;
+    await new Promise(r => setTimeout(r, 2000));
+  }
+}</pre>
+      </div>
+
+      <div class="dev-tabs__panel" data-active="false" data-id="python">
+        <pre class="dev-endpoint__codeblock">import time, requests
+
+def share_file(name: str, size: int) -> dict:
+    r = requests.post(
+        "https://clex.in/api/transfers",
+        json={"file_name": name, "file_size_bytes": size},
+        timeout=10,
+    )
+    r.raise_for_status()
+    t = r.json()
+    print(f"Receive: {t['receive_url']}")
+    print(f"Code:    {t['code']}")
+    return t
+
+def poll_until_done(code: str) -> dict:
+    while True:
+        t = requests.get(f"https://clex.in/api/transfers/{code}", timeout=10).json()
+        print(t["status"])
+        if t["status"] in {"completed", "cancelled", "expired"}:
+            return t
+        time.sleep(2)</pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ Statuses + rate limits ═══ -->
+  <section class="dev-section">
+    <div class="container">
+      <h2 class="dev-section__title">Reference</h2>
+
+      <h3 style="font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.06em; font-size: var(--text-sm); color: var(--text-tertiary); margin-bottom: var(--space-sm);">Transfer status</h3>
+      <table class="dev-table">
+        <thead><tr><th>Value</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><code>created</code></td><td>Transfer minted, no peer connected yet.</td></tr>
+          <tr><td><code>connected</code></td><td>Receiver opened the room, P2P connecting.</td></tr>
+          <tr><td><code>completed</code></td><td>Bytes delivered. Terminal state.</td></tr>
+          <tr><td><code>cancelled</code></td><td>Sender or receiver aborted. Terminal state.</td></tr>
+          <tr><td><code>expired</code></td><td>TTL elapsed before completion. Terminal state.</td></tr>
+        </tbody>
+      </table>
+
+      <h3 style="font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.06em; font-size: var(--text-sm); color: var(--text-tertiary); margin: var(--space-lg) 0 var(--space-sm);">Routes</h3>
+      <table class="dev-table">
+        <thead><tr><th>Value</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><code>p2p</code></td><td>WebRTC sender→receiver direct.</td></tr>
+          <tr><td><code>local</code></td><td>Same-LAN shortcut (no internet hop).</td></tr>
+          <tr><td><code>fallback</code></td><td>Drive-backed temporary relay (sender-signed, 24h).</td></tr>
+        </tbody>
+      </table>
+
+      <div class="dev-callout">
+        <strong>Rate limits:</strong> The public API today has no hard rate limit. We reserve the right to throttle abusive callers (>30 req/s sustained per IP) by returning <code>429</code>. If you need higher throughput, ping <a href="mailto:hello@clex.in" class="link-underline">hello@clex.in</a>.
+      </div>
+
+      <div class="dev-callout">
+        <strong>Open source:</strong> Everything you see here is open. Source: <a href="https://github.com/Abhinavv-007/clex" target="_blank" rel="noopener noreferrer" class="link-underline">github.com/Abhinavv-007/clex</a>. File issues, send PRs, or fork it.
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ Footer ═══ -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer__grid">
+        <div class="footer__brand">
+          <div class="footer__logo" aria-label="Clex">
+            <img src="/brand/clex-logo.png" alt="" class="footer__logo-image">
+            <span class="footer__logo-wordmark">Clex</span>
+          </div>
+          <p class="footer__desc">
+            Drop files, prepare them in-browser, and share through the fastest route available. Private by default, built for the open web.
+          </p>
+        </div>
+        <div class="footer__col">
+          <h4 class="footer__col-title">Product</h4>
+          <nav class="footer__links">
+            <a href="/features" class="footer__link">Features</a>
+            <a href="/vault" class="footer__link">Vault</a>
+            <a href="/how-it-works" class="footer__link">How It Works</a>
+            <a href="/workspace" class="footer__link">Workspace</a>
+            <a href="/chain" class="footer__link">Chain</a>
+            <a href="/developers" class="footer__link">Developers</a>
+            <a href="/getting-started" class="footer__link">Get Started</a>
+          </nav>
+        </div>
+        <div class="footer__col">
+          <h4 class="footer__col-title">Support</h4>
+          <nav class="footer__links">
+            <a href="/faq" class="footer__link">FAQ</a>
+            <a href="/getting-started" class="footer__link">Onboarding</a>
+            <a href="mailto:hello@clex.in" class="footer__link">Contact</a>
+          </nav>
+        </div>
+        <div class="footer__col">
+          <h4 class="footer__col-title">Legal</h4>
+          <nav class="footer__links">
+            <a href="/privacy" class="footer__link">Privacy Policy</a>
+            <a href="/terms" class="footer__link">Terms of Service</a>
+          </nav>
+        </div>
+      </div>
+      <div class="footer__bottom">
+        <span class="footer__copyright">© 2026 Clex. All rights reserved.</span>
+        <div class="footer__legal">
+          <a href="/privacy" class="footer__legal-link">Privacy</a>
+          <a href="/terms" class="footer__legal-link">Terms</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // ─── Tabs (curl / js / python) ─────────────────────────────────────────
+    document.querySelectorAll('.dev-tabs').forEach(group => {
+      const buttons = group.querySelectorAll('.dev-tabs__btn');
+      const container = group.parentElement;
+      const panels = container.querySelectorAll('.dev-tabs__panel');
+      buttons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          buttons.forEach(b => b.setAttribute('aria-selected', b === btn ? 'true' : 'false'));
+          panels.forEach(p => p.setAttribute('data-active', p.dataset.id === btn.dataset.target ? 'true' : 'false'));
+        });
+      });
+    });
+  </script>
+</body>
+</html>

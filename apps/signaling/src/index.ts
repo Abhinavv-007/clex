@@ -3,6 +3,35 @@ import type { Env } from './types'
 
 const ROOM_CODE_RE = /^\/room\/([A-Z0-9]{6})$/i
 
+const BOOTED_AT = Date.now()
+
+function safeEqual(a: string, b: string): boolean {
+  if (typeof a !== 'string' || typeof b !== 'string') return false
+  if (a.length !== b.length) return false
+  let mismatch = 0
+  for (let i = 0; i < a.length; i += 1) mismatch |= a.charCodeAt(i) ^ b.charCodeAt(i)
+  return mismatch === 0
+}
+
+function isAdminAuthorized(req: Request, env: Env): boolean {
+  const expected = env.CLEX_ADMIN_SECRET || env.ADMIN_SECRET || ''
+  if (!expected) return false
+  const provided = req.headers.get('x-admin-secret') || ''
+  if (!provided) return false
+  return safeEqual(provided, expected)
+}
+
+function adminJson(data: unknown, init: ResponseInit = {}): Response {
+  return new Response(JSON.stringify(data), {
+    ...init,
+    headers: {
+      'Content-Type': 'application/json; charset=utf-8',
+      'Cache-Control': 'private, no-store',
+      ...((init.headers as Record<string, string>) ?? {}),
+    },
+  })
+}
+
 function corsHeaders(origin: string, allowedOriginsStr: string): HeadersInit {
   const allowedOrigins = allowedOriginsStr.split(',').map(s => s.trim());
   let allowed = ''
@@ -52,6 +81,61 @@ export default {
           },
         },
       )
+    }
+
+    // ─── Admin (gated by CLEX_ADMIN_SECRET) ────────────────────────────
+    // Signaling is mostly a stateless DO router, so the admin surface is
+    // intentionally tiny — process info, runtime, env config flags. The
+    // chain worker carries the rich session/audit data.
+    if (request.method === 'GET' &&
+        (url.pathname === '/admin/summary' || url.pathname === '/api/admin/summary')) {
+      if (!isAdminAuthorized(request, env)) return adminJson({ error: 'unauthorized' }, { status: 401 })
+      return adminJson({
+        service: 'clex-signaling',
+        generatedAt: Math.floor(Date.now() / 1000),
+        process: {
+          booted_at: Math.floor(BOOTED_AT / 1000),
+          uptime_ms: Date.now() - BOOTED_AT,
+          runtime: 'cloudflare-workers',
+        },
+        bindings: {
+          durable_object_rooms: typeof env.ROOMS?.idFromName === 'function',
+        },
+        config: {
+          allowed_origin: env.ALLOWED_ORIGIN ?? null,
+          admin_secret_set: Boolean(env.CLEX_ADMIN_SECRET || env.ADMIN_SECRET),
+        },
+      })
+    }
+    if (request.method === 'GET' &&
+        (url.pathname === '/admin/health' || url.pathname === '/api/admin/health')) {
+      if (!isAdminAuthorized(request, env)) return adminJson({ error: 'unauthorized' }, { status: 401 })
+      return adminJson({
+        ok: true,
+        service: 'clex-signaling',
+        ts: Math.floor(Date.now() / 1000),
+        version: 'phase-2-admin-api',
+        booted_at: Math.floor(BOOTED_AT / 1000),
+        uptime_ms: Date.now() - BOOTED_AT,
+        bindings: {
+          durable_object_rooms: typeof env.ROOMS?.idFromName === 'function',
+        },
+      })
+    }
+    if (request.method === 'GET' &&
+        (url.pathname === '/admin/audit' || url.pathname === '/api/admin/audit')) {
+      if (!isAdminAuthorized(request, env)) return adminJson({ error: 'unauthorized' }, { status: 401 })
+      return adminJson({
+        service: 'clex-signaling',
+        generatedAt: Math.floor(Date.now() / 1000),
+        events: [
+          {
+            type: 'process.boot',
+            ts: Math.floor(BOOTED_AT / 1000),
+            details: { runtime: 'cloudflare-workers' },
+          },
+        ],
+      })
     }
 
     // Route: /room/:code?role=sender|receiver
