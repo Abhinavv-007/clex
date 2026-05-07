@@ -140,6 +140,68 @@
         </div>
       </div>
 
+      <!-- Reliability (Direct+) -->
+      <div class="faq-section reveal">
+        <h2 class="faq-section__title">Reliability — Clex Direct+</h2>
+        <div class="accordion">
+          <div class="accordion__item">
+            <button class="accordion__trigger" aria-expanded="false">
+              Can I pause a transfer?
+              <span class="accordion__icon">+</span>
+            </button>
+            <div class="accordion__content">
+              <div class="accordion__body faq-answer">
+                <p><strong>Yes.</strong> Clex Direct+ exposes a pause button while a transfer is in flight. The send loop holds in-flight chunks, the data channel stays open, and the receiver acks what's already arrived. Hit resume and it picks up from the next pending chunk — no restart from byte zero.</p>
+              </div>
+            </div>
+          </div>
+          <div class="accordion__item">
+            <button class="accordion__trigger" aria-expanded="false">
+              Can I resume a transfer after the connection drops?
+              <span class="accordion__icon">+</span>
+            </button>
+            <div class="accordion__content">
+              <div class="accordion__body faq-answer">
+                <p>Within the same session, yes. The chunk tracker on each side knows which chunks have been verified, so reconnection-style retries replay only the missing chunks. If both browser tabs close before the transfer completes, the session ends and you'll need a fresh code — chunk state lives in the browser, not on a server.</p>
+              </div>
+            </div>
+          </div>
+          <div class="accordion__item">
+            <button class="accordion__trigger" aria-expanded="false">
+              How do I know the file arrived correctly?
+              <span class="accordion__icon">+</span>
+            </button>
+            <div class="accordion__content">
+              <div class="accordion__body faq-answer">
+                <p>The receiver checks every chunk's size against the manifest and (for files under the per-chunk hash budget) computes a SHA-256 against the manifest's chunk hashes. When all chunks line up, both peers build a <strong>verified transfer receipt</strong> — file count, size, chunk count, retries, health score, optional root hash. The receipt is a content-free summary, so it stays privacy-safe.</p>
+              </div>
+            </div>
+          </div>
+          <div class="accordion__item">
+            <button class="accordion__trigger" aria-expanded="false">
+              What does the health score mean?
+              <span class="accordion__icon">+</span>
+            </button>
+            <div class="accordion__content">
+              <div class="accordion__body faq-answer">
+                <p>It's a 0–100 hint that summarises the live transfer: connection stability, retries, failed chunks, backpressure, and route. Above 90 means clean. Mid-range usually means a few retries kicked in (which is reliability working, not failing). Low scores tell you the network is actually struggling — try Local mode if you're on the same Wi-Fi, or fall back to Drive.</p>
+              </div>
+            </div>
+          </div>
+          <div class="accordion__item">
+            <button class="accordion__trigger" aria-expanded="false">
+              Why was a previous Direct+ build slow on a 50 MB file?
+              <span class="accordion__icon">+</span>
+            </button>
+            <div class="accordion__content">
+              <div class="accordion__body faq-answer">
+                <p>The first Direct+ build sent 64 KB chunks one at a time and updated the UI on every chunk. On a fast LAN that meant the wire sat idle waiting for ACKs and the React/Svelte tree re-rendered hundreds of times per second. The current build uses 256 KB chunks, a sliding window of up to 32 in flight, fire-and-forget hash verification, and coalesced UI updates — same reliability layer, full LAN speed.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Privacy -->
       <div class="faq-section reveal">
         <h2 class="faq-section__title">Privacy & Security</h2>
@@ -246,6 +308,35 @@
             <div class="accordion__content">
               <div class="accordion__body faq-answer">
                 <p><strong>No.</strong> The public Transfer Chain is for workspace transfer metadata only. Vault notes, secret-link content, and Drive-backed timed shares stay outside the public ledger.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Developers -->
+      <div class="faq-section reveal">
+        <h2 class="faq-section__title">Developers</h2>
+        <div class="accordion">
+          <div class="accordion__item">
+            <button class="accordion__trigger" aria-expanded="false">
+              Can I use Clex from a terminal or an API?
+              <span class="accordion__icon">+</span>
+            </button>
+            <div class="accordion__content">
+              <div class="accordion__body faq-answer">
+                <p><strong>Yes — with a CLI.</strong> The HTTP API handles room metadata, health checks, and (planned) status/pause/resume/receipt endpoints. The actual file bytes still travel over WebRTC, so a pure <code>curl</code> upload won't work — that would require a relay store, which Clex deliberately doesn't run. The Clex CLI is a real WebRTC peer that speaks the same Direct+ protocol the browser does. See the <a href="/developers" class="link">Developers page</a> for the full reference.</p>
+              </div>
+            </div>
+          </div>
+          <div class="accordion__item">
+            <button class="accordion__trigger" aria-expanded="false">
+              Will the API ever accept raw file uploads?
+              <span class="accordion__icon">+</span>
+            </button>
+            <div class="accordion__content">
+              <div class="accordion__body faq-answer">
+                <p><strong>No, not on these endpoints.</strong> Clex's privacy promise is that the server never sees raw bytes during a normal transfer — that constraint is non-negotiable for the existing routes. If a relay mode is ever added, it will be a separate, opt-in product and clearly labelled, not bolted onto the existing API.</p>
               </div>
             </div>
           </div>
@@ -406,7 +497,6 @@
             <a href="/how-it-works" class="footer__link">How It Works</a>
             <a href="/workspace" class="footer__link">Workspace</a>
             <a href="/chain" class="footer__link">Chain</a>
-            <a href="/developers" class="footer__link">Developers</a>
             <a href="/getting-started" class="footer__link">Get Started</a>
           </nav>
         </div>

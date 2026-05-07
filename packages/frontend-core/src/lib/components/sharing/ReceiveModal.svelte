@@ -9,6 +9,9 @@
   import { detectReceivedFileFacts, formatBytes, saveBlobWithSystemFallback, triggerBlobDownload, truncateName } from '$utils'
   import type { TransferProfile } from '$transfer/types'
   import TransferProgress from './TransferProgress.svelte'
+  import TransferHealthCard from './TransferHealthCard.svelte'
+  import TransferReceiptCard from './TransferReceiptCard.svelte'
+  import TransferControls from './TransferControls.svelte'
 
   const signalingUrl = getSignalingBaseUrl(import.meta.env.PUBLIC_SIGNALING_URL as string | undefined)
 
@@ -182,20 +185,22 @@
     </div>
 
   {:else if state === 'transferring'}
-    <div class="flex flex-col gap-6">
+    <div class="flex flex-col gap-5">
       <div class="flex items-center gap-4">
-        <div class="w-[48px] h-[48px] rounded-[14px] flex items-center justify-center bg-white/5 border border-white/10">
+        <div class="w-[48px] h-[48px] rounded-[14px] flex items-center justify-center bg-white/5 border border-white/10 flex-shrink-0">
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
             <path d="M10 3v11M5 9l5 5 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
             <path d="M3 17h14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
           </svg>
         </div>
-        <div>
+        <div class="min-w-0">
           <p class="text-[15px] font-semibold text-white tracking-[-0.01em]">Receiving files…</p>
-          <p class="text-[13px] text-slate-400 mt-0.5">We'll try to save automatically and keep manual save options ready</p>
+          <p class="text-[13px] text-slate-400 mt-0.5">We'll save automatically when verification completes.</p>
         </div>
       </div>
       <TransferProgress />
+      <TransferHealthCard />
+      <TransferControls {transfer} />
     </div>
 
   {:else if state === 'complete'}
@@ -211,6 +216,9 @@
         <p class="text-[14px] text-slate-400 mt-1">
           Your browser may have saved the files automatically. If not, use the save controls below.
         </p>
+      </div>
+      <div class="w-full">
+        <TransferReceiptCard />
       </div>
       {#if receivedFiles.length > 0}
         <div class="rm-save-panel">

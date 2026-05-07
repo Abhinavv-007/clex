@@ -12,11 +12,11 @@
 
   $: routeLabel =
     route === 'drive'
-      ? 'Drive fallback'
+      ? 'Drive'
       : connectionKind === 'lan'
-        ? 'Local network'
+        ? 'Local'
         : connectionKind === 'internet'
-          ? 'Direct (internet)'
+          ? 'Direct (Internet)'
           : 'Direct'
 
   $: tone =
@@ -42,14 +42,18 @@
       </div>
       <div class="th-label-block">
         <span class="th-label">{healthLabelText(health.label)}</span>
-        <span class="th-meta">{routeLabel}{#if paused} · paused{/if}{#if protocol === 'legacy'} · legacy peer{/if}</span>
+        <div class="th-meta-row">
+          <span class="th-badge th-badge--route">{routeLabel}</span>
+          {#if paused}<span class="th-badge th-badge--paused">Paused</span>{/if}
+          {#if protocol === 'legacy'}<span class="th-badge th-badge--legacy">Legacy peer</span>{/if}
+        </div>
       </div>
     </div>
 
     <div class="th-grid">
       <div class="th-cell">
         <span class="th-cell-key">Verified</span>
-        <span class="th-cell-val">{health.verifiedChunks} / {health.totalChunks}</span>
+        <span class="th-cell-val">{health.verifiedChunks}<span class="th-slash">/</span>{health.totalChunks}</span>
       </div>
       <div class="th-cell">
         <span class="th-cell-key">Retries</span>
@@ -61,12 +65,12 @@
       </div>
       <div class="th-cell">
         <span class="th-cell-key">Avg speed</span>
-        <span class="th-cell-val">{formatSpeed(health.averageSpeedBps)}</span>
+        <span class="th-cell-val th-cell-val--speed" title={formatSpeed(health.averageSpeedBps)}>{formatSpeed(health.averageSpeedBps)}</span>
       </div>
     </div>
 
     {#if health.bufferedHigh}
-      <p class="th-note">Backpressure: data channel full — pacing sends.</p>
+      <p class="th-note">Backpressure — pacing sends to match the network.</p>
     {/if}
   </div>
 {/if}
@@ -80,6 +84,8 @@
     border-radius: 14px;
     border: 1px solid var(--border);
     background: var(--surface-2);
+    min-width: 0;
+    overflow: hidden;
   }
 
   .th-card--good { border-color: rgba(34, 197, 94, 0.45); background: rgba(34, 197, 94, 0.06); }
@@ -92,6 +98,7 @@
     align-items: center;
     gap: 14px;
     min-width: 0;
+    flex-wrap: wrap;
   }
 
   .th-score-block {
@@ -100,9 +107,10 @@
     gap: 2px;
     font-family: var(--font-display);
     font-weight: 700;
-    font-size: 26px;
+    font-size: 28px;
     color: var(--text-1);
     letter-spacing: -0.02em;
+    flex-shrink: 0;
   }
 
   .th-score-max {
@@ -114,27 +122,49 @@
   .th-label-block {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 4px;
     min-width: 0;
+    flex: 1 1 auto;
   }
 
   .th-label {
     font-size: 13px;
     font-weight: 600;
     color: var(--text-1);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
-  .th-meta {
-    font-size: 11px;
-    color: var(--text-3);
+  .th-meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .th-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 1px 8px;
+    border-radius: 999px;
+    font-family: var(--font-mono);
+    font-size: 10px;
     text-transform: uppercase;
     letter-spacing: 0.05em;
+    border: 1px solid var(--border);
+    background: rgba(255,255,255,0.03);
+    color: var(--text-2);
+    white-space: nowrap;
   }
+
+  .th-badge--paused { color: #f59e0b; border-color: rgba(245,158,11,0.35); background: rgba(245,158,11,0.08); }
+  .th-badge--legacy { color: var(--text-3); }
 
   .th-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 6px 12px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px 14px;
+    min-width: 0;
   }
 
   .th-cell {
@@ -144,6 +174,7 @@
     gap: 6px;
     padding: 4px 0;
     border-top: 1px dashed rgba(255, 255, 255, 0.08);
+    min-width: 0;
   }
 
   .th-cell-key {
@@ -151,17 +182,31 @@
     color: var(--text-3);
     text-transform: uppercase;
     letter-spacing: 0.05em;
+    flex-shrink: 0;
   }
 
   .th-cell-val {
     font-family: var(--font-mono);
     font-size: 12px;
     color: var(--text-1);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+    text-align: right;
   }
+
+  .th-cell-val--speed { max-width: 8.5em; }
+
+  .th-slash { opacity: 0.4; margin: 0 2px; }
 
   .th-note {
     font-size: 11px;
-    color: var(--text-3);
+    color: var(--text-2);
     margin: 0;
+    padding: 6px 8px;
+    border-radius: 8px;
+    background: rgba(245, 158, 11, 0.08);
+    border: 1px solid rgba(245, 158, 11, 0.2);
   }
 </style>

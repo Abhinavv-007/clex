@@ -18,8 +18,24 @@ export interface IceCandidatePayload {
   usernameFragment?: string | null
 }
 
-export const CHUNK_SIZE = 64 * 1024 // 64 KB — safe for WebRTC DataChannel
+// 256 KB — within the safe per-message DataChannel limit on every modern
+// browser. Larger frames mean fewer trips through the JS event loop, fewer
+// store updates, and fewer ACK round-trips per MB.
+export const CHUNK_SIZE = 256 * 1024
 export const DC_LABEL = 'clex-transfer'
+
+// Backpressure window. We let bufferedAmount climb to HIGH before pausing the
+// send loop, then resume once it drains below LOW (via bufferedamountlow).
+// Sized so a healthy LAN can hold ~32 chunks in flight, which is plenty to
+// keep the wire busy while still bounding peak memory at a few MB.
+export const BUFFERED_AMOUNT_HIGH_WATER = 8 * 1024 * 1024 // 8 MB
+export const BUFFERED_AMOUNT_LOW_WATER = 2 * 1024 * 1024 // 2 MB
+export const MAX_IN_FLIGHT_CHUNKS = 32
+
+// UI store writes are coalesced to this interval — without it, a 50 MB
+// transfer fires hundreds of Svelte updates per second and re-renders the
+// whole transfer card on every chunk.
+export const UI_UPDATE_INTERVAL_MS = 150
 
 // ─── Reliable transfer protocol (Clex Direct+) ───────────────────────────────
 //
@@ -31,19 +47,21 @@ export const DC_LABEL = 'clex-transfer'
 
 export const RELIABLE_PROTOCOL_VERSION = 1
 export const CAPABILITY_GRACE_MS = 600
-export const RECEIVER_PROGRESS_INTERVAL_MS = 250
+export const RECEIVER_PROGRESS_INTERVAL_MS = 400
 
 // Per-chunk hashing is skipped for files larger than this so the manifest
 // build doesn't block the UI on large transfers (each chunk costs one
-// crypto.subtle.digest call). 1 GB ≈ 16,384 chunks at the default 64 KB; on a
-// modern laptop that completes in a few seconds. Final correctness still falls
-// back to the receiver's size + chunk-count check.
-export const MAX_CHUNK_HASH_FILE_SIZE = 1 * 1024 * 1024 * 1024 // 1 GB
+// crypto.subtle.digest call). At 256 KB chunks, 256 MB ≈ 1024 chunks — under a
+// second on a modern laptop. Bigger files fall back to the receiver's size +
+// chunk-count check, which is still strong (size mismatches fail fast).
+export const MAX_CHUNK_HASH_FILE_SIZE = 256 * 1024 * 1024 // 256 MB
 export const PER_CHUNK_HASH_DEFAULT = true
 
 export const RETRY_MAX_ATTEMPTS = 4
 export const RETRY_INITIAL_DELAY_MS = 600
 export const RETRY_BACKOFF_FACTOR = 1.7
+export const ACK_TIMEOUT_MS = 8000
+export const RETRY_BACKOFF_MS = RETRY_INITIAL_DELAY_MS
 
 export interface ReliableCapabilities {
   reliable: true

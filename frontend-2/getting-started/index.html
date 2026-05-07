@@ -134,7 +134,7 @@
           <div class="gs-step__content">
             <h2 class="gs-step__title">Share</h2>
             <p class="gs-step__text">
-              Click "Share" and Clex generates a unique link. Send it to the recipient — they open it in their browser and the transfer begins. Clex automatically tries direct P2P first, then local network, then Google Drive as fallback.
+              Click "Share" and Clex generates a unique 6-character code. Send it to the recipient — they open it in their browser and the transfer begins. Clex automatically tries direct P2P first, then local network, then Google Drive as fallback.
             </p>
             <div class="gs-step__tip">
               Tip: For P2P, both sender and receiver need to keep their browser tabs open until the transfer completes.
@@ -145,12 +145,25 @@
         <div class="gs-step reveal">
           <div class="gs-step__number">5</div>
           <div class="gs-step__content">
-            <h2 class="gs-step__title">Receive (When Someone Sends to You)</h2>
+            <h2 class="gs-step__title">Watch the transfer (and pause it if you want)</h2>
             <p class="gs-step__text">
-              Got a Clex link? Open it. The file transfer starts automatically. You'll see a progress bar and the files will download to your browser when complete. No app install, no login.
+              Direct+ shows a live progress bar, a chunk rail, and a health card with route, retries, and verified count. You can <strong>pause</strong> mid-transfer and pick back up where you left off — the chunk tracker remembers what's already verified, so resume doesn't restart from byte zero. When the receiver finishes, both sides get a <strong>verified receipt</strong> with file count, size, chunk count, and an optional proof root hash.
             </p>
             <div class="gs-step__tip">
-              Tip: You can also open the workspace and click "Receive" to enter a share code manually.
+              Tip: A high health score (90+) means clean transfer. Mid-range usually means a few retries kicked in — that's reliability working, not failing.
+            </div>
+          </div>
+        </div>
+
+        <div class="gs-step reveal">
+          <div class="gs-step__number">6</div>
+          <div class="gs-step__content">
+            <h2 class="gs-step__title">Receive (When Someone Sends to You)</h2>
+            <p class="gs-step__text">
+              Got a Clex code? Open the workspace, click Receive, type it in. The transfer starts automatically, the receiver verifies each chunk against the manifest, and the file lands in your browser. No app install, no login.
+            </p>
+            <div class="gs-step__tip">
+              Tip: Want to drive Clex from a script or terminal? See the <a href="/developers" class="link">Developers page</a> for the API and CLI reference.
             </div>
           </div>
         </div>
@@ -243,6 +256,24 @@
             For P2P and local transfers, files exist only in browser memory during the transfer. When you close the tab, they're gone. Zero server-side storage.
           </p>
         </div>
+        <div class="tip-card hover-lift">
+          <h3 class="tip-card__title">Pause &amp; Resume</h3>
+          <p class="tip-card__text">
+            Direct+ lets you pause an in-flight transfer and resume from the next pending chunk — no restart, no double-sending. Useful for slow networks, mid-call interruptions, or simply switching to a faster window.
+          </p>
+        </div>
+        <div class="tip-card hover-lift">
+          <h3 class="tip-card__title">Verified Receipts</h3>
+          <p class="tip-card__text">
+            Every Direct+ transfer ends with a content-free receipt: chunks, retries, route, health score, and an optional root hash. Click to copy and keep a record without exposing what was sent.
+          </p>
+        </div>
+        <div class="tip-card hover-lift">
+          <h3 class="tip-card__title">CLI &amp; API</h3>
+          <p class="tip-card__text">
+            Need to drive transfers from a terminal or a script? The HTTP API handles room metadata, health, and (planned) status / pause / resume / receipt endpoints. See <a href="/developers" class="link">Developers</a>.
+          </p>
+        </div>
       </div>
     </div>
   </section>
@@ -293,7 +324,6 @@
             <a href="/how-it-works" class="footer__link">How It Works</a>
             <a href="/workspace" class="footer__link">Workspace</a>
             <a href="/chain" class="footer__link">Chain</a>
-            <a href="/developers" class="footer__link">Developers</a>
             <a href="/getting-started" class="footer__link">Get Started</a>
           </nav>
         </div>

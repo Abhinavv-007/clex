@@ -2,12 +2,6 @@ export interface Env {
   DB: D1Database
   LEDGER: DurableObjectNamespace
   ALLOWED_ORIGIN: string
-  /**
-   * Server-side admin secret consumed by /chain/admin/* and forwarded by
-   * lnch.in's `CLEX_ADMIN_SECRET` proxy. Falls back to `ADMIN_SECRET`.
-   */
-  CLEX_ADMIN_SECRET?: string
-  ADMIN_SECRET?: string
 }
 
 export interface TransferFile {
