@@ -18,6 +18,7 @@ const FIREBASE_CONFIG = {
   storageBucket: 'clex-in.firebasestorage.app',
   messagingSenderId: '1050016400675',
   appId: '1:1050016400675:web:32eaedd53bc82d2663f896',
+  measurementId: 'G-P5RC17ZCY2',
 }
 
 export interface VaultUser {
@@ -27,18 +28,41 @@ export interface VaultUser {
   photoURL: string | null
 }
 
-// ── Singleton ─────────────────────────────────────────────────────────────────
+// ── Singleton ───────────────────────────────────────────────────────────────
 
+type FirebaseApp = import('firebase/app').FirebaseApp
 type FirebaseAuth = import('firebase/auth').Auth
 let _auth: FirebaseAuth | null = null
+let analyticsInitStarted = false
+
+async function getFirebaseApp(): Promise<FirebaseApp> {
+  const { initializeApp, getApps, getApp } = await import('firebase/app')
+  const app = getApps().length ? getApp() : initializeApp(FIREBASE_CONFIG)
+  void initFirebaseAnalytics(app)
+  return app
+}
+
+async function initFirebaseAnalytics(app: FirebaseApp): Promise<void> {
+  if (analyticsInitStarted || typeof window === 'undefined') return
+  analyticsInitStarted = true
+
+  try {
+    const { getAnalytics, isSupported } = await import('firebase/analytics')
+    if (await isSupported()) {
+      getAnalytics(app)
+    }
+  } catch {
+    // Analytics is optional. Auth must continue to work in browsers that block
+    // analytics storage, during SSR-like test runs, and in privacy modes.
+  }
+}
 
 async function getFirebaseAuth(): Promise<FirebaseAuth> {
   if (_auth) return _auth
-  const [{ initializeApp, getApps, getApp }, { getAuth }] = await Promise.all([
-    import('firebase/app'),
+  const [{ getAuth }, app] = await Promise.all([
     import('firebase/auth'),
+    getFirebaseApp(),
   ])
-  const app = getApps().length ? getApp() : initializeApp(FIREBASE_CONFIG)
   _auth = getAuth(app)
   return _auth
 }
@@ -47,7 +71,7 @@ function toVaultUser(u: { uid: string; email: string | null; displayName: string
   return { uid: u.uid, email: u.email, displayName: u.displayName, photoURL: u.photoURL }
 }
 
-// ── Public API ────────────────────────────────────────────────────────────────
+// ── Public API ───────────────────────────────────────────────────────────────
 
 /**
  * Sign in with Google (popup).
@@ -75,6 +99,15 @@ export async function signOutGoogle(): Promise<void> {
   const auth = await getFirebaseAuth()
   const { signOut } = await import('firebase/auth')
   await signOut(auth)
+}
+
+/**
+ * Return the Firebase Google ID token for authenticated API calls.
+ * The API can accept this as `Authorization: Bearer <token>`.
+ */
+export async function getGoogleIdToken(forceRefresh = false): Promise<string | null> {
+  const auth = await getFirebaseAuth()
+  return auth.currentUser ? auth.currentUser.getIdToken(forceRefresh) : null
 }
 
 /**
