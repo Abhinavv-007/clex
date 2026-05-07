@@ -1,0 +1,34 @@
+/* ============================================
+   CLEX — Account page (poster style)
+   ============================================ */
+
+.account-section {
+  padding: 9rem 0 6rem;
+  position: relative;
+  background: var(--gradient-hero);
+  background-image:
+    radial-gradient(circle, color-mix(in srgb, var(--text-tertiary) 18%, transparent) 1px, transparent 1.2px),
+    var(--gradient-hero);
+  background-size: 22px 22px, auto;
+  background-position: 0 0, 0 0;
+}
+
+.account-section::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(to bottom, color-mix(in srgb, var(--bg-primary) 70%, transparent) 0%, transparent 12%, transparent 88%, color-mix(in srgb, var(--bg-primary) 70%, transparent) 100%);
+}
+
+.container--narrow {
+  max-width: 880px;
+  margin: 0 auto;
+}
+
+[data-theme='light'] .account-section {
+  background-image:
+    radial-gradient(circle, color-mix(in srgb, #2d2417 22%, transparent) 1px, transparent 1.2px),
+    var(--gradient-hero);
+}

@@ -275,3 +275,20 @@
     align-items: start;
   }
 }
+
+/* ── Limits cheat-sheet list ── */
+.dev-list {
+  list-style: disc;
+  padding-left: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.dev-list li strong {
+  color: var(--text-primary);
+}

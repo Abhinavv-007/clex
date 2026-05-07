@@ -1,3 +1,17 @@
+import {
+  handleApiKeyCreate,
+  handleApiKeyList,
+  handleApiKeyRevoke,
+  handleApiKeyUpdate,
+  handleApiKeyUsage,
+} from './apiKeys'
+import {
+  handleApiUploadCreate,
+  handleApiUploadDelete,
+  handleApiUploadList,
+  handleApiUploadShare,
+} from './apiUploads'
+
 /**
  * Clex Vault Worker
  *
@@ -73,8 +87,8 @@ function corsHeaders(origin: string, allowedStr: string): Record<string, string>
   if (!allowed) return {}
   return {
     'Access-Control-Allow-Origin': allowed,
-    'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Vault-UID, X-Subscription-ID, X-Filename',
+    'Access-Control-Allow-Methods': 'GET, POST, PATCH, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Vault-UID, X-Subscription-ID, X-Filename, X-Expires-In',
     'Access-Control-Max-Age': '86400',
     Vary: 'Origin',
   }
@@ -103,7 +117,7 @@ function random8Digit(): string {
 }
 
 /** UTC date string for quota key: YYYY-MM-DD */
-function utcDate(now = Date.now()): string {
+export function utcDate(now = Date.now()): string {
   return new Date(now).toISOString().slice(0, 10)
 }
 
@@ -1038,6 +1052,39 @@ export default {
     const accountDeviceMatch = path.match(/^\/vault\/api\/devices\/([^/]+)$/)
     if (accountDeviceMatch) {
       if (method === 'DELETE') return handleAccountDeviceDelete(decodeURIComponent(accountDeviceMatch[1]), request, env, cors)
+      return err('Method not allowed', 405, cors)
+    }
+
+    // ─── API keys (UI-managed, X-Vault-UID auth) ─────────────────────────
+    if (path === '/vault/api/keys') {
+      if (method === 'POST') return handleApiKeyCreate(request, env, cors)
+      if (method === 'GET') return handleApiKeyList(request, env, cors)
+      return err('Method not allowed', 405, cors)
+    }
+    const apiKeyMatch = path.match(/^\/vault\/api\/keys\/([A-Za-z0-9_]+)(\/usage)?$/)
+    if (apiKeyMatch) {
+      const keyId = apiKeyMatch[1]
+      const isUsage = Boolean(apiKeyMatch[2])
+      if (isUsage) {
+        if (method === 'GET') return handleApiKeyUsage(keyId, request, env, cors)
+        return err('Method not allowed', 405, cors)
+      }
+      if (method === 'PATCH') return handleApiKeyUpdate(keyId, request, env, cors)
+      if (method === 'DELETE') return handleApiKeyRevoke(keyId, request, env, cors)
+      return err('Method not allowed', 405, cors)
+    }
+
+    // ─── Programmatic uploads (Bearer api-key OR X-Vault-UID) ───────────
+    if (path === '/vault/api/uploads') {
+      if (method === 'POST') return handleApiUploadCreate(request, env, cors)
+      if (method === 'GET') return handleApiUploadList(request, env, cors)
+      return err('Method not allowed', 405, cors)
+    }
+    const apiUploadIdMatch = path.match(/^\/vault\/api\/uploads\/([A-Za-z0-9_-]+)$/)
+    if (apiUploadIdMatch) {
+      const id = apiUploadIdMatch[1]
+      if (method === 'GET') return handleApiUploadShare(id, env, cors)
+      if (method === 'DELETE') return handleApiUploadDelete(id, request, env, cors)
       return err('Method not allowed', 405, cors)
     }
 

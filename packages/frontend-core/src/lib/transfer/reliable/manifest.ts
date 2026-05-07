@@ -49,20 +49,36 @@ export function chunkRange(chunkIndex: number, chunkSize: number, fileSize: numb
   return { start, end }
 }
 
+// Maximum number of chunk hashes computed concurrently. crypto.subtle.digest
+// is implemented off-thread by every modern browser, so a small concurrency
+// window collapses long sequential waits without flooding memory.
+const HASH_CONCURRENCY = 8
+
 async function hashBlobChunks(
   blob: Blob,
   chunkSize: number,
   totalChunks: number
 ): Promise<string[]> {
   const hashes: string[] = new Array(totalChunks)
-  for (let i = 0; i < totalChunks; i++) {
-    const { start, end } = chunkRange(i, chunkSize, blob.size)
-    const slice = blob.slice(start, end)
-    // arrayBuffer() on a sliced Blob does not pull the whole file into memory —
-    // each iteration releases the previous slice to GC.
-    const buf = await slice.arrayBuffer()
-    hashes[i] = await digestSha256(buf)
+  let nextIndex = 0
+  const concurrency = Math.min(HASH_CONCURRENCY, totalChunks)
+
+  async function worker(): Promise<void> {
+    while (true) {
+      const i = nextIndex++
+      if (i >= totalChunks) return
+      const { start, end } = chunkRange(i, chunkSize, blob.size)
+      const slice = blob.slice(start, end)
+      // arrayBuffer() on a sliced Blob does not pull the whole file into
+      // memory; each iteration releases the previous slice to GC.
+      const buf = await slice.arrayBuffer()
+      hashes[i] = await digestSha256(buf)
+    }
   }
+
+  const workers: Promise<void>[] = []
+  for (let i = 0; i < concurrency; i += 1) workers.push(worker())
+  await Promise.all(workers)
   return hashes
 }
 

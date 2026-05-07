@@ -161,6 +161,125 @@
     </div>
   </section>
 
+  <!-- ═══ API keys & programmatic uploads ═══ -->
+  <section class="section" id="api-keys">
+    <div class="container">
+      <div class="section__header reveal">
+        <span class="section__label">API Keys</span>
+        <h2 class="section__title">Programmatic uploads<br>with per-key limits</h2>
+        <p class="section__subtitle">
+          Sign in once with Google, mint a key on <a href="/account">your account page</a>, then upload files with a single HTTP call. Each key carries its own file-size cap (10&nbsp;MB / 100&nbsp;MB / 1&nbsp;GB / unlimited) and rate limit (10–1000&nbsp;req/min, or unlimited). You can rotate, edit, or revoke keys any time.
+        </p>
+        <div class="dev-hero__pills">
+          <a href="/account" class="btn btn--primary btn--small">Get a key →</a>
+          <span class="dev-pill"><span class="dev-pill__dot"></span> Up to 25 keys per account</span>
+          <span class="dev-pill"><span class="dev-pill__dot"></span> Hash-only storage; plaintext shown once</span>
+        </div>
+      </div>
+
+      <div class="dev-endpoint reveal">
+        <div class="dev-endpoint__head">
+          <span class="dev-endpoint__method dev-endpoint__method--post">POST</span>
+          <code class="dev-endpoint__path">/vault/api/uploads</code>
+          <span class="dev-endpoint__tag dev-endpoint__tag--stable">Stable</span>
+        </div>
+        <p class="dev-endpoint__desc">
+          Upload a file using a Bearer API key. Returns a share URL, an internal id, and rate-limit headers (<code>X-RateLimit-Limit</code>, <code>X-RateLimit-Remaining</code>, <code>X-RateLimit-Reset</code>). The body is the raw file bytes; metadata travels in headers (<code>X-Filename</code>, optional <code>X-Expires-In</code>).
+        </p>
+        <pre class="dev-code"><code># curl
+curl -X POST https://clex.in/vault/api/uploads \
+  -H "Authorization: Bearer ck_live_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" \
+  -H "X-Filename: report.pdf" \
+  -H "X-Expires-In: 86400" \
+  --data-binary @report.pdf
+
+{
+  "id": "ap_…",
+  "shareToken": "K9M3JX72A8DR",
+  "shareUrl": "https://clex.in/share/K9M3JX72A8DR",
+  "downloadUrl": "https://…signed-supabase-url…",
+  "size": 524288,
+  "expiresAt": 1714972800
+}</code></pre>
+      </div>
+
+      <div class="dev-endpoint reveal">
+        <div class="dev-endpoint__head">
+          <span class="dev-endpoint__method dev-endpoint__method--post">POST</span>
+          <code class="dev-endpoint__path">/vault/api/uploads</code>
+          <span class="dev-endpoint__tag">Python</span>
+        </div>
+        <pre class="dev-code"><code>import os, requests
+
+with open("report.pdf", "rb") as f:
+    r = requests.post(
+        "https://clex.in/vault/api/uploads",
+        headers={
+            "Authorization": f"Bearer {os.environ['CLEX_API_KEY']}",
+            "X-Filename": "report.pdf",
+            "X-Expires-In": "86400",
+        },
+        data=f,
+    )
+
+r.raise_for_status()
+print(r.json()["shareUrl"])</code></pre>
+      </div>
+
+      <div class="dev-endpoint reveal">
+        <div class="dev-endpoint__head">
+          <span class="dev-endpoint__method dev-endpoint__method--post">POST</span>
+          <code class="dev-endpoint__path">/vault/api/uploads</code>
+          <span class="dev-endpoint__tag">Node / fetch</span>
+        </div>
+        <pre class="dev-code"><code>import { readFile } from 'node:fs/promises'
+
+const body = await readFile('report.pdf')
+const res = await fetch('https://clex.in/vault/api/uploads', {
+  method: 'POST',
+  headers: {
+    Authorization: `Bearer ${process.env.CLEX_API_KEY}`,
+    'X-Filename': 'report.pdf',
+    'X-Expires-In': '86400',
+  },
+  body,
+})
+
+if (!res.ok) throw new Error(`upload failed: ${res.status}`)
+const { shareUrl } = await res.json()
+console.log(shareUrl)</code></pre>
+      </div>
+
+      <div class="dev-endpoint reveal">
+        <div class="dev-endpoint__head">
+          <span class="dev-endpoint__method dev-endpoint__method--get">GET</span>
+          <code class="dev-endpoint__path">/vault/api/uploads</code>
+          <span class="dev-endpoint__tag dev-endpoint__tag--stable">Stable</span>
+        </div>
+        <p class="dev-endpoint__desc">List uploads owned by the authenticated user. Authenticate via Bearer key (returns only that key's uploads) or <code>X-Vault-UID</code> (returns everything).</p>
+      </div>
+
+      <div class="dev-endpoint reveal">
+        <div class="dev-endpoint__head">
+          <span class="dev-endpoint__method dev-endpoint__method--delete">DELETE</span>
+          <code class="dev-endpoint__path">/vault/api/uploads/:id</code>
+          <span class="dev-endpoint__tag dev-endpoint__tag--stable">Stable</span>
+        </div>
+        <p class="dev-endpoint__desc">Revoke an upload. Subsequent share-link hits return 410.</p>
+      </div>
+
+      <div class="dev-callout reveal">
+        <h3 class="dev-callout__title">Limits cheat-sheet</h3>
+        <ul class="dev-list">
+          <li><strong>File size</strong> per key: 10&nbsp;MB · 100&nbsp;MB · 1&nbsp;GB · unlimited (5&nbsp;GB hard ceiling per upload).</li>
+          <li><strong>Rate</strong> per key: 10 · 30 · 100 · 1000 req/min · unlimited.</li>
+          <li><strong>Expiry</strong>: 5 minutes – 7 days. Default 24 hours. Pass <code>X-Expires-In</code> in seconds.</li>
+          <li><strong>Plaintext key</strong>: shown exactly once at creation. Only the SHA-256 hash is stored.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
   <section class="section dev-simple" id="what-it-does">
     <div class="container">
       <div class="section__header reveal">

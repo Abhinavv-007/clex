@@ -48,8 +48,11 @@ export const UI_UPDATE_INTERVAL_MS = 150
 // transfer downgrades to legacy mode.
 
 export const RELIABLE_PROTOCOL_VERSION = 1
-export const CAPABILITY_GRACE_MS = 600
-export const RECEIVER_PROGRESS_INTERVAL_MS = 400
+// Both sides announce capabilities the moment the data channel opens, so on a
+// healthy WAN connection the round-trip completes well under 200 ms. We use
+// 280 ms here to absorb mobile RTTs without leaving sub-second files idling.
+export const CAPABILITY_GRACE_MS = 280
+export const RECEIVER_PROGRESS_INTERVAL_MS = 250
 
 // Per-chunk hashing is optional and intentionally disabled by default for live
 // transfers. WebRTC DataChannel already provides ordered reliable delivery;

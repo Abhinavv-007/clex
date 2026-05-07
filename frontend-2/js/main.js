@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Theme toggle button
   const themeToggle = document.getElementById('theme-toggle');
   if (themeToggle) {
-    themeToggle.addEventListener('click', toggleTheme);
+    themeToggle.addEventListener('click', (e) => toggleTheme(e));
   }
 
   // Navigation
