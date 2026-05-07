@@ -246,3 +246,91 @@
     font-size: 5rem;
   }
 }
+
+/* ── Direct+ protocol card (Step 04) ── */
+.hiw-protocol-card {
+  padding: var(--space-xl);
+  border-radius: 22px;
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border-color));
+  background: color-mix(in srgb, var(--accent) 5%, transparent);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.hiw-protocol-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}
+
+.hiw-protocol-card__label {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  color: var(--accent);
+}
+
+.hiw-protocol-card__chip {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border-color));
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  color: var(--text-primary);
+}
+
+.hiw-protocol-card__steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.hiw-protocol-card__steps li {
+  display: flex;
+  gap: var(--space-sm);
+  align-items: flex-start;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  line-height: 1.55;
+}
+
+.hiw-protocol-card__num {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: var(--weight-bold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1px;
+}
+
+.hiw-protocol-card__link {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  color: var(--accent);
+  align-self: flex-start;
+  border-bottom: 1px dashed color-mix(in srgb, var(--accent) 50%, transparent);
+  padding-bottom: 2px;
+}
+
+.hiw-protocol-card__link:hover {
+  border-bottom-color: var(--accent);
+}

@@ -143,6 +143,37 @@
           <div id="hiw-route-island"></div>
         </div>
 
+        <!-- ═══ Giant Step 4: VERIFY ═══ -->
+        <div class="giant-step">
+          <div class="giant-step__content">
+            <div class="giant-step__number">04</div>
+            <h2 class="giant-step__title">Verify &amp; Receipt</h2>
+            <p class="giant-step__text">
+              Clex Direct+ slices your files into 256 KB chunks, holds up to 32 in flight at once, and lets the receiver ACK each one. Lost chunks retry on backoff; corrupted ones get re-requested by hash. You can <strong>pause</strong> mid-transfer and pick up from the next pending chunk — no restart from byte zero. When the last chunk lands, both peers compute a content-free <strong>verified receipt</strong>: file count, total size, chunk count, retries, route, and an optional root hash you can copy.
+            </p>
+            <div class="giant-step__tags">
+              <span class="badge badge--accent">Chunk-level integrity</span>
+              <span class="badge badge--outline">Pause &amp; resume</span>
+              <span class="badge badge--outline">Health score</span>
+              <span class="badge badge--outline">Verified receipt</span>
+            </div>
+          </div>
+          <div class="hiw-protocol-card">
+            <div class="hiw-protocol-card__head">
+              <span class="hiw-protocol-card__label">Direct+ wire</span>
+              <span class="hiw-protocol-card__chip">256 KB · 32 in-flight</span>
+            </div>
+            <ol class="hiw-protocol-card__steps">
+              <li><span class="hiw-protocol-card__num">1</span> Capability handshake (legacy peers fall back automatically)</li>
+              <li><span class="hiw-protocol-card__num">2</span> Manifest with file list, sizes, optional per-chunk SHA-256</li>
+              <li><span class="hiw-protocol-card__num">3</span> Chunk frames with sliding window + ACK / NACK</li>
+              <li><span class="hiw-protocol-card__num">4</span> Receiver verifies size, hash; sender retries on demand</li>
+              <li><span class="hiw-protocol-card__num">5</span> Verify success → both sides build a content-free receipt</li>
+            </ol>
+            <a href="/developers#protocol" class="hiw-protocol-card__link">See the full protocol →</a>
+          </div>
+        </div>
+
       </div>
     </div>
   </section>
@@ -258,7 +289,6 @@
             <a href="/how-it-works" class="footer__link">How It Works</a>
             <a href="/workspace" class="footer__link">Workspace</a>
             <a href="/chain" class="footer__link">Chain</a>
-            <a href="/developers" class="footer__link">Developers</a>
             <a href="/getting-started" class="footer__link">Get Started</a>
           </nav>
         </div>

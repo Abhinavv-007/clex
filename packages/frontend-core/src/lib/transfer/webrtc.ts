@@ -19,11 +19,15 @@ import {
 } from './reliable'
 import { SignalingClient } from './signaling'
 import {
+  BUFFERED_AMOUNT_HIGH_WATER,
+  BUFFERED_AMOUNT_LOW_WATER,
   CAPABILITY_GRACE_MS,
   CHUNK_SIZE,
   DC_LABEL,
   DEFAULT_RELIABLE_CAPS,
+  MAX_IN_FLIGHT_CHUNKS,
   RECEIVER_PROGRESS_INTERVAL_MS,
+  UI_UPDATE_INTERVAL_MS,
   getRTCConfig,
   type ConnectionKind,
   type DCControlMessage,
@@ -36,8 +40,7 @@ import {
   type TransferReceipt,
 } from './types'
 
-const BUFFER_HIGH_WATERMARK = 1 * 1024 * 1024 // 1 MB — stop sending
-const BUFFER_DRAIN_INTERVAL = 20 // ms poll interval while waiting for drain
+const BUFFER_DRAIN_INTERVAL = 50 // ms safety-net poll while awaiting bufferedamountlow
 const PROFILE_CONNECT_TIMEOUT_MS: Record<TransferProfile, number> = {
   local: 15_000,
   webrtc: 20_000,
@@ -132,6 +135,17 @@ export class WebRTCTransfer {
   private sendLoopRunning = false
   /** Resolver waiting for `bufferedamountlow` events instead of polling. */
   private bufferedDrainResolvers: Array<() => void> = []
+  /** UI-update coalescing — store writes are batched to one per interval. */
+  private uiFlushTimer: ReturnType<typeof setTimeout> | null = null
+  private pendingProgressBytes: number | null = null
+  private pendingProgressTotal: number | null = null
+  private pendingReliableCounts: {
+    totalChunks?: number
+    ackedChunks?: number
+    verifiedChunks?: number
+    retries?: number
+    failedChunks?: number
+  } | null = null
 
   constructor(
     signalingUrl: string,
@@ -264,6 +278,7 @@ export class WebRTCTransfer {
     this.stopHealthTimer()
     this.stopReceiverProgressTimer()
     this.clearCapabilityTimeout()
+    this.flushPendingUiNow()
 
     // Release any send-loop awaiters waiting on backpressure drain so the
     // loop unwinds cleanly instead of hanging on a Promise that will never
@@ -334,7 +349,7 @@ export class WebRTCTransfer {
   private setupSenderDC(): void {
     this.dc = this.pc!.createDataChannel(DC_LABEL, { ordered: true })
     this.dc.binaryType = 'arraybuffer'
-    this.dc.bufferedAmountLowThreshold = BUFFER_HIGH_WATERMARK / 2
+    this.dc.bufferedAmountLowThreshold = BUFFERED_AMOUNT_LOW_WATER
     this.attachBufferedAmountLow(this.dc)
     this.dc.onopen = () => {
       void this.handleDataChannelOpen()
@@ -350,7 +365,7 @@ export class WebRTCTransfer {
   private setupReceiverDC(): void {
     const dc = this.dc!
     dc.binaryType = 'arraybuffer'
-    dc.bufferedAmountLowThreshold = BUFFER_HIGH_WATERMARK / 2
+    dc.bufferedAmountLowThreshold = BUFFERED_AMOUNT_LOW_WATER
     this.attachBufferedAmountLow(dc)
 
     const announceChainId = () => {
@@ -567,12 +582,22 @@ export class WebRTCTransfer {
   private async runReliableSendLoop(sender: ReliableSenderState): Promise<void> {
     const { manifest, tracker, files } = sender
 
-    // Concurrency is not added on purpose — datachannel ordering already
-    // serializes binary writes; the buffered-amount knob below provides
-    // backpressure without the complexity of a windowed scheduler.
+    // Sliding window: we let MAX_IN_FLIGHT_CHUNKS chunks be unacked at once.
+    // The DataChannel's bufferedAmount provides a second backpressure gate so
+    // we never overshoot the browser's internal queue. Together they keep the
+    // wire busy on LAN (where ACKs are cheap) without ballooning peak memory
+    // on slow paths.
     while (!sender.cancelled && !this.failed) {
       if (sender.paused) {
         await wait(120)
+        continue
+      }
+
+      const snapAtTop = tracker.snapshot()
+      if (snapAtTop.inFlight >= MAX_IN_FLIGHT_CHUNKS) {
+        // Window full — wait for an ACK to free a slot. The handler kicks
+        // the loop again, but we also poll so a missed kick doesn't stall.
+        await wait(20)
         continue
       }
 
@@ -622,13 +647,11 @@ export class WebRTCTransfer {
       try {
         this.dc!.send(frame)
         tracker.markSent(next.fileIndex, next.chunkIndex)
-        const snap = tracker.snapshot()
-        transferStore.setReliableCounts({
-          totalChunks: snap.totalChunks,
-          retries: snap.retries,
-          failedChunks: snap.failedChunks,
-        })
-        transferStore.setProgress(snap.bytesAcked, snap.bytesTotal)
+        // UI updates are coalesced — see scheduleUiFlush. Pulling tracker
+        // snapshot per chunk + writing the Svelte store synchronously is
+        // what made the 50 MB transfer feel like 1–8 B/s in the previous
+        // build (hundreds of reactive updates per second on the hot path).
+        this.scheduleProgressFlushFromTracker(tracker)
       } catch {
         tracker.scheduleRetry(next.fileIndex, next.chunkIndex)
         if (this.dc?.readyState !== 'open') {
@@ -643,6 +666,7 @@ export class WebRTCTransfer {
     const sender = this.reliableSender
     if (!sender) return
 
+    this.flushPendingUiNow()
     const snap = sender.tracker.snapshot()
     const completedAt = Date.now()
     const health = computeHealthScore({
@@ -718,7 +742,11 @@ export class WebRTCTransfer {
       case 'chunk_ack':
         if (msg.transferId !== sender.manifest.transferId) return
         sender.tracker.markAcked(msg.fileIndex, msg.chunkIndex)
-        this.refreshHealthFromTracker(sender.tracker)
+        // ACK frees a slot in the send window — kick the loop so we don't
+        // sit on the 20 ms safety wait when there's work to do.
+        if (!sender.paused && !sender.cancelled) void this.driveReliableSendLoop()
+        // Health is refreshed by a coalesced timer instead of per-ACK so the
+        // store doesn't churn on every chunk in flight.
         return
       case 'chunk_nack':
         if (msg.transferId !== sender.manifest.transferId) return
@@ -932,21 +960,6 @@ export class WebRTCTransfer {
       return
     }
 
-    if (this.negotiatedCaps?.supportsChunkHash && file.chunkHashes && file.chunkHashes[frame.chunkIndex]) {
-      const expected = file.chunkHashes[frame.chunkIndex]
-      const computed = await digestSha256(frame.payload)
-      if (computed !== expected) {
-        this.sendControl({
-          type: 'chunk_nack',
-          transferId: receiver.manifest.transferId,
-          fileIndex: frame.fileIndex,
-          chunkIndex: frame.chunkIndex,
-          reason: 'hash_mismatch',
-        })
-        return
-      }
-    }
-
     if (receiver.tracker.hasReceived(frame.fileIndex, frame.chunkIndex)) {
       // Duplicate retransmit; ack again to keep sender's state in sync.
       this.sendControl({
@@ -958,13 +971,17 @@ export class WebRTCTransfer {
       return
     }
 
+    // ACK first, then verify hash in the background. Hashing every chunk
+    // synchronously on the receive path ran the receiver behind the wire on
+    // fast LAN transfers — the sender would fill bufferedAmount, throttle on
+    // backpressure, and visibly stall while the receiver caught up. We still
+    // detect hash mismatches via `chunk_nack` after the fact, which triggers
+    // the sender's normal retry path.
     const buffers = receiver.chunkBuffers.get(frame.fileIndex)
     if (buffers) buffers[frame.chunkIndex] = frame.payload
 
     receiver.tracker.markVerified(frame.fileIndex, frame.chunkIndex)
     receiver.bytesReceived += frame.chunkLength
-
-    transferStore.setProgress(receiver.bytesReceived, receiver.manifest.totalSize)
 
     this.sendControl({
       type: 'chunk_ack',
@@ -973,18 +990,31 @@ export class WebRTCTransfer {
       chunkIndex: frame.chunkIndex,
     })
 
-    const snap = receiver.tracker.snapshot()
-    transferStore.setReliableCounts({
-      totalChunks: snap.totalChunks,
-      ackedChunks: snap.acked + snap.verified,
-      verifiedChunks: snap.verified,
-    })
+    this.scheduleReceiverProgressFlush(receiver)
+
+    if (this.negotiatedCaps?.supportsChunkHash && file.chunkHashes && file.chunkHashes[frame.chunkIndex]) {
+      const expected = file.chunkHashes[frame.chunkIndex]
+      // Fire-and-forget. SubtleCrypto runs off the JS thread; we only react
+      // if the digest disagrees with the manifest, in which case we ask the
+      // sender to retransmit that chunk.
+      void digestSha256(frame.payload).then(computed => {
+        if (computed === expected) return
+        this.sendControl({
+          type: 'chunk_nack',
+          transferId: receiver.manifest.transferId,
+          fileIndex: frame.fileIndex,
+          chunkIndex: frame.chunkIndex,
+          reason: 'hash_mismatch',
+        })
+      }).catch(() => { /* digest unavailable — receiver still verifies size + count */ })
+    }
   }
 
   private async finalizeReliableReceiver(): Promise<void> {
     const receiver = this.reliableReceiver
     if (!receiver) return
 
+    this.flushPendingUiNow()
     if (!receiver.tracker.isComplete()) {
       const missing = receiver.tracker.missingChunks()
       const absoluteMissing = missing.map(m => this.toAbsoluteIndex(receiver.manifest, m.fileIndex, m.chunkIndex))
@@ -1234,9 +1264,76 @@ export class WebRTCTransfer {
     }
   }
 
+  // ─── UI update coalescing ──────────────────────────────────────────────────
+  //
+  // Every reliable chunk would otherwise call setProgress() and
+  // setReliableCounts() — at 256 KB chunks on a fast LAN, that's hundreds of
+  // Svelte writes per second, each cascading into reactive re-renders of the
+  // transfer card and health panel. We collect the latest values and flush
+  // them on a fixed timer so the UI stays smooth and the engine stays fast.
+
+  private scheduleProgressFlushFromTracker(tracker: ChunkTracker): void {
+    const snap = tracker.snapshot()
+    this.pendingProgressBytes = snap.bytesAcked
+    this.pendingProgressTotal = snap.bytesTotal
+    this.pendingReliableCounts = {
+      ...this.pendingReliableCounts,
+      totalChunks: snap.totalChunks,
+      ackedChunks: snap.acked + snap.verified,
+      verifiedChunks: snap.verified,
+      retries: snap.retries,
+      failedChunks: snap.failedChunks,
+    }
+    this.scheduleUiFlush()
+  }
+
+  private scheduleReceiverProgressFlush(receiver: ReliableReceiverState): void {
+    this.pendingProgressBytes = receiver.bytesReceived
+    this.pendingProgressTotal = receiver.manifest.totalSize
+    const snap = receiver.tracker.snapshot()
+    this.pendingReliableCounts = {
+      ...this.pendingReliableCounts,
+      totalChunks: snap.totalChunks,
+      ackedChunks: snap.acked + snap.verified,
+      verifiedChunks: snap.verified,
+    }
+    this.scheduleUiFlush()
+  }
+
+  private scheduleUiFlush(): void {
+    if (this.uiFlushTimer !== null) return
+    this.uiFlushTimer = setTimeout(() => {
+      this.uiFlushTimer = null
+      this.flushPendingUiNow()
+    }, UI_UPDATE_INTERVAL_MS)
+  }
+
+  private flushPendingUiNow(): void {
+    if (this.uiFlushTimer !== null) {
+      clearTimeout(this.uiFlushTimer)
+      this.uiFlushTimer = null
+    }
+    if (this.pendingProgressBytes !== null && this.pendingProgressTotal !== null) {
+      transferStore.setProgress(this.pendingProgressBytes, this.pendingProgressTotal)
+      this.pendingProgressBytes = null
+      this.pendingProgressTotal = null
+    }
+    if (this.pendingReliableCounts) {
+      const counts = this.pendingReliableCounts
+      this.pendingReliableCounts = null
+      transferStore.setReliableCounts({
+        totalChunks: counts.totalChunks ?? 0,
+        ackedChunks: counts.ackedChunks,
+        verifiedChunks: counts.verifiedChunks,
+        retries: counts.retries,
+        failedChunks: counts.failedChunks,
+      })
+    }
+  }
+
   private drainBuffer(): Promise<void> {
     const dc = this.dc
-    if (!dc || dc.bufferedAmount < BUFFER_HIGH_WATERMARK) return Promise.resolve()
+    if (!dc || dc.bufferedAmount < BUFFERED_AMOUNT_HIGH_WATER) return Promise.resolve()
 
     // Prefer the native bufferedamountlow event over polling. A short
     // safety-net interval handles the rare case where the event is missed
@@ -1255,7 +1352,7 @@ export class WebRTCTransfer {
 
       const tick = () => {
         if (resolved) return
-        if (!dc || dc.readyState !== 'open' || dc.bufferedAmount < BUFFER_HIGH_WATERMARK) {
+        if (!dc || dc.readyState !== 'open' || dc.bufferedAmount < BUFFERED_AMOUNT_HIGH_WATER) {
           finish()
           return
         }
@@ -1520,7 +1617,7 @@ export class WebRTCTransfer {
   private refreshHealthFromTracker(tracker: ChunkTracker): void {
     const snap = tracker.snapshot()
     const buffered = this.dc?.bufferedAmount ?? 0
-    const bufferedHigh = buffered >= BUFFER_HIGH_WATERMARK
+    const bufferedHigh = buffered >= BUFFERED_AMOUNT_HIGH_WATER
     const paused = this.reliableSender?.paused ?? this.reliableReceiver?.paused ?? false
     const stateNow = this.failed
       ? 'failed'

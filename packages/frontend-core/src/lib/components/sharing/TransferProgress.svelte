@@ -11,6 +11,7 @@
   $: paused = $transferStore.paused
   $: totalChunks = $transferStore.totalChunks
   $: verifiedChunks = $transferStore.verifiedChunks
+  $: ackedChunks = $transferStore.ackedChunks
   $: retries = $transferStore.retries
 
   $: verifiedPct = totalChunks > 0 ? Math.min(100, Math.round((verifiedChunks / totalChunks) * 100)) : 0
@@ -30,32 +31,63 @@
 
     <div class="tp-labels">
       <span class="tp-label tp-label--primary">{progress}%</span>
-      <span class="tp-label">{formatBytes(bytesSent)} / {formatBytes(bytesTotal)}</span>
+      <span class="tp-label tp-label--bytes">{formatBytes(bytesSent)} <span class="tp-slash">/</span> {formatBytes(bytesTotal)}</span>
     </div>
   </div>
 
   <div class="tp-stats">
-    <span class="tp-stat">{formatSpeed(speed)}</span>
+    <span class="tp-stat tp-stat--speed" title="Current speed">
+      <span class="tp-stat__icon" aria-hidden="true">⇣</span>
+      <span class="tp-stat__val">{formatSpeed(speed)}</span>
+    </span>
     {#if protocol === 'reliable' && totalChunks > 0}
-      <span class="tp-stat">Verified {verifiedChunks}/{totalChunks}</span>
+      <span class="tp-stat" title="Verified chunks">
+        <span class="tp-stat__icon" aria-hidden="true">✓</span>
+        <span class="tp-stat__val">{verifiedChunks}/{totalChunks}</span>
+      </span>
       {#if retries > 0}
-        <span class="tp-stat tp-stat--retry">{retries} retr{retries === 1 ? 'y' : 'ies'}</span>
+        <span class="tp-stat tp-stat--retry" title="Retried chunks">
+          <span class="tp-stat__icon" aria-hidden="true">↻</span>
+          <span class="tp-stat__val">{retries}</span>
+        </span>
       {/if}
     {/if}
     {#if paused}
-      <span class="tp-stat tp-stat--paused">Paused</span>
+      <span class="tp-stat tp-stat--paused">
+        <span class="tp-stat__icon" aria-hidden="true">❚❚</span>
+        <span class="tp-stat__val">Paused</span>
+      </span>
     {/if}
     <span class="tp-stat tp-stat--eta">
       <span class="tp-dot" />
-      ETA {eta}
+      <span class="tp-stat__val">ETA {eta}</span>
     </span>
   </div>
+
+  {#if protocol === 'reliable' && totalChunks > 0 && totalChunks <= 240}
+    <div class="tp-chunkrail" aria-hidden="true">
+      {#each Array(totalChunks) as _, idx}
+        <span
+          class="tp-chunk"
+          class:tp-chunk--verified={idx < verifiedChunks}
+          class:tp-chunk--acked={idx >= verifiedChunks && idx < ackedChunks}
+        ></span>
+      {/each}
+    </div>
+  {:else if protocol === 'reliable' && totalChunks > 240}
+    <div class="tp-chunkrail tp-chunkrail--compact" aria-hidden="true">
+      <div class="tp-chunkrail__bar">
+        <div class="tp-chunkrail__verified" style="width: {verifiedPct}%;"></div>
+      </div>
+      <span class="tp-chunkrail__count">{totalChunks} chunks</span>
+    </div>
+  {/if}
 
   {#if currentFile}
     <div class="tp-current">
       <div class="tp-current__header">
         <span class="tp-current__eyebrow">Current file</span>
-        <strong>{truncateName(currentFile.name, 34)}</strong>
+        <strong title={currentFile.name}>{truncateName(currentFile.name, 34)}</strong>
       </div>
 
       <div class="tp-current__facts">
@@ -71,9 +103,13 @@
   .tp-root {
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 12px;
     width: 100%;
     min-width: 0;
+    /* Prevent any inner long string (filenames, hashes) from overflowing the
+     * card container — the chip group + label rows still wrap, but values
+     * never push the card off-screen. */
+    overflow: hidden;
   }
 
   .tp-bar {
@@ -125,9 +161,6 @@
 
   .tp-paused .tp-beam { animation-play-state: paused; }
 
-  .tp-stat--paused { color: #f59e0b; font-weight: 600; }
-  .tp-stat--retry  { color: #f59e0b; }
-
   .tp-beam {
     position: absolute;
     inset: 0 auto 0 0;
@@ -143,8 +176,9 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 16px;
-    padding: 0 16px;
+    gap: 12px;
+    padding: 0 14px;
+    min-width: 0;
   }
 
   .tp-label {
@@ -153,32 +187,61 @@
     font-family: var(--font-mono);
     font-size: 12px;
     color: color-mix(in srgb, var(--text-1) 60%, var(--text-2));
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
   }
+
+  .tp-label--bytes { flex: 0 1 auto; }
+
+  .tp-slash { opacity: 0.4; margin: 0 2px; }
 
   .tp-label--primary {
     color: var(--text-1);
     font-weight: 700;
+    flex: 0 0 auto;
   }
 
   .tp-stats {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 12px;
+    gap: 8px 12px;
     flex-wrap: wrap;
+    min-width: 0;
   }
 
   .tp-stat {
-    font-size: 12px;
-    color: var(--text-2);
-  }
-
-  .tp-stat--eta {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    justify-content: flex-end;
+    font-size: 12px;
+    color: var(--text-2);
+    min-width: 0;
   }
+
+  .tp-stat__icon {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-3);
+  }
+
+  .tp-stat__val {
+    font-family: var(--font-mono);
+    color: var(--text-1);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 220px;
+  }
+
+  .tp-stat--retry .tp-stat__icon,
+  .tp-stat--retry .tp-stat__val { color: #f59e0b; }
+
+  .tp-stat--paused .tp-stat__icon,
+  .tp-stat--paused .tp-stat__val { color: #f59e0b; font-weight: 600; }
+
+  .tp-stat--eta { margin-left: auto; }
 
   .tp-dot {
     width: 7px;
@@ -187,6 +250,69 @@
     background: var(--green);
     box-shadow: 0 0 0 4px color-mix(in srgb, var(--green) 16%, transparent);
     animation: tp-pulse 2s ease-in-out infinite;
+    flex-shrink: 0;
+  }
+
+  /* Chunk rail */
+  .tp-chunkrail {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+    padding: 8px 10px;
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--surface) 60%, var(--surface-2) 40%);
+    border: 1px solid var(--border);
+    max-height: 64px;
+    overflow: hidden;
+  }
+
+  .tp-chunk {
+    width: 6px;
+    height: 6px;
+    border-radius: 2px;
+    background: color-mix(in srgb, var(--text-3) 25%, transparent);
+    transition: background 200ms ease;
+    flex-shrink: 0;
+  }
+
+  .tp-chunk--acked {
+    background: color-mix(in srgb, var(--cyan) 60%, transparent);
+  }
+
+  .tp-chunk--verified {
+    background: #22c55e;
+    box-shadow: 0 0 6px color-mix(in srgb, #22c55e 50%, transparent);
+  }
+
+  .tp-chunkrail--compact {
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+  }
+
+  .tp-chunkrail__bar {
+    flex: 1 1 auto;
+    height: 4px;
+    border-radius: 2px;
+    background: color-mix(in srgb, var(--text-3) 16%, transparent);
+    overflow: hidden;
+    min-width: 0;
+  }
+
+  .tp-chunkrail__verified {
+    height: 100%;
+    background: linear-gradient(90deg, #22c55e, color-mix(in srgb, var(--cyan) 70%, white 10%));
+    transition: width 260ms ease;
+  }
+
+  .tp-chunkrail__count {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-3);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    flex-shrink: 0;
   }
 
   .tp-current {
@@ -197,6 +323,7 @@
     border-radius: 16px;
     background: color-mix(in srgb, var(--surface) 74%, var(--accent) 12%);
     border: 1px solid color-mix(in srgb, var(--border-hard) 15%, transparent);
+    min-width: 0;
   }
 
   .tp-current__header {
@@ -219,6 +346,9 @@
     font-weight: 600;
     color: var(--text-1);
     letter-spacing: -0.02em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .tp-current__facts {
@@ -254,16 +384,11 @@
   }
 
   @media (max-width: 520px) {
-    .tp-bar {
-      height: 52px;
-    }
-
-    .tp-labels {
-      padding: 0 12px;
-    }
-
-    .tp-label {
-      font-size: 11px;
-    }
+    .tp-bar { height: 52px; }
+    .tp-labels { padding: 0 12px; }
+    .tp-label { font-size: 11px; }
+    .tp-label--bytes { display: none; }
+    .tp-stat__val { max-width: 140px; }
+    .tp-stat--eta { margin-left: 0; width: 100%; }
   }
 </style>
