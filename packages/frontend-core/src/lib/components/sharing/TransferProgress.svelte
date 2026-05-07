@@ -13,9 +13,18 @@
   $: verifiedChunks = $transferStore.verifiedChunks
   $: ackedChunks = $transferStore.ackedChunks
   $: retries = $transferStore.retries
+  $: connectionKind = $transferStore.connectionKind
 
   $: verifiedPct = totalChunks > 0 ? Math.min(100, Math.round((verifiedChunks / totalChunks) * 100)) : 0
   $: eta = formatETA(bytesTotal - bytesSent, speed)
+  $: networkLabel =
+    connectionKind === 'lan' ? 'LAN'
+    : connectionKind === 'internet' ? 'WAN'
+    : 'P2P'
+  $: networkClass =
+    connectionKind === 'lan' ? 'tp-net--lan'
+    : connectionKind === 'internet' ? 'tp-net--wan'
+    : 'tp-net--unknown'
   $: currentFileFacts = currentFile
     ? [currentFile.type.split('/')[0]?.toUpperCase() || 'FILE', formatBytes(currentFile.size)]
     : []
@@ -58,6 +67,10 @@
         <span class="tp-stat__val">Paused</span>
       </span>
     {/if}
+    <span class="tp-stat tp-net {networkClass}" title="Connection type">
+      <span class="tp-net__dot" aria-hidden="true" />
+      <span class="tp-stat__val">{networkLabel}</span>
+    </span>
     <span class="tp-stat tp-stat--eta">
       <span class="tp-dot" />
       <span class="tp-stat__val">ETA {eta}</span>
@@ -242,6 +255,45 @@
   .tp-stat--paused .tp-stat__val { color: #f59e0b; font-weight: 600; }
 
   .tp-stat--eta { margin-left: auto; }
+
+  /* Network chip — LAN / WAN / P2P origin indicator */
+  .tp-net {
+    padding: 3px 8px;
+    border-radius: 999px;
+    border: 1px solid color-mix(in srgb, var(--text-3) 28%, transparent);
+    background: color-mix(in srgb, var(--surface) 60%, transparent);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  .tp-net__dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+    background: var(--text-3);
+    flex-shrink: 0;
+  }
+
+  .tp-net--lan {
+    border-color: color-mix(in srgb, var(--green) 40%, transparent);
+    color: var(--green);
+  }
+  .tp-net--lan .tp-net__dot { background: var(--green); box-shadow: 0 0 0 3px color-mix(in srgb, var(--green) 18%, transparent); }
+
+  .tp-net--wan {
+    border-color: color-mix(in srgb, var(--cyan) 40%, transparent);
+    color: var(--cyan);
+  }
+  .tp-net--wan .tp-net__dot { background: var(--cyan); box-shadow: 0 0 0 3px color-mix(in srgb, var(--cyan) 18%, transparent); }
+
+  .tp-net--unknown {
+    border-color: color-mix(in srgb, var(--text-3) 30%, transparent);
+    color: var(--text-2);
+  }
 
   .tp-dot {
     width: 7px;

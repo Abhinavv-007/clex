@@ -110,4 +110,15 @@ export async function initIslands() {
     });
     return;
   }
+
+  if (page === 'account') {
+    const [{ AccountApp }] = await Promise.all([import('@clex/frontend-core')]);
+    const params = new URLSearchParams(window.location.search);
+    const nextUrl = params.get('next') || '';
+    mount(AccountApp, document.getElementById('account-app-island'), {
+      vaultApiUrl: '/vault/api',
+      nextUrl,
+    });
+    return;
+  }
 }

@@ -52,6 +52,18 @@ function wait(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms))
 }
 
+/**
+ * One-shot wake handle. The send loop awaits `promise`; ACK / resume / retry
+ * handlers call `resolve()` to break it out of an idle wait. After a wake
+ * fires the caller is expected to swap in a fresh handle so subsequent
+ * waiters block again until the next event.
+ */
+function makeWakeHandle(): { promise: Promise<void>; resolve: () => void } {
+  let resolveFn: () => void = () => undefined
+  const promise = new Promise<void>(resolve => { resolveFn = resolve })
+  return { promise, resolve: resolveFn }
+}
+
 interface ReliableSenderState {
   manifest: TransferManifest
   tracker: ChunkTracker
@@ -68,6 +80,9 @@ interface ReliableSenderState {
   resolveVerify: (() => void) | null
   rejectVerify: ((err: Error) => void) | null
   rootHash?: string
+  /** Wake handle for the send loop — replaces fixed polling. Resolved on
+   *  chunk_ack, resume, retry timer, and cancellation. */
+  wake: { promise: Promise<void>; resolve: () => void }
 }
 
 interface ReliableReceiverState {
@@ -244,6 +259,7 @@ export class WebRTCTransfer {
     if (this.reliableSender) {
       const wasPaused = this.reliableSender.paused
       this.reliableSender.paused = false
+      this.reliableSender.wake.resolve()
       transferStore.setPaused(false)
       this.sendControl({ type: 'resume', transferId: this.reliableSender.manifest.transferId, by: 'sender' })
       this.logDiagnostic('resumed_by_sender')
@@ -527,15 +543,19 @@ export class WebRTCTransfer {
       verifyResolved,
       resolveVerify,
       rejectVerify,
+      wake: makeWakeHandle(),
     }
 
     // Send manifest header
     this.sendControl({ type: 'manifest', manifest })
 
     try {
+      // 4s is plenty for a healthy WebRTC channel — receivers ACK as soon as
+      // they parse the manifest header. Tighter than 8s gets us out of stuck
+      // sends faster on networks where the data channel never establishes.
       await Promise.race([
         manifestAcked,
-        wait(8000).then(() => { throw new Error('manifest_ack_timeout') }),
+        wait(4000).then(() => { throw new Error('manifest_ack_timeout') }),
       ])
     } catch {
       this.failTransfer('Receiver did not acknowledge the manifest in time.', 'manifest_ack_timeout')
@@ -589,23 +609,29 @@ export class WebRTCTransfer {
     // on slow paths.
     while (!sender.cancelled && !this.failed) {
       if (sender.paused) {
-        await wait(120)
+        // Sleep on the wake handle so resume() can kick us out instantly.
+        await Promise.race([sender.wake.promise, wait(500)])
+        sender.wake = makeWakeHandle()
         continue
       }
 
       const snapAtTop = tracker.snapshot()
       if (snapAtTop.inFlight >= MAX_IN_FLIGHT_CHUNKS) {
-        // Window full — wait for an ACK to free a slot. The handler kicks
-        // the loop again, but we also poll so a missed kick doesn't stall.
-        await wait(20)
+        // Window full — wait for chunk_ack to free a slot. The 50 ms ceiling
+        // is a safety net in case a kick is missed; in practice the wake
+        // resolves first.
+        await Promise.race([sender.wake.promise, wait(50)])
+        sender.wake = makeWakeHandle()
         continue
       }
 
       const next = tracker.pickNextSendable()
       if (!next) {
         if (tracker.isComplete()) break
-        // No retransmits ready yet — wait briefly for the retry timer.
-        await wait(80)
+        // No retransmits ready yet — sleep until the retry timer or a new ACK
+        // wakes us. 80 ms ceiling matches the previous fixed poll budget.
+        await Promise.race([sender.wake.promise, wait(80)])
+        sender.wake = makeWakeHandle()
         continue
       }
 
@@ -742,8 +768,9 @@ export class WebRTCTransfer {
       case 'chunk_ack':
         if (msg.transferId !== sender.manifest.transferId) return
         sender.tracker.markAcked(msg.fileIndex, msg.chunkIndex)
-        // ACK frees a slot in the send window — kick the loop so we don't
-        // sit on the 20 ms safety wait when there's work to do.
+        // ACK frees a slot in the send window — wake the loop so we don't
+        // sit on the safety wait when there's work to do.
+        sender.wake.resolve()
         if (!sender.paused && !sender.cancelled) void this.driveReliableSendLoop()
         // Health is refreshed by a coalesced timer instead of per-ACK so the
         // store doesn't churn on every chunk in flight.
@@ -758,7 +785,7 @@ export class WebRTCTransfer {
         for (const chunk of msg.chunks) {
           sender.tracker.forceResend(chunk.fileIndex, chunk.chunkIndex)
         }
-        // Kick the loop: in case it's currently sleeping on a retry timer.
+        sender.wake.resolve()
         if (!sender.paused) void this.driveReliableSendLoop()
         return
       case 'receiver_progress':
@@ -796,11 +823,13 @@ export class WebRTCTransfer {
         return
       case 'resume':
         sender.paused = false
+        sender.wake.resolve()
         transferStore.setPaused(false)
         if (!sender.cancelled) void this.driveReliableSendLoop()
         return
       case 'cancel':
         sender.cancelled = true
+        sender.wake.resolve()
         this.failTransfer('Transfer cancelled by peer.', 'cancelled_by_peer')
         return
     }
