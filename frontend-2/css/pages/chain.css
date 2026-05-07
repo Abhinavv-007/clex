@@ -3,9 +3,9 @@
    Inherits all design tokens from tokens.css
    ============================================ */
 
-/* ── Page hero ───────────────────────────────────────────────────────────── */
+/* ── Page hero ──────────────────────────────────────────────────────────── */
 .chain-hero {
-  padding-top: calc(var(--section-padding) * 0.7);
+  padding-top: calc(8.75rem + env(safe-area-inset-top, 0px));
   padding-bottom: var(--space-4xl);
   border-bottom: var(--border-heavy) solid var(--border-bold);
   background: var(--bg-primary);
@@ -123,7 +123,7 @@
   color: var(--text-tertiary);
 }
 
-/* ── How it works strip ──────────────────────────────────────────────────── */
+/* ── How it works strip ─────────────────────────────────────────────────── */
 .chain-how {
   background: var(--bg-secondary);
   border-top: var(--border-heavy) solid var(--border-bold);
@@ -171,13 +171,17 @@
   line-height: var(--leading-relaxed);
 }
 
-/* ── Island mount ────────────────────────────────────────────────────────── */
+/* ── Island mount ───────────────────────────────────────────────────────── */
 #chain-explorer-island {
   min-height: 320px;
 }
 
 /* ── Responsive ─────────────────────────────────────────────────────────── */
 @media (max-width: 900px) {
+  .chain-hero {
+    padding-top: calc(9.75rem + env(safe-area-inset-top, 0px));
+  }
+
   .chain-hero__inner {
     grid-template-columns: 1fr;
   }
@@ -189,7 +193,7 @@
 
 @media (max-width: 767px) {
   .chain-hero {
-    padding-top: calc(var(--section-padding-mobile) * 1.2);
+    padding-top: calc(10.25rem + env(safe-area-inset-top, 0px));
     padding-bottom: var(--space-3xl);
   }
 
