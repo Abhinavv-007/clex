@@ -18,23 +18,25 @@ export interface IceCandidatePayload {
   usernameFragment?: string | null
 }
 
-// 256 KB — within the safe per-message DataChannel limit on every modern
-// browser. Larger frames mean fewer trips through the JS event loop, fewer
-// store updates, and fewer ACK round-trips per MB.
-export const CHUNK_SIZE = 256 * 1024
+// Keep each DataChannel binary message well below the practical per-message
+// limits seen across Chromium, Firefox, Safari, and embedded Chromium shells.
+// The reliable frame adds a 16-byte header on top of this payload, so using a
+// full 256 KB payload can cross browser limits and surface as a generic
+// `Data channel error` during real transfers.
+export const CHUNK_SIZE = 64 * 1024
 export const DC_LABEL = 'clex-transfer'
 
 // Backpressure window. We let bufferedAmount climb to HIGH before pausing the
 // send loop, then resume once it drains below LOW (via bufferedamountlow).
-// Sized so a healthy LAN can hold ~32 chunks in flight, which is plenty to
-// keep the wire busy while still bounding peak memory at a few MB.
+// The smaller chunk size keeps individual sends safe while the window still
+// lets a healthy LAN keep enough data in flight.
 export const BUFFERED_AMOUNT_HIGH_WATER = 8 * 1024 * 1024 // 8 MB
 export const BUFFERED_AMOUNT_LOW_WATER = 2 * 1024 * 1024 // 2 MB
 export const MAX_IN_FLIGHT_CHUNKS = 32
 
 // UI store writes are coalesced to this interval — without it, a 50 MB
 // transfer fires hundreds of Svelte updates per second and re-renders the
-// whole transfer card on every chunk.
+// whole transfer card and health panel on every chunk.
 export const UI_UPDATE_INTERVAL_MS = 150
 
 // ─── Reliable transfer protocol (Clex Direct+) ───────────────────────────────
@@ -51,9 +53,9 @@ export const RECEIVER_PROGRESS_INTERVAL_MS = 400
 
 // Per-chunk hashing is skipped for files larger than this so the manifest
 // build doesn't block the UI on large transfers (each chunk costs one
-// crypto.subtle.digest call). At 256 KB chunks, 256 MB ≈ 1024 chunks — under a
-// second on a modern laptop. Bigger files fall back to the receiver's size +
-// chunk-count check, which is still strong (size mismatches fail fast).
+// crypto.subtle.digest call). At 64 KB chunks, 256 MB ≈ 4096 chunks. Bigger
+// files fall back to the receiver's size + chunk-count check, which is still
+// strong (size mismatches fail fast).
 export const MAX_CHUNK_HASH_FILE_SIZE = 256 * 1024 * 1024 // 256 MB
 export const PER_CHUNK_HASH_DEFAULT = true
 
@@ -113,7 +115,7 @@ export interface TransferManifest {
   files: ManifestFileEntry[]
 }
 
-// ─── Receipt ─────────────────────────────────────────────────────────────────
+// ─── Receipt ────────────────────────────────────────────────────────────────
 
 export interface TransferReceipt {
   transferId: string
@@ -134,7 +136,7 @@ export interface TransferReceipt {
   rev: number
 }
 
-// ─── Health ──────────────────────────────────────────────────────────────────
+// ─── Health ─────────────────────────────────────────────────────────────────
 
 export interface TransferHealth {
   /** 0–100 composite score. */
@@ -152,7 +154,7 @@ export interface TransferHealth {
   connectionStable: boolean
 }
 
-// ─── Queue ───────────────────────────────────────────────────────────────────
+// ─── Queue ──────────────────────────────────────────────────────────────────
 
 export type QueueEntryStatus =
   | 'pending'
@@ -178,7 +180,7 @@ export interface QueueEntry {
   resumable: boolean
 }
 
-// ─── DataChannel control messages (additive union) ───────────────────────────
+// ─── DataChannel control messages (additive union) ──────────────────────────
 //
 // Every legacy variant from v0 still appears here unchanged so old peers stay
 // compatible. The new reliable protocol adds:
@@ -190,7 +192,7 @@ export interface QueueEntry {
 // parsers, which is what makes the union safe to extend.
 
 export type DCControlMessage =
-  // ── Legacy v0 ────────────────────────────────────────────────────────────
+  // ── Legacy v0 ─────────────────────────────────────────────────────────────
   | { type: 'receiver-chain'; chainId: string }
   | { type: 'file-start'; fileId: string; name: string; mimeType: string; totalChunks: number; totalSize: number }
   | { type: 'file-end'; fileId: string }
@@ -228,7 +230,7 @@ export type DCControlMessage =
   | { type: 'cancel'; transferId: string; reason?: string }
   | { type: 'error'; transferId?: string; code: string; message?: string }
 
-// ─── Reliable chunk binary frame ─────────────────────────────────────────────
+// ─── Reliable chunk binary frame ────────────────────────────────────────────
 //
 // One DataChannel binary message per chunk in reliable mode. The 16-byte
 // header lets the receiver demultiplex by file and detect retransmissions
@@ -251,7 +253,7 @@ export interface ReliableChunkFrame {
   payload: ArrayBuffer
 }
 
-// ─── RTC config (unchanged) ──────────────────────────────────────────────────
+// ─── RTC config (unchanged) ─────────────────────────────────────────────────
 
 export interface RTCConfig {
   iceServers: RTCIceServer[]
