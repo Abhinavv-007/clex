@@ -150,7 +150,7 @@ function updateCommands(token) {
     healthCode.textContent = `curl ${API_BASE}/api/health`;
   }
   if (authCode) {
-    authCode.textContent = `curl ${API_BASE}/api/me \\
+    authCode.textContent = `curl ${API_BASE}/api/health \\
   -H "Authorization: Bearer ${token}"`;
   }
 }
