@@ -26,20 +26,20 @@ export interface IceCandidatePayload {
 export const CHUNK_SIZE = 64 * 1024
 export const DC_LABEL = 'clex-transfer'
 
-// Backpressure window. We let bufferedAmount climb to HIGH before pausing the
-// send loop, then resume once it drains below LOW (via bufferedamountlow).
-// The smaller chunk size keeps individual sends safe while the window still
-// lets a healthy LAN keep enough data in flight.
+// Backpressure window. A 64 KB chunk needs a wider chunk window than the old
+// 256 KB path; 32 chunks capped visible progress around 2 MB and made the
+// sender appear stuck while waiting for ACKs. 128 chunks keeps roughly 8 MB in
+// flight on healthy links without returning to unsafe per-message sizes.
 export const BUFFERED_AMOUNT_HIGH_WATER = 8 * 1024 * 1024 // 8 MB
-export const BUFFERED_AMOUNT_LOW_WATER = 2 * 1024 * 1024 // 2 MB
-export const MAX_IN_FLIGHT_CHUNKS = 32
+export const BUFFERED_AMOUNT_LOW_WATER = 1 * 1024 * 1024 // 1 MB
+export const MAX_IN_FLIGHT_CHUNKS = 128
 
 // UI store writes are coalesced to this interval — without it, a 50 MB
 // transfer fires hundreds of Svelte updates per second and re-renders the
 // whole transfer card and health panel on every chunk.
 export const UI_UPDATE_INTERVAL_MS = 150
 
-// ─── Reliable transfer protocol (Clex Direct+) ───────────────────────────────
+// ─── Reliable transfer protocol (Clex Direct+) ─────────────────────────────
 //
 // Capability negotiation lets new peers opt in to ACK/retry/hash/resume while
 // old peers (which never send `capability`) silently fall back to the legacy
@@ -51,13 +51,12 @@ export const RELIABLE_PROTOCOL_VERSION = 1
 export const CAPABILITY_GRACE_MS = 600
 export const RECEIVER_PROGRESS_INTERVAL_MS = 400
 
-// Per-chunk hashing is skipped for files larger than this so the manifest
-// build doesn't block the UI on large transfers (each chunk costs one
-// crypto.subtle.digest call). At 64 KB chunks, 256 MB ≈ 4096 chunks. Bigger
-// files fall back to the receiver's size + chunk-count check, which is still
-// strong (size mismatches fail fast).
-export const MAX_CHUNK_HASH_FILE_SIZE = 256 * 1024 * 1024 // 256 MB
-export const PER_CHUNK_HASH_DEFAULT = true
+// Per-chunk hashing is optional and intentionally disabled by default for live
+// transfers. WebRTC DataChannel already provides ordered reliable delivery;
+// keeping ACK/retry plus final size/chunk verification avoids the CPU spikes
+// that made progress pause during the first few megabytes on real browsers.
+export const MAX_CHUNK_HASH_FILE_SIZE = 32 * 1024 * 1024 // 32 MB
+export const PER_CHUNK_HASH_DEFAULT = false
 
 export const RETRY_MAX_ATTEMPTS = 4
 export const RETRY_INITIAL_DELAY_MS = 600
@@ -80,12 +79,12 @@ export const DEFAULT_RELIABLE_CAPS: ReliableCapabilities = {
   version: RELIABLE_PROTOCOL_VERSION,
   supportsChunkAck: true,
   supportsResume: true,
-  supportsChunkHash: true,
+  supportsChunkHash: false,
   supportsTransferReceipt: true,
   supportsTransferQueue: true,
 }
 
-// ─── Manifest ────────────────────────────────────────────────────────────────
+// ─── Manifest ─────────────────────────────────────────────────────────────
 
 export interface ManifestFileEntry {
   fileId: string
@@ -115,7 +114,7 @@ export interface TransferManifest {
   files: ManifestFileEntry[]
 }
 
-// ─── Receipt ────────────────────────────────────────────────────────────────
+// ─── Receipt ──────────────────────────────────────────────────────────────
 
 export interface TransferReceipt {
   transferId: string
@@ -136,7 +135,7 @@ export interface TransferReceipt {
   rev: number
 }
 
-// ─── Health ─────────────────────────────────────────────────────────────────
+// ─── Health ───────────────────────────────────────────────────────────────
 
 export interface TransferHealth {
   /** 0–100 composite score. */
@@ -154,7 +153,7 @@ export interface TransferHealth {
   connectionStable: boolean
 }
 
-// ─── Queue ──────────────────────────────────────────────────────────────────
+// ─── Queue ────────────────────────────────────────────────────────────────
 
 export type QueueEntryStatus =
   | 'pending'
@@ -180,7 +179,7 @@ export interface QueueEntry {
   resumable: boolean
 }
 
-// ─── DataChannel control messages (additive union) ──────────────────────────
+// ─── DataChannel control messages (additive union) ─────────────────────────
 //
 // Every legacy variant from v0 still appears here unchanged so old peers stay
 // compatible. The new reliable protocol adds:
@@ -192,7 +191,7 @@ export interface QueueEntry {
 // parsers, which is what makes the union safe to extend.
 
 export type DCControlMessage =
-  // ── Legacy v0 ─────────────────────────────────────────────────────────────
+  // ── Legacy v0 ────────────────────────────────────────────────────────────
   | { type: 'receiver-chain'; chainId: string }
   | { type: 'file-start'; fileId: string; name: string; mimeType: string; totalChunks: number; totalSize: number }
   | { type: 'file-end'; fileId: string }
@@ -230,7 +229,7 @@ export type DCControlMessage =
   | { type: 'cancel'; transferId: string; reason?: string }
   | { type: 'error'; transferId?: string; code: string; message?: string }
 
-// ─── Reliable chunk binary frame ────────────────────────────────────────────
+// ─── Reliable chunk binary frame ───────────────────────────────────────────
 //
 // One DataChannel binary message per chunk in reliable mode. The 16-byte
 // header lets the receiver demultiplex by file and detect retransmissions
@@ -253,7 +252,7 @@ export interface ReliableChunkFrame {
   payload: ArrayBuffer
 }
 
-// ─── RTC config (unchanged) ─────────────────────────────────────────────────
+// ─── RTC config (unchanged) ────────────────────────────────────────────────
 
 export interface RTCConfig {
   iceServers: RTCIceServer[]
