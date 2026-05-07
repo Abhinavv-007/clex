@@ -30,10 +30,4 @@ export type ServerMessage =
 export interface Env {
   ROOMS: DurableObjectNamespace
   ALLOWED_ORIGIN: string
-  /**
-   * Server-side admin secret consumed by /admin/* and forwarded by the
-   * lnch.in `CLEX_ADMIN_SECRET` proxy. Falls back to `ADMIN_SECRET`.
-   */
-  CLEX_ADMIN_SECRET?: string
-  ADMIN_SECRET?: string
 }

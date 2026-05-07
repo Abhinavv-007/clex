@@ -8,6 +8,7 @@ export interface SiteRoutes {
   workspace: string
   receive: string
   chain: string
+  developers: string
   privacy: string
   terms: string
 }
@@ -22,6 +23,7 @@ export const siteRoutes: SiteRoutes = Object.freeze({
   workspace: '/workspace',
   receive: '/receive',
   chain: '/chain',
+  developers: '/developers',
   privacy: '/privacy',
   terms: '/terms',
 })

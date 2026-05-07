@@ -7,17 +7,6 @@ import {
   serializeCookie,
   type Env,
 } from './googleAuth'
-import {
-  bumpMetric,
-  handleAdminAudit,
-  handleAdminHealth,
-  handleAdminSummary,
-  handleAdminTransfers,
-  handleAppendEvent,
-  handleCancelTransfer,
-  handleCreateTransfer,
-  handleGetTransfer,
-} from './transfers'
 
 const TOKEN_PICKUP_PATH = '/api/auth/gdrive/token'
 const STATE_COOKIE = 'gdrive_state'
@@ -1010,7 +999,8 @@ async function cleanupExpiredVaultDriveSessions(env: Env): Promise<void> {
   }
 }
 
-async function dispatch(request: Request, env: Env): Promise<Response> {
+export default {
+  async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url)
 
     if (request.method === 'OPTIONS') {
@@ -1029,7 +1019,7 @@ async function dispatch(request: Request, env: Env): Promise<Response> {
         ok: true,
         service: 'clex-api',
         ts: Math.floor(Date.now() / 1000),
-        version: 'phase-2-admin-api',
+        version: 'phase-1-public-face',
         bindings: {
           kv: typeof (env as { DRIVE_SESSION_STORE?: { put?: unknown } }).DRIVE_SESSION_STORE?.put === 'function',
         },
@@ -1040,40 +1030,6 @@ async function dispatch(request: Request, env: Env): Promise<Response> {
       })
       appendCors(headers, request, env)
       return new Response(request.method === 'HEAD' ? null : body, { status: 200, headers })
-    }
-
-    // ─── Public file-transfer API (clex.in/api/transfers) ─────────────
-    // Stable shape that powers the upcoming `clex` CLI and any third-party
-    // integrator. Storage is KV-backed; the actual file movement happens
-    // browser-to-browser via the signaling worker. See apps/api/src/transfers.ts.
-    if (url.pathname === '/api/transfers' && request.method === 'POST') {
-      return handleCreateTransfer(request, env)
-    }
-    const transfersMatch = url.pathname.match(/^\/api\/transfers\/([A-Za-z0-9]+)(\/events)?$/)
-    if (transfersMatch) {
-      const codeOrId = transfersMatch[1]
-      const isEventsSub = Boolean(transfersMatch[2])
-      if (isEventsSub) {
-        if (request.method === 'POST') return handleAppendEvent(request, env, codeOrId)
-        return new Response('Method not allowed', { status: 405 })
-      }
-      if (request.method === 'GET') return handleGetTransfer(request, env, codeOrId)
-      if (request.method === 'DELETE') return handleCancelTransfer(request, env, codeOrId)
-      return new Response('Method not allowed', { status: 405 })
-    }
-
-    // ─── Admin (gated by CLEX_ADMIN_SECRET) ───────────────────────────
-    if (url.pathname === '/api/admin/summary' && request.method === 'GET') {
-      return handleAdminSummary(request, env)
-    }
-    if (url.pathname === '/api/admin/transfers' && request.method === 'GET') {
-      return handleAdminTransfers(request, env)
-    }
-    if (url.pathname === '/api/admin/health' && request.method === 'GET') {
-      return handleAdminHealth(request, env)
-    }
-    if (url.pathname === '/api/admin/audit' && request.method === 'GET') {
-      return handleAdminAudit(request, env)
     }
 
     if (url.pathname === '/api/auth/google/status' && request.method === 'GET') {
@@ -1124,20 +1080,6 @@ async function dispatch(request: Request, env: Env): Promise<Response> {
     }
 
     return new Response('Not found', { status: 404 })
-}
-
-export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
-    const url = new URL(request.url)
-    const t0 = Date.now()
-    const res = await dispatch(request, env)
-    // Bucket the metrics route by the static prefix so we don't blow out
-    // the per-route map with one entry per transfer-id. The transfer-id
-    // segment is stripped to `/api/transfers/:id`.
-    const route = url.pathname
-      .replace(/^\/api\/transfers\/[A-Za-z0-9]+(\/events)?$/, '/api/transfers/:id$1')
-    bumpMetric(route, res.status, Date.now() - t0)
-    return res
   },
 
   async scheduled(_controller: ScheduledController, env: Env): Promise<void> {

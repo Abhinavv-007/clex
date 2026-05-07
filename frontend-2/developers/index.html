@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="icon" type="image/png" href="/brand/clex-logo.png">
   <link rel="apple-touch-icon" href="/brand/clex-logo.png">
-  <title>Developers — Clex | Public file-transfer API</title>
-  <meta name="description" content="Build with Clex — the public file-transfer API. Create transfers, get a 6-character room code and a receive link, and ship files browser-to-browser without ever uploading to a server.">
+  <title>Developers — Clex | API & CLI</title>
+  <meta name="description" content="Build with Clex from terminal or code. Manage transfer sessions, inspect health, fetch receipts, and learn what runs over WebRTC vs HTTP. Privacy-first, direct-transfer-first.">
   <script>
     (() => {
       try {
@@ -68,7 +68,7 @@
     <a href="/vault" class="nav__mobile-link">Vault</a>
     <a href="/how-it-works" class="nav__mobile-link">How It Works</a>
     <a href="/chain" class="nav__mobile-link">Chain</a>
-    <a href="/developers" class="nav__mobile-link">Developers</a>
+    <a href="/developers" class="nav__mobile-link" style="color: var(--accent-text);">Developers</a>
     <a href="/getting-started" class="nav__mobile-link">Get Started</a>
     <a href="/faq" class="nav__mobile-link">FAQ</a>
     <a href="/workspace" class="nav__mobile-link" style="color: var(--accent-text);">Open Workspace →</a>
@@ -77,290 +77,310 @@
   <!-- ═══ Hero ═══ -->
   <section class="dev-hero">
     <div class="container">
-      <span class="page-hero__label reveal">Public API · Open Source</span>
-      <h1 class="page-hero__title reveal">Build on Clex.</h1>
+      <span class="page-hero__label reveal">Developers</span>
+      <h1 class="page-hero__title reveal">API &amp; CLI<br>Built On <span class="text-accent">Direct+</span></h1>
       <p class="page-hero__subtitle reveal">
-        A small, honest public API for browser-to-browser file transfer. Create a transfer from your terminal, get a 6-character room code and a receive link, and let the receiver pull the file straight from your machine. No accounts, no servers in the middle, no API keys to manage.
+        Drive Clex from your terminal, scripts, or services. Sessions, status, pause, resume, and receipts are HTTP. The actual file bytes stay on the WebRTC channel between sender and receiver — never on our servers.
       </p>
-      <pre class="dev-hero__terminal reveal" aria-label="Terminal example"><span class="dev-hero__terminal-prompt">$</span> curl -sS -X POST https://clex.in/api/transfers \
-    -H 'content-type: application/json' \
-    -d '{"file_name":"design.zip","file_size_bytes":4823491}'
-
-{
-  "transfer_id": "f4a3e9b1c8…",
-  "code":        "X7K92Q",
-  "receive_url": "https://clex.in/receive?code=X7K92Q",
-  "status":      "created",
-  "expires_at":  1762542901
-}</pre>
+      <div class="dev-hero__pills reveal">
+        <span class="dev-pill"><span class="dev-pill__dot"></span> Privacy-first</span>
+        <span class="dev-pill"><span class="dev-pill__dot"></span> Direct-transfer-first</span>
+        <span class="dev-pill"><span class="dev-pill__dot"></span> No raw bytes on server</span>
+      </div>
     </div>
   </section>
 
-  <!-- ═══ How transfers work ═══ -->
-  <section class="dev-section">
+  <!-- ═══ Architecture overview ═══ -->
+  <section class="section" id="architecture">
     <div class="container">
-      <h2 class="dev-section__title">How a transfer works</h2>
-      <p class="dev-section__lede">
-        Clex is privacy-first. The API only stores transfer <em>metadata</em> — a short room code, a receive URL, optional file metadata, and a status timeline. The actual file bytes never touch our servers; they go peer-to-peer over WebRTC, with a same-LAN shortcut when both sides are on the same network.
-      </p>
+      <div class="section__header reveal">
+        <span class="section__label">Architecture</span>
+        <h2 class="section__title">HTTP for control,<br>WebRTC for bytes</h2>
+        <p class="section__subtitle">
+          Clex isn't a server-upload product. The HTTP API helps a sender and a receiver find each other and exchange WebRTC signaling, then they form a peer-to-peer DataChannel and send the file directly. <strong>The Clex server never sees raw file bytes</strong> in the normal flow.
+        </p>
+      </div>
 
-      <ol style="display: flex; flex-direction: column; gap: var(--space-md); padding-left: 1.4rem; color: var(--text-secondary); line-height: var(--leading-relaxed);">
-        <li><strong>Create.</strong> You <code>POST /api/transfers</code>. We mint a <code>transfer_id</code>, a short <code>code</code>, and a <code>receive_url</code>. Default expiry is 24h (you can override 60s–7d).</li>
-        <li><strong>Hand off.</strong> Share the <code>code</code> or <code>receive_url</code> with the receiver. Anyone with the link can join.</li>
-        <li><strong>Connect.</strong> The browser opens a WebRTC connection through the Clex signaling worker. The room code matches the two peers.</li>
-        <li><strong>Transfer.</strong> Bytes flow sender→receiver directly. No server-side relay unless P2P is impossible, in which case Clex offers a Drive-backed fallback.</li>
-        <li><strong>Mark complete.</strong> The sender (or your CLI) <code>POST</code>s an <code>events</code> entry — <code>connected</code>, <code>completed</code>, <code>cancelled</code>, etc. — so the public chain ledger has an honest record.</li>
+      <div class="dev-table reveal">
+        <div class="dev-table__row dev-table__row--head">
+          <span>Action</span>
+          <span>Where it runs</span>
+          <span>Why</span>
+        </div>
+        <div class="dev-table__row">
+          <span class="dev-table__action">Health probe</span>
+          <span class="dev-table__where">HTTP <code>/api/health</code></span>
+          <span class="dev-table__why">Cheap liveness — safe for uptime monitors.</span>
+        </div>
+        <div class="dev-table__row">
+          <span class="dev-table__action">Create transfer (room code)</span>
+          <span class="dev-table__where">Browser / CLI</span>
+          <span class="dev-table__why">Generated client-side; signaling worker assigns the room when the first peer joins.</span>
+        </div>
+        <div class="dev-table__row">
+          <span class="dev-table__action">Connect peers</span>
+          <span class="dev-table__where">Signaling worker (WebSocket)</span>
+          <span class="dev-table__why">Relays SDP offers, answers, ICE candidates. Never sees file bytes.</span>
+        </div>
+        <div class="dev-table__row">
+          <span class="dev-table__action">Send file bytes</span>
+          <span class="dev-table__where">WebRTC DataChannel (peer↔peer)</span>
+          <span class="dev-table__why">256 KB chunks, sliding window, ACK/retry, optional per-chunk hash.</span>
+        </div>
+        <div class="dev-table__row">
+          <span class="dev-table__action">Pause / resume / cancel</span>
+          <span class="dev-table__where">DataChannel control message</span>
+          <span class="dev-table__why">In-band control over the same P2P link, so latency is one round trip.</span>
+        </div>
+        <div class="dev-table__row">
+          <span class="dev-table__action">Receipt / proof</span>
+          <span class="dev-table__where">Browser / CLI (computed locally)</span>
+          <span class="dev-table__why">Built from the manifest + chunk tracker — no server-side ledger of file content.</span>
+        </div>
+      </div>
+
+      <div class="dev-callout reveal">
+        <h3 class="dev-callout__title">Why a CLI, not <code>curl</code> uploads</h3>
+        <p>
+          A pure-HTTP <code>curl</code> upload would require the server to hold the file bytes — that's the model Clex deliberately avoids. To send a file from a terminal you need a peer that speaks WebRTC. That's the role of the Clex CLI: it plays the same DataChannel role the browser does, just headless. HTTP endpoints are still useful for health checks, room metadata, and (planned) reading a transfer receipt that you produced locally.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ HTTP API reference ═══ -->
+  <section class="section" id="http-api">
+    <div class="container">
+      <div class="section__header reveal">
+        <span class="section__label">HTTP API</span>
+        <h2 class="section__title">Stable today</h2>
+        <p class="section__subtitle">
+          These endpoints exist in the deployed API worker right now. Base URL is your Clex API origin (the same host that serves <code>/api/health</code>).
+        </p>
+      </div>
+
+      <div class="dev-endpoint reveal">
+        <div class="dev-endpoint__head">
+          <span class="dev-endpoint__method dev-endpoint__method--get">GET</span>
+          <code class="dev-endpoint__path">/api/health</code>
+          <span class="dev-endpoint__tag dev-endpoint__tag--stable">Stable</span>
+        </div>
+        <p class="dev-endpoint__desc">Liveness probe. Public, cacheable, no auth.</p>
+        <pre class="dev-code"><code>curl -s https://api.clex.in/api/health
+{
+  "ok": true,
+  "service": "clex-api",
+  "ts": 1714972800,
+  "version": "phase-1-public-face",
+  "bindings": { "kv": true }
+}</code></pre>
+      </div>
+
+      <div class="dev-endpoint reveal">
+        <div class="dev-endpoint__head">
+          <span class="dev-endpoint__method dev-endpoint__method--get">GET</span>
+          <code class="dev-endpoint__path">/health</code>
+          <span class="dev-endpoint__tag dev-endpoint__tag--stable">Stable</span>
+        </div>
+        <p class="dev-endpoint__desc">Alias of <code>/api/health</code>. Use whichever your monitor prefers.</p>
+      </div>
+
+      <div class="dev-endpoint reveal">
+        <div class="dev-endpoint__head">
+          <span class="dev-endpoint__method dev-endpoint__method--ws">WS</span>
+          <code class="dev-endpoint__path">wss://signaling.clex.in/?room=&lt;CODE&gt;&amp;mode=webrtc|local&amp;chainId=&lt;ID&gt;</code>
+          <span class="dev-endpoint__tag dev-endpoint__tag--stable">Stable</span>
+        </div>
+        <p class="dev-endpoint__desc">
+          The signaling worker is a WebSocket. Open one per peer. Send JSON envelopes (<code>{"type":"offer","sdp":"..."}</code>, <code>{"type":"ice","candidate":...}</code>). The worker forwards them to the other peer in the same room and disconnects when the room is empty.
+        </p>
+        <pre class="dev-code"><code>// minimal Node sender (uses 'ws' + 'wrtc' or a browser-like RTCPeerConnection)
+const ws = new WebSocket(`wss://signaling.clex.in/?room=${code}&amp;mode=webrtc&amp;chainId=${id}`)
+ws.onmessage = e =&gt; handle(JSON.parse(e.data))   // peer_joined / offer / answer / ice
+ws.onopen = () =&gt; ws.send(JSON.stringify({ type: 'offer', sdp: localOffer.sdp }))</code></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ Planned API ═══ -->
+  <section class="section" id="planned-api">
+    <div class="container">
+      <div class="section__header reveal">
+        <span class="section__label">Planned</span>
+        <h2 class="section__title">Coming next</h2>
+        <p class="section__subtitle">
+          These endpoints are designed but not yet shipped. They're additive — the existing API stays where it is. Anything that would touch raw file bytes is intentionally <em>not</em> on the list.
+        </p>
+      </div>
+
+      <div class="dev-endpoint dev-endpoint--planned reveal">
+        <div class="dev-endpoint__head">
+          <span class="dev-endpoint__method dev-endpoint__method--post">POST</span>
+          <code class="dev-endpoint__path">/api/transfer/sessions</code>
+          <span class="dev-endpoint__tag dev-endpoint__tag--planned">Planned</span>
+        </div>
+        <p class="dev-endpoint__desc">
+          Reserve a room code so a sender and receiver can meet. The body is metadata only — file names, sizes, chunk count. No file bytes. Returns a <code>transferId</code> the CLI can later use to fetch the room's status from the signaling worker.
+        </p>
+        <pre class="dev-code"><code>curl -X POST https://api.clex.in/api/transfer/sessions \
+  -H 'content-type: application/json' \
+  -d '{ "fileNames": ["report.pdf"], "totalSize": 524288, "totalChunks": 2 }'
+
+{ "transferId": "5d4e…", "roomCode": "K9M3JX", "expiresIn": 600 }</code></pre>
+      </div>
+
+      <div class="dev-endpoint dev-endpoint--planned reveal">
+        <div class="dev-endpoint__head">
+          <span class="dev-endpoint__method dev-endpoint__method--get">GET</span>
+          <code class="dev-endpoint__path">/api/transfer/sessions/:id</code>
+          <span class="dev-endpoint__tag dev-endpoint__tag--planned">Planned</span>
+        </div>
+        <p class="dev-endpoint__desc">
+          Reads room metadata: peer count, mode (<code>webrtc</code> or <code>local</code>), and whether the room is open or sealed. Designed to power CLI <code>clex status</code>.
+        </p>
+      </div>
+
+      <div class="dev-endpoint dev-endpoint--planned reveal">
+        <div class="dev-endpoint__head">
+          <span class="dev-endpoint__method dev-endpoint__method--post">POST</span>
+          <code class="dev-endpoint__path">/api/transfer/sessions/:id/pause</code>
+          <span class="dev-endpoint__tag dev-endpoint__tag--planned">Planned</span>
+        </div>
+        <p class="dev-endpoint__desc">
+          Convenience endpoint to send a <code>pause</code> control message to whichever peer is online. The actual pause is delivered over the DataChannel; this just lets you trigger it from a different process.
+        </p>
+      </div>
+
+      <div class="dev-endpoint dev-endpoint--planned reveal">
+        <div class="dev-endpoint__head">
+          <span class="dev-endpoint__method dev-endpoint__method--post">POST</span>
+          <code class="dev-endpoint__path">/api/transfer/sessions/:id/resume</code>
+          <span class="dev-endpoint__tag dev-endpoint__tag--planned">Planned</span>
+        </div>
+        <p class="dev-endpoint__desc">Same as pause but the inverse signal.</p>
+      </div>
+
+      <div class="dev-endpoint dev-endpoint--planned reveal">
+        <div class="dev-endpoint__head">
+          <span class="dev-endpoint__method dev-endpoint__method--delete">DELETE</span>
+          <code class="dev-endpoint__path">/api/transfer/sessions/:id</code>
+          <span class="dev-endpoint__tag dev-endpoint__tag--planned">Planned</span>
+        </div>
+        <p class="dev-endpoint__desc">Cancel an in-flight transfer and free the room.</p>
+      </div>
+
+      <div class="dev-endpoint dev-endpoint--planned reveal">
+        <div class="dev-endpoint__head">
+          <span class="dev-endpoint__method dev-endpoint__method--get">GET</span>
+          <code class="dev-endpoint__path">/api/transfer/receipts/:id</code>
+          <span class="dev-endpoint__tag dev-endpoint__tag--planned">Planned</span>
+        </div>
+        <p class="dev-endpoint__desc">
+          Returns the receipt the sender (or the CLI) <em>uploaded</em> for that transfer — file count, total size, chunk count, root hash, retries, health score. The receipt is a content-free summary; we never store the file itself.
+        </p>
+        <pre class="dev-code"><code>{
+  "transferId": "5d4e…",
+  "totalSize": 52428800,
+  "totalChunks": 200,
+  "chunkSize": 262144,
+  "fileCount": 1,
+  "verified": true,
+  "durationMs": 18234,
+  "route": "webrtc",
+  "retryCount": 2,
+  "failedChunkCount": 0,
+  "healthScore": 96,
+  "rootHash": "9f3c…b1",
+  "rev": 1
+}</code></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ CLI ═══ -->
+  <section class="section" id="cli">
+    <div class="container">
+      <div class="section__header reveal">
+        <span class="section__label">CLI</span>
+        <h2 class="section__title">Headless peer</h2>
+        <p class="section__subtitle">
+          The CLI is a real WebRTC peer. It opens the same DataChannel a browser would, runs the same Direct+ reliability layer, and produces the same receipt format. None of the file bytes leave the connection between you and your peer.
+        </p>
+      </div>
+
+      <div class="dev-cli reveal">
+        <div class="dev-cli__row">
+          <code class="dev-cli__cmd">clex send ./report.pdf</code>
+          <p class="dev-cli__desc">Generate a 6-character room code, wait for the receiver, stream chunks over WebRTC. Pause with <kbd>Ctrl+P</kbd>, resume, or cancel anytime.</p>
+        </div>
+        <div class="dev-cli__row">
+          <code class="dev-cli__cmd">clex receive K9M3JX</code>
+          <p class="dev-cli__desc">Connect to a code, verify each chunk against the manifest, write to disk on success.</p>
+        </div>
+        <div class="dev-cli__row">
+          <code class="dev-cli__cmd">clex status &lt;TRANSFER_ID&gt;</code>
+          <p class="dev-cli__desc">Inspect a live or completed transfer: chunks, retries, health score, route, paused state.</p>
+        </div>
+        <div class="dev-cli__row">
+          <code class="dev-cli__cmd">clex pause &lt;TRANSFER_ID&gt;</code>
+          <p class="dev-cli__desc">Send the in-band pause signal to whichever peer is currently sending.</p>
+        </div>
+        <div class="dev-cli__row">
+          <code class="dev-cli__cmd">clex resume &lt;TRANSFER_ID&gt;</code>
+          <p class="dev-cli__desc">Inverse of pause. Picks up at the next pending chunk — no restart from byte zero.</p>
+        </div>
+        <div class="dev-cli__row">
+          <code class="dev-cli__cmd">clex receipt &lt;TRANSFER_ID&gt;</code>
+          <p class="dev-cli__desc">Print the local receipt: root hash, chunk count, retries, health.</p>
+        </div>
+        <div class="dev-cli__row">
+          <code class="dev-cli__cmd">clex doctor</code>
+          <p class="dev-cli__desc">Diagnose your network: STUN reachability, NAT type guess, signaling health.</p>
+        </div>
+      </div>
+
+      <p class="dev-note reveal">
+        Status: the CLI is in active development and tracks the same protocol version as the web client. Subscribe via the home page if you want a ping when it's installable.
+      </p>
+    </div>
+  </section>
+
+  <!-- ═══ Reliability protocol ═══ -->
+  <section class="section" id="protocol">
+    <div class="container">
+      <div class="section__header reveal">
+        <span class="section__label">Direct+ protocol</span>
+        <h2 class="section__title">What's on the wire</h2>
+        <p class="section__subtitle">
+          Both peers exchange a <code>capability</code> message; if either side is on the legacy v0 client the transfer downgrades to plain streaming. Otherwise:
+        </p>
+      </div>
+
+      <ol class="dev-steps reveal">
+        <li><strong>Manifest.</strong> Sender posts a JSON manifest: file list, sizes, chunk size (256 KB by default), optional per-chunk SHA-256 hashes, optional root hash.</li>
+        <li><strong>Manifest ACK.</strong> Receiver verifies the shape and replies <code>manifest_ack</code>.</li>
+        <li><strong>Chunk frames.</strong> Sender writes binary frames with a 16-byte header (<code>fileIndex / chunkIndex / chunkLength / flags</code>). Receiver verifies length, ACKs immediately, then verifies hash off the hot path.</li>
+        <li><strong>Sliding window.</strong> Up to 32 chunks in flight per peer, gated by <code>RTCDataChannel.bufferedAmount</code> with a low-water trigger via <code>bufferedamountlow</code>. No "wait for one ACK before sending next chunk" — that's what made the previous build crawl.</li>
+        <li><strong>Retry.</strong> Up to 4 attempts per chunk, exponential backoff. On hash mismatch the receiver fires a <code>chunk_nack</code> and the sender re-queues that chunk.</li>
+        <li><strong>Pause / resume.</strong> Either peer can send <code>pause</code> over the same DataChannel; the send loop sleeps without dropping in-flight state. <code>resume</code> kicks the loop.</li>
+        <li><strong>Verify + receipt.</strong> Receiver counts chunks against the manifest, sends <code>verify_success</code> with the root hash, and both sides build a content-free receipt.</li>
       </ol>
     </div>
   </section>
 
-  <!-- ═══ Privacy model ═══ -->
-  <section class="dev-section">
+  <!-- ═══ Privacy boundary ═══ -->
+  <section class="section dev-privacy" id="privacy">
     <div class="container">
-      <h2 class="dev-section__title">Privacy model</h2>
-      <p class="dev-section__lede">
-        Everything that's stored on our side is what you'd be comfortable putting on a sticky note: a code, a status, optional non-sensitive file metadata you chose to share. File contents never enter our servers. Transfers auto-expire and are deleted from KV when the TTL fires.
-      </p>
-      <ul style="display: flex; flex-direction: column; gap: var(--space-sm); padding-left: 1.4rem; color: var(--text-secondary); line-height: var(--leading-relaxed);">
-        <li><strong>No file payloads</strong> on Clex servers (P2P or LAN routes).</li>
-        <li><strong>No auth tokens</strong> in the public API. Codes are short-lived and single-purpose.</li>
-        <li><strong>Optional fallback</strong> via Google Drive (signed by the sender, deleted in 24h).</li>
-        <li><strong>Public ledger</strong> on <a href="/chain" class="link-underline">/chain</a> records hashes &amp; routes, never file bytes or names if you don't share them.</li>
+      <div class="section__header reveal">
+        <span class="section__label">Boundary</span>
+        <h2 class="section__title">What the API will <em>never</em> do</h2>
+      </div>
+      <ul class="dev-bounds reveal">
+        <li>Accept raw file bytes over HTTP. The DataChannel is the only path file content takes.</li>
+        <li>Persist chunks server-side, even temporarily. There is no relay store.</li>
+        <li>Read filenames or content as part of the chain ledger. The chain only sees anonymous session metadata.</li>
+        <li>Add an "upload to Clex" endpoint that pretends to be P2P. If we ever ship a relay mode, it will be opt-in, separately documented, and clearly labelled — not bolted onto these routes.</li>
       </ul>
-    </div>
-  </section>
-
-  <!-- ═══ Endpoints ═══ -->
-  <section class="dev-section">
-    <div class="container">
-      <h2 class="dev-section__title">Endpoints</h2>
-      <p class="dev-section__lede">
-        All endpoints live on <code>https://clex.in</code>, return JSON, and accept JSON request bodies. CORS is open. No keys required for the public surface.
-      </p>
-
-      <!-- POST /api/transfers -->
-      <article class="dev-endpoint">
-        <header class="dev-endpoint__head">
-          <span class="dev-endpoint__method dev-endpoint__method--post">POST</span>
-          <code class="dev-endpoint__path">/api/transfers</code>
-        </header>
-        <p class="dev-endpoint__desc">
-          Create a new transfer session. Returns a <code>transfer_id</code>, a 6-character <code>code</code>, and the canonical <code>receive_url</code>.
-        </p>
-        <span class="dev-endpoint__codeblock-label">Request body (all fields optional)</span>
-        <pre class="dev-endpoint__codeblock">{
-  "ttl_seconds":     86400,            // 60 .. 604800; default 86400 (24h)
-  "file_name":       "design.zip",     // optional metadata for the receiver UI
-  "file_size_bytes": 4823491,          // optional, for progress UI
-  "file_mime":       "application/zip",
-  "client_label":    "clex CLI v1.2"
-}</pre>
-        <span class="dev-endpoint__codeblock-label">Response 200</span>
-        <pre class="dev-endpoint__codeblock">{
-  "transfer_id": "f4a3e9b1c8…",
-  "code":        "X7K92Q",
-  "receive_url": "https://clex.in/receive?code=X7K92Q",
-  "status":      "created",
-  "expires_at":  1762542901,
-  "created_at":  1762456501
-}</pre>
-      </article>
-
-      <!-- GET /api/transfers/:id -->
-      <article class="dev-endpoint">
-        <header class="dev-endpoint__head">
-          <span class="dev-endpoint__method dev-endpoint__method--get">GET</span>
-          <code class="dev-endpoint__path">/api/transfers/&lt;id_or_code&gt;</code>
-        </header>
-        <p class="dev-endpoint__desc">
-          Read the current state of a transfer. Pass either the <code>transfer_id</code> or the 6-character <code>code</code>.
-        </p>
-        <span class="dev-endpoint__codeblock-label">Response 200</span>
-        <pre class="dev-endpoint__codeblock">{
-  "transfer_id": "f4a3e9b1c8…",
-  "code":        "X7K92Q",
-  "receive_url": "https://clex.in/receive?code=X7K92Q",
-  "status":      "connected",
-  "route":       "p2p",
-  "file_name":   "design.zip",
-  "file_size_bytes": 4823491,
-  "file_mime":   "application/zip",
-  "events": [
-    { "type": "created",   "ts": 1762456501 },
-    { "type": "connected", "ts": 1762456538, "details": { "peer": "browser" } }
-  ],
-  "expires_at": 1762542901,
-  "created_at": 1762456501
-}</pre>
-      </article>
-
-      <!-- POST /api/transfers/:id/events -->
-      <article class="dev-endpoint">
-        <header class="dev-endpoint__head">
-          <span class="dev-endpoint__method dev-endpoint__method--post">POST</span>
-          <code class="dev-endpoint__path">/api/transfers/&lt;id_or_code&gt;/events</code>
-        </header>
-        <p class="dev-endpoint__desc">
-          Append a lifecycle event. Useful from a CLI or browser client for keeping the public chain ledger honest.
-        </p>
-        <span class="dev-endpoint__codeblock-label">Request body</span>
-        <pre class="dev-endpoint__codeblock">{
-  "type":    "completed",          // created | connected | completed | cancelled | expired | error
-  "details": { "bytes_sent": 4823491, "duration_ms": 9421 }
-}</pre>
-        <span class="dev-endpoint__codeblock-label">Response 200</span>
-        <pre class="dev-endpoint__codeblock">{ "ok": true, "status": "completed" }</pre>
-      </article>
-
-      <!-- DELETE /api/transfers/:id -->
-      <article class="dev-endpoint">
-        <header class="dev-endpoint__head">
-          <span class="dev-endpoint__method dev-endpoint__method--delete">DELETE</span>
-          <code class="dev-endpoint__path">/api/transfers/&lt;id_or_code&gt;</code>
-        </header>
-        <p class="dev-endpoint__desc">
-          Cancel a transfer that hasn't completed yet. Already-completed transfers stay marked completed and are not retroactively erased from the chain ledger.
-        </p>
-        <span class="dev-endpoint__codeblock-label">Response 200</span>
-        <pre class="dev-endpoint__codeblock">{ "ok": true, "status": "cancelled" }</pre>
-      </article>
-
-      <!-- GET /api/health -->
-      <article class="dev-endpoint">
-        <header class="dev-endpoint__head">
-          <span class="dev-endpoint__method dev-endpoint__method--get">GET</span>
-          <code class="dev-endpoint__path">/api/health</code>
-        </header>
-        <p class="dev-endpoint__desc">
-          Public liveness probe. Used by status pages and the lnch.in registry. Cacheable.
-        </p>
-        <span class="dev-endpoint__codeblock-label">Response 200</span>
-        <pre class="dev-endpoint__codeblock">{
-  "ok":      true,
-  "service": "clex-api",
-  "ts":      1762456501,
-  "version": "phase-2-admin-api"
-}</pre>
-      </article>
-    </div>
-  </section>
-
-  <!-- ═══ Code samples ═══ -->
-  <section class="dev-section">
-    <div class="container">
-      <h2 class="dev-section__title">Snippets</h2>
-      <p class="dev-section__lede">
-        Drop-in examples for the most common flow: create a transfer, then poll until it's marked <code>completed</code> or <code>cancelled</code>.
-      </p>
-
-      <div class="dev-tabs" role="tablist" aria-label="Code language">
-        <button class="dev-tabs__btn" role="tab" aria-selected="true" data-target="curl">curl</button>
-        <button class="dev-tabs__btn" role="tab" aria-selected="false" data-target="js">javascript</button>
-        <button class="dev-tabs__btn" role="tab" aria-selected="false" data-target="python">python</button>
-      </div>
-
-      <div class="dev-tabs__panel" data-active="true" data-id="curl">
-        <pre class="dev-endpoint__codeblock"># Create a transfer
-curl -sS -X POST https://clex.in/api/transfers \
-  -H 'content-type: application/json' \
-  -d '{"file_name":"design.zip","file_size_bytes":4823491}' \
-  | tee /tmp/clex.json
-
-CODE=$(jq -r .code /tmp/clex.json)
-echo "Share https://clex.in/receive?code=$CODE"
-
-# Poll status
-while :; do
-  STATUS=$(curl -sS https://clex.in/api/transfers/$CODE | jq -r .status)
-  echo "$STATUS"
-  case "$STATUS" in completed|cancelled|expired) break;; esac
-  sleep 2
-done</pre>
-      </div>
-
-      <div class="dev-tabs__panel" data-active="false" data-id="js">
-        <pre class="dev-endpoint__codeblock">async function shareFile({ name, size }) {
-  const r = await fetch('https://clex.in/api/transfers', {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ file_name: name, file_size_bytes: size }),
-  });
-  const t = await r.json();
-  console.log(`Receive: ${t.receive_url}`);
-  console.log(`Code:    ${t.code}`);
-  return t;
-}
-
-async function pollUntilDone(code) {
-  while (true) {
-    const t = await fetch(`https://clex.in/api/transfers/${code}`).then(r => r.json());
-    console.log(t.status);
-    if (['completed', 'cancelled', 'expired'].includes(t.status)) return t;
-    await new Promise(r => setTimeout(r, 2000));
-  }
-}</pre>
-      </div>
-
-      <div class="dev-tabs__panel" data-active="false" data-id="python">
-        <pre class="dev-endpoint__codeblock">import time, requests
-
-def share_file(name: str, size: int) -> dict:
-    r = requests.post(
-        "https://clex.in/api/transfers",
-        json={"file_name": name, "file_size_bytes": size},
-        timeout=10,
-    )
-    r.raise_for_status()
-    t = r.json()
-    print(f"Receive: {t['receive_url']}")
-    print(f"Code:    {t['code']}")
-    return t
-
-def poll_until_done(code: str) -> dict:
-    while True:
-        t = requests.get(f"https://clex.in/api/transfers/{code}", timeout=10).json()
-        print(t["status"])
-        if t["status"] in {"completed", "cancelled", "expired"}:
-            return t
-        time.sleep(2)</pre>
-      </div>
-    </div>
-  </section>
-
-  <!-- ═══ Statuses + rate limits ═══ -->
-  <section class="dev-section">
-    <div class="container">
-      <h2 class="dev-section__title">Reference</h2>
-
-      <h3 style="font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.06em; font-size: var(--text-sm); color: var(--text-tertiary); margin-bottom: var(--space-sm);">Transfer status</h3>
-      <table class="dev-table">
-        <thead><tr><th>Value</th><th>Meaning</th></tr></thead>
-        <tbody>
-          <tr><td><code>created</code></td><td>Transfer minted, no peer connected yet.</td></tr>
-          <tr><td><code>connected</code></td><td>Receiver opened the room, P2P connecting.</td></tr>
-          <tr><td><code>completed</code></td><td>Bytes delivered. Terminal state.</td></tr>
-          <tr><td><code>cancelled</code></td><td>Sender or receiver aborted. Terminal state.</td></tr>
-          <tr><td><code>expired</code></td><td>TTL elapsed before completion. Terminal state.</td></tr>
-        </tbody>
-      </table>
-
-      <h3 style="font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.06em; font-size: var(--text-sm); color: var(--text-tertiary); margin: var(--space-lg) 0 var(--space-sm);">Routes</h3>
-      <table class="dev-table">
-        <thead><tr><th>Value</th><th>Meaning</th></tr></thead>
-        <tbody>
-          <tr><td><code>p2p</code></td><td>WebRTC sender→receiver direct.</td></tr>
-          <tr><td><code>local</code></td><td>Same-LAN shortcut (no internet hop).</td></tr>
-          <tr><td><code>fallback</code></td><td>Drive-backed temporary relay (sender-signed, 24h).</td></tr>
-        </tbody>
-      </table>
-
-      <div class="dev-callout">
-        <strong>Rate limits:</strong> The public API today has no hard rate limit. We reserve the right to throttle abusive callers (>30 req/s sustained per IP) by returning <code>429</code>. If you need higher throughput, ping <a href="mailto:hello@clex.in" class="link-underline">hello@clex.in</a>.
-      </div>
-
-      <div class="dev-callout">
-        <strong>Open source:</strong> Everything you see here is open. Source: <a href="https://github.com/Abhinavv-007/clex" target="_blank" rel="noopener noreferrer" class="link-underline">github.com/Abhinavv-007/clex</a>. File issues, send PRs, or fork it.
-      </div>
     </div>
   </section>
 
@@ -373,9 +393,7 @@ def poll_until_done(code: str) -> dict:
             <img src="/brand/clex-logo.png" alt="" class="footer__logo-image">
             <span class="footer__logo-wordmark">Clex</span>
           </div>
-          <p class="footer__desc">
-            Drop files, prepare them in-browser, and share through the fastest route available. Private by default, built for the open web.
-          </p>
+          <p class="footer__desc">Drop files, prepare them in-browser, and share through the fastest route available. Private by default, built for the open web.</p>
         </div>
         <div class="footer__col">
           <h4 class="footer__col-title">Product</h4>
@@ -385,7 +403,6 @@ def poll_until_done(code: str) -> dict:
             <a href="/how-it-works" class="footer__link">How It Works</a>
             <a href="/workspace" class="footer__link">Workspace</a>
             <a href="/chain" class="footer__link">Chain</a>
-            <a href="/developers" class="footer__link">Developers</a>
             <a href="/getting-started" class="footer__link">Get Started</a>
           </nav>
         </div>
@@ -393,7 +410,7 @@ def poll_until_done(code: str) -> dict:
           <h4 class="footer__col-title">Support</h4>
           <nav class="footer__links">
             <a href="/faq" class="footer__link">FAQ</a>
-            <a href="/getting-started" class="footer__link">Onboarding</a>
+            <a href="/developers" class="footer__link">Developers</a>
             <a href="mailto:hello@clex.in" class="footer__link">Contact</a>
           </nav>
         </div>
@@ -415,19 +432,5 @@ def poll_until_done(code: str) -> dict:
     </div>
   </footer>
 
-  <script>
-    // ─── Tabs (curl / js / python) ─────────────────────────────────────────
-    document.querySelectorAll('.dev-tabs').forEach(group => {
-      const buttons = group.querySelectorAll('.dev-tabs__btn');
-      const container = group.parentElement;
-      const panels = container.querySelectorAll('.dev-tabs__panel');
-      buttons.forEach(btn => {
-        btn.addEventListener('click', () => {
-          buttons.forEach(b => b.setAttribute('aria-selected', b === btn ? 'true' : 'false'));
-          panels.forEach(p => p.setAttribute('data-active', p.dataset.id === btn.dataset.target ? 'true' : 'false'));
-        });
-      });
-    });
-  </script>
 </body>
 </html>

@@ -21,3 +21,9 @@ Thumbs.db
 
 # Local editor state
 .cursor/
+.claude/
+
+# Graphify analysis artifacts (local-only)
+graphify-out/
+graphify-active-corpus/
+.graphify_python
