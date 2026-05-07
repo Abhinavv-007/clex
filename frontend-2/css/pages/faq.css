@@ -1,0 +1,67 @@
+/* ============================================
+   CLEX — FAQ Page
+   ============================================ */
+
+.faq-hero {
+  padding: 10rem 0 var(--space-4xl);
+  background: var(--gradient-hero);
+  border-bottom: var(--border-heavy) solid var(--border-bold);
+}
+
+.faq-categories {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-3xl);
+}
+
+.faq-category-btn {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+  padding: 0.5rem 1rem;
+  border: var(--border-medium) solid var(--border-bold);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--duration-fast);
+  box-shadow: var(--shadow-sm) var(--shadow-color);
+}
+
+.faq-category-btn:hover,
+.faq-category-btn--active {
+  background: var(--accent);
+  color: #0a0a0a;
+  border-color: #0a0a0a;
+  box-shadow: var(--shadow-sm) #0a0a0a;
+}
+
+.faq-section {
+  margin-bottom: var(--space-3xl);
+}
+
+.faq-section__title {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 3.2vw, 2.9rem);
+  text-transform: uppercase;
+  letter-spacing: -0.045em;
+  margin-bottom: var(--space-lg);
+  padding-bottom: var(--space-md);
+  border-bottom: var(--border-thick) solid var(--accent);
+  display: inline-block;
+  line-height: 0.94;
+}
+
+.faq-answer strong {
+  color: var(--text-primary);
+}
+
+.faq-answer code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  padding: 0.1em 0.4em;
+  background: var(--accent-muted);
+  border: 1px solid var(--accent);
+  color: var(--accent-text);
+}

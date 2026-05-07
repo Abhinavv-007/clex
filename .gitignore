@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+.pnpm-debug.log
+
+# Build outputs
+dist/
+.svelte-kit/
+build/
+.wrangler/
+.turbo/
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Local editor state
+.cursor/
+.claude/
+
+# Graphify analysis artifacts (local-only)
+graphify-out/
+graphify-active-corpus/
+.graphify_python

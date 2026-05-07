@@ -1,0 +1,211 @@
+/* ============================================
+   CLEX — Chain Explorer Page
+   Inherits all design tokens from tokens.css
+   ============================================ */
+
+/* ── Page hero ───────────────────────────────────────────────────────────── */
+.chain-hero {
+  padding-top: calc(var(--section-padding) * 0.7);
+  padding-bottom: var(--space-4xl);
+  border-bottom: var(--border-heavy) solid var(--border-bold);
+  background: var(--bg-primary);
+}
+
+.chain-hero__inner {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: end;
+  gap: var(--space-3xl);
+}
+
+.chain-hero__badge-row {
+  margin-bottom: var(--space-lg);
+}
+
+.chain-hero__title {
+  font-family: var(--font-display);
+  font-size: clamp(3.6rem, 8vw, 7.5rem);
+  font-weight: var(--weight-bold);
+  line-height: 0.88;
+  letter-spacing: -0.06em;
+  text-transform: uppercase;
+  margin-bottom: var(--space-xl);
+}
+
+.chain-hero__title-accent {
+  color: var(--accent-text);
+}
+
+.chain-hero__sub {
+  font-size: clamp(1.05rem, 2vw, 1.35rem);
+  color: var(--text-secondary);
+  line-height: var(--leading-relaxed);
+  max-width: 48ch;
+}
+
+.chain-hero__meta {
+  margin-top: var(--space-xl);
+  display: flex;
+  align-items: center;
+  gap: var(--space-lg);
+  flex-wrap: wrap;
+}
+
+.chain-hero__pill {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-widest);
+  padding: 0.4rem 0.9rem;
+  border: var(--border-thin) solid var(--border-color);
+  color: var(--text-tertiary);
+  background: var(--bg-card);
+}
+
+.chain-hero__side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+/* ── Trust items ─────────────────────────────────────────────────────────── */
+.chain-trust {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.chain-trust__item {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+  color: var(--text-tertiary);
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.chain-trust__item::before {
+  content: '✓';
+  color: var(--accent-text);
+  font-weight: var(--weight-bold);
+}
+
+/* ── Explorer section ────────────────────────────────────────────────────── */
+.chain-explorer {
+  padding: var(--space-4xl) 0 var(--section-padding);
+}
+
+.chain-explorer__header {
+  margin-bottom: var(--space-3xl);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-lg);
+}
+
+.chain-explorer__title {
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 3.5vw, 3rem);
+  font-weight: var(--weight-bold);
+  letter-spacing: -0.05em;
+  text-transform: uppercase;
+  line-height: 0.92;
+}
+
+.chain-explorer__refresh-note {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+  color: var(--text-tertiary);
+}
+
+/* ── How it works strip ──────────────────────────────────────────────────── */
+.chain-how {
+  background: var(--bg-secondary);
+  border-top: var(--border-heavy) solid var(--border-bold);
+  border-bottom: var(--border-heavy) solid var(--border-bold);
+  padding: var(--space-4xl) 0;
+}
+
+.chain-how__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0;
+}
+
+.chain-how__item {
+  padding: var(--space-2xl);
+  border-right: var(--border-thick) solid var(--border-bold);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.chain-how__item:last-child { border-right: none; }
+
+.chain-how__num {
+  font-family: var(--font-mono);
+  font-size: var(--text-3xl);
+  font-weight: var(--weight-bold);
+  color: var(--accent-text);
+  opacity: 0.4;
+  line-height: 1;
+}
+
+.chain-how__title {
+  font-family: var(--font-display);
+  font-size: clamp(1.2rem, 2vw, 1.6rem);
+  font-weight: var(--weight-bold);
+  text-transform: uppercase;
+  letter-spacing: -0.03em;
+  line-height: 0.95;
+}
+
+.chain-how__text {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  line-height: var(--leading-relaxed);
+}
+
+/* ── Island mount ────────────────────────────────────────────────────────── */
+#chain-explorer-island {
+  min-height: 320px;
+}
+
+/* ── Responsive ─────────────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .chain-hero__inner {
+    grid-template-columns: 1fr;
+  }
+
+  .chain-hero__side {
+    display: none;
+  }
+}
+
+@media (max-width: 767px) {
+  .chain-hero {
+    padding-top: calc(var(--section-padding-mobile) * 1.2);
+    padding-bottom: var(--space-3xl);
+  }
+
+  .chain-hero__title {
+    font-size: clamp(2.8rem, 14vw, 5rem);
+  }
+
+  .chain-how__grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .chain-how__item {
+    border-bottom: var(--border-thick) solid var(--border-bold);
+  }
+
+  .chain-how__item:nth-child(even) {
+    border-right: none;
+  }
+}

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Parent style sets the window background. All actual theming is in Compose. -->
+    <style name="Theme.Clex" parent="android:Theme.Material.NoTitleBar">
+        <item name="android:windowBackground">@color/bg_primary</item>
+        <item name="android:statusBarColor">@color/bg_primary</item>
+        <item name="android:navigationBarColor">@color/bg_secondary</item>
+    </style>
+</resources>

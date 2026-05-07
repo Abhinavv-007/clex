@@ -1,0 +1,76 @@
+name = "clex-vault"
+main = "src/index.ts"
+compatibility_date = "2024-05-29"
+compatibility_flags = ["nodejs_compat"]
+workers_dev = true
+
+# ── Cron Triggers ──────────────────────────────────────────────────────────────
+[triggers]
+crons = ["0 * * * *"]   # every hour — runs pending file deletions
+
+# ── KV Namespaces ──────────────────────────────────────────────────────────────
+[[kv_namespaces]]
+binding = "VAULT_SECRETS"
+id = "5162af1e61064f4b83c2c610a4eb5242"
+
+[[kv_namespaces]]
+binding = "VAULT_TOKENS"
+id = "eea542853aed48cb94933b5ec022e35d"
+
+[[kv_namespaces]]
+binding = "VAULT_SIGNALS"
+id = "e50630ec62f64567be6dc57aaee809d6"
+
+[[kv_namespaces]]
+binding = "UPLOAD_QUOTA"
+id = "e03c4c4e8f6c434cbb8db7b77da0860b"
+
+# ── D1 Database ───────────────────────────────────────────────────────────────
+[[d1_databases]]
+binding = "DB"
+database_name = "clex-vault"
+database_id = "68d8ae50-6b96-46e2-85b2-4edbd4d3c0ba"
+
+[vars]
+ALLOWED_ORIGIN = "*"
+MAX_SECRET_SIZE = "50000"
+# SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY
+# are set via: wrangler secret put <NAME> --env production
+
+# ── Production ────────────────────────────────────────────────────────────────
+[env.production]
+name = "clex-vault-prod"
+
+[env.production.triggers]
+crons = ["0 * * * *"]
+
+[[env.production.kv_namespaces]]
+binding = "VAULT_SECRETS"
+id = "5162af1e61064f4b83c2c610a4eb5242"
+
+[[env.production.kv_namespaces]]
+binding = "VAULT_TOKENS"
+id = "eea542853aed48cb94933b5ec022e35d"
+
+[[env.production.kv_namespaces]]
+binding = "VAULT_SIGNALS"
+id = "e50630ec62f64567be6dc57aaee809d6"
+
+[[env.production.kv_namespaces]]
+binding = "UPLOAD_QUOTA"
+id = "e03c4c4e8f6c434cbb8db7b77da0860b"
+
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "clex-vault"
+database_id = "68d8ae50-6b96-46e2-85b2-4edbd4d3c0ba"
+
+[[env.production.routes]]
+pattern = "clex.in/vault/api/*"
+zone_name = "clex.in"
+
+[env.production.vars]
+ALLOWED_ORIGIN = "https://clex.in, https://www.clex.in"
+MAX_SECRET_SIZE = "50000"
+# SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY
+# are set via: wrangler secret put <NAME> --env production

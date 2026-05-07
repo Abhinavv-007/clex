@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/png" href="/brand/clex-logo.png">
+  <link rel="apple-touch-icon" href="/brand/clex-logo.png">
+  <title>How It Works — Clex | Drop, Prepare, Share</title>
+  <meta name="description" content="Three steps: drop files into your workspace, prepare them with built-in tools, and share through the fastest route. See how Clex connects preparation to delivery.">
+  <script>
+    (() => {
+      try {
+        const theme = localStorage.getItem('clex-theme') === 'light' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', theme);
+        document.documentElement.classList.toggle('dark', theme === 'dark');
+        document.documentElement.style.colorScheme = theme;
+      } catch {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        document.documentElement.classList.add('dark');
+        document.documentElement.style.colorScheme = 'dark';
+      }
+    })();
+  </script>
+
+  <link rel="stylesheet" href="/css/reset.css">
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/animations.css">
+  <link rel="stylesheet" href="/css/pages/home.css">
+  <link rel="stylesheet" href="/css/pages/how-it-works.css">
+
+  <script type="module" src="/js/main.js"></script>
+</head>
+<body data-page="how-it-works">
+
+  <!-- ═══ Navigation ═══ -->
+  <nav class="nav" id="main-nav">
+    <div class="nav__inner">
+      <a href="/" class="nav__logo" aria-label="Clex home">
+        <img src="/brand/clex-logo.png" alt="" class="nav__logo-image">
+        <span class="nav__logo-wordmark">Clex</span>
+      </a>
+      <div class="nav__links">
+        <a href="/features" class="nav__link" data-page="features">Features</a>
+        <a href="/vault" class="nav__link" data-page="vault">Vault</a>
+        <a href="/how-it-works" class="nav__link" data-page="how-it-works">How It Works</a>
+        <a href="/chain" class="nav__link" data-page="chain">Chain</a>
+        <a href="/developers" class="nav__link" data-page="developers">Developers</a>
+        <a href="/getting-started" class="nav__link" data-page="getting-started">Get Started</a>
+        <a href="/faq" class="nav__link" data-page="faq">FAQ</a>
+      </div>
+      <div class="nav__actions">
+        <button class="nav__theme-toggle" id="theme-toggle" aria-label="Toggle theme">☀</button>
+        <a href="/workspace" class="btn btn--primary btn--small desktop-only">Open Workspace →</a>
+      </div>
+      <button class="nav__hamburger" id="nav-hamburger" aria-label="Toggle menu">
+        <span class="nav__hamburger-line"></span>
+        <span class="nav__hamburger-line"></span>
+        <span class="nav__hamburger-line"></span>
+      </button>
+    </div>
+  </nav>
+  <div class="nav__mobile-menu" id="nav-mobile-menu">
+    <a href="/" class="nav__mobile-link">Home</a>
+    <a href="/features" class="nav__mobile-link">Features</a>
+    <a href="/vault" class="nav__mobile-link">Vault</a>
+    <a href="/how-it-works" class="nav__mobile-link">How It Works</a>
+    <a href="/chain" class="nav__mobile-link">Chain</a>
+    <a href="/developers" class="nav__mobile-link">Developers</a>
+    <a href="/getting-started" class="nav__mobile-link">Get Started</a>
+    <a href="/faq" class="nav__mobile-link">FAQ</a>
+    <a href="/workspace" class="nav__mobile-link" style="color: var(--accent-text);">Open Workspace →</a>
+  </div>
+
+  <!-- ═══ Hero ═══ -->
+  <section class="hiw-hero">
+    <div class="container">
+      <span class="page-hero__label reveal">The Process</span>
+      <h1 class="page-hero__title reveal">Three Steps<br>Zero Friction</h1>
+      <p class="page-hero__subtitle reveal">
+        Clex connects preparation and delivery into a single flow. Here's exactly how it works, from first drop to final delivery.
+      </p>
+    </div>
+  </section>
+
+  <!-- ═══ Giant Step 1: DROP ═══ -->
+  <section class="section">
+    <div class="container">
+      <div class="giant-steps">
+
+        <div class="giant-step">
+          <div class="giant-step__content">
+            <div class="giant-step__number">01</div>
+            <h2 class="giant-step__title">Drop Your Files</h2>
+            <p class="giant-step__text">
+              Open Clex in your browser. Drag files in — images, PDFs, documents, anything. They stay in your browser's memory. Nothing gets uploaded to any server.
+            </p>
+            <div class="giant-step__tags">
+              <span class="badge badge--outline">Drag & Drop</span>
+              <span class="badge badge--outline">Click to Browse</span>
+              <span class="badge badge--outline">Paste from Clipboard</span>
+            </div>
+          </div>
+          <div id="hiw-drop-island"></div>
+        </div>
+
+        <!-- ═══ Giant Step 2: PREPARE ═══ -->
+        <div class="giant-step">
+          <div class="giant-step__content">
+            <div class="giant-step__number">02</div>
+            <h2 class="giant-step__title">Prepare & Transform</h2>
+            <p class="giant-step__text">
+              Use built-in tools to process your files before sharing. Compress images, merge PDFs, convert DOCX to PDF, bundle into ZIP. Chain operations together — one flows into the next.
+            </p>
+            <div class="giant-step__tags">
+              <span class="badge badge--outline">Compress</span>
+              <span class="badge badge--outline">Merge</span>
+              <span class="badge badge--outline">Convert</span>
+              <span class="badge badge--outline">Split</span>
+              <span class="badge badge--outline">ZIP</span>
+              <span class="badge badge--outline">Chain</span>
+            </div>
+          </div>
+          <div id="hiw-tools-island"></div>
+        </div>
+
+        <!-- ═══ Giant Step 3: SHARE ═══ -->
+        <div class="giant-step">
+          <div class="giant-step__content">
+            <div class="giant-step__number">03</div>
+            <h2 class="giant-step__title">Share & Deliver</h2>
+            <p class="giant-step__text">
+              Hit share. Clex scans the network, detects available routes, and picks the fastest path. Direct P2P is always tried first. Local network for same-Wi-Fi speed. Google Drive when direct isn't possible.
+            </p>
+            <div class="giant-step__tags">
+              <span class="badge badge--accent">P2P Default</span>
+              <span class="badge badge--outline">Local Network</span>
+              <span class="badge badge--outline">Drive Fallback</span>
+            </div>
+          </div>
+          <div id="hiw-route-island"></div>
+        </div>
+
+        <!-- ═══ Giant Step 4: VERIFY ═══ -->
+        <div class="giant-step">
+          <div class="giant-step__content">
+            <div class="giant-step__number">04</div>
+            <h2 class="giant-step__title">Verify &amp; Receipt</h2>
+            <p class="giant-step__text">
+              Clex Direct+ slices your files into 256 KB chunks, holds up to 32 in flight at once, and lets the receiver ACK each one. Lost chunks retry on backoff; corrupted ones get re-requested by hash. You can <strong>pause</strong> mid-transfer and pick up from the next pending chunk — no restart from byte zero. When the last chunk lands, both peers compute a content-free <strong>verified receipt</strong>: file count, total size, chunk count, retries, route, and an optional root hash you can copy.
+            </p>
+            <div class="giant-step__tags">
+              <span class="badge badge--accent">Chunk-level integrity</span>
+              <span class="badge badge--outline">Pause &amp; resume</span>
+              <span class="badge badge--outline">Health score</span>
+              <span class="badge badge--outline">Verified receipt</span>
+            </div>
+          </div>
+          <div class="hiw-protocol-card">
+            <div class="hiw-protocol-card__head">
+              <span class="hiw-protocol-card__label">Direct+ wire</span>
+              <span class="hiw-protocol-card__chip">256 KB · 32 in-flight</span>
+            </div>
+            <ol class="hiw-protocol-card__steps">
+              <li><span class="hiw-protocol-card__num">1</span> Capability handshake (legacy peers fall back automatically)</li>
+              <li><span class="hiw-protocol-card__num">2</span> Manifest with file list, sizes, optional per-chunk SHA-256</li>
+              <li><span class="hiw-protocol-card__num">3</span> Chunk frames with sliding window + ACK / NACK</li>
+              <li><span class="hiw-protocol-card__num">4</span> Receiver verifies size, hash; sender retries on demand</li>
+              <li><span class="hiw-protocol-card__num">5</span> Verify success → both sides build a content-free receipt</li>
+            </ol>
+            <a href="/developers#protocol" class="hiw-protocol-card__link">See the full protocol →</a>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ Banner ═══ -->
+  <div class="banner reveal-scale">
+    <div class="container">
+      <p class="banner__text">Files go from A → B<br>Nothing in between</p>
+    </div>
+  </div>
+
+  <section class="section">
+    <div class="container">
+      <div class="section__header text-center reveal">
+        <span class="section__label">Vault Flow</span>
+        <h2 class="section__title page-section__title">Private Work Has<br>Its Own Route</h2>
+        <p class="section__subtitle mx-auto">
+          Vault runs alongside the main workspace flow. Notes stay local, secret links carry their own policy, and timed Drive-share sessions clean themselves up.
+        </p>
+      </div>
+
+      <div class="grid grid-3 gap-xl stagger-group">
+        <div class="card hover-lift">
+          <h3 class="card__title">1. Write Locally</h3>
+          <p class="card__text">
+            Vault notes are encrypted in the browser, organized into folders, and available offline after the app loads. The local device remains the primary home for that content.
+          </p>
+        </div>
+        <div class="card hover-lift">
+          <h3 class="card__title">2. Choose Secret Protections</h3>
+          <p class="card__text">
+            Secret Share lets you pick the expiry and decide which protections apply: view once, 60-second viewing window, no select, tab-switch lock, and DevTools guard.
+          </p>
+        </div>
+        <div class="card hover-lift">
+          <h3 class="card__title">3. Publish a Timed File Link</h3>
+          <p class="card__text">
+            Cloud Share uses Google Drive sign-in for ownership and quota tracking, accepts files up to 1 GB each, enforces a 10 GB daily budget, and removes the Drive session after 24 hours.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ Edge Cases ═══ -->
+  <section class="section">
+    <div class="container">
+      <div class="section__header text-center reveal">
+        <span class="section__label">What If...?</span>
+        <h2 class="section__title page-section__title">Clex Handles<br>the Edge Cases</h2>
+      </div>
+
+      <div class="grid grid-2 gap-xl stagger-group">
+        <div class="card hover-lift">
+          <h3 class="card__title">What if I'm offline?</h3>
+          <p class="card__text">
+            After Clex loads once, the preparation tools work completely offline. Compress images, merge PDFs, convert documents — all without internet. Share when you reconnect.
+          </p>
+        </div>
+        <div class="card hover-lift">
+          <h3 class="card__title">What about large files?</h3>
+          <p class="card__text">
+            Local network transfer handles large files at LAN speed. For remote transfers, P2P streams chunks progressively. Drive has Google's file limits for the fallback path.
+          </p>
+        </div>
+        <div class="card hover-lift">
+          <h3 class="card__title">What if P2P fails?</h3>
+          <p class="card__text">
+            Clex automatically detects when direct P2P can't establish. It offers local network or Google Drive as alternatives. You choose — Clex never switches without asking.
+          </p>
+        </div>
+        <div class="card hover-lift">
+          <h3 class="card__title">What browsers work?</h3>
+          <p class="card__text">
+            Chrome, Firefox, Safari, Edge — any modern browser with WebRTC support. Mobile browsers work too. Clex adapts the interface to your screen size automatically.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ CTA ═══ -->
+  <section class="cta-strip">
+    <div class="container">
+      <h2 class="cta-strip__title reveal">
+        Simple enough?<br><span style="color: var(--accent-text);">Try it now</span>
+      </h2>
+      <p class="cta-strip__text reveal">
+        No download, no install, no signup. Just open and drop.
+      </p>
+      <div class="reveal">
+        <a href="/workspace" class="btn btn--primary btn--large">Open Workspace →</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ Footer ═══ -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer__grid">
+        <div class="footer__brand">
+          <div class="footer__logo" aria-label="Clex">
+            <img src="/brand/clex-logo.png" alt="" class="footer__logo-image">
+            <span class="footer__logo-wordmark">Clex</span>
+          </div>
+          <p class="footer__desc">Drop files, prepare them in-browser, and share through the fastest route available. Private by default, built for the open web.</p>
+        </div>
+        <div class="footer__col">
+          <h4 class="footer__col-title">Product</h4>
+          <nav class="footer__links">
+            <a href="/features" class="footer__link">Features</a>
+            <a href="/vault" class="footer__link">Vault</a>
+            <a href="/how-it-works" class="footer__link">How It Works</a>
+            <a href="/workspace" class="footer__link">Workspace</a>
+            <a href="/chain" class="footer__link">Chain</a>
+            <a href="/getting-started" class="footer__link">Get Started</a>
+          </nav>
+        </div>
+        <div class="footer__col">
+          <h4 class="footer__col-title">Support</h4>
+          <nav class="footer__links">
+            <a href="/faq" class="footer__link">FAQ</a>
+            <a href="/getting-started" class="footer__link">Onboarding</a>
+            <a href="mailto:hello@clex.in" class="footer__link">Contact</a>
+          </nav>
+        </div>
+        <div class="footer__col">
+          <h4 class="footer__col-title">Legal</h4>
+          <nav class="footer__links">
+            <a href="/privacy" class="footer__link">Privacy Policy</a>
+            <a href="/terms" class="footer__link">Terms of Service</a>
+          </nav>
+        </div>
+      </div>
+      <div class="footer__signature">
+        <div class="footer__signature-copy">
+          <p class="footer__signature-heading">
+            <span class="footer__signature-kicker">Built by</span>
+            <span class="footer__signature-name">Abhinav</span>
+          </p>
+          <p class="footer__signature-text">
+            Fast tools, private transfers, and browser-native delivery.
+          </p>
+        </div>
+        <div class="footer__signature-links">
+          <a href="https://www.linkedin.com/in/abhnv07/" target="_blank" rel="noopener noreferrer" class="footer__signature-link footer__signature-link--linkedin" aria-label="Abhinav on LinkedIn">
+            <span class="footer__signature-icon" aria-hidden="true">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" focusable="false">
+                <path d="M20.45 20.45h-3.55v-5.57c0-1.33-.03-3.04-1.85-3.04-1.86 0-2.14 1.45-2.14 2.95v5.66H9.36V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.38-1.85 3.61 0 4.27 2.38 4.27 5.47v6.27ZM5.34 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12ZM7.12 20.45H3.56V9h3.56v11.45ZM22.22 0H1.77C.79 0 0 .77 0 1.72v20.56C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.72V1.72C24 .77 23.2 0 22.22 0Z"/>
+              </svg>
+            </span>
+            <span>LinkedIn</span>
+          </a>
+          <a href="mailto:abhnv@abhnv.in" class="footer__signature-link footer__signature-link--mail" aria-label="Email Abhinav">
+            <span class="footer__signature-icon" aria-hidden="true">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" focusable="false">
+                <path d="M3.5 6.75a2.25 2.25 0 0 1 2.25-2.25h12.5a2.25 2.25 0 0 1 2.25 2.25v10.5a2.25 2.25 0 0 1-2.25 2.25H5.75A2.25 2.25 0 0 1 3.5 17.25V6.75Z" stroke="currentColor" stroke-width="1.6"/>
+                <path d="M4.25 7.5 11 12.4a1.75 1.75 0 0 0 2 0L19.75 7.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="18.5" cy="6" r="2.5" fill="var(--accent, #6366f1)" stroke="var(--bg-card, #fff)" stroke-width="1"/>
+              </svg>
+            </span>
+            <span>abhnv@abhnv.in</span>
+          </a>
+          <a href="https://abhnv.in" target="_blank" rel="noopener noreferrer" class="footer__signature-link footer__signature-link--site" aria-label="Visit abhnv.in">
+            <span class="footer__signature-icon" aria-hidden="true">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" focusable="false">
+                <circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.6"/>
+                <path d="M3.5 12h17M12 3.5c2.4 2.4 3.6 5.5 3.6 8.5s-1.2 6.1-3.6 8.5M12 3.5C9.6 5.9 8.4 9 8.4 12s1.2 6.1 3.6 8.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                <path d="M5.5 8.5h13M5.5 15.5h13" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" opacity="0.55"/>
+              </svg>
+            </span>
+            <span>abhnv.in</span>
+          </a>
+          <a href="https://abhnv.me" target="_blank" rel="noopener noreferrer" class="footer__signature-link footer__signature-link--me" aria-label="Visit abhnv.me">
+            <span class="footer__signature-icon" aria-hidden="true">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" focusable="false">
+                <circle cx="12" cy="9" r="3.5" stroke="currentColor" stroke-width="1.6"/>
+                <path d="M5 20a7 7 0 0 1 14 0" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                <circle cx="18.5" cy="5.5" r="2" fill="currentColor" opacity="0.85"/>
+              </svg>
+            </span>
+            <span>abhnv.me</span>
+          </a>
+        </div>
+      </div>
+      <div class="footer__bottom">
+        <span class="footer__copyright">© 2026 Clex. All rights reserved.</span>
+        <div class="footer__legal">
+          <a href="/privacy" class="footer__legal-link">Privacy</a>
+          <a href="/terms" class="footer__legal-link">Terms</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>

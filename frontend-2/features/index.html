@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/png" href="/brand/clex-logo.png">
+  <link rel="apple-touch-icon" href="/brand/clex-logo.png">
+  <title>Features — Clex | Everything Connects</title>
+  <meta name="description" content="Explore Clex's complete feature set: image compression, PDF operations, PDF to Image, DOCX conversion, Vault notes and secret sharing, smart chaining, and three transfer routes in one workspace.">
+  <script>
+    (() => {
+      try {
+        const theme = localStorage.getItem('clex-theme') === 'light' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', theme);
+        document.documentElement.classList.toggle('dark', theme === 'dark');
+        document.documentElement.style.colorScheme = theme;
+      } catch {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        document.documentElement.classList.add('dark');
+        document.documentElement.style.colorScheme = 'dark';
+      }
+    })();
+  </script>
+
+  <link rel="stylesheet" href="/css/reset.css">
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/animations.css">
+  <link rel="stylesheet" href="/css/pages/home.css">
+  <link rel="stylesheet" href="/css/pages/features.css">
+
+  <script type="module" src="/js/main.js"></script>
+</head>
+<body data-page="features">
+
+  <!-- ═══ Navigation ═══ -->
+  <nav class="nav" id="main-nav">
+    <div class="nav__inner">
+      <a href="/" class="nav__logo" aria-label="Clex home">
+        <img src="/brand/clex-logo.png" alt="" class="nav__logo-image">
+        <span class="nav__logo-wordmark">Clex</span>
+      </a>
+      <div class="nav__links">
+        <a href="/features" class="nav__link" data-page="features">Features</a>
+        <a href="/vault" class="nav__link" data-page="vault">Vault</a>
+        <a href="/how-it-works" class="nav__link" data-page="how-it-works">How It Works</a>
+        <a href="/chain" class="nav__link" data-page="chain">Chain</a>
+        <a href="/developers" class="nav__link" data-page="developers">Developers</a>
+        <a href="/getting-started" class="nav__link" data-page="getting-started">Get Started</a>
+        <a href="/faq" class="nav__link" data-page="faq">FAQ</a>
+      </div>
+      <div class="nav__actions">
+        <button class="nav__theme-toggle" id="theme-toggle" aria-label="Toggle theme">☀</button>
+        <a href="/workspace" class="btn btn--primary btn--small desktop-only">Open Workspace →</a>
+      </div>
+      <button class="nav__hamburger" id="nav-hamburger" aria-label="Toggle menu">
+        <span class="nav__hamburger-line"></span>
+        <span class="nav__hamburger-line"></span>
+        <span class="nav__hamburger-line"></span>
+      </button>
+    </div>
+  </nav>
+  <div class="nav__mobile-menu" id="nav-mobile-menu">
+    <a href="/" class="nav__mobile-link">Home</a>
+    <a href="/features" class="nav__mobile-link">Features</a>
+    <a href="/vault" class="nav__mobile-link">Vault</a>
+    <a href="/how-it-works" class="nav__mobile-link">How It Works</a>
+    <a href="/chain" class="nav__mobile-link">Chain</a>
+    <a href="/developers" class="nav__mobile-link">Developers</a>
+    <a href="/getting-started" class="nav__mobile-link">Get Started</a>
+    <a href="/faq" class="nav__mobile-link">FAQ</a>
+    <a href="/workspace" class="nav__mobile-link" style="color: var(--accent-text);">Open Workspace →</a>
+  </div>
+
+  <!-- ═══ Hero ═══ -->
+  <section class="features-hero">
+    <div class="container">
+      <span class="page-hero__label reveal">Feature System</span>
+      <h1 class="features-hero__title page-hero__title reveal">Everything<br>Connects</h1>
+      <p class="features-hero__subtitle page-hero__subtitle reveal">
+        Clex isn't a list of separate tools. It's a system where preparation flows into delivery — every feature feeds the next.
+      </p>
+    </div>
+  </section>
+
+  <!-- ═══ Preparation Tools ═══ -->
+  <section class="section" id="preparation">
+    <div class="container">
+      <div class="section__header reveal">
+        <span class="section__label">Preparation</span>
+        <h2 class="section__title page-section__title">Transform Files<br>Before They Move</h2>
+        <p class="section__subtitle">
+          Built-in tools that process everything inside your browser. Nothing gets uploaded to a server.
+        </p>
+      </div>
+    </div>
+
+    <div class="container--wide" style="max-width: var(--container-wide); margin: 0 auto; padding: 0 var(--container-padding);">
+      
+      <!-- Statement strip -->
+      <div id="features-statement" class="features-statement">
+        <div class="statement-inner">
+          <div class="statement-col">
+            <span class="stat-num">12+</span>
+            <span class="stat-label">File formats</span>
+          </div>
+          <div class="statement-divider"></div>
+          <div class="statement-col">
+            <span class="stat-num">3</span>
+            <span class="stat-label">Transfer routes</span>
+          </div>
+          <div class="statement-divider"></div>
+          <div class="statement-col">
+            <span class="stat-num">0</span>
+            <span class="stat-label">Server uploads (P2P)</span>
+          </div>
+          <div class="statement-divider"></div>
+          <div class="statement-col">
+            <span class="stat-num">100%</span>
+            <span class="stat-label">Client-side processing</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tool grid -->
+      <div class="tools-grid stagger-group" id="features-tool-grid">
+        <!-- Injected via JS or manually copied here -->
+        <article class="tool-card" style="--card-color: #22D3EE; transition-delay: 0ms;">
+          <div class="card-top">
+            <div class="tool-icon-wrap"><span class="tool-icon">⇩</span></div>
+            <span class="tool-tag" style="color: var(--card-color); border-color: var(--card-color); background: color-mix(in srgb, var(--card-color) 12%, transparent)">Images</span>
+          </div>
+          <h3 class="tool-title">Image Compression</h3>
+          <p class="tool-desc">Reduce image size by up to 90% while preserving visual quality. JPEG, PNG, WebP supported.</p>
+          <div class="tool-metric">
+            <span class="metric-dot" style="background: var(--card-color)"></span>
+            <span class="metric-text">Up to 90% smaller</span>
+          </div>
+        </article>
+
+        <article class="tool-card" style="--card-color: #9B7FFF; transition-delay: 60ms;">
+          <div class="card-top">
+            <div class="tool-icon-wrap"><span class="tool-icon">⇄</span></div>
+            <span class="tool-tag" style="color: var(--card-color); border-color: var(--card-color); background: color-mix(in srgb, var(--card-color) 12%, transparent)">Convert</span>
+          </div>
+          <h3 class="tool-title">Format Conversion</h3>
+          <p class="tool-desc">Convert between image formats instantly in the browser. No uploads, no waiting.</p>
+          <div class="tool-metric">
+            <span class="metric-dot" style="background: var(--card-color)"></span>
+            <span class="metric-text">8 formats supported</span>
+          </div>
+        </article>
+
+        <article class="tool-card" style="--card-color: #FFAA00; transition-delay: 120ms;">
+          <div class="card-top">
+            <div class="tool-icon-wrap"><span class="tool-icon">⊕</span></div>
+            <span class="tool-tag" style="color: var(--card-color); border-color: var(--card-color); background: color-mix(in srgb, var(--card-color) 12%, transparent)">PDF</span>
+          </div>
+          <h3 class="tool-title">PDF Merge</h3>
+          <p class="tool-desc">Combine multiple PDFs into one. Drag to reorder pages before merging.</p>
+          <div class="tool-metric">
+            <span class="metric-dot" style="background: var(--card-color)"></span>
+            <span class="metric-text">Unlimited pages</span>
+          </div>
+        </article>
+
+        <article class="tool-card" style="--card-color: #FFAA00; transition-delay: 180ms;">
+          <div class="card-top">
+            <div class="tool-icon-wrap"><span class="tool-icon">⊗</span></div>
+            <span class="tool-tag" style="color: var(--card-color); border-color: var(--card-color); background: color-mix(in srgb, var(--card-color) 12%, transparent)">PDF</span>
+          </div>
+          <h3 class="tool-title">PDF Split & Extract</h3>
+          <p class="tool-desc">Pull specific pages from a PDF or split a large file into individual documents.</p>
+          <div class="tool-metric">
+            <span class="metric-dot" style="background: var(--card-color)"></span>
+            <span class="metric-text">Page-level precision</span>
+          </div>
+        </article>
+
+        <article class="tool-card" style="--card-color: #FFAA00; transition-delay: 0ms;">
+          <div class="card-top">
+            <div class="tool-icon-wrap"><span class="tool-icon">🖼</span></div>
+            <span class="tool-tag" style="color: var(--card-color); border-color: var(--card-color); background: color-mix(in srgb, var(--card-color) 12%, transparent)">PDF</span>
+          </div>
+          <h3 class="tool-title">PDF → Image</h3>
+          <p class="tool-desc">Export PDF pages as image files for previews, approvals, social posts, and lighter delivery flows.</p>
+          <div class="tool-metric">
+            <span class="metric-dot" style="background: var(--card-color)"></span>
+            <span class="metric-text">Page previews on demand</span>
+          </div>
+        </article>
+
+        <article class="tool-card" style="--card-color: #9B7FFF; transition-delay: 0ms;">
+          <div class="card-top">
+            <div class="tool-icon-wrap"><span class="tool-icon">⬡</span></div>
+            <span class="tool-tag" style="color: var(--card-color); border-color: var(--card-color); background: color-mix(in srgb, var(--card-color) 12%, transparent)">Convert</span>
+          </div>
+          <h3 class="tool-title">DOCX → PDF</h3>
+          <p class="tool-desc">Convert Word documents to PDF in seconds. Runs entirely in your browser.</p>
+          <div class="tool-metric">
+            <span class="metric-dot" style="background: var(--card-color)"></span>
+            <span class="metric-text">100% client-side</span>
+          </div>
+        </article>
+
+        <article class="tool-card" style="--card-color: #00E570; transition-delay: 60ms;">
+          <div class="card-top">
+            <div class="tool-icon-wrap"><span class="tool-icon">⊞</span></div>
+            <span class="tool-tag" style="color: var(--card-color); border-color: var(--card-color); background: color-mix(in srgb, var(--card-color) 12%, transparent)">Archive</span>
+          </div>
+          <h3 class="tool-title">ZIP Bundling</h3>
+          <p class="tool-desc">Bundle any set of files into a ZIP archive for clean, single-package delivery.</p>
+          <div class="tool-metric">
+            <span class="metric-dot" style="background: var(--card-color)"></span>
+            <span class="metric-text">Any file type</span>
+          </div>
+        </article>
+
+        <article class="tool-card" style="--card-color: #FF4466; transition-delay: 120ms;">
+          <div class="card-top">
+            <div class="tool-icon-wrap"><span class="tool-icon">⟳</span></div>
+            <span class="tool-tag" style="color: var(--card-color); border-color: var(--card-color); background: color-mix(in srgb, var(--card-color) 12%, transparent)">System</span>
+          </div>
+          <h3 class="tool-title">Smart Tool Chaining</h3>
+          <p class="tool-desc">Compress an image, convert it, then share it — all in one continuous flow.</p>
+          <div class="tool-metric">
+            <span class="metric-dot" style="background: var(--card-color)"></span>
+            <span class="metric-text">Zero context switches</span>
+          </div>
+        </article>
+
+        <article class="tool-card" style="--card-color: #22D3EE; transition-delay: 180ms;">
+          <div class="card-top">
+            <div class="tool-icon-wrap"><span class="tool-icon">⟷</span></div>
+            <span class="tool-tag" style="color: var(--card-color); border-color: var(--card-color); background: color-mix(in srgb, var(--card-color) 12%, transparent)">Transfer</span>
+          </div>
+          <h3 class="tool-title">Direct P2P Transfer · Direct+</h3>
+          <p class="tool-desc">Send files browser-to-browser via WebRTC. <strong>Clex Direct+</strong> adds chunk-level verification, ACK/retry, pause/resume, and a verified transfer receipt. No relay, no server storage.</p>
+          <div class="tool-metric">
+            <span class="metric-dot" style="background: var(--card-color)"></span>
+            <span class="metric-text">Verified · Pausable · Privacy-safe</span>
+          </div>
+        </article>
+
+        <article class="tool-card" style="--card-color: #00E570; transition-delay: 0ms;">
+          <div class="card-top">
+            <div class="tool-icon-wrap"><span class="tool-icon">⊡</span></div>
+            <span class="tool-tag" style="color: var(--card-color); border-color: var(--card-color); background: color-mix(in srgb, var(--card-color) 12%, transparent)">Transfer</span>
+          </div>
+          <h3 class="tool-title">Local Network Routing</h3>
+          <p class="tool-desc">Detected on the same Wi-Fi? Files route locally for near-instant delivery.</p>
+          <div class="tool-metric">
+            <span class="metric-dot" style="background: var(--card-color)"></span>
+            <span class="metric-text">LAN speed</span>
+          </div>
+        </article>
+
+        <article class="tool-card" style="--card-color: #9B7FFF; transition-delay: 60ms;">
+          <div class="card-top">
+            <div class="tool-icon-wrap"><span class="tool-icon">↑</span></div>
+            <span class="tool-tag" style="color: var(--card-color); border-color: var(--card-color); background: color-mix(in srgb, var(--card-color) 12%, transparent)">Cloud</span>
+          </div>
+          <h3 class="tool-title">Google Drive Fallback</h3>
+          <p class="tool-desc">When direct transfer isn't possible, upload to your own Drive and share the link.</p>
+          <div class="tool-metric">
+            <span class="metric-dot" style="background: var(--card-color)"></span>
+            <span class="metric-text">Your storage, your control</span>
+          </div>
+        </article>
+
+        <article class="tool-card" style="--card-color: #FFAA00; transition-delay: 120ms;">
+          <div class="card-top">
+            <div class="tool-icon-wrap"><span class="tool-icon">⬡</span></div>
+            <span class="tool-tag" style="color: var(--card-color); border-color: var(--card-color); background: color-mix(in srgb, var(--card-color) 12%, transparent)">Share</span>
+          </div>
+          <h3 class="tool-title">QR Code Sharing</h3>
+          <p class="tool-desc">Generate a QR code from any share link. Point and receive — no typing required.</p>
+          <div class="tool-metric">
+            <span class="metric-dot" style="background: var(--card-color)"></span>
+            <span class="metric-text">Instant mobile handoff</span>
+          </div>
+        </article>
+
+        <article class="tool-card" style="--card-color: #00E570; transition-delay: 180ms;">
+          <div class="card-top">
+            <div class="tool-icon-wrap"><span class="tool-icon">◎</span></div>
+            <span class="tool-tag" style="color: var(--card-color); border-color: var(--card-color); background: color-mix(in srgb, var(--card-color) 12%, transparent)">System</span>
+          </div>
+          <h3 class="tool-title">Offline Capable</h3>
+          <p class="tool-desc">All file operations work offline after the first load. Reliable anywhere.</p>
+          <div class="tool-metric">
+            <span class="metric-dot" style="background: var(--card-color)"></span>
+            <span class="metric-text">Works without internet</span>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ Connector Banner ═══ -->
+  <div class="banner reveal-scale">
+    <div class="container">
+      <p class="banner__text">Prepare ——→ Deliver</p>
+    </div>
+  </div>
+
+  <section class="section vault-spotlight" id="vault-spotlight">
+    <div class="container">
+      <div class="vault-spotlight__shell reveal">
+        <div class="vault-spotlight__copy">
+          <span class="section__label">Vault</span>
+          <h2 class="page-section__title vault-spotlight__title">Vault keeps private work inside the same Clex flow</h2>
+          <p class="vault-spotlight__text">
+            Vault extends Clex beyond transfer. It stores encrypted notes locally, keeps working offline, syncs paired devices peer-to-peer when available, supports Google-account recovery, and now exposes secret links plus Drive-backed timed file handoffs from the same shell.
+          </p>
+
+          <div class="vault-spotlight__meta">
+            <span class="vault-spotlight__meta-item">Offline-first notes</span>
+            <span class="vault-spotlight__meta-item">Paired-device sync</span>
+            <span class="vault-spotlight__meta-item">Selectable secret protections</span>
+            <span class="vault-spotlight__meta-item">1 GB per file, 10 GB/day</span>
+          </div>
+
+          <div class="vault-spotlight__actions">
+            <a href="/vault" class="btn btn--primary">Explore Vault →</a>
+            <a href="/workspace" class="btn btn--ghost">Open Workspace</a>
+          </div>
+        </div>
+
+        <div class="vault-spotlight__stack">
+          <div class="vault-spotlight__note">
+            <strong>Notes</strong>
+            <p>Create encrypted notes and folders, search them instantly, and keep the primary copy on your own device.</p>
+          </div>
+          <div class="vault-spotlight__note">
+            <strong>Secret Share</strong>
+            <p>Choose view once, a 60-second viewing window, no-select mode, tab-switch lock, or DevTools guard. Leave view once off and the link stays reusable until expiry.</p>
+          </div>
+          <div class="vault-spotlight__note">
+            <strong>Cloud Share</strong>
+            <p>Upload into your own Google Drive, publish per-file links plus an optional folder share, and let Vault delete the whole session automatically after 24 hours.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ Delivery System ═══ -->
+  <section class="section delivery-system" id="delivery">
+    <div class="container">
+      <div class="section__header text-center reveal">
+        <span class="section__label">Delivery</span>
+        <h2 class="section__title page-section__title">Three Routes<br>One Smart Decision</h2>
+        <p class="section__subtitle mx-auto">
+          Once your files are prepared, Clex routes them through the best available path. Direct is always preferred.
+        </p>
+      </div>
+
+      <div class="delivery-flow reveal">
+        <div class="delivery-flow__node">
+          <div class="delivery-flow__node-title">Your Browser</div>
+          <div class="delivery-flow__node-desc">Files ready in workspace</div>
+        </div>
+        <div class="delivery-flow__arrow">→</div>
+        <div class="delivery-flow__node" style="border-color: var(--accent); box-shadow: var(--shadow-md) var(--accent);">
+          <div class="delivery-flow__node-title" style="color: var(--accent-text);">Clex Router</div>
+          <div class="delivery-flow__node-desc">Detects best path</div>
+        </div>
+        <div class="delivery-flow__arrow">→</div>
+        <div class="delivery-flow__node">
+          <div class="delivery-flow__node-title">Recipient</div>
+          <div class="delivery-flow__node-desc">Opens link in browser</div>
+        </div>
+      </div>
+
+      <!-- Transfer Comparison -->
+      <div style="margin-top: var(--space-4xl);">
+        <div class="container--narrow" style="max-width: var(--container-narrow); margin: 0 auto;">
+          <table class="compare-table reveal">
+            <thead>
+              <tr>
+                <th>Feature</th>
+                <th>Direct P2P</th>
+                <th>Local Network</th>
+                <th>Google Drive</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Protocol</strong></td>
+                <td>WebRTC</td>
+                <td>Local TCP</td>
+                <td>Google APIs</td>
+              </tr>
+              <tr>
+                <td><strong>Server Storage</strong></td>
+                <td><span class="check"></span> None</td>
+                <td><span class="check"></span> None</td>
+                <td>Your Drive</td>
+              </tr>
+              <tr>
+                <td><strong>Account</strong></td>
+                <td><span class="check"></span> Not needed</td>
+                <td><span class="check"></span> Not needed</td>
+                <td>Google Auth</td>
+              </tr>
+              <tr>
+                <td><strong>Speed</strong></td>
+                <td>Fast</td>
+                <td><span style="color:var(--accent-text);font-weight:bold;">Fastest</span></td>
+                <td>Depends on your bandwidth</td>
+              </tr>
+              <tr>
+                <td><strong>File Limit</strong></td>
+                <td>Browser RAM</td>
+                <td>Browser RAM</td>
+                <td>Drive quota (2 TB on Google AI Pro)</td>
+              </tr>
+              <tr>
+                <td><strong>Privacy</strong></td>
+                <td><span style="color:var(--accent-text);font-weight:bold;">Maximum</span></td>
+                <td><span style="color:var(--accent-text);font-weight:bold;">Maximum</span></td>
+                <td>Google TLS</td>
+              </tr>
+              <tr>
+                <td><strong>When to Use</strong></td>
+                <td>Default — always try first</td>
+                <td>Same Wi-Fi, big files</td>
+                <td>Fallback, async delivery</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ Chaining Demo ═══ -->
+  <section class="section chaining" id="chaining">
+    <div class="container">
+      <div class="section__header reveal">
+        <span class="section__label">Tool Chaining</span>
+        <h2 class="section__title page-section__title">One Thing Leads<br>to the Next</h2>
+        <p class="section__subtitle">
+          Clex connects operations so your workflow flows naturally. No re-upload, no copy-paste between tools.
+        </p>
+      </div>
+
+      <div id="chain-flow-island" class="reveal"></div>
+    </div>
+  </section>
+
+  <!-- ═══ Privacy Block ═══ -->
+  <section class="section section--tight" id="privacy-block">
+    <div class="container text-center">
+      <div class="reveal">
+        <span class="section__label">Privacy Architecture</span>
+        <h2 class="page-section__title" style="margin-bottom: var(--space-xl);">
+          Zero Knowledge by Design
+        </h2>
+      </div>
+      <div class="grid grid-3 gap-xl stagger-group" style="margin-top: var(--space-xl);">
+        <div class="card hover-lift">
+          <h3 class="card__title">No File Storage</h3>
+          <p class="card__text">
+            During P2P and local transfers, files exist only in the sender's and receiver's browsers. Clex's servers never see them.
+          </p>
+        </div>
+        <div class="card hover-lift">
+          <h3 class="card__title">No Account System</h3>
+          <p class="card__text">
+            P2P transfers need no login. No email, no password, no profile. Open a link and go. Google auth is only needed for Drive fallback.
+          </p>
+        </div>
+        <div class="card hover-lift">
+          <h3 class="card__title">Offline Capable</h3>
+          <p class="card__text">
+            After first load, Clex's preparation tools work without internet. Process files locally, then share when you're back online.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ CTA ═══ -->
+  <section class="cta-strip">
+    <div class="container">
+      <h2 class="cta-strip__title reveal">See it in action</h2>
+      <p class="cta-strip__text reveal">
+        Open the workspace and drop your first file. No setup needed.
+      </p>
+      <div class="vault-spotlight__actions reveal">
+        <a href="/workspace" class="btn btn--primary btn--large">Open Workspace →</a>
+        <a href="/vault" class="btn btn--large">Explore Vault</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ Footer ═══ -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer__grid">
+        <div class="footer__brand">
+          <div class="footer__logo" aria-label="Clex">
+            <img src="/brand/clex-logo.png" alt="" class="footer__logo-image">
+            <span class="footer__logo-wordmark">Clex</span>
+          </div>
+          <p class="footer__desc">Drop files, prepare them in-browser, and share through the fastest route available. Private by default, built for the open web.</p>
+        </div>
+        <div class="footer__col">
+          <h4 class="footer__col-title">Product</h4>
+          <nav class="footer__links">
+            <a href="/features" class="footer__link">Features</a>
+            <a href="/vault" class="footer__link">Vault</a>
+            <a href="/how-it-works" class="footer__link">How It Works</a>
+            <a href="/workspace" class="footer__link">Workspace</a>
+            <a href="/chain" class="footer__link">Chain</a>
+            <a href="/getting-started" class="footer__link">Get Started</a>
+          </nav>
+        </div>
+        <div class="footer__col">
+          <h4 class="footer__col-title">Support</h4>
+          <nav class="footer__links">
+            <a href="/faq" class="footer__link">FAQ</a>
+            <a href="/getting-started" class="footer__link">Onboarding</a>
+            <a href="mailto:hello@clex.in" class="footer__link">Contact</a>
+          </nav>
+        </div>
+        <div class="footer__col">
+          <h4 class="footer__col-title">Legal</h4>
+          <nav class="footer__links">
+            <a href="/privacy" class="footer__link">Privacy Policy</a>
+            <a href="/terms" class="footer__link">Terms of Service</a>
+          </nav>
+        </div>
+      </div>
+      <div class="footer__signature">
+        <div class="footer__signature-copy">
+          <p class="footer__signature-heading">
+            <span class="footer__signature-kicker">Built by</span>
+            <span class="footer__signature-name">Abhinav</span>
+          </p>
+          <p class="footer__signature-text">
+            Fast tools, private transfers, and browser-native delivery.
+          </p>
+        </div>
+        <div class="footer__signature-links">
+          <a href="https://www.linkedin.com/in/abhnv07/" target="_blank" rel="noopener noreferrer" class="footer__signature-link footer__signature-link--linkedin" aria-label="Abhinav on LinkedIn">
+            <span class="footer__signature-icon" aria-hidden="true">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" focusable="false">
+                <path d="M20.45 20.45h-3.55v-5.57c0-1.33-.03-3.04-1.85-3.04-1.86 0-2.14 1.45-2.14 2.95v5.66H9.36V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.38-1.85 3.61 0 4.27 2.38 4.27 5.47v6.27ZM5.34 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12ZM7.12 20.45H3.56V9h3.56v11.45ZM22.22 0H1.77C.79 0 0 .77 0 1.72v20.56C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.72V1.72C24 .77 23.2 0 22.22 0Z"/>
+              </svg>
+            </span>
+            <span>LinkedIn</span>
+          </a>
+          <a href="mailto:abhnv@abhnv.in" class="footer__signature-link footer__signature-link--mail" aria-label="Email Abhinav">
+            <span class="footer__signature-icon" aria-hidden="true">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" focusable="false">
+                <path d="M3.5 6.75a2.25 2.25 0 0 1 2.25-2.25h12.5a2.25 2.25 0 0 1 2.25 2.25v10.5a2.25 2.25 0 0 1-2.25 2.25H5.75A2.25 2.25 0 0 1 3.5 17.25V6.75Z" stroke="currentColor" stroke-width="1.6"/>
+                <path d="M4.25 7.5 11 12.4a1.75 1.75 0 0 0 2 0L19.75 7.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="18.5" cy="6" r="2.5" fill="var(--accent, #6366f1)" stroke="var(--bg-card, #fff)" stroke-width="1"/>
+              </svg>
+            </span>
+            <span>abhnv@abhnv.in</span>
+          </a>
+          <a href="https://abhnv.in" target="_blank" rel="noopener noreferrer" class="footer__signature-link footer__signature-link--site" aria-label="Visit abhnv.in">
+            <span class="footer__signature-icon" aria-hidden="true">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" focusable="false">
+                <circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.6"/>
+                <path d="M3.5 12h17M12 3.5c2.4 2.4 3.6 5.5 3.6 8.5s-1.2 6.1-3.6 8.5M12 3.5C9.6 5.9 8.4 9 8.4 12s1.2 6.1 3.6 8.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                <path d="M5.5 8.5h13M5.5 15.5h13" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" opacity="0.55"/>
+              </svg>
+            </span>
+            <span>abhnv.in</span>
+          </a>
+          <a href="https://abhnv.me" target="_blank" rel="noopener noreferrer" class="footer__signature-link footer__signature-link--me" aria-label="Visit abhnv.me">
+            <span class="footer__signature-icon" aria-hidden="true">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" focusable="false">
+                <circle cx="12" cy="9" r="3.5" stroke="currentColor" stroke-width="1.6"/>
+                <path d="M5 20a7 7 0 0 1 14 0" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                <circle cx="18.5" cy="5.5" r="2" fill="currentColor" opacity="0.85"/>
+              </svg>
+            </span>
+            <span>abhnv.me</span>
+          </a>
+        </div>
+      </div>
+      <div class="footer__bottom">
+        <span class="footer__copyright">© 2026 Clex. All rights reserved.</span>
+        <div class="footer__legal">
+          <a href="/privacy" class="footer__legal-link">Privacy</a>
+          <a href="/terms" class="footer__legal-link">Terms</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>

@@ -1,0 +1,15 @@
+/* ============================================
+   CLEX — Workspace Route Shell
+   ============================================ */
+
+body[data-page="workspace"] {
+  background: var(--bg-primary);
+}
+
+.workspace-shell {
+  min-height: 100vh;
+}
+
+#workspace-app-island {
+  min-height: 100vh;
+}

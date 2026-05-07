@@ -1,0 +1,7 @@
+export { default as CTASection } from './CTASection.svelte'
+export { default as Features } from './Features.svelte'
+export { default as Footer } from './Footer.svelte'
+export { default as Hero } from './Hero.svelte'
+export { default as HowItWorks } from './HowItWorks.svelte'
+export { default as Methods } from './Methods.svelte'
+export { default as StatsBanner } from './StatsBanner.svelte'

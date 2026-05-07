@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/png" href="/brand/clex-logo.png">
+  <link rel="apple-touch-icon" href="/brand/clex-logo.png">
+  <title>FAQ — Clex | Frequently Asked Questions</title>
+  <meta name="description" content="Answers to common questions about Clex: transfer methods, privacy, file storage, speed, browser support, offline usage, Google Drive fallback, and file handling.">
+  <script>
+    (() => {
+      try {
+        const theme = localStorage.getItem('clex-theme') === 'light' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', theme);
+        document.documentElement.classList.toggle('dark', theme === 'dark');
+        document.documentElement.style.colorScheme = theme;
+      } catch {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        document.documentElement.classList.add('dark');
+        document.documentElement.style.colorScheme = 'dark';
+      }
+    })();
+  </script>
+
+  <link rel="stylesheet" href="/css/reset.css">
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/animations.css">
+  <link rel="stylesheet" href="/css/pages/home.css">
+  <link rel="stylesheet" href="/css/pages/faq.css">
+
+  <script type="module" src="/js/main.js"></script>
+</head>
+<body data-page="faq">
+
+  <!-- ═══ Navigation ═══ -->
+  <nav class="nav" id="main-nav">
+    <div class="nav__inner">
+      <a href="/" class="nav__logo" aria-label="Clex home">
+        <img src="/brand/clex-logo.png" alt="" class="nav__logo-image">
+        <span class="nav__logo-wordmark">Clex</span>
+      </a>
+      <div class="nav__links">
+        <a href="/features" class="nav__link" data-page="features">Features</a>
+        <a href="/vault" class="nav__link" data-page="vault">Vault</a>
+        <a href="/how-it-works" class="nav__link" data-page="how-it-works">How It Works</a>
+        <a href="/chain" class="nav__link" data-page="chain">Chain</a>
+        <a href="/developers" class="nav__link" data-page="developers">Developers</a>
+        <a href="/getting-started" class="nav__link" data-page="getting-started">Get Started</a>
+        <a href="/faq" class="nav__link" data-page="faq">FAQ</a>
+      </div>
+      <div class="nav__actions">
+        <button class="nav__theme-toggle" id="theme-toggle" aria-label="Toggle theme">☀</button>
+        <a href="/workspace" class="btn btn--primary btn--small desktop-only">Open Workspace →</a>
+      </div>
+      <button class="nav__hamburger" id="nav-hamburger" aria-label="Toggle menu">
+        <span class="nav__hamburger-line"></span>
+        <span class="nav__hamburger-line"></span>
+        <span class="nav__hamburger-line"></span>
+      </button>
+    </div>
+  </nav>
+  <div class="nav__mobile-menu" id="nav-mobile-menu">
+    <a href="/" class="nav__mobile-link">Home</a>
+    <a href="/features" class="nav__mobile-link">Features</a>
+    <a href="/vault" class="nav__mobile-link">Vault</a>
+    <a href="/how-it-works" class="nav__mobile-link">How It Works</a>
+    <a href="/chain" class="nav__mobile-link">Chain</a>
+    <a href="/developers" class="nav__mobile-link">Developers</a>
+    <a href="/getting-started" class="nav__mobile-link">Get Started</a>
+    <a href="/faq" class="nav__mobile-link">FAQ</a>
+    <a href="/workspace" class="nav__mobile-link" style="color: var(--accent-text);">Open Workspace →</a>
+  </div>
+
+  <!-- ═══ Hero ═══ -->
+  <section class="faq-hero">
+    <div class="container">
+      <span class="page-hero__label reveal">Support</span>
+      <h1 class="page-hero__title reveal">Frequently<br>Asked Questions</h1>
+      <p class="page-hero__subtitle reveal">
+        Everything you need to know about how Clex handles your files, transfers, and privacy.
+      </p>
+    </div>
+  </section>
+
+  <!-- ═══ FAQ Content ═══ -->
+  <section class="section">
+    <div class="container container--narrow">
+
+      <!-- Transfer Methods -->
+      <div class="faq-section reveal">
+        <h2 class="faq-section__title">Transfer Methods</h2>
+        <div class="accordion">
+          <div class="accordion__item">
+            <button class="accordion__trigger" aria-expanded="false">
+              How does P2P transfer work?
+              <span class="accordion__icon">+</span>
+            </button>
+            <div class="accordion__content">
+              <div class="accordion__body faq-answer">
+                <p>Clex uses <strong>WebRTC</strong> to establish a direct browser-to-browser connection. When you share files, Clex creates a unique session and uses a lightweight signaling server to help the two browsers find each other. Once connected, the files stream <strong>directly</strong> from your browser to the recipient's browser. No server stores or relays the actual file data.</p>
+              </div>
+            </div>
+          </div>
+          <div class="accordion__item">
+            <button class="accordion__trigger" aria-expanded="false">
+              What is local network transfer?
+              <span class="accordion__icon">+</span>
+            </button>
+            <div class="accordion__content">
+              <div class="accordion__body faq-answer">
+                <p>When both devices are on the <strong>same Wi-Fi network</strong>, Clex can detect this and transfer files over the local network instead of routing through the internet. This gives you <strong>LAN-speed transfers</strong> — ideal for large files, video, or batch transfers between your own devices.</p>
+              </div>
+            </div>
+          </div>
+          <div class="accordion__item">
+            <button class="accordion__trigger" aria-expanded="false">
+              When does Google Drive get used?
+              <span class="accordion__icon">+</span>
+            </button>
+            <div class="accordion__content">
+              <div class="accordion__body faq-answer">
+                <p>Google Drive is a <strong>fallback option</strong>. It's used when direct P2P or local network transfer isn't possible — for example, when devices are on restrictive networks or behind strict NATs. When you choose Drive, the file uploads to <strong>your Google Drive account</strong>, not to Clex's servers. The recipient gets a secure link to download from your Drive.</p>
+              </div>
+            </div>
+          </div>
+          <div class="accordion__item">
+            <button class="accordion__trigger" aria-expanded="false">
+              Do both browsers need to be open for P2P?
+              <span class="accordion__icon">+</span>
+            </button>
+            <div class="accordion__content">
+              <div class="accordion__body faq-answer">
+                <p><strong>Yes.</strong> For P2P and local network transfers, both sender and receiver need to keep their browser tabs open until the transfer completes. If either tab closes, the transfer stops. For asynchronous transfers (where the recipient isn't online yet), use the <strong>Google Drive fallback</strong>.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Reliability (Direct+) -->
+      <div class="faq-section reveal">
+        <h2 class="faq-section__title">Reliability — Clex Direct+</h2>
+        <div class="accordion">
+          <div class="accordion__item">
+            <button class="accordion__trigger" aria-expanded="false">
+              Can I pause a transfer?
+              <span class="accordion__icon">+</span>
+            </button>
+            <div class="accordion__content">
+              <div class="accordion__body faq-answer">
+                <p><strong>Yes.</strong> Clex Direct+ exposes a pause button while a transfer is in flight. The send loop holds in-flight chunks, the data channel stays open, and the receiver acks what's already arrived. Hit resume and it picks up from the next pending chunk — no restart from byte zero.</p>
+              </div>
+            </div>
+          </div>
+          <div class="accordion__item">
+            <button class="accordion__trigger" aria-expanded="false">
+              Can I resume a transfer after the connection drops?
+              <span class="accordion__icon">+</span>
+            </button>
+            <div class="accordion__content">
+              <div class="accordion__body faq-answer">
+                <p>Within the same session, yes. The chunk tracker on each side knows which chunks have been verified, so reconnection-style retries replay only the missing chunks. If both browser tabs close before the transfer completes, the session ends and you'll need a fresh code — chunk state lives in the browser, not on a server.</p>
+              </div>
+            </div>
+          </div>
+          <div class="accordion__item">
+            <button class="accordion__trigger" aria-expanded="false">
+              How do I know the file arrived correctly?
+              <span class="accordion__icon">+</span>
+            </button>
+            <div class="accordion__content">
+              <div class="accordion__body faq-answer">
+                <p>The receiver checks every chunk's size against the manifest and (for files under the per-chunk hash budget) computes a SHA-256 against the manifest's chunk hashes. When all chunks line up, both peers build a <strong>verified transfer receipt</strong> — file count, size, chunk count, retries, health score, optional root hash. The receipt is a content-free summary, so it stays privacy-safe.</p>
+              </div>
+            </div>
+          </div>
+          <div class="accordion__item">
+            <button class="accordion__trigger" aria-expanded="false">
+              What does the health score mean?
+              <span class="accordion__icon">+</span>
+            </button>
+            <div class="accordion__content">
+              <div class="accordion__body faq-answer">
+                <p>It's a 0–100 hint that summarises the live transfer: connection stability, retries, failed chunks, backpressure, and route. Above 90 means clean. Mid-range usually means a few retries kicked in (which is reliability working, not failing). Low scores tell you the network is actually struggling — try Local mode if you're on the same Wi-Fi, or fall back to Drive.</p>
+              </div>
+            </div>
+          </div>
+          <div class="accordion__item">
+            <button class="accordion__trigger" aria-expanded="false">
+              Why was a previous Direct+ build slow on a 50 MB file?
+              <span class="accordion__icon">+</span>
+            </button>
+            <div class="accordion__content">
+              <div class="accordion__body faq-answer">
+                <p>The first Direct+ build sent 64 KB chunks one at a time and updated the UI on every chunk. On a fast LAN that meant the wire sat idle waiting for ACKs and the React/Svelte tree re-rendered hundreds of times per second. The current build uses 256 KB chunks, a sliding window of up to 32 in flight, fire-and-forget hash verification, and coalesced UI updates — same reliability layer, full LAN speed.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Privacy -->
+      <div class="faq-section reveal">
+        <h2 class="faq-section__title">Privacy & Security</h2>
+        <div class="accordion">
+          <div class="accordion__item">
+            <button class="accordion__trigger" aria-expanded="false">
+              Are my files stored on Clex servers?
+              <span class="accordion__icon">+</span>
+            </button>
+            <div class="accordion__content">
+              <div class="accordion__body faq-answer">
+                <p><strong>No.</strong> During P2P and local network transfers, your files are <strong>never</strong> stored on any Clex server. They exist only in the sender's and receiver's browsers during the transfer. The only server involvement is a lightweight signaling server that helps the two browsers find each other — <strong>it never sees or stores file data</strong>.</p>
+              </div>
+            </div>
+          </div>
+          <div class="accordion__item">
+            <button class="accordion__trigger" aria-expanded="false">
+              Do I need an account?
+              <span class="accordion__icon">+</span>
+            </button>
+            <div class="accordion__content">
+              <div class="accordion__body faq-answer">
+                <p><strong>No account is required</strong> for P2P or local network transfers. Just open Clex and go. The only time authentication is needed is when you choose to use <strong>Google Drive as a fallback</strong>, which requires signing in with your Google account to upload files to your personal Drive.</p>
+              </div>
+            </div>
+          </div>
+          <div class="accordion__item">
+            <button class="accordion__trigger" aria-expanded="false">
+              Is the transfer encrypted?
+              <span class="accordion__icon">+</span>
+            </button>
+            <div class="accordion__content">
+              <div class="accordion__body faq-answer">
+                <p>WebRTC connections are <strong>encrypted by default</strong> using DTLS (Datagram Transport Layer Security). This means your P2P transfers are encrypted end-to-end between browsers. Google Drive transfers use <strong>Google's TLS encryption</strong>.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="faq-section reveal">
+        <h2 class="faq-section__title">Vault</h2>
+        <div class="accordion">
+          <div class="accordion__item">
+            <button class="accordion__trigger" aria-expanded="false">
+              Where are Vault notes stored?
+              <span class="accordion__icon">+</span>
+            </button>
+            <div class="accordion__content">
+              <div class="accordion__body faq-answer">
+                <p>Vault notes are stored <strong>locally in your browser</strong> and encrypted before they are written into the local database. The local device is the primary copy. Vault can sync between paired devices when available, but notes are not published to the public Chain.</p>
+              </div>
+            </div>
+          </div>
+          <div class="accordion__item">
+            <button class="accordion__trigger" aria-expanded="false">
+              Are secret links always one-time?
+              <span class="accordion__icon">+</span>
+            </button>
+            <div class="accordion__content">
+              <div class="accordion__body faq-answer">
+                <p><strong>No.</strong> Secret Share only becomes one-time when you enable <strong>View once</strong>. If you leave that protection off, the recipient can reopen the link until the chosen link expiry is reached.</p>
+              </div>
+            </div>
+          </div>
+          <div class="accordion__item">
+            <button class="accordion__trigger" aria-expanded="false">
+              What do the secret protections actually do?
+              <span class="accordion__icon">+</span>
+            </button>
+            <div class="accordion__content">
+              <div class="accordion__body faq-answer">
+                <p>You choose which protections apply for each secret: <strong>View once</strong>, <strong>60s viewing window</strong>, <strong>No select</strong>, <strong>Tab switch lock</strong>, and <strong>DevTools guard</strong>. Only the protections you turn on are enforced. <strong>Memory only</strong> remains a built-in guarantee.</p>
+              </div>
+            </div>
+          </div>
+          <div class="accordion__item">
+            <button class="accordion__trigger" aria-expanded="false">
+              Why does Cloud Share require Google sign-in?
+              <span class="accordion__icon">+</span>
+            </button>
+            <div class="accordion__content">
+              <div class="accordion__body faq-answer">
+                <p>Cloud Share uses Google Drive sign-in to publish Vault share sessions into your own Drive, enforce the daily upload budget, and list active timed links on your device. It is scoped to Vault Drive sharing, not required for normal P2P or local transfers.</p>
+              </div>
+            </div>
+          </div>
+          <div class="accordion__item">
+            <button class="accordion__trigger" aria-expanded="false">
+              What are the Cloud Share limits?
+              <span class="accordion__icon">+</span>
+            </button>
+            <div class="accordion__content">
+              <div class="accordion__body faq-answer">
+                <p>Cloud Share allows files up to <strong>1 GB each</strong>, enforces a <strong>10 GB per day</strong> upload budget per connected Google Drive account, and deletes the Drive session automatically after <strong>24 hours</strong>.</p>
+              </div>
+            </div>
+          </div>
+          <div class="accordion__item">
+            <button class="accordion__trigger" aria-expanded="false">
+              Do Vault notes and secret links appear on Chain?
+              <span class="accordion__icon">+</span>
+            </button>
+            <div class="accordion__content">
+              <div class="accordion__body faq-answer">
+                <p><strong>No.</strong> The public Transfer Chain is for workspace transfer metadata only. Vault notes, secret-link content, and Drive-backed timed shares stay outside the public ledger.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Developers -->
+      <div class="faq-section reveal">
+        <h2 class="faq-section__title">Developers</h2>
+        <div class="accordion">
+          <div class="accordion__item">
+            <button class="accordion__trigger" aria-expanded="false">
+              Can I use Clex from a terminal or an API?
+              <span class="accordion__icon">+</span>
+            </button>
+            <div class="accordion__content">
+              <div class="accordion__body faq-answer">
+                <p><strong>Yes — with a CLI.</strong> The HTTP API handles room metadata, health checks, and (planned) status/pause/resume/receipt endpoints. The actual file bytes still travel over WebRTC, so a pure <code>curl</code> upload won't work — that would require a relay store, which Clex deliberately doesn't run. The Clex CLI is a real WebRTC peer that speaks the same Direct+ protocol the browser does. See the <a href="/developers" class="link">Developers page</a> for the full reference.</p>
+              </div>
+            </div>
+          </div>
+          <div class="accordion__item">
+            <button class="accordion__trigger" aria-expanded="false">
+              Will the API ever accept raw file uploads?
+              <span class="accordion__icon">+</span>
+            </button>
+            <div class="accordion__content">
+              <div class="accordion__body faq-answer">
+                <p><strong>No, not on these endpoints.</strong> Clex's privacy promise is that the server never sees raw bytes during a normal transfer — that constraint is non-negotiable for the existing routes. If a relay mode is ever added, it will be a separate, opt-in product and clearly labelled, not bolted onto the existing API.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Speed & Performance -->
+      <div class="faq-section reveal">
+        <h2 class="faq-section__title">Speed & Performance</h2>
+        <div class="accordion">
+          <div class="accordion__item">
+            <button class="accordion__trigger" aria-expanded="false">
+              How fast are transfers?
+              <span class="accordion__icon">+</span>
+            </button>
+            <div class="accordion__content">
+              <div class="accordion__body faq-answer">
+                <p>P2P transfers run at the speed of your internet connection — there's no server bottleneck. <strong>Local network transfers</strong> are even faster since they use your Wi-Fi's LAN speed (often 100+ Mbps). Google Drive speed depends on your upload bandwidth and Google's infrastructure.</p>
+              </div>
+            </div>
+          </div>
+          <div class="accordion__item">
+            <button class="accordion__trigger" aria-expanded="false">
+              Is there a file size limit?
+              <span class="accordion__icon">+</span>
+            </button>
+            <div class="accordion__content">
+              <div class="accordion__body faq-answer">
+                <p>For P2P and local transfers, the limit is <strong>your browser's available RAM</strong>. Most modern browsers handle files up to several GB comfortably. For Google Drive, limits depend on your <strong>Drive storage quota</strong> (15 GB free tier). Extremely large files may work better with local network transfer.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Browser Support -->
+      <div class="faq-section reveal">
+        <h2 class="faq-section__title">Browser Support</h2>
+        <div class="accordion">
+          <div class="accordion__item">
+            <button class="accordion__trigger" aria-expanded="false">
+              Which browsers does Clex support?
+              <span class="accordion__icon">+</span>
+            </button>
+            <div class="accordion__content">
+              <div class="accordion__body faq-answer">
+                <p>Clex works in all modern browsers with WebRTC support: <strong>Chrome 80+</strong>, <strong>Firefox 78+</strong>, <strong>Safari 14+</strong>, <strong>Edge 80+</strong>, and their mobile equivalents. For the best experience, use the latest version of Chrome or Firefox.</p>
+              </div>
+            </div>
+          </div>
+          <div class="accordion__item">
+            <button class="accordion__trigger" aria-expanded="false">
+              Does it work on mobile?
+              <span class="accordion__icon">+</span>
+            </button>
+            <div class="accordion__content">
+              <div class="accordion__body faq-answer">
+                <p><strong>Yes.</strong> Clex is fully responsive and works on mobile browsers. You can drop files, use preparation tools, and share — all from your phone or tablet. The interface adapts to smaller screens while keeping full functionality.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Offline Usage -->
+      <div class="faq-section reveal">
+        <h2 class="faq-section__title">Offline Usage</h2>
+        <div class="accordion">
+          <div class="accordion__item">
+            <button class="accordion__trigger" aria-expanded="false">
+              Can I use Clex offline?
+              <span class="accordion__icon">+</span>
+            </button>
+            <div class="accordion__content">
+              <div class="accordion__body faq-answer">
+                <p><strong>Partially.</strong> After Clex loads in your browser for the first time, the <strong>preparation tools work offline</strong>. You can compress images, merge PDFs, convert documents, and bundle ZIPs without internet. Sharing requires a connection (since it needs to reach the other device), but you can prepare everything offline and share when you reconnect.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- File Handling -->
+      <div class="faq-section reveal">
+        <h2 class="faq-section__title">File Handling</h2>
+        <div class="accordion">
+          <div class="accordion__item">
+            <button class="accordion__trigger" aria-expanded="false">
+              What file types can I process?
+              <span class="accordion__icon">+</span>
+            </button>
+            <div class="accordion__content">
+              <div class="accordion__body faq-answer">
+                <p>Clex supports <strong>image compression and conversion</strong> (JPEG, PNG, WebP), <strong>PDF operations</strong> (merge, split, extract, export), <strong>DOCX to PDF conversion</strong>, and <strong>ZIP bundling</strong> for any file types. You can share any file type through the transfer system, even if Clex doesn't have specific preparation tools for it.</p>
+              </div>
+            </div>
+          </div>
+          <div class="accordion__item">
+            <button class="accordion__trigger" aria-expanded="false">
+              What happens to my files after transfer?
+              <span class="accordion__icon">+</span>
+            </button>
+            <div class="accordion__content">
+              <div class="accordion__body faq-answer">
+                <p>For P2P and local transfers: <strong>nothing</strong>. The files existed only in browser memory during the transfer. When you close the tab, they're gone from Clex entirely. For Google Drive transfers, the file remains in <strong>your Google Drive</strong> until you delete it — Clex doesn't manage or retain it.</p>
+              </div>
+            </div>
+          </div>
+          <div class="accordion__item">
+            <button class="accordion__trigger" aria-expanded="false">
+              Can I process files without sharing them?
+              <span class="accordion__icon">+</span>
+            </button>
+            <div class="accordion__content">
+              <div class="accordion__body faq-answer">
+                <p><strong>Absolutely.</strong> You can use Clex purely as a file preparation tool. Drop files, compress images, merge PDFs, convert formats, and download the results — all without ever touching the sharing features. It works as a standalone utility.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ═══ Still have questions? ═══ -->
+  <section class="cta-strip">
+    <div class="container">
+      <h2 class="cta-strip__title reveal">
+        Still have questions?
+      </h2>
+      <p class="cta-strip__text reveal">
+        Reach out and we'll get back to you.
+      </p>
+      <div class="reveal" style="display: flex; gap: var(--space-md); justify-content: center; flex-wrap: wrap;">
+        <a href="mailto:hello@clex.in" class="btn">Contact Us →</a>
+        <a href="/workspace" class="btn btn--primary">Open Workspace →</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ Footer ═══ -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer__grid">
+        <div class="footer__brand">
+          <div class="footer__logo" aria-label="Clex">
+            <img src="/brand/clex-logo.png" alt="" class="footer__logo-image">
+            <span class="footer__logo-wordmark">Clex</span>
+          </div>
+          <p class="footer__desc">Drop files, prepare them in-browser, and share through the fastest route available. Private by default, built for the open web.</p>
+        </div>
+        <div class="footer__col">
+          <h4 class="footer__col-title">Product</h4>
+          <nav class="footer__links">
+            <a href="/features" class="footer__link">Features</a>
+            <a href="/vault" class="footer__link">Vault</a>
+            <a href="/how-it-works" class="footer__link">How It Works</a>
+            <a href="/workspace" class="footer__link">Workspace</a>
+            <a href="/chain" class="footer__link">Chain</a>
+            <a href="/getting-started" class="footer__link">Get Started</a>
+          </nav>
+        </div>
+        <div class="footer__col">
+          <h4 class="footer__col-title">Support</h4>
+          <nav class="footer__links">
+            <a href="/faq" class="footer__link">FAQ</a>
+            <a href="/getting-started" class="footer__link">Onboarding</a>
+            <a href="mailto:hello@clex.in" class="footer__link">Contact</a>
+          </nav>
+        </div>
+        <div class="footer__col">
+          <h4 class="footer__col-title">Legal</h4>
+          <nav class="footer__links">
+            <a href="/privacy" class="footer__link">Privacy Policy</a>
+            <a href="/terms" class="footer__link">Terms of Service</a>
+          </nav>
+        </div>
+      </div>
+      <div class="footer__signature">
+        <div class="footer__signature-copy">
+          <p class="footer__signature-heading">
+            <span class="footer__signature-kicker">Built by</span>
+            <span class="footer__signature-name">Abhinav</span>
+          </p>
+          <p class="footer__signature-text">
+            Fast tools, private transfers, and browser-native delivery.
+          </p>
+        </div>
+        <div class="footer__signature-links">
+          <a href="https://www.linkedin.com/in/abhnv07/" target="_blank" rel="noopener noreferrer" class="footer__signature-link footer__signature-link--linkedin" aria-label="Abhinav on LinkedIn">
+            <span class="footer__signature-icon" aria-hidden="true">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" focusable="false">
+                <path d="M20.45 20.45h-3.55v-5.57c0-1.33-.03-3.04-1.85-3.04-1.86 0-2.14 1.45-2.14 2.95v5.66H9.36V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.38-1.85 3.61 0 4.27 2.38 4.27 5.47v6.27ZM5.34 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12ZM7.12 20.45H3.56V9h3.56v11.45ZM22.22 0H1.77C.79 0 0 .77 0 1.72v20.56C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.72V1.72C24 .77 23.2 0 22.22 0Z"/>
+              </svg>
+            </span>
+            <span>LinkedIn</span>
+          </a>
+          <a href="mailto:abhnv@abhnv.in" class="footer__signature-link footer__signature-link--mail" aria-label="Email Abhinav">
+            <span class="footer__signature-icon" aria-hidden="true">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" focusable="false">
+                <path d="M3.5 6.75a2.25 2.25 0 0 1 2.25-2.25h12.5a2.25 2.25 0 0 1 2.25 2.25v10.5a2.25 2.25 0 0 1-2.25 2.25H5.75A2.25 2.25 0 0 1 3.5 17.25V6.75Z" stroke="currentColor" stroke-width="1.6"/>
+                <path d="M4.25 7.5 11 12.4a1.75 1.75 0 0 0 2 0L19.75 7.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="18.5" cy="6" r="2.5" fill="var(--accent, #6366f1)" stroke="var(--bg-card, #fff)" stroke-width="1"/>
+              </svg>
+            </span>
+            <span>abhnv@abhnv.in</span>
+          </a>
+          <a href="https://abhnv.in" target="_blank" rel="noopener noreferrer" class="footer__signature-link footer__signature-link--site" aria-label="Visit abhnv.in">
+            <span class="footer__signature-icon" aria-hidden="true">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" focusable="false">
+                <circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.6"/>
+                <path d="M3.5 12h17M12 3.5c2.4 2.4 3.6 5.5 3.6 8.5s-1.2 6.1-3.6 8.5M12 3.5C9.6 5.9 8.4 9 8.4 12s1.2 6.1 3.6 8.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                <path d="M5.5 8.5h13M5.5 15.5h13" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" opacity="0.55"/>
+              </svg>
+            </span>
+            <span>abhnv.in</span>
+          </a>
+          <a href="https://abhnv.me" target="_blank" rel="noopener noreferrer" class="footer__signature-link footer__signature-link--me" aria-label="Visit abhnv.me">
+            <span class="footer__signature-icon" aria-hidden="true">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" focusable="false">
+                <circle cx="12" cy="9" r="3.5" stroke="currentColor" stroke-width="1.6"/>
+                <path d="M5 20a7 7 0 0 1 14 0" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                <circle cx="18.5" cy="5.5" r="2" fill="currentColor" opacity="0.85"/>
+              </svg>
+            </span>
+            <span>abhnv.me</span>
+          </a>
+        </div>
+      </div>
+      <div class="footer__bottom">
+        <span class="footer__copyright">© 2026 Clex. All rights reserved.</span>
+        <div class="footer__legal">
+          <a href="/privacy" class="footer__legal-link">Privacy</a>
+          <a href="/terms" class="footer__legal-link">Terms</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>

@@ -1,0 +1,129 @@
+/* ============================================
+   CLEX — Base Element Styles
+   ============================================ */
+
+html {
+  font-size: 16px;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+body {
+  font-family: var(--font-body);
+  font-weight: var(--weight-regular);
+  line-height: var(--leading-normal);
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  overflow-x: hidden;
+  transition: background-color var(--duration-normal) var(--ease-out),
+              color var(--duration-normal) var(--ease-out);
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: var(--radius-full);
+}
+
+/* ── Selection ── */
+::selection {
+  background: var(--accent);
+  color: var(--text-inverse);
+}
+
+/* ── Headings ── */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-tight);
+  color: var(--text-primary);
+}
+
+h1 {
+  font-size: clamp(var(--text-4xl), 6vw, var(--text-7xl));
+  letter-spacing: -0.04em;
+  text-transform: uppercase;
+}
+
+h2 {
+  font-size: clamp(var(--text-3xl), 4vw, var(--text-5xl));
+  text-transform: uppercase;
+}
+
+h3 {
+  font-size: clamp(var(--text-2xl), 3vw, var(--text-3xl));
+}
+
+h4 {
+  font-size: var(--text-xl);
+}
+
+h5 {
+  font-size: var(--text-lg);
+}
+
+h6 {
+  font-size: var(--text-base);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+}
+
+/* ── Paragraphs ── */
+p {
+  font-size: var(--text-lg);
+  color: var(--text-secondary);
+  max-width: 65ch;
+}
+
+.lead {
+  font-size: var(--text-xl);
+  line-height: var(--leading-relaxed);
+}
+
+/* ── Links ── */
+a {
+  transition: color var(--duration-fast) var(--ease-out);
+}
+
+a:hover {
+  color: var(--accent-text);
+}
+
+/* ── Strong / Em ── */
+strong {
+  font-weight: var(--weight-bold);
+  color: var(--text-primary);
+}
+
+em {
+  font-style: italic;
+}
+
+/* ── Code ── */
+code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  background: var(--bg-tertiary);
+  padding: 0.15em 0.4em;
+  border: var(--border-thin) solid var(--border-color);
+}
+
+/* ── Horizontal Rule ── */
+hr {
+  border: none;
+  height: var(--border-medium);
+  background: var(--border-color);
+  margin: var(--space-3xl) 0;
+}
+
+/* ── Images ── */
+img {
+  border: var(--border-medium) solid var(--border-bold);
+}
