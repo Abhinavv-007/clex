@@ -27,6 +27,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   await handleGoogleDriveOAuthCallback();
   await initIslands();
+  await initPageEnhancements(activePage);
 
   // Lazy load animations only when needed
   loadAnimations();
@@ -72,6 +73,17 @@ async function handleGoogleDriveOAuthCallback() {
   }
 
   window.history.replaceState({}, '', cleanedUrl);
+}
+
+async function initPageEnhancements(page) {
+  if (page !== 'developers') return;
+
+  try {
+    const { initDeveloperAccess } = await import('./developer-access.js');
+    await initDeveloperAccess();
+  } catch (e) {
+    console.warn('Developer access controls not loaded:', e);
+  }
 }
 
 async function loadAnimations() {
