@@ -6,6 +6,7 @@ import {
   BUFFERED_AMOUNT_LOW_WATER,
   CHUNK_SIZE,
   MAX_IN_FLIGHT_CHUNKS,
+  RELIABLE_CHUNK_HEADER_BYTES,
   RETRY_BACKOFF_FACTOR,
   RETRY_BACKOFF_MS,
   RETRY_INITIAL_DELAY_MS,
@@ -14,11 +15,12 @@ import {
 } from '../types'
 
 describe('reliable transfer constants', () => {
-  it('uses a chunk size that is safe for WebRTC datachannels and big enough to keep the wire busy', () => {
-    // Browser DataChannel limits cluster around 256 KB across Chromium / Firefox / Safari.
-    // We pick exactly that so a 50 MB file is ~200 chunks instead of ~800.
-    expect(CHUNK_SIZE).toBe(256 * 1024)
-    expect(CHUNK_SIZE).toBeLessThanOrEqual(256 * 1024)
+  it('uses a chunk size that stays safely below browser datachannel message limits', () => {
+    // The reliable frame adds a header to the payload. Keeping the payload at
+    // 64 KB avoids the generic DataChannel errors seen when a 256 KB payload
+    // plus framing crosses browser or network SCTP message limits.
+    expect(CHUNK_SIZE).toBe(64 * 1024)
+    expect(CHUNK_SIZE + RELIABLE_CHUNK_HEADER_BYTES).toBeLessThanOrEqual(64 * 1024 + 64)
   })
 
   it('lets the low watermark sit comfortably below the high watermark', () => {

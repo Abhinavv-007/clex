@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="icon" type="image/png" href="/brand/clex-logo.png">
   <link rel="apple-touch-icon" href="/brand/clex-logo.png">
-  <title>Developers — Clex | API & CLI</title>
-  <meta name="description" content="Build with Clex from terminal or code. Manage transfer sessions, inspect health, fetch receipts, and learn what runs over WebRTC vs HTTP. Privacy-first, direct-transfer-first.">
+  <title>Developers — Clex API</title>
+  <meta name="description" content="Sign in with Google, create a Clex API token, and use simple commands for the Clex API and direct file transfer flow.">
   <script>
     (() => {
       try {
@@ -35,7 +35,6 @@
 </head>
 <body data-page="developers">
 
-  <!-- ═══ Navigation ═══ -->
   <nav class="nav" id="main-nav">
     <div class="nav__inner">
       <a href="/" class="nav__logo" aria-label="Clex home">
@@ -62,6 +61,7 @@
       </button>
     </div>
   </nav>
+
   <div class="nav__mobile-menu" id="nav-mobile-menu">
     <a href="/" class="nav__mobile-link">Home</a>
     <a href="/features" class="nav__mobile-link">Features</a>
@@ -74,79 +74,89 @@
     <a href="/workspace" class="nav__mobile-link" style="color: var(--accent-text);">Open Workspace →</a>
   </div>
 
-  <!-- ═══ Hero ═══ -->
   <section class="dev-hero">
-    <div class="container">
-      <span class="page-hero__label reveal">Developers</span>
-      <h1 class="page-hero__title reveal">API &amp; CLI<br>Built On <span class="text-accent">Direct+</span></h1>
-      <p class="page-hero__subtitle reveal">
-        Drive Clex from your terminal, scripts, or services. Sessions, status, pause, resume, and receipts are HTTP. The actual file bytes stay on the WebRTC channel between sender and receiver — never on our servers.
-      </p>
-      <div class="dev-hero__pills reveal">
-        <span class="dev-pill"><span class="dev-pill__dot"></span> Privacy-first</span>
-        <span class="dev-pill"><span class="dev-pill__dot"></span> Direct-transfer-first</span>
-        <span class="dev-pill"><span class="dev-pill__dot"></span> No raw bytes on server</span>
+    <div class="container dev-hero__grid">
+      <div>
+        <span class="page-hero__label reveal">Developers</span>
+        <h1 class="page-hero__title reveal">Clex API<br><span class="text-accent">without the mess</span></h1>
+        <p class="page-hero__subtitle reveal">
+          Sign in, create a token, copy a command. The API controls rooms and receipts; file bytes still move directly between browsers over WebRTC.
+        </p>
+      </div>
+      <div class="dev-hero__summary reveal">
+        <span>1. Sign in with Google</span>
+        <span>2. Create API token</span>
+        <span>3. Send Bearer token</span>
       </div>
     </div>
   </section>
 
-  <!-- ═══ Architecture overview ═══ -->
-  <section class="section" id="architecture">
+  <section class="section" id="api-access">
+    <div class="container">
+      <div class="dev-access reveal" id="developer-access">
+        <div class="dev-access__header">
+          <div>
+            <span class="section__label">API Access</span>
+            <h2 class="dev-access__title">Create your token</h2>
+            <p class="dev-access__text">
+              Use your Google account to create a Firebase ID token. Send it as <code>Authorization: Bearer &lt;token&gt;</code> for protected Clex API routes.
+            </p>
+          </div>
+          <div class="dev-access__status">
+            <span id="dev-user-label">Sign in to create an API token</span>
+            <small id="dev-token-status">Ready</small>
+          </div>
+        </div>
+
+        <div class="dev-access__actions">
+          <button class="btn btn--primary" id="dev-google-signin" type="button">Sign in with Google</button>
+          <button class="btn btn--secondary" id="dev-create-token" type="button">Create API token</button>
+          <button class="btn btn--secondary" id="dev-copy-token" type="button">Copy token</button>
+          <button class="btn btn--ghost" id="dev-google-signout" type="button">Sign out</button>
+        </div>
+
+        <label class="dev-token-label" for="dev-token-output">Your API token</label>
+        <textarea class="dev-token-output" id="dev-token-output" rows="4" readonly placeholder="Sign in with Google first"></textarea>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="quick-commands">
     <div class="container">
       <div class="section__header reveal">
-        <span class="section__label">Architecture</span>
-        <h2 class="section__title">HTTP for control,<br>WebRTC for bytes</h2>
-        <p class="section__subtitle">
-          Clex isn't a server-upload product. The HTTP API helps a sender and a receiver find each other and exchange WebRTC signaling, then they form a peer-to-peer DataChannel and send the file directly. <strong>The Clex server never sees raw file bytes</strong> in the normal flow.
-        </p>
+        <span class="section__label">Quick Start</span>
+        <h2 class="section__title">Simple commands</h2>
+        <p class="section__subtitle">Copy these in order. The token command updates automatically after you create a token.</p>
       </div>
 
-      <div class="dev-table reveal">
-        <div class="dev-table__row dev-table__row--head">
-          <span>Action</span>
-          <span>Where it runs</span>
-          <span>Why</span>
-        </div>
-        <div class="dev-table__row">
-          <span class="dev-table__action">Health probe</span>
-          <span class="dev-table__where">HTTP <code>/api/health</code></span>
-          <span class="dev-table__why">Cheap liveness — safe for uptime monitors.</span>
-        </div>
-        <div class="dev-table__row">
-          <span class="dev-table__action">Create transfer (room code)</span>
-          <span class="dev-table__where">Browser / CLI</span>
-          <span class="dev-table__why">Generated client-side; signaling worker assigns the room when the first peer joins.</span>
-        </div>
-        <div class="dev-table__row">
-          <span class="dev-table__action">Connect peers</span>
-          <span class="dev-table__where">Signaling worker (WebSocket)</span>
-          <span class="dev-table__why">Relays SDP offers, answers, ICE candidates. Never sees file bytes.</span>
-        </div>
-        <div class="dev-table__row">
-          <span class="dev-table__action">Send file bytes</span>
-          <span class="dev-table__where">WebRTC DataChannel (peer↔peer)</span>
-          <span class="dev-table__why">256 KB chunks, sliding window, ACK/retry, optional per-chunk hash.</span>
-        </div>
-        <div class="dev-table__row">
-          <span class="dev-table__action">Pause / resume / cancel</span>
-          <span class="dev-table__where">DataChannel control message</span>
-          <span class="dev-table__why">In-band control over the same P2P link, so latency is one round trip.</span>
-        </div>
-        <div class="dev-table__row">
-          <span class="dev-table__action">Receipt / proof</span>
-          <span class="dev-table__where">Browser / CLI (computed locally)</span>
-          <span class="dev-table__why">Built from the manifest + chunk tracker — no server-side ledger of file content.</span>
-        </div>
-      </div>
+      <div class="dev-command-list reveal">
+        <article class="dev-command">
+          <div class="dev-command__top">
+            <span class="dev-command__step">01</span>
+            <h3>Save your token</h3>
+            <button type="button" data-copy-command="dev-cmd-export">Copy</button>
+          </div>
+          <pre class="dev-code"><code id="dev-cmd-export">export CLEX_TOKEN='&lt;YOUR_TOKEN&gt;'</code></pre>
+        </article>
 
-      <div class="dev-callout reveal">
-        <h3 class="dev-callout__title">Two ways to send a file from code</h3>
-        <p>
-          <strong>Direct (peer-to-peer):</strong> use the Clex CLI or your own WebRTC client. The bytes go straight from your machine to the receiver — no server hop. Best for large files and privacy-critical flows.
-        </p>
-        <p>
-          <strong>Programmatic upload (Vault):</strong> POST a file with an API key. Clex stores the file in your Vault bucket and gives you back a share URL. Useful for build pipelines, server-side scripts, or any context where you can't run a long-lived peer process. Per-key file-size and rate limits keep the cost surface bounded.
-        </p>
+        <article class="dev-command">
+          <div class="dev-command__top">
+            <span class="dev-command__step">02</span>
+            <h3>Check the API</h3>
+            <button type="button" data-copy-command="dev-cmd-health">Copy</button>
+          </div>
+          <pre class="dev-code"><code id="dev-cmd-health">curl https://api.clex.in/api/health</code></pre>
+        </article>
+
+        <article class="dev-command">
+          <div class="dev-command__top">
+            <span class="dev-command__step">03</span>
+            <h3>Send an authenticated request</h3>
+            <button type="button" data-copy-command="dev-cmd-auth">Copy</button>
+          </div>
+          <pre class="dev-code"><code id="dev-cmd-auth">curl https://api.clex.in/api/health \
+  -H "Authorization: Bearer &lt;YOUR_TOKEN&gt;"</code></pre>
+        </article>
       </div>
     </div>
   </section>
@@ -270,243 +280,44 @@ console.log(shareUrl)</code></pre>
     </div>
   </section>
 
-  <!-- ═══ HTTP API reference ═══ -->
-  <section class="section" id="http-api">
+  <section class="section dev-simple" id="what-it-does">
     <div class="container">
       <div class="section__header reveal">
-        <span class="section__label">HTTP API</span>
-        <h2 class="section__title">Stable today</h2>
-        <p class="section__subtitle">
-          These endpoints exist in the deployed API worker right now. Base URL is your Clex API origin (the same host that serves <code>/api/health</code>).
-        </p>
+        <span class="section__label">How It Works</span>
+        <h2 class="section__title">API controls metadata.<br>WebRTC moves files.</h2>
       </div>
 
-      <div class="dev-endpoint reveal">
-        <div class="dev-endpoint__head">
-          <span class="dev-endpoint__method dev-endpoint__method--get">GET</span>
-          <code class="dev-endpoint__path">/api/health</code>
-          <span class="dev-endpoint__tag dev-endpoint__tag--stable">Stable</span>
+      <div class="dev-simple__grid stagger-group">
+        <div class="dev-simple__item">
+          <h3>API</h3>
+          <p>Health checks, auth, transfer metadata, receipts, and future room controls.</p>
         </div>
-        <p class="dev-endpoint__desc">Liveness probe. Public, cacheable, no auth.</p>
-        <pre class="dev-code"><code>curl -s https://api.clex.in/api/health
-{
-  "ok": true,
-  "service": "clex-api",
-  "ts": 1714972800,
-  "version": "phase-1-public-face",
-  "bindings": { "kv": true }
-}</code></pre>
+        <div class="dev-simple__item">
+          <h3>WebSocket</h3>
+          <p>Connects two peers by relaying offer, answer, and ICE messages.</p>
+        </div>
+        <div class="dev-simple__item">
+          <h3>WebRTC</h3>
+          <p>Sends file chunks directly between devices. Clex does not receive raw file bytes.</p>
+        </div>
       </div>
 
-      <div class="dev-endpoint reveal">
-        <div class="dev-endpoint__head">
-          <span class="dev-endpoint__method dev-endpoint__method--get">GET</span>
-          <code class="dev-endpoint__path">/health</code>
-          <span class="dev-endpoint__tag dev-endpoint__tag--stable">Stable</span>
-        </div>
-        <p class="dev-endpoint__desc">Alias of <code>/api/health</code>. Use whichever your monitor prefers.</p>
-      </div>
-
-      <div class="dev-endpoint reveal">
-        <div class="dev-endpoint__head">
-          <span class="dev-endpoint__method dev-endpoint__method--ws">WS</span>
-          <code class="dev-endpoint__path">wss://signaling.clex.in/?room=&lt;CODE&gt;&amp;mode=webrtc|local&amp;chainId=&lt;ID&gt;</code>
-          <span class="dev-endpoint__tag dev-endpoint__tag--stable">Stable</span>
-        </div>
-        <p class="dev-endpoint__desc">
-          The signaling worker is a WebSocket. Open one per peer. Send JSON envelopes (<code>{"type":"offer","sdp":"..."}</code>, <code>{"type":"ice","candidate":...}</code>). The worker forwards them to the other peer in the same room and disconnects when the room is empty.
-        </p>
-        <pre class="dev-code"><code>// minimal Node sender (uses 'ws' + 'wrtc' or a browser-like RTCPeerConnection)
-const ws = new WebSocket(`wss://signaling.clex.in/?room=${code}&amp;mode=webrtc&amp;chainId=${id}`)
-ws.onmessage = e =&gt; handle(JSON.parse(e.data))   // peer_joined / offer / answer / ice
-ws.onopen = () =&gt; ws.send(JSON.stringify({ type: 'offer', sdp: localOffer.sdp }))</code></pre>
+      <div class="dev-note reveal">
+        The token shown here is a Google Firebase ID token. It is meant for protected API calls and expires automatically; create a fresh one when needed.
       </div>
     </div>
   </section>
 
-  <!-- ═══ Planned API ═══ -->
-  <section class="section" id="planned-api">
+  <section class="cta-strip">
     <div class="container">
-      <div class="section__header reveal">
-        <span class="section__label">Planned</span>
-        <h2 class="section__title">Coming next</h2>
-        <p class="section__subtitle">
-          These endpoints are designed but not yet shipped. They're additive — the existing API stays where it is. Anything that would touch raw file bytes is intentionally <em>not</em> on the list.
-        </p>
-      </div>
-
-      <div class="dev-endpoint dev-endpoint--planned reveal">
-        <div class="dev-endpoint__head">
-          <span class="dev-endpoint__method dev-endpoint__method--post">POST</span>
-          <code class="dev-endpoint__path">/api/transfer/sessions</code>
-          <span class="dev-endpoint__tag dev-endpoint__tag--planned">Planned</span>
-        </div>
-        <p class="dev-endpoint__desc">
-          Reserve a room code so a sender and receiver can meet. The body is metadata only — file names, sizes, chunk count. No file bytes. Returns a <code>transferId</code> the CLI can later use to fetch the room's status from the signaling worker.
-        </p>
-        <pre class="dev-code"><code>curl -X POST https://api.clex.in/api/transfer/sessions \
-  -H 'content-type: application/json' \
-  -d '{ "fileNames": ["report.pdf"], "totalSize": 524288, "totalChunks": 2 }'
-
-{ "transferId": "5d4e…", "roomCode": "K9M3JX", "expiresIn": 600 }</code></pre>
-      </div>
-
-      <div class="dev-endpoint dev-endpoint--planned reveal">
-        <div class="dev-endpoint__head">
-          <span class="dev-endpoint__method dev-endpoint__method--get">GET</span>
-          <code class="dev-endpoint__path">/api/transfer/sessions/:id</code>
-          <span class="dev-endpoint__tag dev-endpoint__tag--planned">Planned</span>
-        </div>
-        <p class="dev-endpoint__desc">
-          Reads room metadata: peer count, mode (<code>webrtc</code> or <code>local</code>), and whether the room is open or sealed. Designed to power CLI <code>clex status</code>.
-        </p>
-      </div>
-
-      <div class="dev-endpoint dev-endpoint--planned reveal">
-        <div class="dev-endpoint__head">
-          <span class="dev-endpoint__method dev-endpoint__method--post">POST</span>
-          <code class="dev-endpoint__path">/api/transfer/sessions/:id/pause</code>
-          <span class="dev-endpoint__tag dev-endpoint__tag--planned">Planned</span>
-        </div>
-        <p class="dev-endpoint__desc">
-          Convenience endpoint to send a <code>pause</code> control message to whichever peer is online. The actual pause is delivered over the DataChannel; this just lets you trigger it from a different process.
-        </p>
-      </div>
-
-      <div class="dev-endpoint dev-endpoint--planned reveal">
-        <div class="dev-endpoint__head">
-          <span class="dev-endpoint__method dev-endpoint__method--post">POST</span>
-          <code class="dev-endpoint__path">/api/transfer/sessions/:id/resume</code>
-          <span class="dev-endpoint__tag dev-endpoint__tag--planned">Planned</span>
-        </div>
-        <p class="dev-endpoint__desc">Same as pause but the inverse signal.</p>
-      </div>
-
-      <div class="dev-endpoint dev-endpoint--planned reveal">
-        <div class="dev-endpoint__head">
-          <span class="dev-endpoint__method dev-endpoint__method--delete">DELETE</span>
-          <code class="dev-endpoint__path">/api/transfer/sessions/:id</code>
-          <span class="dev-endpoint__tag dev-endpoint__tag--planned">Planned</span>
-        </div>
-        <p class="dev-endpoint__desc">Cancel an in-flight transfer and free the room.</p>
-      </div>
-
-      <div class="dev-endpoint dev-endpoint--planned reveal">
-        <div class="dev-endpoint__head">
-          <span class="dev-endpoint__method dev-endpoint__method--get">GET</span>
-          <code class="dev-endpoint__path">/api/transfer/receipts/:id</code>
-          <span class="dev-endpoint__tag dev-endpoint__tag--planned">Planned</span>
-        </div>
-        <p class="dev-endpoint__desc">
-          Returns the receipt the sender (or the CLI) <em>uploaded</em> for that transfer — file count, total size, chunk count, root hash, retries, health score. The receipt is a content-free summary; we never store the file itself.
-        </p>
-        <pre class="dev-code"><code>{
-  "transferId": "5d4e…",
-  "totalSize": 52428800,
-  "totalChunks": 200,
-  "chunkSize": 262144,
-  "fileCount": 1,
-  "verified": true,
-  "durationMs": 18234,
-  "route": "webrtc",
-  "retryCount": 2,
-  "failedChunkCount": 0,
-  "healthScore": 96,
-  "rootHash": "9f3c…b1",
-  "rev": 1
-}</code></pre>
+      <h2 class="cta-strip__title reveal">Test the transfer flow</h2>
+      <p class="cta-strip__text reveal">Open the workspace, send a file, then use the API page for developer access.</p>
+      <div class="reveal">
+        <a href="/workspace" class="btn btn--primary btn--large">Open Workspace →</a>
       </div>
     </div>
   </section>
 
-  <!-- ═══ CLI ═══ -->
-  <section class="section" id="cli">
-    <div class="container">
-      <div class="section__header reveal">
-        <span class="section__label">CLI</span>
-        <h2 class="section__title">Headless peer</h2>
-        <p class="section__subtitle">
-          The CLI is a real WebRTC peer. It opens the same DataChannel a browser would, runs the same Direct+ reliability layer, and produces the same receipt format. None of the file bytes leave the connection between you and your peer.
-        </p>
-      </div>
-
-      <div class="dev-cli reveal">
-        <div class="dev-cli__row">
-          <code class="dev-cli__cmd">clex send ./report.pdf</code>
-          <p class="dev-cli__desc">Generate a 6-character room code, wait for the receiver, stream chunks over WebRTC. Pause with <kbd>Ctrl+P</kbd>, resume, or cancel anytime.</p>
-        </div>
-        <div class="dev-cli__row">
-          <code class="dev-cli__cmd">clex receive K9M3JX</code>
-          <p class="dev-cli__desc">Connect to a code, verify each chunk against the manifest, write to disk on success.</p>
-        </div>
-        <div class="dev-cli__row">
-          <code class="dev-cli__cmd">clex status &lt;TRANSFER_ID&gt;</code>
-          <p class="dev-cli__desc">Inspect a live or completed transfer: chunks, retries, health score, route, paused state.</p>
-        </div>
-        <div class="dev-cli__row">
-          <code class="dev-cli__cmd">clex pause &lt;TRANSFER_ID&gt;</code>
-          <p class="dev-cli__desc">Send the in-band pause signal to whichever peer is currently sending.</p>
-        </div>
-        <div class="dev-cli__row">
-          <code class="dev-cli__cmd">clex resume &lt;TRANSFER_ID&gt;</code>
-          <p class="dev-cli__desc">Inverse of pause. Picks up at the next pending chunk — no restart from byte zero.</p>
-        </div>
-        <div class="dev-cli__row">
-          <code class="dev-cli__cmd">clex receipt &lt;TRANSFER_ID&gt;</code>
-          <p class="dev-cli__desc">Print the local receipt: root hash, chunk count, retries, health.</p>
-        </div>
-        <div class="dev-cli__row">
-          <code class="dev-cli__cmd">clex doctor</code>
-          <p class="dev-cli__desc">Diagnose your network: STUN reachability, NAT type guess, signaling health.</p>
-        </div>
-      </div>
-
-      <p class="dev-note reveal">
-        Status: the CLI is in active development and tracks the same protocol version as the web client. Subscribe via the home page if you want a ping when it's installable.
-      </p>
-    </div>
-  </section>
-
-  <!-- ═══ Reliability protocol ═══ -->
-  <section class="section" id="protocol">
-    <div class="container">
-      <div class="section__header reveal">
-        <span class="section__label">Direct+ protocol</span>
-        <h2 class="section__title">What's on the wire</h2>
-        <p class="section__subtitle">
-          Both peers exchange a <code>capability</code> message; if either side is on the legacy v0 client the transfer downgrades to plain streaming. Otherwise:
-        </p>
-      </div>
-
-      <ol class="dev-steps reveal">
-        <li><strong>Manifest.</strong> Sender posts a JSON manifest: file list, sizes, chunk size (256 KB by default), optional per-chunk SHA-256 hashes, optional root hash.</li>
-        <li><strong>Manifest ACK.</strong> Receiver verifies the shape and replies <code>manifest_ack</code>.</li>
-        <li><strong>Chunk frames.</strong> Sender writes binary frames with a 16-byte header (<code>fileIndex / chunkIndex / chunkLength / flags</code>). Receiver verifies length, ACKs immediately, then verifies hash off the hot path.</li>
-        <li><strong>Sliding window.</strong> Up to 32 chunks in flight per peer, gated by <code>RTCDataChannel.bufferedAmount</code> with a low-water trigger via <code>bufferedamountlow</code>. No "wait for one ACK before sending next chunk" — that's what made the previous build crawl.</li>
-        <li><strong>Retry.</strong> Up to 4 attempts per chunk, exponential backoff. On hash mismatch the receiver fires a <code>chunk_nack</code> and the sender re-queues that chunk.</li>
-        <li><strong>Pause / resume.</strong> Either peer can send <code>pause</code> over the same DataChannel; the send loop sleeps without dropping in-flight state. <code>resume</code> kicks the loop.</li>
-        <li><strong>Verify + receipt.</strong> Receiver counts chunks against the manifest, sends <code>verify_success</code> with the root hash, and both sides build a content-free receipt.</li>
-      </ol>
-    </div>
-  </section>
-
-  <!-- ═══ Privacy boundary ═══ -->
-  <section class="section dev-privacy" id="privacy">
-    <div class="container">
-      <div class="section__header reveal">
-        <span class="section__label">Boundary</span>
-        <h2 class="section__title">What the API will <em>never</em> do</h2>
-      </div>
-      <ul class="dev-bounds reveal">
-        <li>Accept raw file bytes over HTTP. The DataChannel is the only path file content takes.</li>
-        <li>Persist chunks server-side, even temporarily. There is no relay store.</li>
-        <li>Read filenames or content as part of the chain ledger. The chain only sees anonymous session metadata.</li>
-        <li>Add an "upload to Clex" endpoint that pretends to be P2P. If we ever ship a relay mode, it will be opt-in, separately documented, and clearly labelled — not bolted onto these routes.</li>
-      </ul>
-    </div>
-  </section>
-
-  <!-- ═══ Footer ═══ -->
   <footer class="footer">
     <div class="container">
       <div class="footer__grid">
