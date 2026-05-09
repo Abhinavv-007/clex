@@ -168,8 +168,8 @@ export async function mintKey(
   }
 
   const id = randomBase32(16)
-  const payload = randomBase32(36)
-  const fullKey = `ck_live_${payload}`
+  const payload = randomBase32(28)
+  const fullKey = `clex_${payload}`
   const prefix = fullKey.slice(0, 12)
   const hash = await sha256Hex(fullKey)
   const planKey = (plan in PLAN_LIMITS ? plan : 'free') as Plan
@@ -242,7 +242,7 @@ export interface ResolvedKey {
 }
 
 export async function resolveAndStamp(env: Env, plaintext: string): Promise<ResolvedKey | null> {
-  if (!plaintext.startsWith('ck_live_')) return null
+  if (!plaintext.startsWith('clex_')) return null
   const prefix = plaintext.slice(0, 12)
   const id = await env.DRIVE_SESSION_STORE.get(lookupKey(prefix))
   if (!id) return null

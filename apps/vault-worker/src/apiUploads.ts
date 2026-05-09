@@ -212,7 +212,7 @@ export async function handleApiUploadCreate(
     uid = explicitUid
     perKeyMaxBytes = apiKeysModule.FILE_SIZE_LIMITS[1] // UI default = 100 MB
   } else {
-    return errorResponse('Authorization: Bearer ck_live_… or X-Vault-UID required', 401, cors)
+    return errorResponse('Authorization: Bearer clex_… or X-Vault-UID required', 401, cors)
   }
 
   const rawFilename = request.headers.get('X-Filename')

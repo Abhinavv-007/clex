@@ -15,9 +15,10 @@
  */
 
 import type { Env } from './index'
+import { randomBytes, randomHex } from './crypto'
 import { verifyFirebaseAuthHeader } from './firebase'
 
-const KEY_PREFIX = 'ck_live_'
+const KEY_PREFIX = 'clex_'
 const KEY_PREFIX_VISIBLE_LEN = KEY_PREFIX.length + 8
 
 const FILE_SIZE_LIMITS = [-1] as const
@@ -76,14 +77,12 @@ function rowToRecord(row: ApiKeyRow): ApiKeyRecord {
   }
 }
 
-function randomHex(byteLength: number): string {
-  const buf = new Uint8Array(byteLength)
-  crypto.getRandomValues(buf)
-  return Array.from(buf, b => b.toString(16).padStart(2, '0')).join('')
-}
-
 function generatePlaintextKey(): string {
-  return `${KEY_PREFIX}${randomHex(32)}`
+  const alphabet = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+  const bytes = randomBytes(28)
+  let body = ''
+  for (let i = 0; i < bytes.length; i += 1) body += alphabet[bytes[i] % alphabet.length]
+  return `${KEY_PREFIX}${body}`
 }
 
 async function sha256Hex(input: string): Promise<string> {
