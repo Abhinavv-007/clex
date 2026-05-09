@@ -5,6 +5,7 @@ import {
   json,
   parseCookies,
   serializeCookie,
+  shareableCookieDomain,
   type Env,
 } from './googleAuth'
 import {
@@ -708,6 +709,10 @@ async function handleGoogleAuthCallback(request: Request, env: Env): Promise<Res
 
     appendSetCookie(headers, serializeCookie(SESSION_COOKIE, sessionRecord.id, {
       path: '/',
+      // Share the session across clex.in / www.clex.in / api.clex.in so
+      // the api.clex.in dashboard can read the same gdrive_session that
+      // was minted by the OAuth callback on clex.in.
+      domain: shareableCookieDomain(request) ?? undefined,
       httpOnly: true,
       secure,
       sameSite: 'Lax',
