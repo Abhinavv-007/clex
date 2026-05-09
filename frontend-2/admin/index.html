@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/png" href="/brand/clex-logo.png">
+  <link rel="apple-touch-icon" href="/brand/clex-logo.png">
+  <title>Admin · Clex</title>
+  <meta name="description" content="Operator console for Clex — users, transfers, API keys, audit log, passkeys.">
+  <meta name="robots" content="noindex, nofollow">
+  <script>
+    (() => {
+      try {
+        const theme = localStorage.getItem('clex-theme') === 'light' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', theme);
+        document.documentElement.classList.toggle('dark', theme === 'dark');
+        document.documentElement.style.colorScheme = theme;
+      } catch {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        document.documentElement.classList.add('dark');
+        document.documentElement.style.colorScheme = 'dark';
+      }
+    })();
+  </script>
+
+  <link rel="stylesheet" href="/css/reset.css">
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="./admin.css">
+</head>
+<body data-page="admin" class="admin-body">
+  <!-- ─── Sign-in screen ───────────────────────────────────────── -->
+  <section class="admin-signin" id="admin-signin">
+    <div class="admin-signin__card">
+      <div class="admin-signin__brand">
+        <img src="/brand/clex-logo.png" alt="" class="admin-signin__logo">
+        <div>
+          <span class="admin-signin__eyebrow">Clex Operator Console</span>
+          <h1 class="admin-signin__title">Admin sign-in</h1>
+        </div>
+      </div>
+
+      <p class="admin-signin__hint">
+        Authenticate with the admin password or a registered passkey. Sessions expire after 24h.
+        Public visitors should use <a href="/" data-link>clex.in</a> instead.
+      </p>
+
+      <form id="admin-signin-form" class="admin-signin__form" autocomplete="off">
+        <label class="admin-field" for="admin-secret">
+          <span>Admin password</span>
+          <input class="admin-input" type="password" id="admin-secret" name="secret" placeholder="••••••••••" autocomplete="current-password" required>
+        </label>
+        <div class="admin-signin__actions">
+          <button class="btn btn--primary admin-signin__submit" type="submit" id="admin-password-btn">
+            <span>Sign in</span>
+          </button>
+          <button class="btn btn--secondary" type="button" id="admin-passkey-btn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M21 12V7a2 2 0 0 0-2-2h-4l-2-2h-4l-2 2H3a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h7"></path>
+              <circle cx="17" cy="17" r="3"></circle>
+              <path d="M19 19l2 2"></path>
+            </svg>
+            <span>Use passkey</span>
+          </button>
+        </div>
+        <p class="admin-signin__error" id="admin-signin-error" hidden></p>
+      </form>
+    </div>
+  </section>
+
+  <!-- ─── Admin shell ──────────────────────────────────────────── -->
+  <div class="admin-shell" id="admin-shell" hidden>
+    <aside class="admin-sidebar">
+      <a href="/" class="admin-sidebar__brand" title="Back to clex.in">
+        <img src="/brand/clex-logo.png" alt="">
+        <div>
+          <strong>Clex</strong>
+          <span>Admin</span>
+        </div>
+      </a>
+
+      <nav class="admin-nav" id="admin-nav">
+        <button type="button" class="admin-nav__item is-active" data-tab="overview">
+          <span class="admin-nav__dot"></span><span>Overview</span>
+        </button>
+        <button type="button" class="admin-nav__item" data-tab="users">
+          <span class="admin-nav__dot"></span><span>Users</span>
+        </button>
+        <button type="button" class="admin-nav__item" data-tab="transfers">
+          <span class="admin-nav__dot"></span><span>Transfers</span>
+        </button>
+        <button type="button" class="admin-nav__item" data-tab="keys">
+          <span class="admin-nav__dot"></span><span>API keys</span>
+        </button>
+        <button type="button" class="admin-nav__item" data-tab="audit">
+          <span class="admin-nav__dot"></span><span>Audit log</span>
+        </button>
+        <button type="button" class="admin-nav__item" data-tab="passkeys">
+          <span class="admin-nav__dot"></span><span>Passkeys</span>
+        </button>
+      </nav>
+
+      <div class="admin-sidebar__footer">
+        <span class="admin-status-pill" id="admin-method-pill">—</span>
+        <button type="button" class="btn btn--ghost btn--small admin-signout" id="admin-signout">Sign out</button>
+      </div>
+    </aside>
+
+    <main class="admin-main">
+      <header class="admin-topbar">
+        <div>
+          <h1 class="admin-topbar__title" id="admin-tab-title">Overview</h1>
+          <p class="admin-topbar__sub" id="admin-tab-sub">Clex operator console · live data from <code>api.clex.in</code></p>
+        </div>
+        <div class="admin-topbar__meta">
+          <span class="admin-status-pill" id="admin-health-pill" data-state="loading">Checking…</span>
+          <button type="button" class="btn btn--ghost btn--small" id="admin-refresh">Refresh</button>
+        </div>
+      </header>
+
+      <!-- ─ Overview ─ -->
+      <section class="admin-tab is-active" id="admin-tab-overview">
+        <div class="admin-stats" id="admin-stats">
+          <div class="admin-stat admin-stat--skeleton"><span></span><span></span></div>
+          <div class="admin-stat admin-stat--skeleton"><span></span><span></span></div>
+          <div class="admin-stat admin-stat--skeleton"><span></span><span></span></div>
+          <div class="admin-stat admin-stat--skeleton"><span></span><span></span></div>
+        </div>
+
+        <div class="admin-grid admin-grid--2">
+          <div class="admin-panel">
+            <div class="admin-panel__head">
+              <h2>Transfer activity · last 30 days</h2>
+              <span class="admin-panel__meta" id="admin-spark-meta">—</span>
+            </div>
+            <div class="admin-spark" id="admin-spark"></div>
+          </div>
+          <div class="admin-panel">
+            <div class="admin-panel__head">
+              <h2>By file type</h2>
+              <span class="admin-panel__meta" id="admin-mime-meta">—</span>
+            </div>
+            <div class="admin-bars" id="admin-mime-bars"></div>
+          </div>
+        </div>
+
+        <div class="admin-grid admin-grid--2">
+          <div class="admin-panel">
+            <div class="admin-panel__head">
+              <h2>Recent transfers</h2>
+              <span class="admin-panel__meta">latest 10</span>
+            </div>
+            <div class="admin-table-wrap" id="admin-recent-transfers">
+              <p class="admin-empty">Loading…</p>
+            </div>
+          </div>
+          <div class="admin-panel">
+            <div class="admin-panel__head">
+              <h2>Recent admin sign-ins</h2>
+              <span class="admin-panel__meta">last 10</span>
+            </div>
+            <div class="admin-table-wrap" id="admin-recent-logins">
+              <p class="admin-empty">Loading…</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ─ Users ─ -->
+      <section class="admin-tab" id="admin-tab-users">
+        <div class="admin-toolbar">
+          <input type="search" class="admin-input admin-input--search" id="admin-users-search" placeholder="Search by email, name, or UID…">
+          <span class="admin-panel__meta" id="admin-users-count">—</span>
+        </div>
+        <div class="admin-panel admin-panel--no-pad">
+          <div class="admin-table-wrap" id="admin-users-list">
+            <p class="admin-empty">Loading users…</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ─ Transfers ─ -->
+      <section class="admin-tab" id="admin-tab-transfers">
+        <div class="admin-toolbar">
+          <h2>Recent transfers</h2>
+          <span class="admin-panel__meta" id="admin-transfers-count">—</span>
+        </div>
+        <div class="admin-panel admin-panel--no-pad">
+          <div class="admin-table-wrap" id="admin-transfers-list">
+            <p class="admin-empty">Loading transfers…</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ─ API keys feed ─ -->
+      <section class="admin-tab" id="admin-tab-keys">
+        <div class="admin-toolbar">
+          <h2>API key creations</h2>
+          <span class="admin-panel__meta" id="admin-keys-count">—</span>
+        </div>
+        <div class="admin-panel admin-panel--no-pad">
+          <div class="admin-table-wrap" id="admin-keys-list">
+            <p class="admin-empty">Loading API key feed…</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ─ Audit log ─ -->
+      <section class="admin-tab" id="admin-tab-audit">
+        <div class="admin-toolbar">
+          <h2>Audit log</h2>
+          <span class="admin-panel__meta">latest 200 events</span>
+        </div>
+        <div class="admin-panel admin-panel--no-pad">
+          <div class="admin-table-wrap" id="admin-audit-list">
+            <p class="admin-empty">Loading audit events…</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ─ Passkeys ─ -->
+      <section class="admin-tab" id="admin-tab-passkeys">
+        <div class="admin-toolbar">
+          <h2>Admin passkeys</h2>
+          <button type="button" class="btn btn--primary btn--small" id="admin-passkey-register">+ Register passkey</button>
+        </div>
+        <div class="admin-panel admin-panel--no-pad">
+          <div class="admin-table-wrap" id="admin-passkey-list">
+            <p class="admin-empty">Loading passkeys…</p>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- ─ User detail drawer ─ -->
+  <div class="admin-drawer" id="admin-user-drawer" hidden>
+    <div class="admin-drawer__backdrop" data-close></div>
+    <div class="admin-drawer__panel">
+      <header class="admin-drawer__head">
+        <div>
+          <span class="admin-panel__meta">User detail</span>
+          <h2 id="admin-drawer-title">Loading…</h2>
+        </div>
+        <button type="button" class="btn btn--ghost btn--small" data-close>Close</button>
+      </header>
+      <div class="admin-drawer__body" id="admin-drawer-body">
+        <p class="admin-empty">Loading…</p>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="./admin.js"></script>
+</body>
+</html>

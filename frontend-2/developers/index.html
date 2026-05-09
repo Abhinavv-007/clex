@@ -93,30 +93,73 @@
 
   <section class="section" id="api-access">
     <div class="container">
-      <div class="dev-access reveal" id="developer-access">
+      <div class="dev-access reveal" id="developer-access" data-state="loading">
         <div class="dev-access__header">
           <div>
             <span class="section__label">API Access</span>
             <h2 class="dev-access__title">Create your API key</h2>
             <p class="dev-access__text">
-              Use the same Firebase Google login as Clex AI to create a Clex API key. Send it as <code>Authorization: Bearer &lt;key&gt;</code> for protected Clex API routes.
+              Sign in with Google to mint a <code>clex_*</code> key. Send it as <code>Authorization: Bearer &lt;key&gt;</code> on Clex API routes. We hash keys server-side; the plaintext is shown exactly once.
             </p>
           </div>
-          <div class="dev-access__status">
-            <span id="dev-user-label">Sign in to create an API key</span>
-            <small id="dev-token-status">Ready</small>
+          <div class="dev-access__status" role="status" aria-live="polite">
+            <span class="dev-access__status-pill" id="dev-status-pill">Loading…</span>
+            <small id="dev-token-status">&nbsp;</small>
           </div>
         </div>
 
-        <div class="dev-access__actions">
-          <button class="btn btn--primary" id="dev-google-signin" type="button">Sign in with Google</button>
-          <button class="btn btn--secondary" id="dev-create-token" type="button">Create API key</button>
-          <button class="btn btn--secondary" id="dev-copy-token" type="button">Copy key</button>
-          <button class="btn btn--ghost" id="dev-google-signout" type="button">Sign out</button>
+        <!-- Signed-out state -->
+        <div class="dev-access__signed-out">
+          <p class="dev-access__hint">Use your Google account — the same one Clex Workspace uses. Sessions are managed by Firebase; we never see your password.</p>
+          <div class="dev-access__actions">
+            <button class="btn btn--primary" id="dev-google-signin" type="button">
+              <svg class="dev-google-icon" width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
+                <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.616z"/>
+                <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.583-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/>
+                <path fill="#FBBC05" d="M3.964 10.707A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.707V4.961H.957A8.997 8.997 0 0 0 0 9c0 1.452.348 2.827.957 4.039l3.007-2.332z"/>
+                <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.961L3.964 7.293C4.672 5.165 6.656 3.58 9 3.58z"/>
+              </svg>
+              <span>Sign in with Google</span>
+            </button>
+          </div>
         </div>
 
-        <label class="dev-token-label" for="dev-token-output">Your API key</label>
-        <textarea class="dev-token-output" id="dev-token-output" rows="4" readonly placeholder="Sign in with Google first"></textarea>
+        <!-- Signed-in state -->
+        <div class="dev-access__signed-in">
+          <div class="dev-access__profile">
+            <img class="dev-access__avatar" id="dev-user-avatar" alt="" src="" />
+            <div class="dev-access__profile-text">
+              <strong id="dev-user-name">Signed in</strong>
+              <span id="dev-user-email"></span>
+            </div>
+            <button class="btn btn--ghost btn--small" id="dev-google-signout" type="button">Sign out</button>
+          </div>
+
+          <div class="dev-access__actions">
+            <button class="btn btn--primary" id="dev-create-token" type="button">Create API key</button>
+            <button class="btn btn--secondary" id="dev-copy-token" type="button" disabled>Copy key</button>
+            <button class="btn btn--ghost btn--small" id="dev-refresh-keys" type="button">Refresh list</button>
+          </div>
+
+          <div class="dev-access__token" id="dev-token-block" hidden>
+            <label class="dev-token-label" for="dev-token-output">New API key · copy it now</label>
+            <div class="dev-token-row">
+              <textarea class="dev-token-output" id="dev-token-output" rows="2" readonly></textarea>
+              <button class="btn btn--secondary btn--small" id="dev-token-copy-inline" type="button">Copy</button>
+            </div>
+            <p class="dev-token-hint">This is the only time the plaintext is shown. Store it in a secret manager — we keep only a SHA-256 hash.</p>
+          </div>
+
+          <div class="dev-keys">
+            <div class="dev-keys__head">
+              <h3>My API keys</h3>
+              <span class="dev-keys__count" id="dev-keys-count">—</span>
+            </div>
+            <div class="dev-keys__list" id="dev-keys-list" aria-live="polite">
+              <p class="dev-keys__empty">Loading keys…</p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </section>

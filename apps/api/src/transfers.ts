@@ -575,6 +575,34 @@ export async function handleAdminHealth(request: Request, env: Env): Promise<Res
   )
 }
 
+interface AdminLoginRecord {
+  id: string
+  created_at: number
+  method: 'password' | 'passkey'
+  result: 'success' | 'failure'
+  reason: string | null
+  ip: string | null
+  ua: string | null
+  passkey_id: string | null
+}
+
+async function listAdminLoginEvents(env: Env, limit: number): Promise<AdminLoginRecord[]> {
+  const list = await env.DRIVE_SESSION_STORE.list({ prefix: 'admin:login:', limit })
+  const rows: AdminLoginRecord[] = []
+  await Promise.all(
+    list.keys.map(async (key) => {
+      const raw = await env.DRIVE_SESSION_STORE.get(key.name)
+      if (!raw) return
+      try {
+        rows.push(JSON.parse(raw) as AdminLoginRecord)
+      } catch {
+        // skip malformed
+      }
+    }),
+  )
+  return rows.sort((a, b) => b.created_at - a.created_at)
+}
+
 export async function handleAdminAudit(request: Request, env: Env): Promise<Response> {
   const authError = await requireAdminOrSecret(request, env)
   if (authError) return authError
@@ -595,6 +623,21 @@ export async function handleAdminAudit(request: Request, env: Env): Promise<Resp
       })
     }
   }
+  const logins = await listAdminLoginEvents(env, 200)
+  for (const login of logins) {
+    events.push({
+      type: `admin.login.${login.method}.${login.result}`,
+      ts: login.created_at,
+      details: {
+        method: login.method,
+        result: login.result,
+        reason: login.reason,
+        ip: login.ip,
+        ua: login.ua,
+        passkey_id: login.passkey_id,
+      },
+    })
+  }
   return jsonResponse(
     {
       service: 'clex-api',
@@ -605,4 +648,189 @@ export async function handleAdminAudit(request: Request, env: Env): Promise<Resp
     request,
     env,
   )
+}
+
+export async function handleAdminStats(request: Request, env: Env): Promise<Response> {
+  const authError = await requireAdminOrSecret(request, env)
+  if (authError) return authError
+  const m = metrics()
+  const now = Date.now()
+  const todayKey = utcDateKey(now)
+
+  const [transfersList, sessionsList, apiKeysList] = await Promise.all([
+    env.DRIVE_SESSION_STORE.list({ prefix: TRANSFER_KV_PREFIX, limit: 1000 }),
+    env.DRIVE_SESSION_STORE.list({ prefix: 'gdrive:session:', limit: 1000 }),
+    env.DRIVE_SESSION_STORE.list({ prefix: 'apikey:meta:', limit: 1000 }),
+  ])
+
+  const transfers: TransferRecord[] = []
+  await Promise.all(
+    transfersList.keys.map(async (key) => {
+      const raw = await env.DRIVE_SESSION_STORE.get(key.name)
+      if (!raw) return
+      try {
+        transfers.push(JSON.parse(raw) as TransferRecord)
+      } catch {
+        // ignore
+      }
+    }),
+  )
+
+  const apiKeys: { ownerSub: string; revoked?: boolean; createdAt: number; lastUsedAt: number | null }[] = []
+  await Promise.all(
+    apiKeysList.keys.map(async (key) => {
+      const raw = await env.DRIVE_SESSION_STORE.get(key.name)
+      if (!raw) return
+      try {
+        apiKeys.push(JSON.parse(raw) as typeof apiKeys[number])
+      } catch {
+        // ignore
+      }
+    }),
+  )
+
+  const sessions: { sub: string; createdAt: number; updatedAt: number }[] = []
+  await Promise.all(
+    sessionsList.keys.map(async (key) => {
+      const raw = await env.DRIVE_SESSION_STORE.get(key.name)
+      if (!raw) return
+      try {
+        sessions.push(JSON.parse(raw) as typeof sessions[number])
+      } catch {
+        // ignore
+      }
+    }),
+  )
+
+  const usersByUid = new Map<string, { firstSeen: number; lastSeen: number }>()
+  for (const s of sessions) {
+    const created = Math.floor((s.createdAt || now) / 1000)
+    const updated = Math.floor((s.updatedAt || s.createdAt || now) / 1000)
+    const existing = usersByUid.get(s.sub)
+    if (!existing) {
+      usersByUid.set(s.sub, { firstSeen: created, lastSeen: updated })
+    } else {
+      existing.firstSeen = Math.min(existing.firstSeen, created)
+      existing.lastSeen = Math.max(existing.lastSeen, updated)
+    }
+  }
+  for (const k of apiKeys) {
+    const existing = usersByUid.get(k.ownerSub)
+    const created = k.createdAt
+    const lastUsed = k.lastUsedAt ?? k.createdAt
+    if (!existing) {
+      usersByUid.set(k.ownerSub, { firstSeen: created, lastSeen: lastUsed })
+    } else {
+      existing.firstSeen = Math.min(existing.firstSeen, created)
+      existing.lastSeen = Math.max(existing.lastSeen, lastUsed)
+    }
+  }
+
+  const oneDayAgo = Math.floor(now / 1000) - 86_400
+  const sevenDaysAgo = Math.floor(now / 1000) - 7 * 86_400
+  const thirtyDaysAgo = Math.floor(now / 1000) - 30 * 86_400
+
+  const usersTotal = usersByUid.size
+  const usersActive24h = Array.from(usersByUid.values()).filter((u) => u.lastSeen >= oneDayAgo).length
+  const usersActive7d = Array.from(usersByUid.values()).filter((u) => u.lastSeen >= sevenDaysAgo).length
+  const usersNew7d = Array.from(usersByUid.values()).filter((u) => u.firstSeen >= sevenDaysAgo).length
+
+  const transfersToday = transfers.filter((t) => Math.floor(t.created_at / 1000) >= oneDayAgo)
+  const transfersByMime: Record<string, number> = {}
+  const transfersByStatus: Record<string, number> = {}
+  let totalBytesAll = 0
+  let totalBytesToday = 0
+  for (const t of transfers) {
+    const mime = (t.file_mime || 'application/octet-stream').split('/')[0]
+    transfersByMime[mime] = (transfersByMime[mime] || 0) + 1
+    transfersByStatus[t.status] = (transfersByStatus[t.status] || 0) + 1
+    totalBytesAll += t.file_size_bytes || 0
+    if (Math.floor(t.created_at / 1000) >= oneDayAgo) {
+      totalBytesToday += t.file_size_bytes || 0
+    }
+  }
+
+  const dailyTransfers: Record<string, { count: number; bytes: number }> = {}
+  for (let i = 0; i < 30; i++) {
+    const d = utcDateKey(now - i * 86_400_000)
+    dailyTransfers[d] = { count: 0, bytes: 0 }
+  }
+  for (const t of transfers) {
+    const day = utcDateKey(t.created_at)
+    if (dailyTransfers[day]) {
+      dailyTransfers[day].count += 1
+      dailyTransfers[day].bytes += t.file_size_bytes || 0
+    }
+  }
+
+  const apiKeysActive = apiKeys.filter((k) => !k.revoked).length
+  const apiKeysRevoked = apiKeys.filter((k) => Boolean(k.revoked)).length
+
+  const transferDurations = transfers
+    .map((t) => {
+      if (!t.events || t.events.length < 2) return null
+      const start = t.events[0]?.ts ?? t.created_at
+      const end = t.events[t.events.length - 1]?.ts ?? t.created_at
+      return Math.max(0, Math.floor((end - start) / 1000))
+    })
+    .filter((d): d is number => d != null)
+  const avgDurationSeconds =
+    transferDurations.length > 0
+      ? Math.round(transferDurations.reduce((a, b) => a + b, 0) / transferDurations.length)
+      : 0
+
+  const recentLogins = await listAdminLoginEvents(env, 25)
+
+  return jsonResponse(
+    {
+      service: 'clex-api',
+      generatedAt: Math.floor(now / 1000),
+      today: todayKey,
+      users: {
+        total: usersTotal,
+        active_24h: usersActive24h,
+        active_7d: usersActive7d,
+        new_7d: usersNew7d,
+      },
+      api_keys: {
+        total: apiKeys.length,
+        active: apiKeysActive,
+        revoked: apiKeysRevoked,
+      },
+      requests: {
+        total: m.totalRequests,
+      },
+      transfers: {
+        total: transfers.length,
+        today: transfersToday.length,
+        completed: m.transfers.completed,
+        cancelled: m.transfers.cancelled,
+        created: m.transfers.created,
+        bytes_total: totalBytesAll,
+        bytes_today: totalBytesToday,
+        avg_duration_seconds: avgDurationSeconds,
+        by_mime: transfersByMime,
+        by_status: transfersByStatus,
+      },
+      activity: {
+        daily_transfers: Object.entries(dailyTransfers)
+          .sort((a, b) => (a[0] < b[0] ? -1 : 1))
+          .map(([day, v]) => ({ day, count: v.count, bytes: v.bytes })),
+        recent_logins: recentLogins.slice(0, 10),
+      },
+      window: {
+        thirty_days_ago: thirtyDaysAgo,
+        seven_days_ago: sevenDaysAgo,
+        one_day_ago: oneDayAgo,
+      },
+    },
+    { status: 200 },
+    request,
+    env,
+  )
+}
+
+function utcDateKey(when: number): string {
+  const d = new Date(when)
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`
 }
