@@ -10,6 +10,9 @@ export interface Env {
   GOOGLE_CLIENT_SECRET?: string
   GOOGLE_REDIRECT_URI?: string
   GOOGLE_DRIVE_SCOPE?: string
+  FIREBASE_PROJECT_ID?: string
+  WEBAUTHN_RP_ID?: string
+  WEBAUTHN_RP_NAME?: string
   OAUTH_TOKEN_ENCRYPTION_SECRET?: string
   DRIVE_SESSION_STORE: KVNamespace
   /**
@@ -158,9 +161,6 @@ function sanitizeReturnTo(request: Request, env: Env, value: string | null): str
     const allowedOrigins = new Set<string>([
       requestOrigin,
       ...(frontendOrigin ? [frontendOrigin] : []),
-      // Always allow operator-facing surfaces on the same parent zone so
-      // the OAuth bounce back to https://api.clex.in/dashboard works even
-      // before someone remembers to broaden ALLOWED_ORIGIN in wrangler.
       'https://api.clex.in',
     ])
 

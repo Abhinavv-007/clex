@@ -1,19 +1,8 @@
 <script lang="ts">
-  /**
-   * Clex Account — API key management for programmatic uploads.
-   *
-   * Sign-in:    Google Firebase popup (reuses signInWithGoogle from $lib/vault/auth)
-   * After auth: stays on /account (or redirects back to ?next=… if provided).
-   * Lists, creates, edits, revokes API keys; copies plaintext on creation.
-   */
   import { onMount, onDestroy } from 'svelte'
   import { fade, fly } from 'svelte/transition'
-  import { onVaultAuthChanged, signInWithGoogle, signOutGoogle, type VaultUser } from '$lib/vault/auth'
+  import { getGoogleIdToken, onVaultAuthChanged, signInWithGoogle, signOutGoogle, type VaultUser } from '$lib/vault/auth'
 
-  // Lint-friendly autofocus action — Svelte's `autofocus` attribute warns
-  // because raw HTML autofocus is hostile to screen readers, but we need it
-  // when the modal opens. Using an action keeps the warning suppressed
-  // without disabling the rule globally.
   function autofocus(node: HTMLElement) {
     requestAnimationFrame(() => node.focus?.())
   }
@@ -44,7 +33,7 @@
 
   let showCreate = false
   let createName = ''
-  let createMaxFileBytes = FILE_SIZE_PRESETS[1].value
+  let createMaxFileBytes = FILE_SIZE_PRESETS[0].value
   let createRatePerMinute = RATE_PRESETS[0].value
   let creating = false
   let lastPlaintext = ''
@@ -99,7 +88,8 @@
     loadingKeys = true
     error = ''
     try {
-      const data = await listApiKeys({ baseUrl: vaultApiUrl, uid })
+      const token = await getGoogleIdToken()
+      const data = await listApiKeys({ baseUrl: vaultApiUrl, uid, token })
       keys = data.keys
     } catch (e) {
       error = (e as Error).message ?? 'Failed to load keys'
@@ -144,6 +134,7 @@
     creating = true
     error = ''
     try {
+      const token = await getGoogleIdToken()
       const res = await createApiKey(
         {
           name: createName.trim(),
@@ -151,7 +142,7 @@
           maxFileBytes: createMaxFileBytes,
           ratePerMinute: createRatePerMinute,
         },
-        { baseUrl: vaultApiUrl, uid: user.uid },
+        { baseUrl: vaultApiUrl, uid: user.uid, token },
       )
       lastPlaintext = res.plaintext
       keys = [res.key, ...keys]
@@ -175,6 +166,7 @@
     savingEdit = true
     error = ''
     try {
+      const token = await getGoogleIdToken()
       const res = await updateApiKey(
         editingKeyId,
         {
@@ -182,7 +174,7 @@
           maxFileBytes: editMaxFileBytes,
           ratePerMinute: editRatePerMinute,
         },
-        { baseUrl: vaultApiUrl, uid: user.uid },
+        { baseUrl: vaultApiUrl, uid: user.uid, token },
       )
       keys = keys.map((k) => (k.id === editingKeyId ? res.key : k))
       editingKeyId = null
@@ -197,7 +189,8 @@
     if (!user) return
     error = ''
     try {
-      await revokeApiKey(keyId, { baseUrl: vaultApiUrl, uid: user.uid })
+      const token = await getGoogleIdToken()
+      await revokeApiKey(keyId, { baseUrl: vaultApiUrl, uid: user.uid, token })
       keys = keys.filter((k) => k.id !== keyId)
     } catch (e) {
       error = (e as Error).message ?? 'Failed to revoke key'
@@ -239,7 +232,7 @@
       <h1 class="account__title">Your API <em>keys</em></h1>
       <p class="account__sub">
         Mint signed credentials for the <code>POST /vault/api/uploads</code> endpoint.
-        Set per-key file size + rate caps. Plaintext is shown once, never stored.
+        Every signed-in account can keep five active unlimited API keys.
       </p>
     </div>
 
@@ -321,7 +314,7 @@
         </div>
       {:else if keys.length === 0}
         <div class="empty">
-          <p>No keys yet. Create one to get a curl-able upload endpoint.</p>
+          <p>No keys yet. Create one to get a curl-able upload endpoint. Each account can keep up to five active unlimited keys.</p>
         </div>
       {:else}
         <ul class="keys">

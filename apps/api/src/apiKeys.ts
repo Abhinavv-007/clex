@@ -1,11 +1,6 @@
 /**
  * Clex API key management.
  *
- * Backed by the existing `DRIVE_SESSION_STORE` KV namespace (we already
- * pay for it; adding a second binding just for keys is overkill at this
- * scale). The keyspace is scoped under `apikey:` so it can't collide
- * with the Drive/Vault state already living in the same namespace.
- *
  * KV layout
  * ---------
  *   apikey:meta:{id}                 -> ApiKeyRecord (JSON, no plaintext key)
@@ -16,11 +11,6 @@
  *   apikey:owner:{ownerSub}:{id}     -> "1"          (cheap list-by-owner)
  *   apikey:usage:{id}:{utcDate}      -> "<n>"        (per-day request counter)
  *
- * Owners are identified by the existing Google `sub` (carried in the
- * gdrive_session cookie). The dashboard reuses that session — no new auth
- * surface. Keys are minted in the format `clex_<base32_payload>` and the
- * full plaintext is shown to the operator exactly once at creation time
- * (we only persist the SHA-256 hash).
  */
 import type { Env } from './googleAuth'
 
@@ -32,12 +22,12 @@ const USAGE_PREFIX = `${API_KEY_PREFIX}usage:`
 
 const KEY_TTL_SECONDS = 60 * 60 * 24 * 365 * 5 // 5y; keys live until revoked.
 const USAGE_TTL_SECONDS = 60 * 60 * 24 * 90 // keep ~3 months of daily counters.
-const MAX_KEYS_PER_OWNER = 25
+const MAX_KEYS_PER_OWNER = 5
 
 const PLAN_LIMITS = {
-  free: { ratePerMin: 10, sizeBytes: 10 * 1024 * 1024, label: 'Free' },
-  starter: { ratePerMin: 60, sizeBytes: 100 * 1024 * 1024, label: 'Starter' },
-  pro: { ratePerMin: 300, sizeBytes: 1024 * 1024 * 1024, label: 'Pro' },
+  free: { ratePerMin: -1, sizeBytes: -1, label: 'Unlimited' },
+  starter: { ratePerMin: -1, sizeBytes: -1, label: 'Unlimited' },
+  pro: { ratePerMin: -1, sizeBytes: -1, label: 'Unlimited' },
   unlimited: { ratePerMin: 1000, sizeBytes: -1, label: 'Unlimited' },
 } as const
 
@@ -49,7 +39,6 @@ export interface ApiKeyRecord {
   ownerEmail: string | null
   label: string
   plan: Plan
-  /** non-secret prefix (first 12 chars of the key, e.g. `clex_abc12345`) */
   prefix: string
   /** SHA-256 hex of the full key. Plaintext is never stored. */
   hash: string
@@ -169,20 +158,17 @@ export async function mintKey(
   label: string,
   plan: Plan,
 ): Promise<MintResult> {
-  // Enforce per-owner key cap.
   const existing = await env.DRIVE_SESSION_STORE.list({
     prefix: `${OWNER_PREFIX}${ownerSub}:`,
     limit: MAX_KEYS_PER_OWNER + 1,
   })
-  if (existing.keys.length >= MAX_KEYS_PER_OWNER) {
+  const activeCount = await countActiveOwnerKeys(env, existing.keys.map(key => key.name))
+  if (activeCount >= MAX_KEYS_PER_OWNER) {
     throw new Error(`Per-account limit reached (${MAX_KEYS_PER_OWNER} keys).`)
   }
 
-  // Generate the full key + non-secret prefix used for inbound lookup.
-  // The prefix is intentionally long enough to make accidental KV-key
-  // collisions vanishingly unlikely even at thousands of keys per account.
   const id = randomBase32(16)
-  const payload = randomBase32(36)
+  const payload = randomBase32(28)
   const fullKey = `clex_${payload}`
   const prefix = fullKey.slice(0, 12)
   const hash = await sha256Hex(fullKey)
@@ -213,6 +199,23 @@ export async function mintKey(
   return { key: fullKey, record: toPublic(record, 0, 0) }
 }
 
+async function countActiveOwnerKeys(env: Env, ownerKeys: string[]): Promise<number> {
+  let active = 0
+  await Promise.all(ownerKeys.map(async (key) => {
+    const id = key.split(':').pop()
+    if (!id) return
+    const raw = await env.DRIVE_SESSION_STORE.get(metaKey(id))
+    if (!raw) return
+    try {
+      const rec = JSON.parse(raw) as ApiKeyRecord
+      if (!rec.revoked) active += 1
+    } catch {
+      // ignore malformed records
+    }
+  }))
+  return active
+}
+
 export async function revokeKey(env: Env, ownerSub: string, id: string): Promise<boolean> {
   const raw = await env.DRIVE_SESSION_STORE.get(metaKey(id))
   if (!raw) return false
@@ -228,8 +231,6 @@ export async function revokeKey(env: Env, ownerSub: string, id: string): Promise
   await env.DRIVE_SESSION_STORE.put(metaKey(id), JSON.stringify(rec), {
     expirationTtl: KEY_TTL_SECONDS,
   })
-  // Drop the lookup entry so this key can no longer authenticate inbound
-  // requests, even if a copy of the plaintext still exists somewhere.
   await env.DRIVE_SESSION_STORE.delete(lookupKey(rec.prefix))
   return true
 }
