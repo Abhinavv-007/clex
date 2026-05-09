@@ -2,12 +2,6 @@
  * GET /dashboard, /dashboard/, /
  *
  * Serves the Clex API dashboard SPA from the worker. This is the page that
- * lives at https://api.clex.in/ — operators sign in with Google, mint /
- * rotate / revoke API keys, and read live system + per-key analytics.
- *
- * The HTML + JS are inlined so the worker doesn't need a static-asset
- * binding. Every dynamic value (system health, summary, transfers, audit,
- * keys, usage) is fetched at runtime against the same worker.
  */
 import type { Env } from './googleAuth'
 
@@ -89,6 +83,7 @@ const HTML = String.raw`<!doctype html>
 
     .topbar__user { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--fg-soft); }
     .topbar__user img { width: 24px; height: 24px; border-radius: 50%; border: 1px solid var(--rule); }
+    .topbar__user .pill { padding: 2px 7px; border-radius: 999px; background: var(--accent-soft); color: var(--accent-text); border: 1px solid var(--accent-soft); }
 
     main { max-width: 1180px; margin: 0 auto; padding: 28px 24px 80px; }
 
@@ -167,6 +162,11 @@ const HTML = String.raw`<!doctype html>
     }
     .signin h1 { margin: 0 0 8px; font-size: 20px; }
     .signin p { color: var(--fg-soft); }
+    .admin-secret {
+      width: 100%; padding: 9px 10px; margin-top: 14px; border-radius: 7px;
+      border: 1px solid var(--rule); background: var(--bg); color: var(--fg);
+      font: inherit;
+    }
     .signin .btn--primary { display: inline-block; margin-top: 18px; padding: 10px 16px; }
 
     .modal {
@@ -186,13 +186,6 @@ const HTML = String.raw`<!doctype html>
     }
     .modal__actions { display: flex; gap: 8px; margin-top: 18px; justify-content: flex-end; }
 
-    .secret {
-      background: var(--bg-elev-2); border: 1px solid var(--accent);
-      padding: 12px; border-radius: 8px; margin-top: 12px; font-family: ui-monospace, monospace;
-      word-break: break-all; font-size: 12px;
-    }
-    .secret + p { font-size: 12px; color: var(--warn); margin-top: 8px; }
-
     .tabs { display: none; }
     .tabs.active { display: block; }
 
@@ -203,6 +196,15 @@ const HTML = String.raw`<!doctype html>
       padding: 12px; border-radius: 8px; border: 1px solid var(--rule);
       font-size: 12px; line-height: 1.5;
     }
+    .card-list { display: grid; gap: 10px; }
+    .row-card {
+      display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px;
+      padding: 12px; border: 1px solid var(--rule-soft); border-radius: 9px;
+      background: var(--bg-elev-2);
+    }
+    .row-card__title { font-weight: 600; word-break: break-word; }
+    .row-card__meta { color: var(--muted); font-size: 12px; word-break: break-word; }
+    .row-card__actions { display: flex; gap: 8px; align-items: center; }
 
     @media (max-width: 700px) {
       .topbar { padding: 12px 16px; flex-wrap: wrap; gap: 10px; }
@@ -219,19 +221,23 @@ const HTML = String.raw`<!doctype html>
     </div>
     <nav class="topbar__nav" id="nav" hidden>
       <button data-tab="overview" class="active">Overview</button>
+      <button data-tab="users">Users</button>
+      <button data-tab="feed">Live feed</button>
       <button data-tab="keys">API keys</button>
       <button data-tab="usage">Usage</button>
       <button data-tab="audit">Audit</button>
+      <button data-tab="passkeys">Passkeys</button>
     </nav>
     <div class="topbar__user" id="user" hidden></div>
   </header>
 
   <main id="main">
     <section class="signin" id="signin">
-      <h1>Sign in to manage API access</h1>
-      <p>The Clex API dashboard reuses the same Google sign-in as <a href="https://clex.in/developers">clex.in/developers</a>.
-      Mint Bearer keys, watch live traffic, and read the audit trail — no separate account.</p>
-      <button class="btn btn--primary" id="signin-btn">Sign in with Google</button>
+      <h1>Clex admin</h1>
+      <p>Password login unlocks the admin panel. Register a passkey after first login to use passkey login next time.</p>
+      <input id="admin-secret" class="admin-secret" type="password" autocomplete="current-password" placeholder="Admin password" />
+      <button class="btn btn--primary" id="signin-btn">Sign in with password</button>
+      <button class="btn" id="passkey-login-btn" type="button">Use passkey</button>
     </section>
 
     <section class="tabs" id="tab-overview">
@@ -252,13 +258,35 @@ const HTML = String.raw`<!doctype html>
       </div>
     </section>
 
+    <section class="tabs" id="tab-users">
+      <div class="pageHead">
+        <div>
+          <h1>Users</h1>
+          <p>Recent signed-in accounts from Clex Google/Firebase sessions.</p>
+        </div>
+        <span class="pill mono" id="users-pill">—</span>
+      </div>
+      <div class="panel"><div id="users-list"><div class="empty">loading…</div></div></div>
+    </section>
+
+    <section class="tabs" id="tab-feed">
+      <div class="pageHead">
+        <div>
+          <h1>Live feed</h1>
+          <p>Recent API key creations and operational activity.</p>
+        </div>
+        <span class="pill mono" id="feed-pill">—</span>
+      </div>
+      <div class="panel"><div id="feed-list"><div class="empty">loading…</div></div></div>
+    </section>
+
     <section class="tabs" id="tab-keys">
       <div class="pageHead">
         <div>
           <h1>API keys</h1>
-          <p>Bearer tokens you can use against <code>https://api.clex.in/v1/*</code>. Each key carries its own daily / per-minute limits and a max upload size.</p>
+          <p>Bearer keys for account-owned programmatic uploads. Accounts can keep five active unlimited keys.</p>
         </div>
-        <button class="btn btn--primary" id="mint-btn">+ Mint key</button>
+        <a class="btn btn--primary" href="https://clex.in/account">Open account</a>
       </div>
       <div class="panel" id="keys-panel">
         <div id="keys-table"><div class="empty">loading…</div></div>
@@ -289,13 +317,24 @@ const HTML = String.raw`<!doctype html>
       <div class="pageHead">
         <div>
           <h1>Audit · system events</h1>
-          <p>Server-side events surfaced by <code>/api/admin/audit</code>. Requires the operator to be signed in <em>and</em> the admin secret to be configured.</p>
+          <p>Password and passkey admin login events surfaced by <code>/api/admin/audit</code>.</p>
         </div>
         <span class="pill mono" id="audit-pill">—</span>
       </div>
       <div class="panel">
         <pre class="json mono" id="audit-json">loading…</pre>
       </div>
+    </section>
+
+    <section class="tabs" id="tab-passkeys">
+      <div class="pageHead">
+        <div>
+          <h1>Passkeys</h1>
+          <p>Register and manage admin passkeys after password login.</p>
+        </div>
+        <button class="btn btn--primary" id="register-passkey-btn">+ Register passkey</button>
+      </div>
+      <div class="panel"><div id="passkeys-list"><div class="empty">loading…</div></div></div>
     </section>
   </main>
 
@@ -306,11 +345,15 @@ const HTML = String.raw`<!doctype html>
   //  Tiny client. No bundler. No framework. Lives only in this page.
   // ------------------------------------------------------------------
   const $ = (sel, el = document) => el.querySelector(sel);
-  const tabs = ['overview', 'keys', 'usage', 'audit'];
-  const state = { user: null, keys: null, summary: null, audit: null, usage: null };
+  const tabs = ['overview', 'users', 'feed', 'keys', 'usage', 'audit', 'passkeys'];
+  const state = { user: null, keys: null, summary: null, audit: null, usage: null, adminSession: '' };
 
-  async function fetchJson(path, opts) {
-    const res = await fetch(path, { credentials: 'include', ...opts });
+  async function fetchJson(path, opts = {}) {
+    const headers = new Headers(opts.headers || {});
+    if (state.adminSession && path.startsWith('/api/admin/')) {
+      headers.set('X-Admin-Session', state.adminSession);
+    }
+    const res = await fetch(path, { credentials: 'include', ...opts, headers });
     let body = null;
     try { body = await res.json(); } catch { /* non-JSON ok */ }
     return { ok: res.ok, status: res.status, body };
@@ -334,6 +377,41 @@ const HTML = String.raw`<!doctype html>
     if (s < 86400) return Math.floor(s / 3600) + 'h ago';
     return Math.floor(s / 86400) + 'd ago';
   }
+  function b64ToBuf(value) {
+    const normalized = String(value).replace(/-/g, '+').replace(/_/g, '/');
+    const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, '=');
+    const bin = atob(padded);
+    const out = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+    return out.buffer;
+  }
+  function bufToB64(buf) {
+    const bytes = new Uint8Array(buf);
+    let bin = '';
+    for (const b of bytes) bin += String.fromCharCode(b);
+    return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+  function decodePublicKeyOptions(publicKey) {
+    return {
+      ...publicKey,
+      challenge: b64ToBuf(publicKey.challenge),
+      user: publicKey.user ? { ...publicKey.user, id: b64ToBuf(publicKey.user.id) } : publicKey.user,
+      allowCredentials: (publicKey.allowCredentials || []).map(c => ({ ...c, id: b64ToBuf(c.id) })),
+      excludeCredentials: (publicKey.excludeCredentials || []).map(c => ({ ...c, id: b64ToBuf(c.id) })),
+    };
+  }
+  function credentialToJSON(cred) {
+    return {
+      credentialId: cred.id,
+      response: {
+        attestationObject: cred.response.attestationObject ? bufToB64(cred.response.attestationObject) : undefined,
+        authenticatorData: cred.response.authenticatorData ? bufToB64(cred.response.authenticatorData) : undefined,
+        clientDataJSON: bufToB64(cred.response.clientDataJSON),
+        signature: cred.response.signature ? bufToB64(cred.response.signature) : undefined,
+        transports: typeof cred.response.getTransports === 'function' ? cred.response.getTransports() : undefined,
+      },
+    };
+  }
 
   function setActiveTab(name) {
     tabs.forEach((t) => {
@@ -346,41 +424,86 @@ const HTML = String.raw`<!doctype html>
     history.replaceState(null, '', '#' + name);
     if (name === 'usage') void loadUsage();
     if (name === 'audit') void loadAudit();
+    if (name === 'users') void loadUsers();
+    if (name === 'feed') void loadFeed();
+    if (name === 'passkeys') void loadPasskeys();
   }
 
   document.querySelectorAll('#nav button').forEach((b) => {
     b.addEventListener('click', () => setActiveTab(b.dataset.tab));
   });
 
-  // ------------------------------------------------------------------
-  //  Sign-in flow. Reuses the existing Google Drive session cookie.
-  // ------------------------------------------------------------------
-  $('#signin-btn').addEventListener('click', () => {
-    // Hand off to the existing Google OAuth start endpoint; it'll bounce
-    // back to /workspace by default. We override returnTo to our own URL.
-    const target = encodeURIComponent(window.location.href);
-    window.location.href = '/api/auth/google?return_to=' + target;
+  function readDashboardAdminSession() {
+    try { return localStorage.getItem('clex_dashboard_admin_session') || ''; } catch { return ''; }
+  }
+
+  function persistDashboardAdminSession(session) {
+    try {
+      if (session) localStorage.setItem('clex_dashboard_admin_session', session);
+      else localStorage.removeItem('clex_dashboard_admin_session');
+    } catch {}
+  }
+
+  $('#signin-btn').addEventListener('click', async () => {
+    const secret = ($('#admin-secret') && $('#admin-secret').value || '').trim();
+    if (!secret) return alert('Enter the admin password.');
+    const res = await fetchJson('/api/admin/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ secret })
+    });
+    if (!res.ok || !res.body || !res.body.session_id) return alert('Admin login failed.');
+    state.adminSession = res.body.session_id;
+    persistDashboardAdminSession(state.adminSession);
+    await bootstrap();
+  });
+
+  $('#passkey-login-btn').addEventListener('click', async () => {
+    try {
+      const begin = await fetchJson('/api/admin/login/passkey/begin', { method: 'POST' });
+      if (!begin.ok || !begin.body) throw new Error('passkey_begin_failed');
+      const cred = await navigator.credentials.get({ publicKey: decodePublicKeyOptions(begin.body.publicKey) });
+      const finish = await fetchJson('/api/admin/login/passkey/finish', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ handle: begin.body.handle, ...credentialToJSON(cred) })
+      });
+      if (!finish.ok || !finish.body || !finish.body.session_id) throw new Error('passkey_finish_failed');
+      state.adminSession = finish.body.session_id;
+      persistDashboardAdminSession(state.adminSession);
+      await bootstrap();
+    } catch (e) {
+      alert('Passkey login failed: ' + (e && e.message ? e.message : e));
+    }
   });
 
   async function bootstrap() {
-    const { ok, body } = await fetchJson('/api/auth/gdrive/session');
-    if (!ok || !body || !body.user) {
+    state.adminSession = readDashboardAdminSession();
+    if (!state.adminSession) {
       $('#signin').style.display = 'block';
       $('#nav').hidden = true;
       $('#user').hidden = true;
       tabs.forEach((t) => $('#tab-' + t).classList.remove('active'));
       return;
     }
-    state.user = body.user;
+    const { ok, body } = await fetchJson('/api/admin/me');
+    if (!ok || !body || !body.session) {
+      persistDashboardAdminSession('');
+      state.adminSession = '';
+      $('#signin').style.display = 'block';
+      $('#nav').hidden = true;
+      $('#user').hidden = true;
+      tabs.forEach((t) => $('#tab-' + t).classList.remove('active'));
+      return;
+    }
+    state.user = body.session;
     $('#signin').style.display = 'none';
     $('#nav').hidden = false;
     $('#user').hidden = false;
-    $('#user').innerHTML = (body.user.picture
-      ? '<img src="' + body.user.picture + '" alt="" />'
-      : '') + '<span>' + (body.user.email || body.user.displayName || 'signed in') + '</span>';
+    $('#user').innerHTML = '<span>admin · ' + body.session.method + '</span><span class="pill mono">expires ' + fmtAgo(body.session.expires_at) + '</span>';
     const initial = (location.hash || '').replace('#', '') || 'overview';
     setActiveTab(tabs.includes(initial) ? initial : 'overview');
-    await Promise.all([loadOverview(), loadKeys()]);
+    await loadOverview();
   }
 
   // ------------------------------------------------------------------
@@ -400,7 +523,7 @@ const HTML = String.raw`<!doctype html>
     const adminGated = summaryRes.status === 401 || summaryRes.status === 403;
 
     $('#overview-pill').textContent = adminGated
-      ? 'admin-gated · sign-in only'
+      ? 'admin session required'
       : (health.ok ? 'healthy · v' + (health.version || '?') : 'offline');
 
     const stats = [
@@ -452,104 +575,64 @@ const HTML = String.raw`<!doctype html>
   //  Keys tab.
   // ------------------------------------------------------------------
   async function loadKeys() {
-    const { ok, body } = await fetchJson('/api/keys');
-    if (!ok) {
-      $('#keys-table').innerHTML = '<div class="empty">Could not load keys (' + (body && body.error || 'unknown') + ').</div>';
-      return;
-    }
-    state.keys = (body && body.keys) || [];
-    if (state.keys.length === 0) {
-      $('#keys-table').innerHTML = '<div class="empty">No keys yet. Mint one to start using the Clex API programmatically.</div>';
-      return;
-    }
-    $('#keys-table').innerHTML = '<table class="keys">' +
-      '<thead><tr>' +
-        '<th>Label</th><th>Plan</th><th>Limits</th>' +
-        '<th class="num">Today</th><th class="num">7d</th>' +
-        '<th>Last used</th><th></th>' +
-      '</tr></thead><tbody>' +
-      state.keys.map((k) => (
-        '<tr>' +
-          '<td>' +
-            '<div class="label">' + escapeHtml(k.label) + '</div>' +
-            '<div class="prefix mono">' + k.prefix + '••••</div>' +
-          '</td>' +
-          '<td><span class="pill">' + (k.limits && k.limits.label || k.plan) + '</span></td>' +
-          '<td><span class="mono">' + (k.limits ? (k.limits.ratePerMin + '/min · ' + fmtBytes(k.limits.sizeBytes)) : '—') + '</span></td>' +
-          '<td class="num mono">' + fmt(k.usageToday) + '</td>' +
-          '<td class="num mono">' + fmt(k.usageLast7d) + '</td>' +
-          '<td>' + (k.revoked
-            ? '<span class="pill pill--err">revoked ' + fmtAgo(k.revokedAt) + '</span>'
-            : (k.lastUsedAt ? fmtAgo(k.lastUsedAt) : 'never')) + '</td>' +
-          '<td>' + (k.revoked
-            ? ''
-            : '<button class="btn btn--danger" data-revoke="' + k.id + '">revoke</button>') + '</td>' +
-        '</tr>'
-      )).join('') +
-      '</tbody></table>';
+    $('#keys-table').innerHTML = '<div class="empty">API keys are managed from the signed-in user account page. Admin can inspect them from Users and Live feed.</div>';
+  }
 
-    document.querySelectorAll('[data-revoke]').forEach((b) => {
-      b.addEventListener('click', () => onRevoke(b.dataset.revoke));
+  async function loadUsers() {
+    const { ok, body } = await fetchJson('/api/admin/users?limit=100');
+    const users = ok && body && body.users ? body.users : [];
+    $('#users-pill').textContent = ok ? fmt(body.total || users.length) + ' users' : 'unavailable';
+    if (!ok || users.length === 0) {
+      $('#users-list').innerHTML = '<div class="empty">No signed-in users found yet.</div>';
+      return;
+    }
+    $('#users-list').innerHTML = '<div class="card-list">' + users.map(u => (
+      '<div class="row-card">' +
+        '<div><div class="row-card__title">' + escapeHtml(u.email || u.display_name || u.firebase_uid) + '</div>' +
+        '<div class="row-card__meta mono">' + escapeHtml(u.firebase_uid) + ' · last seen ' + fmtAgo(u.last_seen_at) + '</div></div>' +
+        '<div class="row-card__actions"><button class="btn" data-user-detail="' + encodeURIComponent(u.firebase_uid) + '">Details</button></div>' +
+      '</div>'
+    )).join('') + '</div>';
+    document.querySelectorAll('[data-user-detail]').forEach(btn => {
+      btn.addEventListener('click', () => showUserDetail(decodeURIComponent(btn.dataset.userDetail)));
     });
   }
 
-  $('#mint-btn').addEventListener('click', () => openMintModal());
-
-  function openMintModal() {
-    const root = $('#modal-root');
-    root.innerHTML = '<div class="modal"><div class="modal__panel">' +
-      '<h3>Mint a new API key</h3>' +
-      '<label for="m-label">Label</label>' +
-      '<input id="m-label" maxlength="80" placeholder="e.g. CI bot · prod" />' +
-      '<label for="m-plan">Plan</label>' +
-      '<select id="m-plan">' +
-        '<option value="free">Free · 10 req/min · 10 MB</option>' +
-        '<option value="starter">Starter · 60 req/min · 100 MB</option>' +
-        '<option value="pro">Pro · 300 req/min · 1 GB</option>' +
-      '</select>' +
-      '<div class="modal__actions">' +
-        '<button class="btn" id="m-cancel">Cancel</button>' +
-        '<button class="btn btn--primary" id="m-create">Mint key</button>' +
-      '</div></div></div>';
-    $('#m-cancel').addEventListener('click', () => (root.innerHTML = ''));
-    $('#m-create').addEventListener('click', onMint);
+  async function showUserDetail(uid) {
+    const { ok, body } = await fetchJson('/api/admin/users/' + encodeURIComponent(uid));
+    if (!ok) return alert('Could not load user detail.');
+    const u = body.user || {};
+    const keyRows = (body.keys || []).map(k => '<tr><td>' + escapeHtml(k.label) + '</td><td class="mono">' + k.prefix + '••••</td><td>' + (k.revokedAt ? 'revoked' : 'active') + '</td><td>' + fmtAgo(k.createdAt) + '</td></tr>').join('');
+    $('#modal-root').innerHTML = '<div class="modal"><div class="modal__panel">' +
+      '<h3>User profile</h3>' +
+      '<p><strong>Email:</strong> ' + escapeHtml(u.email || '—') + '</p>' +
+      '<p><strong>Display name:</strong> ' + escapeHtml(u.display_name || '—') + '</p>' +
+      '<p class="mono"><strong>Firebase UID:</strong> ' + escapeHtml(u.firebase_uid || uid) + '</p>' +
+      '<p><strong>Joined:</strong> ' + fmtAgo(u.created_at) + ' · <strong>Last seen:</strong> ' + fmtAgo(u.last_seen_at) + '</p>' +
+      '<h3>Security audit</h3>' +
+      '<pre class="json mono">' + escapeHtml(JSON.stringify(body.security || {}, null, 2)) + '</pre>' +
+      '<h3>API keys</h3>' +
+      '<table class="keys"><tbody>' + (keyRows || '<tr><td>No API keys</td></tr>') + '</tbody></table>' +
+      '<div class="modal__actions"><button class="btn btn--primary" id="u-close">Close</button></div>' +
+      '</div></div>';
+    $('#u-close').addEventListener('click', () => $('#modal-root').innerHTML = '');
   }
 
-  async function onMint() {
-    const label = $('#m-label').value.trim() || 'Untitled key';
-    const plan = $('#m-plan').value;
-    $('#m-create').disabled = true;
-    $('#m-create').textContent = 'minting…';
-    const { ok, body } = await fetchJson('/api/keys', {
-      method: 'POST', headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ label, plan }),
-    });
-    if (!ok || !body || !body.key) {
-      alert('Mint failed: ' + (body && body.message || body && body.error || 'unknown'));
-      $('#m-create').disabled = false;
-      $('#m-create').textContent = 'Mint key';
+  async function loadFeed() {
+    const { ok, body } = await fetchJson('/api/admin/feeds?limit=50');
+    const creations = ok && body && body.key_creations ? body.key_creations : [];
+    $('#feed-pill').textContent = ok ? creations.length + ' events' : 'unavailable';
+    if (!ok || creations.length === 0) {
+      $('#feed-list').innerHTML = '<div class="empty">No recent activity found.</div>';
       return;
     }
-    const root = $('#modal-root');
-    root.innerHTML = '<div class="modal"><div class="modal__panel">' +
-      '<h3>Key minted · save this now</h3>' +
-      '<div class="secret mono">' + body.key + '</div>' +
-      '<p>This is the only time you will see the full key. Copy it into your secrets manager — Clex never stores the plaintext.</p>' +
-      '<div class="modal__actions">' +
-        '<button class="btn btn--primary" id="m-done">Done</button>' +
-      '</div></div></div>';
-    $('#m-done').addEventListener('click', () => (root.innerHTML = ''));
-    await loadKeys();
-  }
-
-  async function onRevoke(id) {
-    if (!confirm('Revoke this key? Existing requests using it will start failing immediately.')) return;
-    const { ok, body } = await fetchJson('/api/keys/' + encodeURIComponent(id), { method: 'DELETE' });
-    if (!ok) {
-      alert('Revoke failed: ' + (body && body.error || 'unknown'));
-      return;
-    }
-    await loadKeys();
+    $('#feed-list').innerHTML = '<div class="card-list">' + creations.map(k => (
+      '<div class="row-card">' +
+        '<div><div class="row-card__title">' + escapeHtml(k.email || k.user_id) + ' · ' + escapeHtml(k.name || 'API key') + '</div>' +
+        '<div class="row-card__meta mono">' + escapeHtml(k.key_prefix || '') + '… · ' + (k.revoked_at ? 'revoked' : 'active') + '</div></div>' +
+        '<div class="row-card__actions"><span class="pill">' + fmtAgo(k.created_at) + '</span></div>' +
+      '</div>'
+    )).join('') + '</div>';
   }
 
   // ------------------------------------------------------------------
@@ -580,16 +663,53 @@ const HTML = String.raw`<!doctype html>
   // ------------------------------------------------------------------
   async function loadAudit() {
     const { ok, status, body } = await fetchJson('/api/admin/audit');
-    if (status === 401 || status === 403) {
-      $('#audit-pill').textContent = 'admin-gated';
-      $('#audit-json').textContent =
-        'This endpoint is gated by CLEX_ADMIN_SECRET. The dashboard does not embed the secret; ' +
-        'set it on the worker and call /api/admin/audit with X-Admin-Secret header from your operator console.';
-      return;
-    }
     state.audit = body;
     $('#audit-pill').textContent = ok ? 'live · ' + (body && body.events ? body.events.length : 0) + ' events' : 'unavailable';
     $('#audit-json').textContent = JSON.stringify(body, null, 2);
+  }
+
+  async function loadPasskeys() {
+    const { ok, body } = await fetchJson('/api/admin/passkeys');
+    const passkeys = ok && body && body.passkeys ? body.passkeys : [];
+    if (!ok || passkeys.length === 0) {
+      $('#passkeys-list').innerHTML = '<div class="empty">No passkeys registered yet. Register one after password login.</div>';
+      return;
+    }
+    $('#passkeys-list').innerHTML = '<div class="card-list">' + passkeys.map(p => (
+      '<div class="row-card">' +
+        '<div><div class="row-card__title">' + escapeHtml(p.label || 'Admin passkey') + '</div>' +
+        '<div class="row-card__meta mono">' + escapeHtml(p.credential_id) + ' · created ' + fmtAgo(p.created_at) + ' · last used ' + fmtAgo(p.last_used_at) + '</div></div>' +
+        '<div class="row-card__actions"><button class="btn btn--danger" data-passkey-revoke="' + p.id + '">Revoke</button></div>' +
+      '</div>'
+    )).join('') + '</div>';
+    document.querySelectorAll('[data-passkey-revoke]').forEach(btn => {
+      btn.addEventListener('click', () => revokePasskey(btn.dataset.passkeyRevoke));
+    });
+  }
+
+  $('#register-passkey-btn').addEventListener('click', async () => {
+    const label = prompt('Passkey label', 'Admin passkey');
+    try {
+      const begin = await fetchJson('/api/admin/passkeys/register/begin', { method: 'POST' });
+      if (!begin.ok || !begin.body) throw new Error('register_begin_failed');
+      const cred = await navigator.credentials.create({ publicKey: decodePublicKeyOptions(begin.body.publicKey) });
+      const finish = await fetchJson('/api/admin/passkeys/register/finish', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ handle: begin.body.handle, label: label || 'Admin passkey', ...credentialToJSON(cred) })
+      });
+      if (!finish.ok) throw new Error(finish.body && finish.body.error || 'register_finish_failed');
+      await loadPasskeys();
+    } catch (e) {
+      alert('Passkey registration failed: ' + (e && e.message ? e.message : e));
+    }
+  });
+
+  async function revokePasskey(id) {
+    if (!confirm('Revoke this admin passkey?')) return;
+    const { ok, body } = await fetchJson('/api/admin/passkeys/' + encodeURIComponent(id), { method: 'DELETE' });
+    if (!ok) return alert('Revoke failed: ' + (body && body.error || 'unknown'));
+    await loadPasskeys();
   }
 
   bootstrap();

@@ -2,7 +2,6 @@
  * Programmatic upload + share endpoints.
  *
  * POST   /vault/api/uploads
- *   Auth:    Authorization: Bearer ck_live_<plaintext>  OR  X-Vault-UID (UI mode)
  *   Body:    raw file bytes (multipart not required — keep it CLI-friendly)
  *   Headers:
  *     X-Filename:  original filename (URL-encoded)

@@ -61,6 +61,7 @@ export interface ApiUploadRecord {
 interface RequestOptions {
   baseUrl?: string
   uid: string
+  token?: string | null
   signal?: AbortSignal
 }
 
@@ -80,6 +81,7 @@ async function request<T>(
   const headers: Record<string, string> = {
     'X-Vault-UID': options.uid,
   }
+  if (options.token) headers.Authorization = `Bearer ${options.token}`
   let payload: BodyInit | undefined
   if (body !== undefined) {
     headers['Content-Type'] = 'application/json'
@@ -168,16 +170,9 @@ export function formatRate(rpm: number): string {
 }
 
 export const FILE_SIZE_PRESETS: Array<{ label: string; value: number }> = [
-  { label: '10 MB', value: 10 * 1024 * 1024 },
-  { label: '100 MB', value: 100 * 1024 * 1024 },
-  { label: '1 GB', value: 1024 * 1024 * 1024 },
   { label: 'Unlimited', value: -1 },
 ]
 
 export const RATE_PRESETS: Array<{ label: string; value: number }> = [
-  { label: '10 / min', value: 10 },
-  { label: '30 / min', value: 30 },
-  { label: '100 / min', value: 100 },
-  { label: '1000 / min', value: 1000 },
   { label: 'Unlimited', value: -1 },
 ]

@@ -34,6 +34,7 @@ database_id = "68d8ae50-6b96-46e2-85b2-4edbd4d3c0ba"
 [vars]
 ALLOWED_ORIGIN = "*"
 MAX_SECRET_SIZE = "50000"
+FIREBASE_PROJECT_ID = "clex-in"
 # SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY
 # are set via: wrangler secret put <NAME> --env production
 
@@ -72,5 +73,6 @@ zone_name = "clex.in"
 [env.production.vars]
 ALLOWED_ORIGIN = "https://clex.in, https://www.clex.in"
 MAX_SECRET_SIZE = "50000"
+FIREBASE_PROJECT_ID = "clex-in"
 # SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY
 # are set via: wrangler secret put <NAME> --env production
