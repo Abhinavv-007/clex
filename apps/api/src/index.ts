@@ -26,6 +26,7 @@ import {
   bumpMetric,
   handleAdminAudit,
   handleAdminHealth,
+  handleAdminStats,
   handleAdminSummary,
   handleAdminTransfers,
   handleAppendEvent,
@@ -1199,6 +1200,9 @@ async function dispatch(request: Request, env: Env): Promise<Response> {
     }
     if (url.pathname === '/api/admin/audit' && request.method === 'GET') {
       return handleAdminAudit(request, env)
+    }
+    if (url.pathname === '/api/admin/stats' && request.method === 'GET') {
+      return handleAdminStats(request, env)
     }
 
     if (url.pathname === '/api/auth/google/status' && request.method === 'GET') {
