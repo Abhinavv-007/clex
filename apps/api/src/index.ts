@@ -5,6 +5,7 @@ import {
   json,
   parseCookies,
   serializeCookie,
+  shareableCookieDomain,
   type Env,
 } from './googleAuth'
 import {
@@ -18,6 +19,13 @@ import {
   handleCreateTransfer,
   handleGetTransfer,
 } from './transfers'
+import {
+  handleKeyUsage,
+  handleListKeys,
+  handleMintKey,
+  handleRevokeKey,
+} from './apiKeysHandlers'
+import { handleDashboard } from './dashboard'
 
 const TOKEN_PICKUP_PATH = '/api/auth/gdrive/token'
 const STATE_COOKIE = 'gdrive_state'
@@ -701,6 +709,10 @@ async function handleGoogleAuthCallback(request: Request, env: Env): Promise<Res
 
     appendSetCookie(headers, serializeCookie(SESSION_COOKIE, sessionRecord.id, {
       path: '/',
+      // Share the session across clex.in / www.clex.in / api.clex.in so
+      // the api.clex.in dashboard can read the same gdrive_session that
+      // was minted by the OAuth callback on clex.in.
+      domain: shareableCookieDomain(request) ?? undefined,
       httpOnly: true,
       secure,
       sameSite: 'Lax',
@@ -1017,6 +1029,38 @@ async function dispatch(request: Request, env: Env): Promise<Response> {
       const headers = new Headers()
       appendCors(headers, request, env)
       return new Response(null, { status: 204, headers })
+    }
+
+    // ─── Operator dashboard (HTML SPA at api.clex.in/dashboard) ──────
+    // The dashboard is the canonical UI for managing Clex API keys and
+    // watching live metrics. Lives at /dashboard so it can also be
+    // mounted under clex.in/api on the same worker if api.clex.in isn't
+    // routed yet.
+    if (
+      (url.pathname === '/dashboard' || url.pathname === '/dashboard/') &&
+      request.method === 'GET'
+    ) {
+      return handleDashboard(request, env)
+    }
+    // On the api.clex.in hostname, treat the bare root as the dashboard
+    // entry point (clex.in's marketing site already lives on the apex).
+    if (url.pathname === '/' && request.method === 'GET' && url.hostname.startsWith('api.')) {
+      return handleDashboard(request, env)
+    }
+
+    // ─── API key management (gdrive_session-gated) ───────────────────
+    if (url.pathname === '/api/keys' && request.method === 'GET') {
+      return handleListKeys(request, env)
+    }
+    if (url.pathname === '/api/keys' && request.method === 'POST') {
+      return handleMintKey(request, env)
+    }
+    if (url.pathname === '/api/keys/usage' && request.method === 'GET') {
+      return handleKeyUsage(request, env)
+    }
+    const keyMatch = url.pathname.match(/^\/api\/keys\/([A-Za-z0-9]+)$/)
+    if (keyMatch && request.method === 'DELETE') {
+      return handleRevokeKey(request, env, keyMatch[1])
     }
 
     // Public liveness probe consumed by lnch.in's LaunchOps health probe and

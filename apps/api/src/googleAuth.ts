@@ -77,6 +77,7 @@ export function serializeCookie(
   value: string,
   options: {
     path?: string
+    domain?: string
     httpOnly?: boolean
     secure?: boolean
     sameSite?: 'Lax' | 'Strict' | 'None'
@@ -86,6 +87,7 @@ export function serializeCookie(
   const segments = [`${name}=${encodeURIComponent(value)}`]
 
   segments.push(`Path=${options.path ?? '/'}`)
+  if (options.domain) segments.push(`Domain=${options.domain}`)
   if (options.httpOnly) segments.push('HttpOnly')
   if (options.secure) segments.push('Secure')
   if (options.sameSite) segments.push(`SameSite=${options.sameSite}`)
@@ -94,9 +96,31 @@ export function serializeCookie(
   return segments.join('; ')
 }
 
+/**
+ * Returns the cookie `Domain` attribute that lets a single session cookie
+ * be read across `clex.in`, `www.clex.in`, and `api.clex.in`. Returns
+ * `null` for unknown hostnames so localhost / wrangler dev keeps using
+ * host-only cookies (which is the safer browser default).
+ */
+export function shareableCookieDomain(request: Request): string | null {
+  let host: string
+  try {
+    host = new URL(request.url).hostname
+  } catch {
+    return null
+  }
+  if (host === 'clex.in' || host.endsWith('.clex.in')) return '.clex.in'
+  return null
+}
+
 export function appendCors(headers: Headers, request: Request, env: Env): void {
   const origin = request.headers.get('Origin') ?? ''
-  const allowed = resolveAllowedOrigin(origin, env.ALLOWED_ORIGIN)
+  const allowedExtra = ['https://api.clex.in']
+  const allowList =
+    env.ALLOWED_ORIGIN === '*'
+      ? '*'
+      : [env.ALLOWED_ORIGIN, ...allowedExtra].filter(Boolean).join(',')
+  const allowed = resolveAllowedOrigin(origin, allowList)
   if (!allowed) return
 
   headers.set('Access-Control-Allow-Origin', allowed)
@@ -134,6 +158,10 @@ function sanitizeReturnTo(request: Request, env: Env, value: string | null): str
     const allowedOrigins = new Set<string>([
       requestOrigin,
       ...(frontendOrigin ? [frontendOrigin] : []),
+      // Always allow operator-facing surfaces on the same parent zone so
+      // the OAuth bounce back to https://api.clex.in/dashboard works even
+      // before someone remembers to broaden ALLOWED_ORIGIN in wrangler.
+      'https://api.clex.in',
     ])
 
     if (env.ALLOWED_ORIGIN !== '*') {

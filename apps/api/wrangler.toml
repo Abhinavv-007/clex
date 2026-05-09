@@ -21,7 +21,12 @@ GOOGLE_DRIVE_SCOPE = "openid email profile https://www.googleapis.com/auth/drive
 name = "clex-api-prod"
 routes = [
   { pattern = "clex.in/api/*", zone_name = "clex.in" },
-  { pattern = "www.clex.in/api/*", zone_name = "clex.in" }
+  { pattern = "www.clex.in/api/*", zone_name = "clex.in" },
+  # api.clex.in is the operator-facing surface: hosts the /dashboard SPA
+  # at the apex and serves the same /api/* JSON. Everything routes to the
+  # same worker — only the hostname differs, so the existing CORS allow
+  # list (clex.in, www.clex.in) still gates browser fetches.
+  { pattern = "api.clex.in/*", zone_name = "clex.in" }
 ]
 
 [env.production.triggers]
