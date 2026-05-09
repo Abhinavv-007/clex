@@ -56,6 +56,7 @@ export interface Env {
   // Config
   ALLOWED_ORIGIN: string
   MAX_SECRET_SIZE: string
+  FIREBASE_PROJECT_ID?: string
   /**
    * Server-side admin secret consumed by /vault/api/admin/* and forwarded
    * by lnch.in's `CLEX_ADMIN_SECRET` proxy. Falls back to `ADMIN_SECRET`.

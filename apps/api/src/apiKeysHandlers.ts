@@ -1,21 +1,9 @@
-/**
- * Route handlers for the Clex API key management endpoints.
- *
- *   GET    /api/keys                 — list keys for the signed-in operator
- *   POST   /api/keys                 — mint a new key
- *   DELETE /api/keys/:id             — revoke a key
- *   GET    /api/keys/usage           — 30-day daily traffic across keys
- *
- * Auth: reuses the existing `gdrive_session` cookie (Google sub). No new
- * auth surface — if the operator has signed in via /developers or /account
- * they are already authorized for these endpoints.
- */
 import {
   appendCors,
-  json,
   parseCookies,
   type Env,
 } from './googleAuth'
+import { verifyFirebaseAuthHeader } from './firebase'
 import {
   dailyUsageWindow,
   listKeys,
@@ -40,10 +28,20 @@ interface SessionRecord {
   updatedAt: number
 }
 
+interface Owner {
+  sub: string
+  email: string | null
+}
+
 async function readOwner(
   request: Request,
   env: Env,
-): Promise<{ sub: string; email: string | null } | null> {
+): Promise<Owner | null> {
+  const claims = await verifyFirebaseAuthHeader(env, request)
+  if (claims) {
+    return { sub: claims.sub, email: claims.email ?? null }
+  }
+
   const cookies = parseCookies(request)
   const sessionId = cookies.get(SESSION_COOKIE)
   if (!sessionId) return null
@@ -95,9 +93,6 @@ export async function handleMintKey(request: Request, env: Env): Promise<Respons
   const plan = allowed.includes(requestedPlan) ? requestedPlan : 'free'
   try {
     const result = await mintKey(env, owner.sub, owner.email, body.label ?? '', plan)
-    // The full plaintext is returned exactly once. The client surfaces it
-    // immediately and is responsible for warning the user that it can't
-    // be retrieved later.
     return jsonWithCors(result, request, env, 201)
   } catch (e) {
     return jsonWithCors(
@@ -131,9 +126,3 @@ export async function handleKeyUsage(request: Request, env: Env): Promise<Respon
   const series = await dailyUsageWindow(env, owner.sub, days)
   return jsonWithCors({ days, series }, request, env)
 }
-
-// Suppress the unused-import warning when this module is imported but the
-// `json` helper from googleAuth.ts isn't needed (we use jsonWithCors). The
-// re-export keeps the surface predictable for any future endpoint that
-// wants a non-CORS response.
-export { json }

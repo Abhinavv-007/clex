@@ -6,7 +6,7 @@
   <link rel="icon" type="image/png" href="/brand/clex-logo.png">
   <link rel="apple-touch-icon" href="/brand/clex-logo.png">
   <title>Developers — Clex API</title>
-  <meta name="description" content="Sign in with Google, create a Clex API token, and use simple commands for the Clex API and direct file transfer flow.">
+  <meta name="description" content="Sign in with Google, create a Clex API key, and use simple commands for the Clex API and direct file transfer flow.">
   <script>
     (() => {
       try {
@@ -80,13 +80,13 @@
         <span class="page-hero__label reveal">Developers</span>
         <h1 class="page-hero__title reveal">Clex API<br><span class="text-accent">without the mess</span></h1>
         <p class="page-hero__subtitle reveal">
-          Sign in, create a token, copy a command. The API controls rooms and receipts; file bytes still move directly between browsers over WebRTC.
+          Sign in, create a key, copy a command. The API controls rooms and receipts; file bytes still move directly between browsers over WebRTC.
         </p>
       </div>
       <div class="dev-hero__summary reveal">
         <span>1. Sign in with Google</span>
-        <span>2. Create API token</span>
-        <span>3. Send Bearer token</span>
+        <span>2. Create API key</span>
+        <span>3. Send Bearer key</span>
       </div>
     </div>
   </section>
@@ -97,25 +97,25 @@
         <div class="dev-access__header">
           <div>
             <span class="section__label">API Access</span>
-            <h2 class="dev-access__title">Create your token</h2>
+            <h2 class="dev-access__title">Create your API key</h2>
             <p class="dev-access__text">
-              Use your Google account to create a Firebase ID token. Send it as <code>Authorization: Bearer &lt;token&gt;</code> for protected Clex API routes.
+              Use the same Firebase Google login as Clex AI to create a Clex API key. Send it as <code>Authorization: Bearer &lt;key&gt;</code> for protected Clex API routes.
             </p>
           </div>
           <div class="dev-access__status">
-            <span id="dev-user-label">Sign in to create an API token</span>
+            <span id="dev-user-label">Sign in to create an API key</span>
             <small id="dev-token-status">Ready</small>
           </div>
         </div>
 
         <div class="dev-access__actions">
           <button class="btn btn--primary" id="dev-google-signin" type="button">Sign in with Google</button>
-          <button class="btn btn--secondary" id="dev-create-token" type="button">Create API token</button>
-          <button class="btn btn--secondary" id="dev-copy-token" type="button">Copy token</button>
+          <button class="btn btn--secondary" id="dev-create-token" type="button">Create API key</button>
+          <button class="btn btn--secondary" id="dev-copy-token" type="button">Copy key</button>
           <button class="btn btn--ghost" id="dev-google-signout" type="button">Sign out</button>
         </div>
 
-        <label class="dev-token-label" for="dev-token-output">Your API token</label>
+        <label class="dev-token-label" for="dev-token-output">Your API key</label>
         <textarea class="dev-token-output" id="dev-token-output" rows="4" readonly placeholder="Sign in with Google first"></textarea>
       </div>
     </div>
@@ -126,17 +126,17 @@
       <div class="section__header reveal">
         <span class="section__label">Quick Start</span>
         <h2 class="section__title">Simple commands</h2>
-        <p class="section__subtitle">Copy these in order. The token command updates automatically after you create a token.</p>
+        <p class="section__subtitle">Copy these in order. The key command updates automatically after you create a key.</p>
       </div>
 
       <div class="dev-command-list reveal">
         <article class="dev-command">
           <div class="dev-command__top">
             <span class="dev-command__step">01</span>
-            <h3>Save your token</h3>
+            <h3>Save your key</h3>
             <button type="button" data-copy-command="dev-cmd-export">Copy</button>
           </div>
-          <pre class="dev-code"><code id="dev-cmd-export">export CLEX_TOKEN='&lt;YOUR_TOKEN&gt;'</code></pre>
+          <pre class="dev-code"><code id="dev-cmd-export">export CLEX_API_KEY='&lt;YOUR_API_KEY&gt;'</code></pre>
         </article>
 
         <article class="dev-command">
@@ -154,8 +154,10 @@
             <h3>Send an authenticated request</h3>
             <button type="button" data-copy-command="dev-cmd-auth">Copy</button>
           </div>
-          <pre class="dev-code"><code id="dev-cmd-auth">curl https://api.clex.in/api/health \
-  -H "Authorization: Bearer &lt;YOUR_TOKEN&gt;"</code></pre>
+          <pre class="dev-code"><code id="dev-cmd-auth">curl -X POST https://clex.in/vault/api/uploads \
+  -H "Authorization: Bearer &lt;YOUR_API_KEY&gt;" \
+  -H "X-Filename: report.pdf" \
+  --data-binary @report.pdf</code></pre>
         </article>
       </div>
     </div>
@@ -168,11 +170,11 @@
         <span class="section__label">API Keys</span>
         <h2 class="section__title">Programmatic uploads<br>with per-key limits</h2>
         <p class="section__subtitle">
-          Sign in once with Google, mint a key on <a href="/account">your account page</a>, then upload files with a single HTTP call. Each key carries its own file-size cap (10&nbsp;MB / 100&nbsp;MB / 1&nbsp;GB / unlimited) and rate limit (10–1000&nbsp;req/min, or unlimited). You can rotate, edit, or revoke keys any time.
+          Sign in once with Google, mint a key on <a href="/account">your account page</a>, then upload files with a single HTTP call. Each account can keep five active unlimited keys; revoke old keys before creating new ones.
         </p>
         <div class="dev-hero__pills">
           <a href="/account" class="btn btn--primary btn--small">Get a key →</a>
-          <span class="dev-pill"><span class="dev-pill__dot"></span> Up to 25 keys per account</span>
+          <span class="dev-pill"><span class="dev-pill__dot"></span> Up to 5 active keys per account</span>
           <span class="dev-pill"><span class="dev-pill__dot"></span> Hash-only storage; plaintext shown once</span>
         </div>
       </div>

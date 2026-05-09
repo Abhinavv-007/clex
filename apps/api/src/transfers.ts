@@ -7,7 +7,7 @@
  *   POST   /api/transfers/:id/events   append a lifecycle event
  *   DELETE /api/transfers/:id          cancel / expire a transfer
  *
- * Admin (gated by X-Admin-Secret: $CLEX_ADMIN_SECRET):
+ * Admin:
  *   GET    /api/admin/summary
  *   GET    /api/admin/transfers
  *   GET    /api/admin/health
@@ -30,6 +30,7 @@
  * have something to integrate against today.
  */
 import { appendCors, type Env } from './googleAuth'
+import { requireAdminOrSecret } from './adminPanel'
 
 const TRANSFER_KV_PREFIX = 'transfer:'
 const TRANSFER_CODE_KV_PREFIX = 'transfer-code:'
@@ -144,24 +145,6 @@ function generateCode(): string {
     out += CODE_ALPHABET[buf[i] % CODE_ALPHABET.length]
   }
   return out
-}
-
-function safeEqual(a: string, b: string): boolean {
-  if (typeof a !== 'string' || typeof b !== 'string') return false
-  if (a.length !== b.length) return false
-  let mismatch = 0
-  for (let i = 0; i < a.length; i += 1) {
-    mismatch |= a.charCodeAt(i) ^ b.charCodeAt(i)
-  }
-  return mismatch === 0
-}
-
-function adminAllowed(request: Request, env: Env): boolean {
-  const expected = env.CLEX_ADMIN_SECRET || env.ADMIN_SECRET || ''
-  if (!expected) return false
-  const provided = request.headers.get('x-admin-secret') || ''
-  if (!provided) return false
-  return safeEqual(provided, expected)
 }
 
 async function readTransfer(env: Env, id: string): Promise<TransferRecord | null> {
@@ -471,7 +454,8 @@ function serializeStatusCodes(): Record<string, number> {
 }
 
 export async function handleAdminSummary(request: Request, env: Env): Promise<Response> {
-  if (!adminAllowed(request, env)) return unauthorized(request, env)
+  const authError = await requireAdminOrSecret(request, env)
+  if (authError) return authError
   const m = metrics()
   return jsonResponse(
     {
@@ -505,7 +489,8 @@ export async function handleAdminSummary(request: Request, env: Env): Promise<Re
 }
 
 export async function handleAdminTransfers(request: Request, env: Env): Promise<Response> {
-  if (!adminAllowed(request, env)) return unauthorized(request, env)
+  const authError = await requireAdminOrSecret(request, env)
+  if (authError) return authError
 
   const url = new URL(request.url)
   const limitRaw = url.searchParams.get('limit')
@@ -559,7 +544,8 @@ export async function handleAdminTransfers(request: Request, env: Env): Promise<
 }
 
 export async function handleAdminHealth(request: Request, env: Env): Promise<Response> {
-  if (!adminAllowed(request, env)) return unauthorized(request, env)
+  const authError = await requireAdminOrSecret(request, env)
+  if (authError) return authError
   const m = metrics()
   return jsonResponse(
     {
@@ -590,7 +576,8 @@ export async function handleAdminHealth(request: Request, env: Env): Promise<Res
 }
 
 export async function handleAdminAudit(request: Request, env: Env): Promise<Response> {
-  if (!adminAllowed(request, env)) return unauthorized(request, env)
+  const authError = await requireAdminOrSecret(request, env)
+  if (authError) return authError
   const m = metrics()
   const events: { type: string; ts: number; details: Record<string, unknown> }[] = [
     {

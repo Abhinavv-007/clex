@@ -1,4 +1,18 @@
 import {
+  handleAdminLogin,
+  handleAdminLogout,
+  handleAdminMe,
+  handleAdminFeed,
+  handleAdminUserDetail,
+  handleAdminUsers,
+  handlePasskeyLoginBegin,
+  handlePasskeyLoginFinish,
+  handlePasskeyRegisterBegin,
+  handlePasskeyRegisterFinish,
+  handlePasskeyRevoke,
+  handlePasskeys,
+} from './adminPanel'
+import {
   appendCors,
   buildFrontendRedirect,
   getGoogleOAuthConfigStatus,
@@ -590,7 +604,7 @@ async function handleGoogleStatus(request: Request, env: Env): Promise<Response>
 
 async function handleGoogleAuthStart(request: Request, env: Env): Promise<Response> {
   const url = new URL(request.url)
-  const returnTo = url.searchParams.get('return_to')
+  const returnTo = sanitizeOAuthReturnTo(request, env, url.searchParams.get('return_to'))
   const config = getGoogleOAuthConfigStatus(env)
   if (!config.configured) {
     return redirect(buildFrontendRedirect(request, env, returnTo, new URLSearchParams({ error: 'oauth_not_configured' })))
@@ -614,7 +628,7 @@ async function handleGoogleAuthStart(request: Request, env: Env): Promise<Respon
       httpOnly: true,
       secure,
       sameSite: 'Lax',
-      maxAge: 600,
+      maxAge: 1800,
     }))
   }
 
@@ -629,6 +643,35 @@ async function handleGoogleAuthStart(request: Request, env: Env): Promise<Respon
   authUrl.searchParams.set('include_granted_scopes', 'true')
 
   return redirect(authUrl.toString(), headers)
+}
+
+function sanitizeOAuthReturnTo(request: Request, env: Env, raw: string | null): string | null {
+  if (!raw) return null
+
+  try {
+    const requestUrl = new URL(request.url)
+    const frontendBase = env.FRONTEND_BASE_URL?.trim() || requestUrl.origin
+    const url = new URL(raw, frontendBase)
+    const allowedOrigins = new Set<string>([
+      requestUrl.origin,
+      new URL(frontendBase).origin,
+      'https://api.clex.in',
+    ])
+    if (env.ALLOWED_ORIGIN !== '*') {
+      env.ALLOWED_ORIGIN
+        .split(',')
+        .map(entry => entry.trim())
+        .filter(Boolean)
+        .forEach(origin => allowedOrigins.add(origin))
+    }
+    if (env.ALLOWED_ORIGIN === '*' || allowedOrigins.has(url.origin)) {
+      return url.toString()
+    }
+  } catch {
+    return null
+  }
+
+  return null
 }
 
 async function handleGoogleAuthCallback(request: Request, env: Env): Promise<Response> {
@@ -1048,7 +1091,7 @@ async function dispatch(request: Request, env: Env): Promise<Response> {
       return handleDashboard(request, env)
     }
 
-    // ─── API key management (gdrive_session-gated) ───────────────────
+    // ─── API key management ───────────────────────────────────────────
     if (url.pathname === '/api/keys' && request.method === 'GET') {
       return handleListKeys(request, env)
     }
@@ -1106,7 +1149,45 @@ async function dispatch(request: Request, env: Env): Promise<Response> {
       return new Response('Method not allowed', { status: 405 })
     }
 
-    // ─── Admin (gated by CLEX_ADMIN_SECRET) ───────────────────────────
+    // ─── Admin ────────────────────────────────────────────────────────
+    if (url.pathname === '/api/admin/login' && request.method === 'POST') {
+      return handleAdminLogin(request, env)
+    }
+    if (url.pathname === '/api/admin/logout' && request.method === 'POST') {
+      return handleAdminLogout(request, env)
+    }
+    if (url.pathname === '/api/admin/me' && request.method === 'GET') {
+      return handleAdminMe(request, env)
+    }
+    if (url.pathname === '/api/admin/users' && request.method === 'GET') {
+      return handleAdminUsers(request, env)
+    }
+    const adminUserMatch = url.pathname.match(/^\/api\/admin\/users\/([^/]+)$/)
+    if (adminUserMatch && request.method === 'GET') {
+      return handleAdminUserDetail(request, env, decodeURIComponent(adminUserMatch[1]))
+    }
+    if (url.pathname === '/api/admin/feeds' && request.method === 'GET') {
+      return handleAdminFeed(request, env)
+    }
+    if (url.pathname === '/api/admin/login/passkey/begin' && request.method === 'POST') {
+      return handlePasskeyLoginBegin(request, env)
+    }
+    if (url.pathname === '/api/admin/login/passkey/finish' && request.method === 'POST') {
+      return handlePasskeyLoginFinish(request, env)
+    }
+    if (url.pathname === '/api/admin/passkeys/register/begin' && request.method === 'POST') {
+      return handlePasskeyRegisterBegin(request, env)
+    }
+    if (url.pathname === '/api/admin/passkeys/register/finish' && request.method === 'POST') {
+      return handlePasskeyRegisterFinish(request, env)
+    }
+    if (url.pathname === '/api/admin/passkeys' && request.method === 'GET') {
+      return handlePasskeys(request, env)
+    }
+    const passkeyMatch = url.pathname.match(/^\/api\/admin\/passkeys\/([A-Za-z0-9]+)$/)
+    if (passkeyMatch && request.method === 'DELETE') {
+      return handlePasskeyRevoke(request, env, passkeyMatch[1])
+    }
     if (url.pathname === '/api/admin/summary' && request.method === 'GET') {
       return handleAdminSummary(request, env)
     }

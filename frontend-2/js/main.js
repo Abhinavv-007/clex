@@ -75,6 +75,7 @@ async function handleGoogleDriveOAuthCallback() {
   window.history.replaceState({}, '', cleanedUrl);
 }
 
+/** @param {string} page */
 async function initPageEnhancements(page) {
   if (page !== 'developers') return;
 
