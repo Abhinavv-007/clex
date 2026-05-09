@@ -41,6 +41,11 @@ jobs:
       - name: Build frontend
         run: pnpm --filter @clex/frontend build
 
+      - name: Build workers
+        run: |
+          pnpm --filter @clex/api build
+          pnpm --filter @clex/vault-worker build
+
       - name: Deploy to Cloudflare Pages
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -51,3 +56,17 @@ jobs:
           --branch main
           --commit-hash "${{ github.sha }}"
           --commit-message "GitHub Actions deploy"
+
+      - name: Deploy API worker
+        working-directory: apps/api
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: pnpm deploy
+
+      - name: Deploy vault worker
+        working-directory: apps/vault-worker
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: pnpm deploy

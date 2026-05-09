@@ -196,6 +196,10 @@ const HTML = String.raw`<!doctype html>
       padding: 12px; border-radius: 8px; border: 1px solid var(--rule);
       font-size: 12px; line-height: 1.5;
     }
+    .mini-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 14px; }
+    .mini-card { border: 1px solid var(--rule-soft); border-radius: 10px; padding: 12px; background: var(--bg-elev-2); }
+    .mini-card strong { display: block; font-size: 20px; margin-top: 4px; }
+    .mini-card span { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; }
     .card-list { display: grid; gap: 10px; }
     .row-card {
       display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px;
@@ -210,6 +214,7 @@ const HTML = String.raw`<!doctype html>
       .topbar { padding: 12px 16px; flex-wrap: wrap; gap: 10px; }
       main { padding: 22px 16px 60px; }
       .topbar__nav { order: 2; flex-basis: 100%; }
+      .mini-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -284,7 +289,7 @@ const HTML = String.raw`<!doctype html>
       <div class="pageHead">
         <div>
           <h1>API keys</h1>
-          <p>Bearer keys for account-owned programmatic uploads. Accounts can keep five active unlimited keys.</p>
+          <p>Account-owned <code>clex_</code> keys for programmatic uploads. Accounts can keep five active unlimited keys.</p>
         </div>
         <a class="btn btn--primary" href="https://clex.in/account">Open account</a>
       </div>
@@ -297,7 +302,7 @@ const HTML = String.raw`<!doctype html>
       <div class="pageHead">
         <div>
           <h1>Usage · last 30 days</h1>
-          <p>Aggregated request count across every key minted by your account. Days are UTC.</p>
+          <p>Admin-wide usage derived from recent API key activity and upload counters. Days are UTC.</p>
         </div>
         <span class="pill mono" id="usage-total">—</span>
       </div>
@@ -346,7 +351,7 @@ const HTML = String.raw`<!doctype html>
   // ------------------------------------------------------------------
   const $ = (sel, el = document) => el.querySelector(sel);
   const tabs = ['overview', 'users', 'feed', 'keys', 'usage', 'audit', 'passkeys'];
-  const state = { user: null, keys: null, summary: null, audit: null, usage: null, adminSession: '' };
+  const state = { user: null, summary: null, audit: null, feed: null, adminSession: '' };
 
   async function fetchJson(path, opts = {}) {
     const headers = new Headers(opts.headers || {});
@@ -426,6 +431,7 @@ const HTML = String.raw`<!doctype html>
     if (name === 'audit') void loadAudit();
     if (name === 'users') void loadUsers();
     if (name === 'feed') void loadFeed();
+    if (name === 'keys') void loadKeys();
     if (name === 'passkeys') void loadPasskeys();
   }
 
@@ -575,7 +581,34 @@ const HTML = String.raw`<!doctype html>
   //  Keys tab.
   // ------------------------------------------------------------------
   async function loadKeys() {
-    $('#keys-table').innerHTML = '<div class="empty">API keys are managed from the signed-in user account page. Admin can inspect them from Users and Live feed.</div>';
+    const feed = state.feed || await loadFeed({ render: false });
+    const keys = feed.creations || [];
+    const active = keys.filter((k) => !k.revoked_at).length;
+    const revoked = keys.length - active;
+    if (keys.length === 0) {
+      $('#keys-table').innerHTML =
+        '<div class="empty">No account-owned API keys found yet. Users create keys from the signed-in account page.</div>';
+      return;
+    }
+    $('#keys-table').innerHTML =
+      '<div class="mini-grid">' +
+        '<div class="mini-card"><span>Total keys</span><strong>' + fmt(keys.length) + '</strong></div>' +
+        '<div class="mini-card"><span>Active keys</span><strong>' + fmt(active) + '</strong></div>' +
+        '<div class="mini-card"><span>Revoked keys</span><strong>' + fmt(revoked) + '</strong></div>' +
+      '</div>' +
+      '<table class="keys">' +
+        '<thead><tr><th>Owner</th><th>Name</th><th>Prefix</th><th>Status</th><th>Created</th><th>Last used</th></tr></thead><tbody>' +
+        keys.map((k) => (
+          '<tr>' +
+            '<td>' + escapeHtml(k.email || k.user_id || '—') + '</td>' +
+            '<td>' + escapeHtml(k.name || 'API key') + '</td>' +
+            '<td class="mono">' + escapeHtml(k.key_prefix || '') + '••••</td>' +
+            '<td><span class="pill ' + (k.revoked_at ? 'pill--err' : 'pill--ok') + '">' + (k.revoked_at ? 'revoked' : 'active') + '</span></td>' +
+            '<td>' + fmtAgo(k.created_at) + '</td>' +
+            '<td>' + fmtAgo(k.last_used_at) + '</td>' +
+          '</tr>'
+        )).join('') +
+        '</tbody></table>';
   }
 
   async function loadUsers() {
@@ -618,13 +651,15 @@ const HTML = String.raw`<!doctype html>
     $('#u-close').addEventListener('click', () => $('#modal-root').innerHTML = '');
   }
 
-  async function loadFeed() {
+  async function loadFeed(options = {}) {
     const { ok, body } = await fetchJson('/api/admin/feeds?limit=50');
     const creations = ok && body && body.key_creations ? body.key_creations : [];
+    state.feed = { ok, creations };
+    if (options.render === false) return state.feed;
     $('#feed-pill').textContent = ok ? creations.length + ' events' : 'unavailable';
     if (!ok || creations.length === 0) {
       $('#feed-list').innerHTML = '<div class="empty">No recent activity found.</div>';
-      return;
+      return state.feed;
     }
     $('#feed-list').innerHTML = '<div class="card-list">' + creations.map(k => (
       '<div class="row-card">' +
@@ -633,28 +668,37 @@ const HTML = String.raw`<!doctype html>
         '<div class="row-card__actions"><span class="pill">' + fmtAgo(k.created_at) + '</span></div>' +
       '</div>'
     )).join('') + '</div>';
+    return state.feed;
   }
 
   // ------------------------------------------------------------------
   //  Usage tab.
   // ------------------------------------------------------------------
   async function loadUsage() {
-    const { ok, body } = await fetchJson('/api/keys/usage?days=30');
-    const series = (ok && body && body.series) || [];
-    state.usage = series;
+    const feed = state.feed || await loadFeed({ render: false });
+    const days = Array.from({ length: 30 }, (_, i) => {
+      const d = new Date(Date.now() - (29 - i) * 86400000);
+      return d.toISOString().slice(0, 10);
+    });
+    const buckets = new Map(days.map(day => [day, 0]));
+    for (const key of feed.creations || []) {
+      const day = key.created_at ? new Date(key.created_at * 1000).toISOString().slice(0, 10) : null;
+      if (day && buckets.has(day)) buckets.set(day, (buckets.get(day) || 0) + 1);
+    }
+    const series = days.map(day => ({ day, count: buckets.get(day) || 0 }));
     if (series.length === 0) {
       $('#usage-strip').innerHTML = '<div class="empty">No usage yet. Mint a key and start hitting the API.</div>';
       $('#usage-range').textContent = '';
-      $('#usage-total').textContent = '0 requests';
+      $('#usage-total').textContent = '0 events';
       return;
     }
     const total = series.reduce((acc, s) => acc + s.count, 0);
-    $('#usage-total').textContent = fmt(total) + ' requests';
+    $('#usage-total').textContent = fmt(total) + ' key events';
     $('#usage-range').textContent = series[0].day + ' → ' + series[series.length - 1].day;
     $('#usage-strip').innerHTML = series.map((s) => {
       const tier = s.count === 0 ? 0 : s.count < 10 ? 1 : s.count < 100 ? 2 : s.count < 1000 ? 3 : 4;
       const h = s.count === 0 ? 6 : Math.min(60, 6 + Math.log10(Math.max(1, s.count)) * 18);
-      return '<div class="strip__cell" data-tier="' + tier + '" style="height:' + h + 'px" title="' + s.day + ': ' + fmt(s.count) + ' req"></div>';
+      return '<div class="strip__cell" data-tier="' + tier + '" style="height:' + h + 'px" title="' + s.day + ': ' + fmt(s.count) + ' events"></div>';
     }).join('');
   }
 

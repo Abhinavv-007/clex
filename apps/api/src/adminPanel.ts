@@ -318,6 +318,7 @@ export async function handleAdminUsers(request: Request, env: Env): Promise<Resp
     'gdrive:session:',
     limit,
   )
+  const keys = await listApiKeyRecords(env, 1000)
   const users = new Map<string, { id: string; firebase_uid: string; email: string | null; display_name: string | null; picture: string | null; created_at: number; last_seen_at: number | null }>()
   for (const session of sessions) {
     const existing = users.get(session.sub)
@@ -335,6 +336,18 @@ export async function handleAdminUsers(request: Request, env: Env): Promise<Resp
       })
     }
   }
+  for (const key of keys) {
+    if (users.has(key.ownerSub)) continue
+    users.set(key.ownerSub, {
+      id: key.ownerSub,
+      firebase_uid: key.ownerSub,
+      email: key.ownerEmail,
+      display_name: null,
+      picture: null,
+      created_at: key.createdAt,
+      last_seen_at: key.lastUsedAt || key.createdAt,
+    })
+  }
   return jsonResponse({ total: users.size, users: Array.from(users.values()).slice(0, limit) }, request, env)
 }
 
@@ -347,19 +360,23 @@ export async function handleAdminUserDetail(request: Request, env: Env, uid: str
     1000,
   )
   const userSessions = sessions.filter(session => session.sub === uid)
-  if (userSessions.length === 0) return jsonResponse({ error: 'user_not_found' }, request, env, 404)
-  userSessions.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0))
-  const latest = userSessions[0]
   const keys = await listApiKeyRecordsForOwner(env, uid)
+  if (userSessions.length === 0 && keys.length === 0) return jsonResponse({ error: 'user_not_found' }, request, env, 404)
+  userSessions.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0))
+  const latest = userSessions[0] || null
   return jsonResponse({
     user: {
       id: uid,
       firebase_uid: uid,
-      email: latest.email,
-      display_name: latest.displayName,
-      picture: latest.picture,
-      created_at: Math.floor(Math.min(...userSessions.map(s => s.createdAt || Date.now())) / 1000),
-      last_seen_at: Math.floor((latest.updatedAt || latest.createdAt || Date.now()) / 1000),
+      email: latest?.email || keys[0]?.ownerEmail || null,
+      display_name: latest?.displayName || null,
+      picture: latest?.picture || null,
+      created_at: userSessions.length > 0
+        ? Math.floor(Math.min(...userSessions.map(s => s.createdAt || Date.now())) / 1000)
+        : (keys[keys.length - 1]?.createdAt || keys[0]?.createdAt || nowSeconds()),
+      last_seen_at: latest
+        ? Math.floor((latest.updatedAt || latest.createdAt || Date.now()) / 1000)
+        : (Math.max(...keys.map(k => k.lastUsedAt || k.createdAt)) || null),
     },
     keys,
     security: {
