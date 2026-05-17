@@ -129,7 +129,7 @@ export function appendCors(headers: Headers, request: Request, env: Env): void {
   headers.set('Access-Control-Allow-Origin', allowed)
   headers.set('Access-Control-Allow-Credentials', 'true')
   headers.set('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS')
-  headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+  headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Admin-Session, X-Admin-Secret')
   headers.set('Vary', 'Origin')
 }
 
