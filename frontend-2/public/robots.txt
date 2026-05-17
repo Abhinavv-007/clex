@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+
+# Private surfaces (require auth or are not for SEO)
+Disallow: /account/
+Disallow: /workspace/
+Disallow: /receive/
+Disallow: /vault/secret/
+Disallow: /vault/share/
+
+Sitemap: https://clex.in/sitemap.xml
