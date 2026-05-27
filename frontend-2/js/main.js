@@ -9,6 +9,8 @@ import { clearPendingDriveReturnTo, getPendingDriveReturnTo, markDriveAuthCallba
 import { initTheme, toggleTheme } from './theme.js';
 import { initNav } from './nav.js';
 import { initIslands } from './islands.js';
+import { initSectionTheme } from './section-theme.js';
+import { initHeroEffects } from './hero-effects.js';
 
 // ── Initialize on DOM ready ──
 document.addEventListener('DOMContentLoaded', async () => {
@@ -28,6 +30,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   await handleGoogleDriveOAuthCallback();
   await initIslands();
   await initPageEnhancements(activePage);
+
+  // Section-driven theme morph + hero interactive effects
+  initSectionTheme();
+  initHeroEffects();
 
   // Lazy load animations only when needed
   loadAnimations();

@@ -153,43 +153,78 @@
   </div>
 
   <!-- ═══ Hero Section ═══ -->
-  <section class="hero" id="hero">
-    <div class="container">
-      <div class="hero__grid">
-        <div class="hero__content">
-          <div class="hero__badge">
-            <span class="badge badge--accent">
-              <span class="badge__dot"></span>
-              Privacy-First File Movement
-            </span>
-          </div>
+  <section class="hero" id="hero" data-section-theme="cream" data-spotlight>
+    <div class="hero__bg" aria-hidden="true">
+      <div class="hero__grid-pattern"></div>
+      <div class="hero__spotlight"></div>
+      <span class="hero__blob hero__blob--lime" data-parallax="-0.08"></span>
+      <span class="hero__blob hero__blob--peach" data-parallax="0.12"></span>
+      <span class="hero__blob hero__blob--lavender" data-parallax="-0.05"></span>
+      <span class="hero__sparkle hero__sparkle--a">✦</span>
+      <span class="hero__sparkle hero__sparkle--b">✧</span>
+      <span class="hero__sparkle hero__sparkle--c">✦</span>
+    </div>
 
-          <h1 class="hero__title">
-            <span class="hero__title-line">Drop</span>
-            <span class="hero__title-line">Prepare</span>
-            <span class="hero__title-line hero__title-accent">Share</span>
-          </h1>
+    <div class="container hero__container">
+      <div class="hero__lead" data-reveal>
+        <span class="pill-badge">
+          <span class="pill-badge__dot"></span>
+          Privacy-First File Workspace
+        </span>
+      </div>
 
-          <p class="hero__subtitle lead">
-            One browser-based workspace to prepare and deliver files — with direct P2P transfer, smart tools, and zero server storage.
-          </p>
+      <h1 class="hero__title" data-reveal>
+        <span class="hero__title-row">
+          <span class="hero__title-word">Drop.</span>
+          <span class="hero__title-word">Prepare.</span>
+        </span>
+        <span class="hero__title-row hero__title-row--accent">
+          <span class="hero__title-word hero__title-word--italic">Share</span>
+          <span class="hero__title-word hero__title-word--soft">it.</span>
+        </span>
+      </h1>
 
-          <div class="hero__actions">
-            <a href="/workspace" class="btn btn--primary btn--large hero__action hero__action--primary">Open Workspace →</a>
-            <a href="/vault" class="btn btn--large hero__action hero__action--secondary">Explore Vault →</a>
-            <a href="/how-it-works" class="btn btn--large hero__action hero__action--secondary">See How It Works →</a>
-          </div>
+      <p class="hero__subtitle lead" data-reveal>
+        One browser-based workspace to prepare and deliver files — with direct P2P transfer, smart tools, and zero server storage.
+      </p>
+
+      <div class="hero__actions" data-reveal>
+        <a href="/workspace" class="pill-btn pill-btn--primary magnetic" data-magnetic="0.22">
+          <span class="pill-btn__label">Open Workspace</span>
+          <span class="pill-btn__arrow" aria-hidden="true">→</span>
+        </a>
+        <a href="/how-it-works" class="pill-btn pill-btn--ghost magnetic" data-magnetic="0.18">
+          <span class="pill-btn__label">See How It Works</span>
+        </a>
+      </div>
+
+      <div class="hero__metrics" data-reveal>
+        <div class="hero__metric">
+          <span class="hero__metric-num">0</span>
+          <span class="hero__metric-label">files stored on our servers</span>
         </div>
-
-        <div class="hero__visual">
-          <div id="hero-workspace-island" class="reveal-right"></div>
+        <div class="hero__metric">
+          <span class="hero__metric-num">P2P</span>
+          <span class="hero__metric-label">browser-to-browser via WebRTC</span>
+        </div>
+        <div class="hero__metric">
+          <span class="hero__metric-num">∞</span>
+          <span class="hero__metric-label">tools chained in one tab</span>
         </div>
       </div>
+
+      <div class="hero__visual" data-reveal>
+        <div id="hero-workspace-island"></div>
+      </div>
     </div>
+
+    <svg class="section-divider section-divider--cream-to-dark" viewBox="0 0 1440 80" preserveAspectRatio="none" aria-hidden="true">
+      <path d="M0,40 C240,80 480,0 720,40 C960,80 1200,0 1440,40 L1440,80 L0,80 Z"></path>
+    </svg>
   </section>
 
   <!-- ═══ Marquee Strip ═══ -->
-  <div class="banner" style="padding: var(--space-xl) 0;">
+  <div class="banner banner--marquee" style="padding: var(--space-xl) 0;" data-section-theme="dark">
     <div class="marquee">
       <div class="marquee__track">
         <span class="marquee__item">WebRTC P2P</span>
@@ -228,12 +263,21 @@
     </div>
   </div>
 
+  <svg class="section-divider section-divider--dark-to-cream" viewBox="0 0 1440 80" preserveAspectRatio="none" aria-hidden="true">
+    <path d="M0,40 C240,0 480,80 720,40 C960,0 1200,80 1440,40 L1440,0 L0,0 Z"></path>
+  </svg>
+
   <!-- ═══ Product Story: 3-Step Flow ═══ -->
-  <section class="section" id="product-story">
+  <section class="section section--cream" id="product-story" data-section-theme="cream">
+    <span class="section-deco section-deco--blob-a" aria-hidden="true" data-parallax="-0.04"></span>
+    <span class="section-deco section-deco--blob-b" aria-hidden="true" data-parallax="0.06"></span>
     <div class="container">
       <div class="section__header text-center reveal">
-        <span class="section__label">The Flow</span>
-        <h2 class="section__title">One Workspace<br>Three Moves</h2>
+        <span class="pill-badge pill-badge--inline">
+          <span class="pill-badge__dot"></span>
+          The Flow
+        </span>
+        <h2 class="section__title section__title--mixed">One workspace,<br><span class="italic-accent">three moves.</span></h2>
         <p class="section__subtitle mx-auto">
           Stop bouncing between apps. Clex connects preparation and delivery into a single, continuous motion.
         </p>
@@ -285,11 +329,19 @@
     </div>
   </section>
 
-  <section class="section">
+  <svg class="section-divider section-divider--cream-to-dark" viewBox="0 0 1440 80" preserveAspectRatio="none" aria-hidden="true">
+    <path d="M0,40 C240,80 480,0 720,40 C960,80 1200,0 1440,40 L1440,80 L0,80 Z"></path>
+  </svg>
+
+  <section class="section section--dark" data-section-theme="dark">
+    <span class="section-deco section-deco--glow-purple" aria-hidden="true" data-parallax="-0.05"></span>
     <div class="container">
       <div class="section__header text-center reveal">
-        <span class="section__label">Vault</span>
-        <h2 class="section__title">The Private Side<br>of the Same System</h2>
+        <span class="pill-badge pill-badge--inline">
+          <span class="pill-badge__dot"></span>
+          Vault
+        </span>
+        <h2 class="section__title section__title--mixed">The private side<br><span class="italic-accent italic-accent--lavender">of the same system.</span></h2>
         <p class="section__subtitle mx-auto">
           Workspace prepares and delivers files. Vault handles encrypted notes, controlled secret links, and timed Drive handoffs without feeling like a separate app.
         </p>
@@ -337,17 +389,22 @@
   </section>
 
   <!-- ═══ Statement Banner ═══ -->
-  <div class="banner banner--dark reveal-scale">
+  <div class="banner banner--dark banner--statement reveal-scale" data-section-theme="dark">
     <div class="container">
       <p class="banner__text">
         Your files never touch our servers.<br>
-        <span style="color: var(--accent-text);">That's the point</span>
+        <span class="italic-accent italic-accent--lime">That's the point.</span>
       </p>
     </div>
   </div>
 
+  <svg class="section-divider section-divider--dark-to-lavender" viewBox="0 0 1440 80" preserveAspectRatio="none" aria-hidden="true">
+    <path d="M0,40 C240,0 480,80 720,40 C960,0 1200,80 1440,40 L1440,0 L0,0 Z"></path>
+  </svg>
+
   <!-- ═══ Direct+ Reliability Callout ═══ -->
-  <section class="section direct-plus-callout" id="direct-plus" aria-labelledby="direct-plus-title">
+  <section class="section section--lavender direct-plus-callout" id="direct-plus" aria-labelledby="direct-plus-title" data-section-theme="lavender">
+    <span class="section-deco section-deco--blob-c" aria-hidden="true" data-parallax="-0.06"></span>
     <div class="container">
       <div class="dpc-card reveal">
         <div class="dpc-eyebrow">
@@ -355,7 +412,7 @@
           <span class="dpc-label">Reliability layer</span>
         </div>
         <h2 id="direct-plus-title" class="dpc-title">
-          Meet <span class="dpc-wordmark">Clex&nbsp;Direct+</span>
+          Meet <span class="italic-accent italic-accent--lavender">Clex&nbsp;Direct+</span>
         </h2>
         <p class="dpc-sub">
           AirDrop-simple. Torrent-stable. Privacy-first. Direct+ adds chunk-level verification, ACK/retry, pause/resume, and a verified transfer receipt to every direct transfer — without changing the privacy model.
@@ -376,12 +433,20 @@
     </div>
   </section>
 
+  <svg class="section-divider section-divider--lavender-to-dark" viewBox="0 0 1440 80" preserveAspectRatio="none" aria-hidden="true">
+    <path d="M0,40 C240,80 480,0 720,40 C960,80 1200,0 1440,40 L1440,80 L0,80 Z"></path>
+  </svg>
+
   <!-- ═══ Routing Panel ═══ -->
-  <section class="section routing" id="routing">
+  <section class="section section--dark routing" id="routing" data-section-theme="dark">
+    <span class="section-deco section-deco--glow-cyan" aria-hidden="true" data-parallax="-0.04"></span>
     <div class="container">
       <div class="section__header text-center reveal">
-        <span class="section__label">Smart Routing</span>
-        <h2 class="section__title">Three Paths<br>One Decision Engine</h2>
+        <span class="pill-badge pill-badge--inline">
+          <span class="pill-badge__dot"></span>
+          Smart Routing
+        </span>
+        <h2 class="section__title section__title--mixed">Three paths,<br><span class="italic-accent italic-accent--cyan">one decision engine.</span></h2>
         <p class="section__subtitle mx-auto">
           Clex detects your network, finds the other device, and picks the fastest route — or lets you choose.
         </p>
@@ -490,12 +555,20 @@
     </div>
   </section>
 
+  <svg class="section-divider section-divider--dark-to-peach" viewBox="0 0 1440 80" preserveAspectRatio="none" aria-hidden="true">
+    <path d="M0,40 C240,0 480,80 720,40 C960,0 1200,80 1440,40 L1440,0 L0,0 Z"></path>
+  </svg>
+
   <!-- ═══ Features Grid ═══ -->
-  <section class="section" id="features-preview">
+  <section class="section section--peach" id="features-preview" data-section-theme="peach">
+    <span class="section-deco section-deco--blob-d" aria-hidden="true" data-parallax="0.05"></span>
     <div class="container">
       <div class="section__header text-center reveal">
-        <span class="section__label">Built-In Tools</span>
-        <h2 class="section__title">Prepare Files Without<br>Leaving the Tab</h2>
+        <span class="pill-badge pill-badge--inline">
+          <span class="pill-badge__icon">✦</span>
+          Built-In Tools
+        </span>
+        <h2 class="section__title section__title--mixed">Prepare files<br><span class="italic-accent italic-accent--peach">without leaving the tab.</span></h2>
       </div>
     </div>
 
@@ -545,12 +618,21 @@
     </div>
   </section>
 
+  <svg class="section-divider section-divider--peach-to-dark" viewBox="0 0 1440 80" preserveAspectRatio="none" aria-hidden="true">
+    <path d="M0,40 C240,80 480,0 720,40 C960,80 1200,0 1440,40 L1440,80 L0,80 Z"></path>
+  </svg>
+
   <!-- ═══ Trust Strip ═══ -->
-  <section class="section section--tight trust" id="trust">
+  <section class="section section--dark section--tight trust" id="trust" data-section-theme="dark">
+    <span class="section-deco section-deco--glow-lime" aria-hidden="true" data-parallax="-0.03"></span>
     <div class="container">
-      <h2 class="page-section__title reveal" style="margin-bottom: var(--space-md);">
-        Built Different
-      </h2>
+      <div class="section__header text-center reveal" style="margin-bottom: var(--space-lg);">
+        <span class="pill-badge pill-badge--inline">
+          <span class="pill-badge__dot"></span>
+          Built Different
+        </span>
+        <h2 class="section__title section__title--mixed">Loved by people<br><span class="italic-accent">who hate clutter.</span></h2>
+      </div>
       <p class="section__subtitle mx-auto reveal" style="margin-bottom: var(--space-2xl);">
         Clex is designed around the idea that your files are yours, and they should move fast.
       </p>
@@ -583,18 +665,74 @@
     </div>
   </section>
 
+  <svg class="section-divider section-divider--dark-to-cream" viewBox="0 0 1440 80" preserveAspectRatio="none" aria-hidden="true">
+    <path d="M0,40 C240,0 480,80 720,40 C960,0 1200,80 1440,40 L1440,0 L0,0 Z"></path>
+  </svg>
+
   <!-- ═══ Final CTA ═══ -->
-  <section class="cta-strip">
+  <section class="section cta-final" data-section-theme="cream">
     <div class="container">
-      <h2 class="cta-strip__title reveal">
-        Ready to Move Files<br>
-        <span style="color: var(--accent-text);">The Right Way?</span>
-      </h2>
-      <p class="cta-strip__text reveal">
-        No signup. No install. Just open Clex and start dropping files. It's that simple.
-      </p>
-      <div class="reveal">
-        <a href="/workspace" class="btn btn--primary btn--large">Open Workspace →</a>
+      <div class="cta-card" data-reveal>
+        <span class="cta-card__corner cta-card__corner--tl" aria-hidden="true"></span>
+        <span class="cta-card__corner cta-card__corner--tr" aria-hidden="true"></span>
+        <span class="cta-card__corner cta-card__corner--bl" aria-hidden="true"></span>
+        <span class="cta-card__corner cta-card__corner--br" aria-hidden="true"></span>
+        <span class="cta-card__spine" aria-hidden="true">
+          <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+        </span>
+
+        <span class="pill-badge pill-badge--soft">
+          <span class="pill-badge__icon">✦</span>
+          Get Started — It's Free
+        </span>
+
+        <h2 class="cta-card__title">
+          Ready to move files<br>
+          <span class="italic-accent italic-accent--lavender">the right way?</span>
+        </h2>
+        <p class="cta-card__text">
+          No signup. No install. Just open Clex and start dropping files. Privacy-first by default.
+        </p>
+
+        <div class="cta-card__actions">
+          <a href="/workspace" class="pill-btn pill-btn--primary magnetic" data-magnetic="0.22">
+            <span class="pill-btn__icon">🚀</span>
+            <span class="pill-btn__label">Open Workspace</span>
+            <span class="pill-btn__arrow">→</span>
+          </a>
+          <a href="/how-it-works" class="pill-btn pill-btn--white magnetic" data-magnetic="0.18">
+            <span class="pill-btn__label">See How It Works</span>
+          </a>
+        </div>
+      </div>
+
+      <div class="featured-on" data-reveal>
+        <span class="featured-on__rule"></span>
+        <span class="featured-on__label">Built On</span>
+        <span class="featured-on__rule"></span>
+      </div>
+      <div class="featured-pills" data-reveal>
+        <span class="featured-pill">
+          <span class="featured-pill__icon featured-pill__icon--green">⚡</span>
+          <span class="featured-pill__copy">
+            <span class="featured-pill__title">WebRTC</span>
+            <span class="featured-pill__sub">Direct browser P2P</span>
+          </span>
+        </span>
+        <span class="featured-pill">
+          <span class="featured-pill__icon featured-pill__icon--lavender">🛡</span>
+          <span class="featured-pill__copy">
+            <span class="featured-pill__title">End-to-end</span>
+            <span class="featured-pill__sub">Zero server storage</span>
+          </span>
+        </span>
+        <span class="featured-pill">
+          <span class="featured-pill__icon featured-pill__icon--peach">◐</span>
+          <span class="featured-pill__copy">
+            <span class="featured-pill__title">Direct+</span>
+            <span class="featured-pill__sub">Reliability layer</span>
+          </span>
+        </span>
       </div>
     </div>
   </section>
