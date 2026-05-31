@@ -1778,13 +1778,13 @@ button.cta:focus-visible {
     position: fixed;
     top: 0;
     left: 0;
-    width: 12px;
-    height: 12px;
+    width: 14px;
+    height: 14px;
     border-radius: 50%;
-    background: #fff;
+    background: var(--accent, #c8ff00);
     mix-blend-mode: difference;
     pointer-events: none;
-    z-index: 9999;
+    z-index: 99999;
     transform: translate3d(-100px, -100px, 0);
     transition: width 200ms ease, height 200ms ease, opacity 220ms ease;
     opacity: 0;
@@ -1792,9 +1792,18 @@ button.cta:focus-visible {
   }
   .clex-cursor-follower.is-active { opacity: 1; }
   .clex-cursor-follower.is-hot {
-    width: 32px;
-    height: 32px;
+    width: 34px;
+    height: 34px;
   }
+  /* Hide native cursor when our custom follower is active */
+  body.clex-cursor-active,
+  body.clex-cursor-active * { cursor: none !important; }
+  /* Keep native caret on text-input surfaces for usability */
+  body.clex-cursor-active input,
+  body.clex-cursor-active textarea,
+  body.clex-cursor-active select,
+  body.clex-cursor-active [contenteditable="true"],
+  body.clex-cursor-active [contenteditable=""] { cursor: text !important; }
 }
 @media (prefers-reduced-motion: reduce) {
   .clex-cursor-follower { display: none !important; }
@@ -1810,11 +1819,52 @@ body::after {
   inset: 0;
   pointer-events: none;
   z-index: 9998;
-  opacity: 0.04;
-  mix-blend-mode: overlay;
+  opacity: 0.035;
+  mix-blend-mode: soft-light;
   background-image: url("data:image/svg+xml;utf8,<svg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.7 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
   background-size: 240px 240px;
 }
 @media (prefers-reduced-motion: reduce) {
-  body::after { opacity: 0.025; }
+  body::after { opacity: 0.02; }
+}
+
+/* Stat-orb numbers: prevent layout shift while counters animate */
+.stat-orb__num {
+  font-variant-numeric: tabular-nums;
+  display: inline-block;
+  min-width: 4ch;
+}
+.stat-orb { min-height: 150px; }
+
+/* Hide duplicate status dot — keep one indicator on peer-node chips */
+.peer-node__chip .peer-node__chip-dot ~ .peer-node__chip-dot { display: none; }
+.peer-node .peer-node__chip-dot ~ .peer-node__chip-dot,
+.peer-node::after { display: none; }
+
+/* Shrink the orbit constellation (P2P circular drivelane) ~30% */
+.orbit-stage {
+  width: clamp(220px, 30vw, 360px) !important;
+  height: clamp(220px, 30vw, 360px) !important;
+  margin: 1.5rem auto 0.5rem !important;
+}
+.orbit-node {
+  width: 64px !important; height: 64px !important;
+  margin: -32px 0 0 -32px !important;
+  --orbit-radius: clamp(90px, 13vw, 145px) !important;
+}
+.orbit-node__label { font-size: 0.82rem !important; }
+
+/* Hero primary CTA: extra pop on hover */
+.pill-btn--primary {
+  transition: transform 220ms cubic-bezier(0.22,1,0.36,1),
+              box-shadow 220ms cubic-bezier(0.22,1,0.36,1),
+              background-color 220ms ease;
+}
+.pill-btn--primary:hover {
+  transform: translate(-3px, -3px) scale(1.04);
+  box-shadow: 8px 8px 0 var(--c-ink, #0a0a0a),
+              0 0 36px rgba(200, 255, 0, 0.55) !important;
+}
+.pill-btn--primary:hover .pill-btn__arrow {
+  transform: translateX(6px);
 }

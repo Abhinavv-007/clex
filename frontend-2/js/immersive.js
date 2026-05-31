@@ -137,6 +137,8 @@ function initCursorFollower() {
   dot.className = 'clex-cursor-follower';
   dot.setAttribute('aria-hidden', 'true');
   document.body.appendChild(dot);
+  // Hide native cursor across the page (CSS fallback handles inputs)
+  document.body.classList.add('clex-cursor-active');
 
   let mouseX = window.innerWidth / 2;
   let mouseY = window.innerHeight / 2;
@@ -147,9 +149,9 @@ function initCursorFollower() {
 
   const tick = () => {
     raf = 0;
-    curX += (mouseX - curX) * 0.18;
-    curY += (mouseY - curY) * 0.18;
-    dot.style.transform = `translate3d(${curX - 6}px, ${curY - 6}px, 0)`;
+    curX += (mouseX - curX) * 0.35;
+    curY += (mouseY - curY) * 0.35;
+    dot.style.transform = `translate3d(${curX - 7}px, ${curY - 7}px, 0)`;
     if (Math.abs(mouseX - curX) > 0.4 || Math.abs(mouseY - curY) > 0.4) {
       raf = requestAnimationFrame(tick);
     }
