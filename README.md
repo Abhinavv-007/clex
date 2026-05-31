@@ -36,6 +36,24 @@
 
 ---
 
+## ✦ Latest Update — Immersive Polish Pass (`v1.0.1-immersive`)
+
+Cleanup + interactive elements pass on top of the existing immersive hero system. All additive — no existing motion removed.
+
+- **Custom cursor follower** — 12px circle, `mix-blend-mode: difference`, rAF lerp, gated to `(hover: hover) and (pointer: fine)`
+- **Scroll progress bar** — fixed top, `accent → accent-warm` gradient, rAF-driven width update
+- **SVG turbulence noise grain** — body::after, 4% opacity, fixed, `pointer-events: none`
+- **Mascot eyes track cursor** — pupils translate ±4px proportional to cursor delta from window center
+- **Chunk grid wave stagger** — `--row` / `--col` driven via `ResizeObserver`, animation-delay maths off live grid
+- **Counter pulse-glow** — animated number counters fire a `.pulse-glow` class on completion
+- **Interactive polish** — nav-link hover glow underline, primary-button radial halo, card hover `z-index`, footer/social `scale + rotate`, focus-visible accent ring, peer-pipe packet `drop-shadow`, smooth section-divider fill transitions, floating-tag depth, bento-cell inner glow, DPC blob freeze on hover, accordion hover bg, hamburger hover, copy-button `data-loading` state, routing-card hover lift
+
+All new motion respects `prefers-reduced-motion` and touch devices.
+
+Release: <https://github.com/Abhinavv-007/clex/releases/tag/v1.0.1-immersive>
+
+---
+
 ## ✦ Hero Reels
 
 <table>
