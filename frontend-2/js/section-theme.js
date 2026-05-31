@@ -8,8 +8,6 @@ const THEMES = ['cream', 'lime', 'dark', 'ivory', 'peach', 'lavender'];
 
 export function initSectionTheme() {
   const sections = Array.from(document.querySelectorAll('[data-section-theme]'));
-  if (!sections.length) return;
-
   const body = document.body;
   /** @param {string | null} theme */
   const setActive = (theme) => {
@@ -17,6 +15,14 @@ export function initSectionTheme() {
     THEMES.forEach((t) => body.classList.toggle(`section-theme-${t}`, t === theme));
     body.dataset.activeSectionTheme = theme;
   };
+
+  // No sections marked? Use a single active theme based on the page's html
+  // data-theme so the nav still gets brand-consistent colors on every page.
+  if (!sections.length) {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    setActive(isDark ? 'dark' : 'cream');
+    return;
+  }
 
   // pick the section whose top crosses 30% of viewport
   let current = sections[0].getAttribute('data-section-theme');

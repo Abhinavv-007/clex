@@ -10,7 +10,17 @@ export function initNav(activePage = '') {
   if (!nav) return;
 
   // Scroll behavior
+  const progressBar = document.querySelector('#scroll-progress .scroll-progress__bar');
   let lastScroll = 0;
+  let progressRaf = 0;
+  const updateProgress = () => {
+    progressRaf = 0;
+    if (!(progressBar instanceof HTMLElement)) return;
+    const doc = document.documentElement;
+    const max = (doc.scrollHeight - doc.clientHeight) || 1;
+    const pct = Math.min(100, Math.max(0, (window.scrollY / max) * 100));
+    progressBar.style.width = `${pct}%`;
+  };
   window.addEventListener('scroll', () => {
     const currentScroll = window.scrollY;
     if (currentScroll > 60) {
@@ -19,7 +29,9 @@ export function initNav(activePage = '') {
       nav.classList.remove('nav--scrolled');
     }
     lastScroll = currentScroll;
+    if (!progressRaf) progressRaf = requestAnimationFrame(updateProgress);
   }, { passive: true });
+  updateProgress();
 
   // Mobile menu
   const hamburger = document.getElementById('nav-hamburger');

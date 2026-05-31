@@ -49,7 +49,6 @@ function applyTheme(theme) {
   document.documentElement.style.colorScheme = theme;
   const toggleBtn = document.getElementById('theme-toggle');
   if (toggleBtn) {
-    toggleBtn.textContent = theme === 'dark' ? '☀' : '☾';
     toggleBtn.setAttribute('aria-label', `Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`);
   }
 }

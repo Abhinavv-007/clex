@@ -4,6 +4,8 @@
    ============================================ */
 
 import '@clex/frontend-core/styles.css';
+import '../css/global-enhance.css';
+import '../css/creem-design.css';
 import { clearPendingDriveReturnTo, getPendingDriveReturnTo, markDriveAuthCallbackSeen } from '@clex/frontend-core';
 
 import { initTheme, toggleTheme } from './theme.js';
@@ -11,11 +13,22 @@ import { initNav } from './nav.js';
 import { initIslands } from './islands.js';
 import { initSectionTheme } from './section-theme.js';
 import { initHeroEffects } from './hero-effects.js';
+import { initSiteEnhance } from './site-enhance.js';
+import { initImmersive } from './immersive.js';
 
 // ── Initialize on DOM ready ──
 document.addEventListener('DOMContentLoaded', async () => {
+  // Prevent first-paint transition flicker.
+  document.body.classList.add('preload');
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => document.body.classList.remove('preload'));
+  });
+
   // Theme
   initTheme();
+
+  // Inject site-wide scaffolding (scroll progress) before nav reads anything.
+  injectGlobalScaffolding();
 
   // Theme toggle button
   const themeToggle = document.getElementById('theme-toggle');
@@ -34,10 +47,22 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Section-driven theme morph + hero interactive effects
   initSectionTheme();
   initHeroEffects();
+  initSiteEnhance();
+  initImmersive();
 
   // Lazy load animations only when needed
   loadAnimations();
 });
+
+/**
+ * Inject site-wide markup that should appear on every page.
+ * - (Scroll progress strip removed by request.)
+ * Idempotent: skips when an element already exists.
+ */
+function injectGlobalScaffolding() {
+  // Strip any pre-existing scroll-progress markup so it never renders.
+  document.querySelectorAll('#scroll-progress, .clex-scroll-progress').forEach((el) => el.remove());
+}
 
 async function handleGoogleDriveOAuthCallback() {
   const url = new URL(window.location.href);

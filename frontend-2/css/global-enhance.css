@@ -1,0 +1,1820 @@
+/* ============================================
+   CLEX — Global Enhancement Layer (site-wide)
+   Applied to every page via main.js link injection.
+   Upgrades dark/light theming, page heroes, buttons,
+   cards, badges, accordions, footer, scroll progress.
+   ============================================ */
+
+/* ---------- Improved tokens for dark + light ---------- */
+[data-theme="dark"] {
+  --bg-primary: #0a0a0a;
+  --bg-secondary: #111111;
+  --bg-tertiary: #1a1a1a;
+  --bg-card: #141414;
+  --bg-card-hover: #1c1c1c;
+  --bg-elevated: #1a1a1a;
+  --bg-input: #0f0f0f;
+
+  --text-primary: #f0f0e8;
+  --text-secondary: #a8a8a0;
+  --text-tertiary: #707068;
+  --text-inverse: #0a0a0a;
+
+  --border-color: #2a2a2a;
+  --border-bold: #f0f0e8;
+  --border-subtle: #1f1f1f;
+
+  --shadow-color: #000000;
+  --surface-glass: rgba(20, 20, 20, 0.78);
+  --gradient-hero:
+    radial-gradient(80% 60% at 20% 0%, rgba(107, 77, 255, 0.18) 0%, transparent 60%),
+    radial-gradient(60% 50% at 100% 0%, rgba(200, 255, 0, 0.12) 0%, transparent 60%),
+    linear-gradient(180deg, #0a0a0a 0%, #0f0f0f 100%);
+}
+
+[data-theme="light"] {
+  --bg-primary: #f6efdf;
+  --bg-secondary: #f1e9d4;
+  --bg-tertiary: #ebe2c9;
+  --bg-card: #ffffff;
+  --bg-card-hover: #fffaeb;
+  --bg-elevated: #ffffff;
+  --bg-input: #fffaeb;
+
+  --text-primary: #0a0a0a;
+  --text-secondary: #4a4642;
+  --text-tertiary: #7a7670;
+  --text-inverse: #f0f0e8;
+
+  --border-color: #d9cfb6;
+  --border-bold: #0a0a0a;
+  --border-subtle: #ebe2c9;
+
+  --shadow-color: #0a0a0a;
+  --surface-glass: rgba(255, 255, 255, 0.85);
+  --gradient-hero:
+    radial-gradient(80% 60% at 20% 0%, #fff0c0 0%, transparent 60%),
+    radial-gradient(60% 50% at 100% 0%, #ffd8b8 0%, transparent 60%),
+    linear-gradient(180deg, #f8f1de 0%, #f1e9d4 100%);
+}
+
+/* ---------- Body smooth theme transition ---------- */
+body, html {
+  transition:
+    background-color 600ms cubic-bezier(0.65, 0, 0.35, 1),
+    color 600ms cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  position: relative;
+}
+
+/* ---------- Scroll Progress Strip removed by request ---------- */
+.clex-scroll-progress,
+#scroll-progress { display: none !important; }
+
+@keyframes clex-progress-shimmer {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+
+/* ---------- Universal page hero polish ---------- */
+.features-hero,
+.faq-hero,
+.gs-hero,
+.hiw-hero,
+.dev-hero,
+.chain-hero,
+.legal-hero {
+  position: relative;
+  padding: 11rem 0 5rem !important;
+  background: var(--gradient-hero) !important;
+  border-bottom: none !important;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.features-hero::before,
+.faq-hero::before,
+.gs-hero::before,
+.hiw-hero::before,
+.dev-hero::before,
+.chain-hero::before,
+.legal-hero::before,
+.features-hero::after,
+.faq-hero::after,
+.gs-hero::after,
+.hiw-hero::after,
+.dev-hero::after,
+.chain-hero::after,
+.legal-hero::after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  pointer-events: none;
+  z-index: -1;
+  animation: clex-aurora-drift 16s ease-in-out infinite;
+}
+.features-hero::before, .faq-hero::before, .gs-hero::before,
+.hiw-hero::before, .dev-hero::before, .chain-hero::before, .legal-hero::before {
+  width: 600px; height: 400px;
+  background: radial-gradient(ellipse, rgba(107, 77, 255, 0.45) 0%, transparent 70%);
+  top: -100px; left: -150px;
+}
+.features-hero::after, .faq-hero::after, .gs-hero::after,
+.hiw-hero::after, .dev-hero::after, .chain-hero::after, .legal-hero::after {
+  width: 520px; height: 380px;
+  background: radial-gradient(ellipse, rgba(255, 122, 61, 0.35) 0%, transparent 70%);
+  top: 5%; right: -120px;
+  animation-delay: 4s;
+}
+[data-theme="light"] .features-hero::before,
+[data-theme="light"] .faq-hero::before,
+[data-theme="light"] .gs-hero::before,
+[data-theme="light"] .hiw-hero::before,
+[data-theme="light"] .dev-hero::before,
+[data-theme="light"] .chain-hero::before,
+[data-theme="light"] .legal-hero::before {
+  background: radial-gradient(ellipse, rgba(196, 181, 253, 0.55) 0%, transparent 70%);
+}
+[data-theme="light"] .features-hero::after,
+[data-theme="light"] .faq-hero::after,
+[data-theme="light"] .gs-hero::after,
+[data-theme="light"] .hiw-hero::after,
+[data-theme="light"] .dev-hero::after,
+[data-theme="light"] .chain-hero::after,
+[data-theme="light"] .legal-hero::after {
+  background: radial-gradient(ellipse, rgba(255, 198, 165, 0.55) 0%, transparent 70%);
+}
+
+@keyframes clex-aurora-drift {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(40px, 30px) scale(1.1); }
+}
+
+/* ---------- Page hero label upgraded to pill-badge style ---------- */
+.page-hero__label,
+.section__label {
+  background: var(--bg-card) !important;
+  border: 2px solid var(--border-bold) !important;
+  box-shadow: 4px 4px 0 var(--border-bold) !important;
+  border-radius: 9999px !important;
+  padding: 0.6rem 1rem !important;
+  font-family: var(--font-mono);
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  font-size: 0.72rem !important;
+  color: var(--text-primary) !important;
+  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  transition: transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1),
+              box-shadow 220ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.page-hero__label:hover,
+.section__label:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 var(--border-bold) !important;
+}
+
+/* ---------- Page hero title gets gradient accent ---------- */
+.page-hero__title,
+.cta-strip__title,
+.section__title.page-section__title {
+  font-family: var(--font-display);
+  font-weight: 900;
+  letter-spacing: -0.05em;
+  line-height: 0.9;
+  text-transform: none !important;
+}
+
+/* Make page hero subtitles readable on both themes */
+.page-hero__subtitle {
+  color: var(--text-secondary);
+  max-width: 56ch;
+  font-size: clamp(1rem, 1.3vw, 1.18rem);
+  line-height: 1.55;
+}
+
+/* ---------- Universal button upgrades ---------- */
+.btn {
+  border-radius: 9999px !important;
+  text-transform: none !important;
+  font-family: var(--font-display) !important;
+  font-weight: 800;
+  letter-spacing: -0.005em;
+  font-size: 0.95rem !important;
+  padding: 0.85rem 1.6rem !important;
+  border-width: 2px !important;
+  box-shadow: 4px 4px 0 var(--border-bold) !important;
+  transition: transform 180ms cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow 180ms cubic-bezier(0.22, 1, 0.36, 1),
+              background 180ms ease;
+}
+.btn--small {
+  padding: 0.55rem 1.1rem !important;
+  font-size: 0.78rem !important;
+  box-shadow: 3px 3px 0 var(--border-bold) !important;
+}
+.btn--large {
+  padding: 1.05rem 2rem !important;
+  font-size: 1.08rem !important;
+}
+.btn:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 var(--border-bold) !important;
+}
+.btn--primary {
+  background: var(--accent) !important;
+  color: #0a0a0a !important;
+  border-color: #0a0a0a !important;
+  box-shadow: 4px 4px 0 #0a0a0a !important;
+  position: relative;
+}
+.btn--primary::before {
+  content: '';
+  position: absolute;
+  inset: -10px;
+  border-radius: 9999px;
+  background: radial-gradient(closest-side, rgba(200, 255, 0, 0.55), transparent 70%);
+  filter: blur(20px);
+  opacity: 0;
+  z-index: -1;
+  transition: opacity 280ms ease;
+}
+.btn--primary:hover::before { opacity: 1; }
+.btn--primary:hover {
+  box-shadow: 6px 6px 0 #0a0a0a !important;
+  background: var(--accent-hover, #d4ff33) !important;
+}
+.btn--ghost {
+  background: transparent !important;
+  border-color: var(--border-bold) !important;
+}
+
+/* ---------- Universal card polish (works light + dark) ---------- */
+.card,
+.tool-card,
+.tip-card,
+.giant-step,
+.delivery-flow__node,
+.vault-spotlight__shell,
+.vault-spotlight__note,
+.trust__item,
+.step,
+.dpc-cell {
+  border-radius: 18px !important;
+  transition:
+    transform 260ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 260ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 260ms ease,
+    background 260ms ease !important;
+}
+
+.card,
+.tool-card,
+.tip-card,
+.delivery-flow__node {
+  background: var(--bg-card) !important;
+  border: 2px solid var(--border-bold) !important;
+  box-shadow: 6px 6px 0 var(--border-bold) !important;
+}
+
+.card:hover,
+.tool-card:hover,
+.tip-card:hover {
+  transform: translate(-4px, -4px);
+  box-shadow: 10px 10px 0 var(--border-bold) !important;
+}
+
+[data-theme="dark"] .card,
+[data-theme="dark"] .tool-card,
+[data-theme="dark"] .tip-card,
+[data-theme="dark"] .delivery-flow__node {
+  background: #141414 !important;
+  border-color: #2f2f2f !important;
+  box-shadow: 6px 6px 0 #c8ff00 !important;
+}
+[data-theme="dark"] .card:hover,
+[data-theme="dark"] .tool-card:hover,
+[data-theme="dark"] .tip-card:hover {
+  border-color: #c8ff00 !important;
+  box-shadow: 10px 10px 0 #c8ff00 !important;
+}
+
+/* Special accent cards */
+.card--accent {
+  border-color: var(--accent) !important;
+  box-shadow: 6px 6px 0 var(--accent) !important;
+}
+[data-theme="dark"] .card--accent {
+  background: rgba(200, 255, 0, 0.04) !important;
+}
+
+/* Card icon refresh */
+.card__icon,
+.tool-icon-wrap {
+  width: 52px !important;
+  height: 52px !important;
+  border-radius: 14px !important;
+  background: var(--accent) !important;
+  border: 2px solid #0a0a0a !important;
+  box-shadow: 3px 3px 0 #0a0a0a !important;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
+[data-theme="dark"] .card__icon,
+[data-theme="dark"] .tool-icon-wrap {
+  background: #c8ff00 !important;
+}
+
+/* ---------- Badges (used on how-it-works tags, etc.) ---------- */
+.badge {
+  border-radius: 9999px !important;
+  padding: 0.4rem 0.85rem !important;
+  border: 2px solid var(--border-bold) !important;
+  background: var(--bg-card) !important;
+  color: var(--text-primary) !important;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  box-shadow: 2px 2px 0 var(--border-bold);
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+.badge:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 var(--border-bold);
+}
+.badge--accent {
+  background: var(--accent) !important;
+  color: #0a0a0a !important;
+}
+.badge--outline {
+  background: transparent !important;
+  border-color: var(--border-bold) !important;
+  color: var(--text-primary) !important;
+}
+
+/* ---------- FAQ category buttons ---------- */
+.faq-category-btn {
+  border-radius: 9999px !important;
+  padding: 0.55rem 1.1rem !important;
+  font-size: 0.7rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.1em !important;
+  border: 2px solid var(--border-bold) !important;
+  background: var(--bg-card) !important;
+  color: var(--text-primary) !important;
+  box-shadow: 3px 3px 0 var(--border-bold) !important;
+  transition: all 180ms cubic-bezier(0.22, 1, 0.36, 1) !important;
+}
+.faq-category-btn:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 5px 5px 0 var(--border-bold) !important;
+}
+.faq-category-btn--active {
+  background: var(--accent) !important;
+  color: #0a0a0a !important;
+  border-color: #0a0a0a !important;
+  box-shadow: 3px 3px 0 #0a0a0a !important;
+}
+.faq-category-btn--active:hover {
+  box-shadow: 5px 5px 0 #0a0a0a !important;
+}
+
+/* ---------- Accordion polish ---------- */
+.accordion {
+  border-radius: 18px !important;
+  border: 2px solid var(--border-bold) !important;
+  background: var(--bg-card) !important;
+  box-shadow: 6px 6px 0 var(--border-bold) !important;
+  overflow: hidden;
+}
+.accordion__item {
+  border-bottom: 1px solid var(--border-color) !important;
+}
+.accordion__trigger {
+  background: transparent !important;
+  color: var(--text-primary) !important;
+  padding: 1.25rem 1.75rem !important;
+  font-size: clamp(1rem, 1.6vw, 1.18rem) !important;
+  font-weight: 800;
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+  transition: background 180ms ease, color 180ms ease;
+}
+.accordion__trigger:hover {
+  background: rgba(127, 127, 127, 0.06) !important;
+}
+.accordion__trigger[aria-expanded="true"] {
+  background: var(--accent) !important;
+  color: #0a0a0a !important;
+}
+.accordion__icon {
+  width: 32px !important;
+  height: 32px !important;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  font-size: 1rem !important;
+  transition: transform 240ms ease;
+}
+.accordion__trigger[aria-expanded="true"] .accordion__icon {
+  transform: rotate(180deg);
+  background: #0a0a0a;
+  color: var(--accent);
+  border-color: #0a0a0a;
+}
+
+/* ---------- Hover lift utility ---------- */
+.hover-lift {
+  transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow 260ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.hover-lift:hover {
+  transform: translate(-3px, -3px);
+}
+
+/* ---------- Banner / statement strip ---------- */
+.banner {
+  background: #0a0a0a !important;
+  color: #f0f0e8 !important;
+  border-color: #0a0a0a !important;
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+.banner::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 700px;
+  height: 700px;
+  background: radial-gradient(circle, rgba(200, 255, 0, 0.08) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: -1;
+  animation: clex-banner-pulse 8s ease-in-out infinite;
+}
+@keyframes clex-banner-pulse {
+  0%, 100% { opacity: 0.6; transform: translate(-50%, -50%) scale(1); }
+  50% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+}
+.banner__text {
+  font-family: var(--font-display) !important;
+  font-weight: 900 !important;
+  letter-spacing: -0.04em !important;
+  font-size: clamp(2.4rem, 6vw, 5rem) !important;
+  line-height: 0.95 !important;
+  text-transform: none !important;
+  color: #f0f0e8 !important;
+}
+
+/* ---------- CTA strip polish ---------- */
+.cta-strip {
+  background: var(--bg-secondary) !important;
+  border-top: none !important;
+  border-bottom: none !important;
+  padding: 6rem 0 !important;
+  position: relative;
+  overflow: hidden;
+}
+.cta-strip::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(60% 50% at 20% 0%, rgba(107, 77, 255, 0.12), transparent 60%),
+    radial-gradient(60% 50% at 80% 100%, rgba(255, 122, 61, 0.12), transparent 60%);
+  pointer-events: none;
+  z-index: 0;
+}
+.cta-strip > .container { position: relative; z-index: 1; }
+
+/* ---------- Footer dark/light contrast ---------- */
+.footer {
+  background: var(--bg-secondary) !important;
+  border-top-color: var(--border-bold) !important;
+  color: var(--text-primary);
+}
+.footer__desc,
+.footer__link,
+.footer__copyright,
+.footer__legal-link,
+.footer__signature-text {
+  color: var(--text-secondary) !important;
+}
+.footer__col-title,
+.footer__signature-heading {
+  color: var(--text-primary) !important;
+}
+.footer__link:hover,
+.footer__legal-link:hover {
+  color: var(--accent-text) !important;
+}
+
+/* ---------- Workspace + vault page (mostly app shells, ensure nav not broken) ---------- */
+.workspace-shell,
+.vault-shell {
+  min-height: 100vh;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+/* ---------- Fix nav bg on pages without section themes ---------- */
+body:not([class*="section-theme-"]) .nav__inner {
+  background: var(--bg-card) !important;
+  border-color: var(--border-bold) !important;
+  box-shadow: 4px 4px 0 var(--border-bold) !important;
+  color: var(--text-primary) !important;
+}
+body:not([class*="section-theme-"]) .nav__link {
+  color: var(--text-primary) !important;
+}
+[data-theme="dark"] body:not([class*="section-theme-"]) .nav__link {
+  color: var(--text-primary) !important;
+}
+
+/* Apply nav text color for all themes properly */
+.nav__logo,
+.nav__logo-wordmark { color: var(--text-primary) !important; }
+[data-theme="dark"] body.section-theme-cream .nav__logo,
+[data-theme="dark"] body.section-theme-peach .nav__logo,
+[data-theme="dark"] body.section-theme-lavender .nav__logo {
+  color: #0a0a0a !important;
+}
+
+/* ---------- Reveal-on-scroll visible state ---------- */
+.reveal,
+.reveal-right,
+.reveal-scale {
+  opacity: 0;
+  transform: translateY(28px);
+  transition:
+    opacity 700ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 700ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.reveal-right { transform: translateX(28px); }
+.reveal-scale { transform: scale(0.95); }
+.reveal.is-visible,
+.reveal-right.is-visible,
+.reveal-scale.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+/* ---------- Tools (Features page) — accent halo on hover ---------- */
+.tool-card { position: relative; }
+.tool-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 18px;
+  pointer-events: none;
+  background: linear-gradient(135deg, transparent 60%, rgba(200, 255, 0, 0.2) 100%);
+  opacity: 0;
+  transition: opacity 280ms ease;
+}
+.tool-card:hover::after { opacity: 1; }
+
+/* ---------- Code blocks dark/light ---------- */
+pre, code {
+  background: var(--bg-tertiary) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-color) !important;
+}
+
+/* ---------- Universal text contrast on light section backgrounds ---------- */
+.section--cream,
+.section--peach {
+  color: #1a1410;
+}
+.section--cream .card__text,
+.section--peach .card__text { color: #3a342c; }
+
+/* ---------- Mobile menu polish ---------- */
+.nav__mobile-menu {
+  background: var(--bg-primary) !important;
+  border-color: var(--border-bold) !important;
+}
+.nav__mobile-link {
+  color: var(--text-primary) !important;
+  border-bottom-color: var(--border-color) !important;
+}
+
+/* ---------- Theme toggle better visibility ---------- */
+.nav__theme-toggle {
+  width: 38px !important;
+  height: 38px !important;
+  border-radius: 50% !important;
+  border: 2px solid var(--border-bold) !important;
+  background: var(--bg-card) !important;
+  color: var(--text-primary) !important;
+  box-shadow: 3px 3px 0 var(--border-bold) !important;
+  font-size: 1rem !important;
+  transition: all 200ms cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+  cursor: pointer;
+}
+.nav__theme-toggle:hover {
+  transform: translate(-2px, -2px) rotate(15deg);
+  box-shadow: 5px 5px 0 var(--border-bold) !important;
+  background: var(--accent) !important;
+  color: #0a0a0a !important;
+}
+
+/* ---------- Selection color ---------- */
+::selection {
+  background: #c8ff00;
+  color: #0a0a0a;
+}
+
+/* ---------- Scrollbar styling ---------- */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 6px;
+  border: 2px solid var(--bg-secondary);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
+}
+
+/* ---------- Mobile responsive page heroes ---------- */
+@media (max-width: 767px) {
+  .features-hero, .faq-hero, .gs-hero, .hiw-hero, .dev-hero, .chain-hero, .legal-hero {
+    padding: 8rem 0 4rem !important;
+  }
+  .page-hero__title {
+    font-size: clamp(2.4rem, 12vw, 4rem) !important;
+  }
+}
+
+/* ---------- Decorative floating sparkles for any page (auto-injected) ---------- */
+.clex-page-sparkle {
+  position: fixed;
+  pointer-events: none;
+  z-index: 1;
+  font-family: var(--font-italic);
+  color: var(--accent);
+  opacity: 0.35;
+  animation: clex-sparkle-float 6s ease-in-out infinite;
+  font-size: 24px;
+}
+@keyframes clex-sparkle-float {
+  0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0.35; }
+  50% { transform: translateY(-12px) rotate(180deg); opacity: 0.6; }
+}
+
+/* ---------- Loading state for any data-loading element ---------- */
+[data-loading="true"] {
+  position: relative;
+  pointer-events: none;
+}
+[data-loading="true"]::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(200, 255, 0, 0.08), transparent);
+  background-size: 200% 100%;
+  animation: clex-shimmer 1.5s linear infinite;
+  pointer-events: none;
+}
+@keyframes clex-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* ============================================
+   ⚡ LANDING-CONSISTENT PAGE HEROES
+   Auto-injected aurora + decorative markup gets
+   placed inside .features-hero / .faq-hero / etc.
+   ============================================ */
+
+/* Reusable aurora layer (inserted by JS as .clex-hero-aurora) */
+.clex-hero-aurora {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+.clex-hero-aurora__blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.55;
+  will-change: transform;
+  animation: clex-aurora-drift 16s ease-in-out infinite;
+}
+.clex-hero-aurora__blob--a {
+  width: 720px; height: 480px;
+  background: radial-gradient(ellipse, #c4b5ff 0%, transparent 70%);
+  top: 8%; left: -200px;
+}
+.clex-hero-aurora__blob--b {
+  width: 640px; height: 420px;
+  background: radial-gradient(ellipse, #ffc6a5 0%, transparent 70%);
+  top: 30%; right: -160px;
+  animation-delay: 4s;
+}
+.clex-hero-aurora__blob--c {
+  width: 560px; height: 360px;
+  background: radial-gradient(ellipse, #b6f0c4 0%, transparent 70%);
+  bottom: -120px; left: 30%;
+  animation-delay: 8s;
+}
+[data-theme="dark"] .clex-hero-aurora__blob--a { background: radial-gradient(ellipse, rgba(107, 77, 255, 0.55) 0%, transparent 70%); }
+[data-theme="dark"] .clex-hero-aurora__blob--b { background: radial-gradient(ellipse, rgba(255, 122, 61, 0.4) 0%, transparent 70%); }
+[data-theme="dark"] .clex-hero-aurora__blob--c { background: radial-gradient(ellipse, rgba(200, 255, 0, 0.3) 0%, transparent 70%); }
+
+.clex-hero-aurora__noise {
+  position: absolute;
+  inset: 0;
+  opacity: 0.05;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='0.55'/></svg>");
+}
+
+.clex-hero-aurora__sparkle {
+  position: absolute;
+  font-family: var(--font-italic);
+  color: var(--text-primary);
+  opacity: 0.35;
+  animation: clex-sparkle-bob 6s ease-in-out infinite;
+}
+.clex-hero-aurora__sparkle--a { top: 22%; left: 14%; font-size: 24px; animation-delay: 0s; }
+.clex-hero-aurora__sparkle--b { top: 32%; right: 18%; font-size: 32px; animation-delay: 1.5s; }
+.clex-hero-aurora__sparkle--c { bottom: 24%; left: 24%; font-size: 22px; animation-delay: 3s; }
+.clex-hero-aurora__sparkle--d { bottom: 30%; right: 14%; font-size: 26px; animation-delay: 4.5s; }
+@keyframes clex-sparkle-bob {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-10px) rotate(180deg); }
+}
+
+/* Reset hero ::before/::after we added earlier, since aurora layer takes over */
+.features-hero::before, .features-hero::after,
+.faq-hero::before, .faq-hero::after,
+.gs-hero::before, .gs-hero::after,
+.hiw-hero::before, .hiw-hero::after,
+.dev-hero::before, .dev-hero::after,
+.chain-hero::before, .chain-hero::after,
+.legal-hero::before, .legal-hero::after {
+  display: none;
+}
+
+.features-hero,
+.faq-hero,
+.gs-hero,
+.hiw-hero,
+.dev-hero,
+.chain-hero,
+.legal-hero {
+  position: relative;
+  isolation: isolate;
+}
+.features-hero > .container,
+.faq-hero > .container,
+.gs-hero > .container,
+.hiw-hero > .container,
+.dev-hero > .container,
+.chain-hero > .container,
+.legal-hero > .container {
+  position: relative;
+  z-index: 1;
+}
+
+/* ---------- Page hero title with italic accent on 2nd line ---------- */
+.page-hero__title {
+  font-size: clamp(3.6rem, 9vw, 8rem) !important;
+  font-weight: 900 !important;
+  letter-spacing: -0.05em !important;
+  line-height: 0.88 !important;
+  text-transform: none !important;
+  font-family: var(--font-display);
+  max-width: 16ch;
+  margin-bottom: var(--space-md);
+}
+/* The second br'd portion treated as italic accent if wrapped in span by JS */
+.page-hero__title .italic-accent,
+.page-hero__title em {
+  font-family: var(--font-italic);
+  font-style: italic;
+  font-weight: 400;
+  background: linear-gradient(135deg, #6b4dff 0%, #ff7a3d 60%, #ffb800 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-size: 1.06em;
+  letter-spacing: -0.005em;
+  filter: drop-shadow(0 4px 18px rgba(107, 77, 255, 0.25));
+  animation: clex-grad-shift 6s ease-in-out infinite;
+  background-size: 200% 200%;
+}
+[data-theme="dark"] .page-hero__title .italic-accent,
+[data-theme="dark"] .page-hero__title em {
+  background: linear-gradient(135deg, #c8ff00 0%, #b89dff 60%, #ffa370 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+@keyframes clex-grad-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* ---------- Section titles use same accent treatment ---------- */
+.section__title.page-section__title em,
+.section__title.page-section__title .italic-accent,
+.cta-strip__title em,
+.cta-strip__title .italic-accent {
+  font-family: var(--font-italic);
+  font-style: italic;
+  font-weight: 400;
+  background: linear-gradient(135deg, #6b4dff 0%, #ff7a3d 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-size: 1.05em;
+  letter-spacing: -0.005em;
+}
+[data-theme="dark"] .section__title.page-section__title em,
+[data-theme="dark"] .section__title.page-section__title .italic-accent,
+[data-theme="dark"] .cta-strip__title em,
+[data-theme="dark"] .cta-strip__title .italic-accent {
+  background: linear-gradient(135deg, #c8ff00 0%, #b89dff 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.section__title.page-section__title,
+.cta-strip__title {
+  font-family: var(--font-display) !important;
+  font-weight: 900 !important;
+  letter-spacing: -0.05em !important;
+  line-height: 0.92 !important;
+  text-transform: none !important;
+  font-size: clamp(2.4rem, 5.5vw, 4.6rem) !important;
+}
+
+/* ---------- Giant steps (how-it-works) — Creem-style numbered cards ---------- */
+.giant-step {
+  background: var(--bg-card);
+  border: 2px solid var(--border-bold);
+  border-radius: 24px;
+  box-shadow: 8px 8px 0 var(--border-bold);
+  padding: clamp(2rem, 4vw, 3.5rem) !important;
+  margin-bottom: 2.5rem;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.9fr);
+  gap: clamp(1.5rem, 3vw, 3rem);
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+  transition: transform 320ms cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow 320ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.giant-step::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(60% 80% at 0% 0%, rgba(107, 77, 255, 0.08), transparent 50%),
+    radial-gradient(60% 80% at 100% 100%, rgba(255, 122, 61, 0.08), transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+}
+.giant-step:hover {
+  transform: translate(-4px, -4px);
+  box-shadow: 12px 12px 0 var(--border-bold);
+}
+.giant-step > * { position: relative; z-index: 1; }
+.giant-step__number {
+  font-family: var(--font-display);
+  font-size: clamp(3rem, 6vw, 5rem);
+  font-weight: 900;
+  letter-spacing: -0.06em;
+  line-height: 1;
+  background: linear-gradient(135deg, #6b4dff 0%, #ff7a3d 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  margin-bottom: 0.75rem;
+}
+[data-theme="dark"] .giant-step__number {
+  background: linear-gradient(135deg, #c8ff00 0%, #b89dff 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.giant-step__title {
+  font-family: var(--font-display) !important;
+  font-size: clamp(1.8rem, 3.2vw, 2.8rem) !important;
+  font-weight: 900 !important;
+  letter-spacing: -0.04em !important;
+  line-height: 0.95 !important;
+  text-transform: none !important;
+  margin-bottom: 1rem;
+}
+.giant-step__text {
+  color: var(--text-secondary) !important;
+  font-size: 1.02rem !important;
+  line-height: 1.6 !important;
+}
+.giant-step__tags {
+  margin-top: 1.25rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+/* ---------- gs-step (getting-started) similar treatment ---------- */
+.gs-step {
+  background: var(--bg-card);
+  border: 2px solid var(--border-bold);
+  border-radius: 22px !important;
+  box-shadow: 6px 6px 0 var(--border-bold) !important;
+  padding: clamp(1.75rem, 3vw, 2.5rem) !important;
+  margin-bottom: 2rem;
+  border-bottom: 2px solid var(--border-bold) !important;
+  grid-template-columns: 100px 1fr !important;
+  gap: 1.5rem !important;
+  transition: transform 280ms cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow 280ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.gs-step:hover {
+  transform: translate(-3px, -3px);
+  box-shadow: 9px 9px 0 var(--border-bold) !important;
+}
+.gs-step__number {
+  background: linear-gradient(135deg, #6b4dff 0%, #ff7a3d 100%) !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  color: transparent !important;
+  font-size: clamp(2.5rem, 5vw, 4rem) !important;
+  font-weight: 900;
+}
+[data-theme="dark"] .gs-step__number {
+  background: linear-gradient(135deg, #c8ff00 0%, #b89dff 100%) !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  color: transparent !important;
+}
+.gs-step__title {
+  text-transform: none !important;
+  font-weight: 900 !important;
+  font-size: clamp(1.5rem, 2.6vw, 2.25rem) !important;
+}
+.gs-step__tip {
+  border-radius: 14px !important;
+  background: linear-gradient(135deg, rgba(200, 255, 0, 0.18), rgba(107, 77, 255, 0.12)) !important;
+  border: 1.5px solid var(--border-bold) !important;
+  border-left: 4px solid var(--accent) !important;
+  color: var(--text-primary) !important;
+  font-family: var(--font-mono);
+  font-size: 0.85rem !important;
+}
+
+/* ---------- Generic step (.steps .step) ---------- */
+.step__number {
+  font-family: var(--font-display);
+  font-size: clamp(2.5rem, 5vw, 4rem) !important;
+  font-weight: 900 !important;
+  background: linear-gradient(135deg, #6b4dff 0%, #ff7a3d 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent !important;
+  letter-spacing: -0.06em;
+}
+[data-theme="dark"] .step__number {
+  background: linear-gradient(135deg, #c8ff00 0%, #b89dff 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent !important;
+}
+
+/* ---------- Tool card (Features) — pastel gradient corner ---------- */
+.tool-card {
+  border-radius: 22px !important;
+  padding: 2rem !important;
+  position: relative;
+  overflow: hidden;
+}
+.tool-card::before {
+  content: '';
+  position: absolute;
+  top: -40px;
+  right: -40px;
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--card-color, #c8ff00) 0%, transparent 70%);
+  opacity: 0.18;
+  pointer-events: none;
+  transition: opacity 300ms ease, transform 300ms ease;
+}
+.tool-card:hover::before {
+  opacity: 0.32;
+  transform: scale(1.2);
+}
+
+/* ---------- Tool icon — use accent gradient pad ---------- */
+.tool-icon-wrap {
+  width: 56px !important;
+  height: 56px !important;
+  border-radius: 14px !important;
+  background: linear-gradient(135deg, #c4b5ff 0%, #ffc6a5 100%) !important;
+  border: 2px solid #0a0a0a !important;
+  box-shadow: 3px 3px 0 #0a0a0a !important;
+  color: #0a0a0a;
+}
+
+/* ---------- Statement strip on Features ---------- */
+.features-statement {
+  border-radius: 22px !important;
+  border: 2px solid var(--border-bold) !important;
+  background: var(--bg-card) !important;
+  box-shadow: 8px 8px 0 var(--border-bold) !important;
+  padding: 0 !important;
+  overflow: hidden;
+}
+.stat-num {
+  font-family: var(--font-display);
+  background: linear-gradient(135deg, #6b4dff 0%, #ff7a3d 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent !important;
+  font-weight: 900 !important;
+}
+[data-theme="dark"] .stat-num {
+  background: linear-gradient(135deg, #c8ff00 0%, #b89dff 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent !important;
+}
+
+/* ---------- Vault spotlight shell ---------- */
+.vault-spotlight__shell {
+  border-radius: 22px !important;
+  background: var(--bg-card) !important;
+  border: 2px solid var(--border-bold) !important;
+  box-shadow: 8px 8px 0 var(--border-bold) !important;
+  padding: clamp(1.75rem, 3vw, 2.5rem) !important;
+}
+.vault-spotlight__note {
+  border-radius: 16px !important;
+  border: 2px solid var(--border-bold) !important;
+  background: var(--bg-secondary) !important;
+}
+
+/* ---------- HiW protocol card ---------- */
+.hiw-protocol-card {
+  border-radius: 22px;
+  background: var(--bg-card);
+  border: 2px solid var(--border-bold);
+  box-shadow: 6px 6px 0 var(--border-bold);
+  padding: 1.5rem;
+}
+
+/* ---------- Trust items match landing pill style ---------- */
+.trust__item {
+  background: var(--bg-card) !important;
+  border: 2px solid var(--border-bold) !important;
+  box-shadow: 3px 3px 0 var(--border-bold) !important;
+  border-radius: 9999px !important;
+  padding: 0.7rem 1.2rem !important;
+  font-size: 0.78rem !important;
+}
+[data-theme="dark"] .trust__item {
+  background: #141414 !important;
+  border-color: #2f2f2f !important;
+  box-shadow: 3px 3px 0 #c8ff00 !important;
+}
+
+/* ---------- Section bg on darks gets ambient pulse ---------- */
+.section--dark {
+  position: relative;
+  isolation: isolate;
+}
+
+/* ---------- Universal page section header upgrade ---------- */
+.section__header.text-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+/* ---------- Body bg per-theme (fix flash) ---------- */
+[data-theme="dark"] body { background: #0a0a0a; }
+[data-theme="light"] body { background: #f6efdf; }
+
+/* ---------- Workspace + vault shells: clean ---------- */
+.workspace-shell,
+.vault-shell {
+  min-height: 100vh;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+/* ---------- Section dividers smooth color transition ---------- */
+.section-divider {
+  transition: background-color 600ms ease;
+}
+.section-divider path {
+  transition: fill 600ms ease;
+}
+
+/* ---------- "open in lemonade" Creem-style CTA pill on every page CTA ---------- */
+.cta-strip__title { margin-bottom: 1.5rem !important; }
+.cta-strip a.btn--primary,
+.cta-strip a.btn--large {
+  border-radius: 9999px !important;
+  font-family: var(--font-display) !important;
+  font-weight: 900;
+  letter-spacing: -0.005em;
+  text-transform: none !important;
+}
+
+/* ---------- Mobile responsive for new gs/giant ---------- */
+@media (max-width: 767px) {
+  .giant-step {
+    grid-template-columns: 1fr !important;
+    padding: 1.5rem !important;
+  }
+  .gs-step {
+    grid-template-columns: 1fr !important;
+    text-align: left;
+  }
+}
+
+/* ---------- Mascot blinking eyes (re-usable for any page) ---------- */
+.clex-page-mascot {
+  display: inline-flex;
+  gap: 14px;
+  margin-bottom: 1rem;
+  animation: clex-mascot-bob 4s ease-in-out infinite;
+}
+.clex-page-mascot__eye {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 3px solid #0a0a0a;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 3px 3px 0 #0a0a0a;
+  animation: clex-blink 5s ease-in-out infinite;
+}
+.clex-page-mascot__pupil {
+  position: absolute;
+  top: 30%;
+  left: 30%;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: #0a0a0a;
+  animation: clex-pupil-look 6s ease-in-out infinite;
+}
+@keyframes clex-mascot-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+@keyframes clex-blink { 0%, 92%, 96%, 100% { transform: scaleY(1); } 94% { transform: scaleY(0.06); } }
+@keyframes clex-pupil-look {
+  0%, 100% { transform: translate(0,0); }
+  25% { transform: translate(6px,0); }
+  50% { transform: translate(6px,4px); }
+  75% { transform: translate(-4px,2px); }
+}
+
+/* ---------- Section themes minimum contrast for cards on dark bg ---------- */
+[data-theme="dark"] .section--cream .card,
+[data-theme="dark"] .section--peach .card {
+  background: #ffffff !important;
+  color: #0a0a0a !important;
+  border-color: #0a0a0a !important;
+  box-shadow: 6px 6px 0 #0a0a0a !important;
+}
+[data-theme="dark"] .section--cream .card__title,
+[data-theme="dark"] .section--peach .card__title { color: #0a0a0a !important; }
+[data-theme="dark"] .section--cream .card__text,
+[data-theme="dark"] .section--peach .card__text { color: #3a342c !important; }
+
+/* ============================================
+   ⚡ ROUTING PRIMARY CARD — fix contrast
+   ============================================ */
+.routing__method {
+  border: none !important;
+  border-right: 2px solid var(--border-bold) !important;
+  padding: 2.5rem 2rem !important;
+  position: relative;
+}
+.routing__method:last-child { border-right: none !important; }
+.routing__method--primary {
+  background: linear-gradient(180deg, rgba(200, 255, 0, 0.12), transparent 80%) !important;
+}
+.routing__method--primary::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  pointer-events: none;
+}
+.routing__method-title {
+  text-transform: none !important;
+  font-weight: 900 !important;
+}
+.routing__method-stats { gap: 0.4rem !important; }
+.routing__method-stat {
+  border-bottom: 1px dashed var(--border-color) !important;
+}
+
+/* ============================================
+   ⚡ CHAIN HERO — give it landing-style aurora bg
+   ============================================ */
+.chain-hero {
+  background:
+    radial-gradient(80% 60% at 20% 0%, rgba(107, 77, 255, 0.18) 0%, transparent 60%),
+    radial-gradient(60% 50% at 100% 0%, rgba(200, 255, 0, 0.12) 0%, transparent 60%),
+    var(--bg-primary) !important;
+  border-bottom: none !important;
+  padding-top: calc(11rem + env(safe-area-inset-top, 0px)) !important;
+  padding-bottom: 5rem !important;
+}
+[data-theme="light"] .chain-hero {
+  background:
+    radial-gradient(80% 60% at 20% 0%, #fff0c0 0%, transparent 60%),
+    radial-gradient(60% 50% at 100% 0%, #ffd8b8 0%, transparent 60%),
+    var(--bg-primary) !important;
+}
+.chain-hero__title {
+  text-transform: none !important;
+  font-weight: 900 !important;
+}
+.chain-hero__title-accent {
+  background: linear-gradient(135deg, #6b4dff 0%, #ff7a3d 60%, #ffb800 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent !important;
+  font-family: var(--font-italic);
+  font-style: italic;
+  font-weight: 400;
+}
+[data-theme="dark"] .chain-hero__title-accent {
+  background: linear-gradient(135deg, #c8ff00 0%, #b89dff 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent !important;
+}
+.chain-hero__pill {
+  border-radius: 9999px !important;
+  border: 2px solid var(--border-bold) !important;
+  background: var(--bg-card) !important;
+  color: var(--text-primary) !important;
+  font-weight: 800 !important;
+  box-shadow: 2px 2px 0 var(--border-bold) !important;
+  padding: 0.5rem 0.95rem !important;
+}
+.chain-trust__item {
+  color: var(--text-secondary) !important;
+}
+
+/* ============================================
+   ⚡ ACCORDION arrow centered
+   ============================================ */
+.accordion__icon {
+  font-family: var(--font-mono);
+  line-height: 1 !important;
+}
+
+/* ============================================
+   ⚡ NAV ACTIONS workspace btn never bleeds
+   ============================================ */
+.nav__actions .btn--primary,
+.nav__actions .btn--primary::before,
+.nav__actions .btn--primary::after {
+  background-clip: padding-box;
+}
+.nav__actions .btn--primary::after {
+  display: none !important;
+}
+
+/* ============================================
+   ⚡ SECTION DIVIDER — hide if next section bg
+   matches (prevents double horizontal lines)
+   ============================================ */
+.section-divider + .section--dark,
+.section-divider + .section--cream,
+.section-divider + .section--peach,
+.section-divider + .section--lavender {
+  border-top: none !important;
+}
+
+/* ============================================
+   ⚡ Buttons: ensure consistent transform reset
+   ============================================ */
+.pill-btn,
+.btn,
+.faq-category-btn {
+  will-change: transform;
+}
+
+/* ============================================
+   ⚡ "Smart Routing" pill chips look uniform
+   ============================================ */
+.badge--accent {
+  background: var(--accent) !important;
+  color: #0a0a0a !important;
+  border-color: #0a0a0a !important;
+  box-shadow: 2px 2px 0 #0a0a0a !important;
+}
+
+/* ============================================
+   ⚡ Step / Giant-Step responsive padding
+   ============================================ */
+@media (max-width: 600px) {
+  .giant-step, .gs-step {
+    padding: 1.5rem 1.25rem !important;
+  }
+  .giant-step__title, .gs-step__title {
+    font-size: clamp(1.5rem, 7vw, 2rem) !important;
+  }
+}
+
+/* ============================================
+   ⚡ Body root colors fallback for non-themed pages
+   ============================================ */
+body:not([class*="section-theme-"])[data-page="features"],
+body:not([class*="section-theme-"])[data-page="faq"],
+body:not([class*="section-theme-"])[data-page="getting-started"],
+body:not([class*="section-theme-"])[data-page="how-it-works"],
+body:not([class*="section-theme-"])[data-page="chain"],
+body:not([class*="section-theme-"])[data-page="developers"] {
+  background: var(--bg-primary);
+}
+
+/* ============================================
+   ⚡ DARK MODE — full UI override (no partial flip)
+   When user toggles dark, every section + bg flips.
+   Section-theme classes still apply for nav-color
+   morph but bg colors get dark variants.
+   ============================================ */
+[data-theme="dark"] body {
+  background: #0a0a0a !important;
+  color: #f0f0e8;
+}
+
+/* Hero on dark theme — flip cream gradient to dark gradient */
+[data-theme="dark"] .hero,
+[data-theme="dark"] .hero--cinematic {
+  background:
+    radial-gradient(80% 60% at 50% 0%, rgba(107, 77, 255, 0.18) 0%, transparent 60%),
+    radial-gradient(60% 50% at 0% 100%, rgba(255, 122, 61, 0.12) 0%, transparent 60%),
+    radial-gradient(60% 50% at 100% 100%, rgba(200, 255, 0, 0.1) 0%, transparent 60%),
+    linear-gradient(180deg, #0a0a0a 0%, #0f0f0f 100%) !important;
+  color: #f0f0e8 !important;
+}
+[data-theme="dark"] .hero__title,
+[data-theme="dark"] .hero__title--mega {
+  color: #f0f0e8 !important;
+  text-shadow: none;
+}
+[data-theme="dark"] .hero__title-word--soft { color: #f0f0e8 !important; }
+[data-theme="dark"] .hero__subtitle {
+  color: rgba(240, 240, 232, 0.78) !important;
+}
+[data-theme="dark"] .hero__metric-num { color: #f0f0e8 !important; }
+[data-theme="dark"] .hero__metric-label { color: rgba(240, 240, 232, 0.55) !important; }
+
+[data-theme="dark"] .hero__grid-pattern {
+  background-image:
+    linear-gradient(rgba(240, 240, 232, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(240, 240, 232, 0.04) 1px, transparent 1px);
+}
+[data-theme="dark"] .hero__sparkle { color: #f0f0e8; opacity: 0.25; }
+
+[data-theme="dark"] .pill-badge--hero,
+[data-theme="dark"] .hero__feature-pill,
+[data-theme="dark"] .hero__agent-pill,
+[data-theme="dark"] .hero__float-tag {
+  background: #181818 !important;
+  color: #f0f0e8 !important;
+  border-color: #f0f0e8 !important;
+  box-shadow: 4px 4px 0 #f0f0e8 !important;
+}
+[data-theme="dark"] .hero__feature-pill-copy strong { color: #f0f0e8 !important; }
+[data-theme="dark"] .hero__feature-pill-copy em { color: rgba(240, 240, 232, 0.55) !important; }
+[data-theme="dark"] .hero__float-tag { box-shadow: 4px 4px 0 #f0f0e8 !important; }
+[data-theme="dark"] .hero__agent-pill-mono { color: rgba(240, 240, 232, 0.55) !important; }
+[data-theme="dark"] .hero__agent-pill-divider { background: rgba(240, 240, 232, 0.15); }
+[data-theme="dark"] .hero__agent-pill-copy { background: #0a0a0a; color: #f0f0e8; border-color: rgba(240, 240, 232, 0.2); }
+
+/* Section themes: cream/peach/lavender flip dark when [data-theme="dark"] */
+[data-theme="dark"] .section--cream,
+[data-theme="dark"] .section--peach,
+[data-theme="dark"] .section--lavender {
+  background: #0a0a0a !important;
+  color: #f0f0e8 !important;
+}
+[data-theme="dark"] .section--cream .section__title,
+[data-theme="dark"] .section--peach .section__title,
+[data-theme="dark"] .section--lavender .section__title { color: #f0f0e8 !important; }
+[data-theme="dark"] .section--cream .section__subtitle,
+[data-theme="dark"] .section--peach .section__subtitle,
+[data-theme="dark"] .section--lavender .section__subtitle {
+  color: rgba(240, 240, 232, 0.65) !important;
+}
+[data-theme="dark"] .section--cream .card,
+[data-theme="dark"] .section--peach .card,
+[data-theme="dark"] .section--lavender .card {
+  background: #141414 !important;
+  color: #f0f0e8 !important;
+  border-color: #2f2f2f !important;
+  box-shadow: 6px 6px 0 #b89dff !important;
+}
+[data-theme="dark"] .section--cream .card__title,
+[data-theme="dark"] .section--peach .card__title,
+[data-theme="dark"] .section--lavender .card__title { color: #f0f0e8 !important; }
+[data-theme="dark"] .section--cream .card__text,
+[data-theme="dark"] .section--peach .card__text,
+[data-theme="dark"] .section--lavender .card__text { color: rgba(240, 240, 232, 0.7) !important; }
+[data-theme="dark"] .section--cream .card__icon,
+[data-theme="dark"] .section--peach .card__icon {
+  background: #b89dff !important;
+  border-color: #f0f0e8 !important;
+  box-shadow: 3px 3px 0 #f0f0e8 !important;
+  color: #0a0a0a !important;
+}
+
+/* Body section-theme classes flip dark too */
+[data-theme="dark"] body.section-theme-cream,
+[data-theme="dark"] body.section-theme-peach,
+[data-theme="dark"] body.section-theme-lavender {
+  background-color: #0a0a0a !important;
+  color: #f0f0e8 !important;
+}
+
+/* CTA card (cream) flip dark */
+[data-theme="dark"] .cta-card {
+  background: linear-gradient(160deg, #1f1438 0%, #2a1f55 100%) !important;
+  color: #f0f0e8 !important;
+  border-color: #b89dff !important;
+  box-shadow: 10px 10px 0 #6b4dff !important;
+}
+[data-theme="dark"] .cta-card__title { color: #f0f0e8 !important; }
+[data-theme="dark"] .cta-card__text { color: rgba(240, 240, 232, 0.78) !important; }
+[data-theme="dark"] .cta-card__corner { border-color: #b89dff !important; }
+[data-theme="dark"] .cta-card__spine i { background: #b89dff !important; }
+
+/* Featured-on strip dark */
+[data-theme="dark"] .featured-on { color: rgba(240, 240, 232, 0.65); }
+[data-theme="dark"] .featured-on__rule { background: rgba(240, 240, 232, 0.2); }
+[data-theme="dark"] .featured-pill {
+  background: #141414 !important;
+  color: #f0f0e8 !important;
+  border-color: #f0f0e8 !important;
+  box-shadow: 3px 3px 0 #f0f0e8 !important;
+}
+[data-theme="dark"] .featured-pill__title { color: #f0f0e8 !important; }
+[data-theme="dark"] .featured-pill__sub { color: rgba(240, 240, 232, 0.55) !important; }
+
+/* Story microapps eyebrow visibility */
+[data-theme="dark"] .story-microapps__eyebrow { color: #b89dff !important; }
+[data-theme="dark"] .story-microapps__copy { color: rgba(240, 240, 232, 0.7) !important; }
+
+/* Vault story chips dark */
+[data-theme="dark"] .vault-story__chip {
+  background: #141414 !important;
+  color: #f0f0e8 !important;
+  border-color: #f0f0e8 !important;
+}
+
+/* Direct-plus card already has dark variant via [data-theme="dark"] selectors above */
+
+/* Routing primary on dark */
+[data-theme="dark"] .routing__method--primary {
+  background: linear-gradient(180deg, rgba(184, 157, 255, 0.12), transparent 80%) !important;
+}
+
+/* CTA strip (final call to action) flip */
+[data-theme="dark"] .cta-strip { background: #0a0a0a !important; }
+[data-theme="dark"] .cta-strip__title { color: #f0f0e8 !important; }
+
+/* Make light theme also override section-themes consistently */
+[data-theme="light"] body.section-theme-dark {
+  background-color: #0a0a0a !important;
+  color: #f0f0e8 !important;
+}
+[data-theme="light"] .section--dark { background: #0a0a0a !important; color: #f0f0e8 !important; }
+
+/* ============================================
+   ⚡ Theme transition — disable on color flips to
+   eliminate flicker. Only animate body bg.
+   ============================================ */
+.hero, .section, .footer, .nav__inner, .card, .pill-btn, .btn, .pill-badge,
+.hero__title, .section__title, .accordion, .badge {
+  transition:
+    background-color 320ms cubic-bezier(0.65, 0, 0.35, 1),
+    color 320ms cubic-bezier(0.65, 0, 0.35, 1),
+    border-color 320ms cubic-bezier(0.65, 0, 0.35, 1) !important;
+}
+
+/* Disable transition during view-transition reveal so things don't double-fade */
+::view-transition-new(root),
+::view-transition-old(root) {
+  animation: none;
+}
+
+/* ============================================
+   ⚡ FOUC prevention — disable all transitions
+   on first paint until JS removes .preload class
+   ============================================ */
+body.preload *,
+body.preload *::before,
+body.preload *::after {
+  transition: none !important;
+  animation: none !important;
+}
+
+/* ============================================================
+   ✦ POLISH PASS — interactive layer
+   Eye-catchy micro-interactions, focus rings, tracker effects.
+   All animations respect prefers-reduced-motion.
+   ============================================================ */
+
+/* 1. Nav link hover underline glow (additive, sits below the existing ::before pill) */
+@media (prefers-reduced-motion: no-preference) {
+  html .nav .nav__link, .nav .nav__link {
+    transition: color 220ms ease, transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  html .nav .nav__link::after,
+  .nav .nav__link::after {
+    content: '' !important;
+    display: block !important;
+    position: absolute;
+    left: 14%;
+    right: 14%;
+    bottom: 4px;
+    height: 2px;
+    border-radius: 2px;
+    background: var(--accent, #c8ff00);
+    opacity: 0;
+    transform: scaleX(0.4);
+    transform-origin: 50% 50%;
+    box-shadow: 0 0 12px var(--accent, #c8ff00);
+    transition: opacity 240ms ease, transform 320ms cubic-bezier(0.22, 1, 0.36, 1);
+    pointer-events: none;
+  }
+  html .nav .nav__link:hover::after,
+  .nav .nav__link:hover::after,
+  html .nav .nav__link:focus-visible::after,
+  .nav .nav__link:focus-visible::after {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+}
+
+/* 2. Primary button halo — extend to .btn-primary alias as well */
+.btn-primary {
+  position: relative;
+}
+.btn-primary::before {
+  content: '';
+  position: absolute;
+  inset: -10px;
+  border-radius: 9999px;
+  background: radial-gradient(closest-side, rgba(200, 255, 0, 0.55), transparent 70%);
+  filter: blur(20px);
+  opacity: 0;
+  z-index: -1;
+  pointer-events: none;
+  transition: opacity 280ms ease;
+}
+.btn-primary:hover::before { opacity: 1; }
+/* Strengthen the existing .btn--primary halo a touch */
+.btn--primary { isolation: isolate; }
+.btn--primary::before { pointer-events: none; }
+
+/* 3. Card z-index on hover so shadow + halo stack above neighbours */
+.card:hover,
+.tool-card:hover,
+.tip-card:hover,
+.delivery-flow__node:hover {
+  position: relative;
+  z-index: 2;
+}
+
+/* 4. Footer social icons — add scale + tilt on hover, layering with existing translate */
+@media (prefers-reduced-motion: no-preference) {
+  .footer__social,
+  .footer__social a,
+  .social-link {
+    transition: transform 260ms cubic-bezier(0.34, 1.56, 0.64, 1),
+                background 220ms ease, color 220ms ease, border-color 220ms ease,
+                box-shadow 260ms ease;
+  }
+  .footer__social:hover,
+  .footer__socials a:hover,
+  .social-link:hover {
+    transform: translate(-2px, -2px) scale(1.08) rotate(-2deg);
+    box-shadow: 0 8px 22px rgba(255, 122, 61, 0.32);
+  }
+}
+
+/* 5. CTA focus rings + cursor */
+.btn,
+.btn--primary,
+.btn--ghost,
+.btn-primary,
+.pill-btn,
+.nav__link,
+a.cta,
+button.cta {
+  cursor: pointer;
+}
+.btn:focus-visible,
+.pill-btn:focus-visible,
+.nav__link:focus-visible,
+a.cta:focus-visible,
+button.cta:focus-visible {
+  outline: 3px solid var(--accent, #c8ff00) !important;
+  outline-offset: 2px !important;
+  border-radius: inherit;
+}
+
+/* 6. Scroll progress bar — fixed at top of viewport */
+.clex-scroll-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 2px;
+  width: 100%;
+  pointer-events: none;
+  z-index: 100;
+  background: transparent;
+}
+.clex-scroll-progress__bar {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--accent, #c8ff00), var(--accent-warm, #ff7a3d));
+  box-shadow: 0 0 8px rgba(200, 255, 0, 0.55);
+  transform-origin: 0 50%;
+  will-change: width;
+  transition: width 80ms linear;
+}
+@media (prefers-reduced-motion: reduce) {
+  .clex-scroll-progress__bar { transition: none; }
+}
+
+/* 8. Chunk grid wave stagger — drive delay from --row, override the inline */
+@media (prefers-reduced-motion: no-preference) {
+  .chunk-grid__cell {
+    animation-delay: calc(var(--row, 0) * 0.1s + var(--col, 0) * 0.04s);
+  }
+}
+
+/* 9. Peer-pipe packets glow */
+.peer-pipe__packet {
+  filter: drop-shadow(0 0 8px var(--accent-warm, #ff7a3d));
+}
+
+/* 10. Section dividers — smooth fill transition */
+.section-divider path {
+  transition: fill 600ms ease;
+}
+
+/* 11. Floating tags depth */
+.floating-tag,
+.float-tag,
+.hero__float-tag {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  filter: drop-shadow(0 0 8px rgba(200, 255, 0, 0.2));
+}
+[data-theme="dark"] .floating-tag,
+[data-theme="dark"] .float-tag,
+[data-theme="dark"] .hero__float-tag {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45), 4px 4px 0 #f0f0e8 !important;
+  filter: drop-shadow(0 0 10px rgba(200, 255, 0, 0.28));
+}
+
+/* 12. Bento inner glow on hover */
+.bento__cell {
+  transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow 260ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.bento__cell:hover {
+  box-shadow: 9px 9px 0 var(--border-bold, #0a0a0a),
+              inset 0 0 20px rgba(200, 255, 0, 0.1);
+}
+
+/* 13. DPC blob freeze on hover */
+.dpc-card:hover .dpc-card__blob,
+.dpc-card:hover::before,
+.dpc-card:hover::after {
+  animation-play-state: paused;
+}
+
+/* 14. Accordion hover background */
+.accordion__trigger:hover:not([aria-expanded='true']) {
+  background: var(--accent-soft, rgba(200, 255, 0, 0.12)) !important;
+}
+
+/* 15. Hamburger hover */
+.nav__hamburger:hover .nav__hamburger-line {
+  background: var(--accent, #c8ff00) !important;
+}
+
+/* 16. Stat counter pulse on completion */
+@keyframes clex-stat-pulse-glow {
+  0%   { box-shadow: 0 0 0 0 rgba(200, 255, 0, 0); }
+  40%  { box-shadow: 0 0 24px 6px rgba(200, 255, 0, 0.42); }
+  100% { box-shadow: 0 0 0 0 rgba(200, 255, 0, 0); }
+}
+.pulse-glow {
+  animation: clex-stat-pulse-glow 0.6s ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pulse-glow { animation: none; }
+}
+
+/* 17. Copy button loading state */
+[data-loading='true'] {
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+/* 18. Routing primary card hover lift + shadow */
+@media (prefers-reduced-motion: no-preference) {
+  .routing__method--primary {
+    transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1),
+                box-shadow 260ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .routing__method--primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 32px rgba(107, 77, 255, 0.28),
+                6px 6px 0 var(--c-ink, #0a0a0a);
+  }
+}
+
+/* ── Custom cursor follower (only on fine pointer + hover capable) ── */
+@media (hover: hover) and (pointer: fine) {
+  .clex-cursor-follower {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #fff;
+    mix-blend-mode: difference;
+    pointer-events: none;
+    z-index: 9999;
+    transform: translate3d(-100px, -100px, 0);
+    transition: width 200ms ease, height 200ms ease, opacity 220ms ease;
+    opacity: 0;
+    will-change: transform;
+  }
+  .clex-cursor-follower.is-active { opacity: 1; }
+  .clex-cursor-follower.is-hot {
+    width: 32px;
+    height: 32px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .clex-cursor-follower { display: none !important; }
+}
+@media (hover: none), (pointer: coarse) {
+  .clex-cursor-follower { display: none !important; }
+}
+
+/* ── Subtle SVG noise grain overlay on body for cinematic texture ── */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9998;
+  opacity: 0.04;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.7 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  background-size: 240px 240px;
+}
+@media (prefers-reduced-motion: reduce) {
+  body::after { opacity: 0.025; }
+}

@@ -9,6 +9,7 @@ export function initHeroEffects() {
   initMagnetic();
   initTilt();
   initBlobParallax();
+  initAgentPillCopy();
   initRevealOnce();
 }
 
@@ -90,6 +91,30 @@ function initBlobParallax() {
   };
   window.addEventListener('scroll', onScroll, { passive: true });
   onScroll();
+}
+
+function initAgentPillCopy() {
+  const btn = document.querySelector('.hero__agent-pill-copy');
+  if (!(btn instanceof HTMLButtonElement)) return;
+  const mono = document.querySelector('.hero__agent-pill-mono');
+  btn.addEventListener('click', async () => {
+    const text = mono?.textContent?.trim() || 'https://clex.in/workspace';
+    btn.dataset.loading = 'true';
+    try {
+      await navigator.clipboard.writeText(text);
+      const original = btn.innerHTML;
+      btn.textContent = '✓';
+      btn.style.background = '#c8ff00';
+      setTimeout(() => {
+        btn.innerHTML = original;
+        btn.style.background = '';
+      }, 1400);
+    } catch {
+      // clipboard not available — ignore
+    } finally {
+      delete btn.dataset.loading;
+    }
+  });
 }
 
 function initRevealOnce() {

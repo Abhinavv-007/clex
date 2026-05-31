@@ -129,7 +129,15 @@
         <a href="/faq" class="nav__link" data-page="faq">FAQ</a>
       </div>
       <div class="nav__actions">
-        <button class="nav__theme-toggle" id="theme-toggle" aria-label="Toggle theme">☀</button>
+        <button class="nav__theme-toggle" id="theme-toggle" aria-label="Toggle theme">
+          <svg class="nav__theme-toggle-icon nav__theme-toggle-icon--sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="4"/>
+            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
+          </svg>
+          <svg class="nav__theme-toggle-icon nav__theme-toggle-icon--moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+          </svg>
+        </button>
         <a href="/workspace" class="btn btn--primary btn--small desktop-only">Open Workspace →</a>
       </div>
       <button class="nav__hamburger" id="nav-hamburger" aria-label="Toggle menu">
@@ -153,27 +161,62 @@
   </div>
 
   <!-- ═══ Hero Section ═══ -->
-  <section class="hero" id="hero" data-section-theme="cream" data-spotlight>
+  <section class="hero hero--cinematic" id="hero" data-section-theme="cream" data-spotlight>
     <div class="hero__bg" aria-hidden="true">
+      <div class="hero__noise"></div>
       <div class="hero__grid-pattern"></div>
       <div class="hero__spotlight"></div>
-      <span class="hero__blob hero__blob--lime" data-parallax="-0.08"></span>
-      <span class="hero__blob hero__blob--peach" data-parallax="0.12"></span>
+      <div class="hero__aurora hero__aurora--a" data-parallax="-0.05"></div>
+      <div class="hero__aurora hero__aurora--b" data-parallax="0.08"></div>
+      <div class="hero__aurora hero__aurora--c" data-parallax="-0.03"></div>
       <span class="hero__blob hero__blob--lavender" data-parallax="-0.05"></span>
+      <span class="hero__blob hero__blob--peach" data-parallax="0.12"></span>
+      <span class="hero__blob hero__blob--lime" data-parallax="-0.08"></span>
+
+      <!-- Floating decorative cards drifting in background -->
+      <span class="hero__float-tag hero__float-tag--a" data-float="0.6">
+        <span class="hero__float-tag-dot" style="background:#34c759"></span>
+        Direct P2P
+      </span>
+      <span class="hero__float-tag hero__float-tag--b" data-float="-0.7">
+        <span class="hero__float-tag-dot" style="background:#ff7a3d"></span>
+        Zero Storage
+      </span>
+      <span class="hero__float-tag hero__float-tag--c" data-float="0.5">
+        <span class="hero__float-tag-dot" style="background:#6b4dff"></span>
+        Encrypted Vault
+      </span>
+      <span class="hero__float-tag hero__float-tag--d" data-float="-0.5">
+        <span class="hero__float-tag-dot" style="background:#25b6e8"></span>
+        WebRTC
+      </span>
+
       <span class="hero__sparkle hero__sparkle--a">✦</span>
       <span class="hero__sparkle hero__sparkle--b">✧</span>
       <span class="hero__sparkle hero__sparkle--c">✦</span>
+      <span class="hero__sparkle hero__sparkle--d">✧</span>
     </div>
 
     <div class="container hero__container">
       <div class="hero__lead" data-reveal>
-        <span class="pill-badge">
+        <span class="pill-badge pill-badge--hero">
           <span class="pill-badge__dot"></span>
           Privacy-First File Workspace
+          <span class="pill-badge__chip">v2.0</span>
         </span>
       </div>
 
-      <h1 class="hero__title" data-reveal>
+      <!-- Animated mascot eye that blinks (Creem-style) -->
+      <div class="hero__mascot" aria-hidden="true" data-reveal>
+        <span class="hero__mascot-eye">
+          <span class="hero__mascot-pupil"></span>
+        </span>
+        <span class="hero__mascot-eye hero__mascot-eye--right">
+          <span class="hero__mascot-pupil"></span>
+        </span>
+      </div>
+
+      <h1 class="hero__title hero__title--mega" data-reveal>
         <span class="hero__title-row">
           <span class="hero__title-word">Drop.</span>
           <span class="hero__title-word">Prepare.</span>
@@ -185,8 +228,22 @@
       </h1>
 
       <p class="hero__subtitle lead" data-reveal>
-        One browser-based workspace to prepare and deliver files — with direct P2P transfer, smart tools, and zero server storage.
+        One browser-based workspace to prepare and deliver files —
+        with <strong>direct P2P transfer</strong>, smart tools, and <strong>zero server storage</strong>.
       </p>
+
+      <!-- AI agent pill (Creem-inspired) -->
+      <div class="hero__agent-pill" data-reveal>
+        <span class="hero__agent-pill-icon" aria-hidden="true">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        </span>
+        <span class="hero__agent-pill-text">No signup, no install</span>
+        <span class="hero__agent-pill-divider"></span>
+        <span class="hero__agent-pill-mono">clex.in/workspace</span>
+        <button class="hero__agent-pill-copy" aria-label="Copy link" type="button">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        </button>
+      </div>
 
       <div class="hero__actions" data-reveal>
         <a href="/workspace" class="pill-btn pill-btn--primary magnetic" data-magnetic="0.22">
@@ -198,28 +255,81 @@
         </a>
       </div>
 
-      <div class="hero__metrics" data-reveal>
-        <div class="hero__metric">
-          <span class="hero__metric-num">0</span>
-          <span class="hero__metric-label">files stored on our servers</span>
+      <!-- Feature trio pills below CTA (Creem-style "Merchant of Record / Revenue Splits / Affiliates") -->
+      <div class="hero__feature-trio" data-reveal>
+        <span class="hero__feature-pill">
+          <span class="hero__feature-pill-icon hero__feature-pill-icon--lavender">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </span>
+          <span class="hero__feature-pill-copy">
+            <strong>Direct P2P</strong>
+            <em>Browser to browser</em>
+          </span>
+        </span>
+        <span class="hero__feature-pill">
+          <span class="hero__feature-pill-icon hero__feature-pill-icon--peach">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+          </span>
+          <span class="hero__feature-pill-copy">
+            <strong>Smart Routing</strong>
+            <em>Fastest path always</em>
+          </span>
+        </span>
+        <span class="hero__feature-pill">
+          <span class="hero__feature-pill-icon hero__feature-pill-icon--green">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          </span>
+          <span class="hero__feature-pill-copy">
+            <strong>Vault Notes</strong>
+            <em>Encrypted by default</em>
+          </span>
+        </span>
+      </div>
+
+      <div class="stat-orbs" data-reveal>
+        <div class="stat-orb">
+          <span class="stat-orb__num" data-count-to="0">0</span>
+          <span class="stat-orb__label">files stored on our servers</span>
         </div>
-        <div class="hero__metric">
-          <span class="hero__metric-num">P2P</span>
-          <span class="hero__metric-label">browser-to-browser via WebRTC</span>
+        <div class="stat-orb">
+          <span class="stat-orb__num">P2P</span>
+          <span class="stat-orb__label">browser-to-browser via WebRTC</span>
         </div>
-        <div class="hero__metric">
-          <span class="hero__metric-num">∞</span>
-          <span class="hero__metric-label">tools chained in one tab</span>
+        <div class="stat-orb">
+          <span class="stat-orb__num">∞</span>
+          <span class="stat-orb__label">tools chained in one tab</span>
+        </div>
+        <div class="stat-orb">
+          <span class="stat-orb__num" data-count-to="100" data-count-suffix="%">0%</span>
+          <span class="stat-orb__label">end-to-end encrypted</span>
         </div>
       </div>
 
       <div class="hero__visual" data-reveal>
-        <div id="hero-workspace-island"></div>
+        <div class="data-stream" aria-hidden="true">
+          <div class="data-stream__row"><span class="data-stream__tag data-stream__tag--lav">DROP</span><span class="data-stream__msg">photo.heic · 4.2 MB · captured today</span><span class="data-stream__time">00:00</span></div>
+          <div class="data-stream__row"><span class="data-stream__tag data-stream__tag--peach">PREP</span><span class="data-stream__msg">→ webp · 480 KB · 88% smaller</span><span class="data-stream__time">00:01</span></div>
+          <div class="data-stream__row"><span class="data-stream__tag">P2P</span><span class="data-stream__msg">peer reachable · WebRTC handshake complete</span><span class="data-stream__time">00:02</span></div>
+          <div class="data-stream__row"><span class="data-stream__tag data-stream__tag--yellow">CHUNK</span><span class="data-stream__msg">256KB · SHA-256 verified · 12/12</span><span class="data-stream__time">00:03</span></div>
+          <div class="data-stream__row"><span class="data-stream__tag">ACK</span><span class="data-stream__msg">all chunks acknowledged · 0 retries</span><span class="data-stream__time">00:04</span></div>
+          <div class="data-stream__row"><span class="data-stream__tag data-stream__tag--lav">DONE</span><span class="data-stream__msg">receipt · proof root hash · file delivered</span><span class="data-stream__time">00:05</span></div>
+          <div class="data-stream__row"><span class="data-stream__tag data-stream__tag--peach">VAULT</span><span class="data-stream__msg">note encrypted · synced to paired device</span><span class="data-stream__time">00:06</span></div>
+          <div class="data-stream__row"><span class="data-stream__tag">LAN</span><span class="data-stream__msg">192.168.1.42 ↔ 192.168.1.87 · 920 Mbps</span><span class="data-stream__time">00:07</span></div>
+          <div class="data-stream__row"><span class="data-stream__tag data-stream__tag--yellow">PDF</span><span class="data-stream__msg">3 pages merged · 1.2MB → ZIP bundle</span><span class="data-stream__time">00:08</span></div>
+          <div class="data-stream__row"><span class="data-stream__tag">P2P</span><span class="data-stream__msg">new peer joined · idle</span><span class="data-stream__time">00:09</span></div>
+        </div>
+        <div id="hero-workspace-island" hidden></div>
+      </div>
+
+      <!-- Scroll indicator -->
+      <div class="hero__scroll-indicator" aria-hidden="true">
+        <span class="hero__scroll-indicator-text">scroll</span>
+        <span class="hero__scroll-indicator-line"></span>
       </div>
     </div>
 
-    <svg class="section-divider section-divider--cream-to-dark" viewBox="0 0 1440 80" preserveAspectRatio="none" aria-hidden="true">
-      <path d="M0,40 C240,80 480,0 720,40 C960,80 1200,0 1440,40 L1440,80 L0,80 Z"></path>
+    <svg class="section-divider section-divider--cream-to-dark section-divider--mega" viewBox="0 0 1440 120" preserveAspectRatio="none" aria-hidden="true">
+      <path d="M0,60 C160,120 320,0 480,40 C640,80 800,20 960,60 C1120,100 1280,30 1440,60 L1440,120 L0,120 Z"></path>
     </svg>
   </section>
 
@@ -314,16 +424,47 @@
 
       <div class="story-microapps">
         <div class="story-microapps__header reveal">
-          <span class="story-microapps__eyebrow">Interactive Windows</span>
+          <span class="story-microapps__eyebrow">Live Demo</span>
           <p class="story-microapps__copy">
-            The same windowed micro-apps drive the full product flow: drop in, prepare in place, then choose the fastest route out.
+            Drop a file, see how it travels through the workspace and out to its destination.
           </p>
         </div>
 
-        <div class="story-microapps__grid stagger-group">
-          <div id="home-drop-island" class="story-microapps__item reveal"></div>
-          <div id="home-tools-island" class="story-microapps__item reveal"></div>
-          <div id="home-route-island" class="story-microapps__item reveal"></div>
+        <!-- Stacked pastel flow card replaces old island grid -->
+        <div class="creem-stack reveal" aria-label="Workspace flow">
+          <div class="creem-stack__card creem-stack__card--lavender">
+            <span class="creem-stack__tag">Drop</span>
+            <span class="creem-stack__title">photo.heic</span>
+            <span class="creem-stack__sub">4.2 MB · captured today</span>
+            <span class="creem-stack__glyph creem-stack__glyph--down" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
+            </span>
+            <span class="creem-stack__arrow" aria-hidden="true"></span>
+          </div>
+          <div class="creem-stack__card creem-stack__card--peach">
+            <span class="creem-stack__tag">Prepare</span>
+            <span class="creem-stack__title">→ webp · 480 KB</span>
+            <span class="creem-stack__sub">88% smaller · same quality</span>
+            <span class="creem-stack__glyph" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m13 2-9 13h6l-2 7 9-13h-6l2-7z"/></svg>
+            </span>
+            <span class="creem-stack__arrow" aria-hidden="true"></span>
+          </div>
+          <div class="creem-stack__card creem-stack__card--mint">
+            <span class="creem-stack__tag">Share</span>
+            <span class="creem-stack__title">Direct P2P</span>
+            <span class="creem-stack__sub">peer reachable · WebRTC</span>
+            <span class="creem-stack__glyph creem-stack__glyph--right" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </span>
+          </div>
+        </div>
+
+        <!-- Hidden islands kept for legacy code that may still mount; keep IDs but invisible -->
+        <div class="story-microapps__legacy" hidden>
+          <div id="home-drop-island"></div>
+          <div id="home-tools-island"></div>
+          <div id="home-route-island"></div>
         </div>
       </div>
     </div>
@@ -429,6 +570,42 @@
           Older Clex peers stay compatible — Direct+ only turns on when both devices support it.
           Want to drive transfers from a script or terminal? Read the <a href="/developers" class="link">Developers reference</a>.
         </p>
+
+        <!-- Live chunk visualizer (Direct+ proof) -->
+        <div class="chunk-grid" aria-hidden="true">
+          <span class="chunk-grid__cell" style="animation-delay:0s"></span>
+          <span class="chunk-grid__cell" style="animation-delay:.05s"></span>
+          <span class="chunk-grid__cell" style="animation-delay:.1s"></span>
+          <span class="chunk-grid__cell" style="animation-delay:.15s"></span>
+          <span class="chunk-grid__cell" style="animation-delay:.2s"></span>
+          <span class="chunk-grid__cell" style="animation-delay:.25s"></span>
+          <span class="chunk-grid__cell" style="animation-delay:.3s"></span>
+          <span class="chunk-grid__cell" style="animation-delay:.35s"></span>
+          <span class="chunk-grid__cell" style="animation-delay:.4s"></span>
+          <span class="chunk-grid__cell" style="animation-delay:.45s"></span>
+          <span class="chunk-grid__cell" style="animation-delay:.5s"></span>
+          <span class="chunk-grid__cell" style="animation-delay:.55s"></span>
+          <span class="chunk-grid__cell" style="animation-delay:.6s"></span>
+          <span class="chunk-grid__cell" style="animation-delay:.65s"></span>
+          <span class="chunk-grid__cell" style="animation-delay:.7s"></span>
+          <span class="chunk-grid__cell" style="animation-delay:.75s"></span>
+          <span class="chunk-grid__cell" style="animation-delay:.8s"></span>
+          <span class="chunk-grid__cell" style="animation-delay:.85s"></span>
+          <span class="chunk-grid__cell" style="animation-delay:.9s"></span>
+          <span class="chunk-grid__cell" style="animation-delay:.95s"></span>
+          <span class="chunk-grid__cell" style="animation-delay:1s"></span>
+          <span class="chunk-grid__cell" style="animation-delay:1.05s"></span>
+          <span class="chunk-grid__cell" style="animation-delay:1.1s"></span>
+          <span class="chunk-grid__cell" style="animation-delay:1.15s"></span>
+          <span class="chunk-grid__cell" style="animation-delay:1.2s"></span>
+          <span class="chunk-grid__cell" style="animation-delay:1.25s"></span>
+          <span class="chunk-grid__cell" style="animation-delay:1.3s"></span>
+          <span class="chunk-grid__cell" style="animation-delay:1.35s"></span>
+          <span class="chunk-grid__cell" style="animation-delay:1.4s"></span>
+          <span class="chunk-grid__cell" style="animation-delay:1.45s"></span>
+          <span class="chunk-grid__cell" style="animation-delay:1.5s"></span>
+          <span class="chunk-grid__cell" style="animation-delay:1.55s"></span>
+        </div>
       </div>
     </div>
   </section>
@@ -454,11 +631,54 @@
     </div>
 
     <div class="container--wide" style="max-width: var(--container-wide); margin: 0 auto; padding: 0 var(--container-padding);">
-      <div class="routing-mock-container reveal">
-        <div id="routing-engine-island" style="max-width: 800px; margin: 0 auto 4rem;"></div>
+      <!-- Orbit constellation: Clex core orbited by peers -->
+      <div class="orbit-stage reveal" aria-hidden="true">
+        <span class="orbit-pulse"></span>
+        <span class="orbit-pulse orbit-pulse--2"></span>
+        <span class="orbit-pulse orbit-pulse--3"></span>
+        <div class="orbit-core">
+          <span class="orbit-core__mark">C</span>
+          <span class="orbit-core__dot"></span>
+        </div>
+        <div class="orbit-node orbit-node--peer1">
+          <span class="orbit-node__label">P2P</span>
+        </div>
+        <div class="orbit-node orbit-node--peer2">
+          <span class="orbit-node__label">LAN</span>
+        </div>
+        <div class="orbit-node orbit-node--peer3">
+          <span class="orbit-node__label">Drive</span>
+        </div>
+      </div>
+      <div id="routing-engine-island" hidden></div>
+
+      <!-- Live peer-to-peer transfer animation -->
+      <div class="peer-flow reveal">
+        <div class="peer-node peer-node--lavender">
+          <span class="peer-node__chip"><span class="peer-node__chip-dot"></span>Sender</span>
+          <span class="peer-node__avatar"><span class="peer-node__monogram">A</span></span>
+          <span class="peer-node__name">Your browser</span>
+          <span class="peer-node__meta">Chrome · 192.168.1.42</span>
+        </div>
+        <div class="peer-pipe" aria-hidden="true">
+          <span class="peer-pipe__fill"></span>
+          <span class="peer-pipe__packet"></span>
+          <span class="peer-pipe__packet"></span>
+          <span class="peer-pipe__packet"></span>
+          <span class="peer-pipe__label">
+            <span class="eq-bars" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></span>
+            &nbsp;WebRTC · 256 KB chunks · ACK / retry
+          </span>
+        </div>
+        <div class="peer-node peer-node--peach">
+          <span class="peer-node__chip"><span class="peer-node__chip-dot"></span>Receiver</span>
+          <span class="peer-node__avatar"><span class="peer-node__monogram">B</span></span>
+          <span class="peer-node__name">Their browser</span>
+          <span class="peer-node__meta">Safari · LAN ready</span>
+        </div>
       </div>
 
-      <div class="routing__grid stagger-group">
+      <div class="routing__grid stagger-group" style="margin-top: 3rem;">
         <div class="routing__method routing__method--primary">
           <div class="routing__method-badge">
             <span class="badge badge--accent">
@@ -568,52 +788,64 @@
           <span class="pill-badge__icon">✦</span>
           Built-In Tools
         </span>
-        <h2 class="section__title section__title--mixed">Prepare files<br><span class="italic-accent italic-accent--peach">without leaving the tab.</span></h2>
-      </div>
-    </div>
-
-    <div class="container--wide" style="max-width: var(--container-wide); margin: 0 auto; padding: 0 var(--container-padding);">
-      <div class="features-grid stagger-group">
-        <div class="card">
-          <div class="card__icon">🖼</div>
-          <h3 class="card__title">Image Tools</h3>
-          <p class="card__text">Compress, resize, convert between formats. JPEG, PNG, WebP, SVG — all in-browser.</p>
-        </div>
-        <div class="card">
-          <div class="card__icon">📄</div>
-          <h3 class="card__title">PDF Operations</h3>
-          <p class="card__text">Merge pages, split documents, extract sections, export — full PDF control without leaving Clex.</p>
-        </div>
-        <div class="card">
-          <div class="card__icon">🔄</div>
-          <h3 class="card__title">DOCX → PDF</h3>
-          <p class="card__text">Drop a Word document, get a PDF. Clean conversion, instant result, no external service.</p>
-        </div>
-        <div class="card">
-          <div class="card__icon">📦</div>
-          <h3 class="card__title">ZIP Bundling</h3>
-          <p class="card__text">Select multiple files, bundle them into a single ZIP archive for clean, organized delivery.</p>
-        </div>
-        <div class="card">
-          <div class="card__icon">⛓</div>
-          <h3 class="card__title">Smart Chaining</h3>
-          <p class="card__text">Compress an image, then merge into a PDF, then ZIP it — operations chain together naturally.</p>
-        </div>
-        <div class="card">
-          <div class="card__icon">📡</div>
-          <h3 class="card__title">Offline Ready</h3>
-          <p class="card__text">Once loaded, Clex works without internet. Process files locally, share when you're back online.</p>
-        </div>
+        <h2 class="section__title section__title--mixed">Prepare files<br><em class="italic-accent">without leaving the tab.</em></h2>
       </div>
 
-      <div class="features-preview__demo reveal">
-        <div class="features-preview__demo-header">
-          <span class="features-preview__demo-eyebrow">Chain Tools</span>
-          <p class="features-preview__demo-copy">
-            Compress, convert, bundle, then share without leaving the workspace.
-          </p>
+      <!-- Bento spotlight: tools at a glance -->
+      <div class="bento reveal">
+        <div class="bento__cell bento__cell--big bento__cell--lavender">
+          <span class="bento__tag">Image Tools</span>
+          <h3 class="bento__title">Compress, resize, convert<br>without ever leaving the tab.</h3>
+          <p class="bento__sub">JPEG · PNG · WebP · AVIF · SVG. Zero upload. Pure browser.</p>
+          <span class="bento__big-num" data-count-to="80" data-count-suffix="%">0%</span>
+          <span class="bento__sub">smaller files on average</span>
         </div>
-        <div id="home-chain-flow-island" class="features-preview__demo-flow"></div>
+        <div class="bento__cell bento__cell--tall bento__cell--peach">
+          <span class="bento__tag">PDF Suite</span>
+          <h3 class="bento__title">Merge, split, extract.</h3>
+          <p class="bento__sub">Drag pages between PDFs visually.</p>
+        </div>
+        <div class="bento__cell bento__cell--small bento__cell--mint">
+          <span class="bento__tag">DOCX → PDF</span>
+          <h3 class="bento__title">Word goes in.<br>PDF comes out.</h3>
+        </div>
+        <div class="bento__cell bento__cell--small bento__cell--yellow">
+          <span class="bento__tag">ZIP Bundles</span>
+          <h3 class="bento__title">Pack everything in one.</h3>
+        </div>
+        <div class="bento__cell bento__cell--wide bento__cell--ink">
+          <span class="bento__tag">Smart Chaining</span>
+          <h3 class="bento__title">Compress → Convert → Merge → ZIP — one continuous flow.</h3>
+          <p class="bento__sub">Operations chain automatically. No re-upload between steps.</p>
+        </div>
+        <div class="bento__cell bento__cell--small">
+          <span class="bento__tag">Offline</span>
+          <h3 class="bento__title">Works without internet.</h3>
+        </div>
+        <div class="bento__cell bento__cell--small bento__cell--lavender">
+          <span class="bento__tag">No Account</span>
+          <h3 class="bento__title">No login. No friction.</h3>
+        </div>
+      </div>
+
+      <!-- Big numbers row -->
+      <div class="creem-counter reveal">
+        <div class="creem-counter__cell">
+          <div class="creem-counter__num" data-count-to="0">0</div>
+          <div class="creem-counter__label">files stored on our servers</div>
+        </div>
+        <div class="creem-counter__cell">
+          <div class="creem-counter__num" data-count-to="256" data-count-suffix=" KB">0</div>
+          <div class="creem-counter__label">verified chunk size</div>
+        </div>
+        <div class="creem-counter__cell">
+          <div class="creem-counter__num" data-count-to="100" data-count-suffix="%">0%</div>
+          <div class="creem-counter__label">browser-to-browser routing</div>
+        </div>
+        <div class="creem-counter__cell">
+          <div class="creem-counter__num" data-count-to="24" data-count-suffix="h">0h</div>
+          <div class="creem-counter__label">vault auto-cleanup</div>
+        </div>
       </div>
     </div>
   </section>
@@ -631,35 +863,118 @@
           <span class="pill-badge__dot"></span>
           Built Different
         </span>
-        <h2 class="section__title section__title--mixed">Loved by people<br><span class="italic-accent">who hate clutter.</span></h2>
+        <h2 class="section__title section__title--mixed">Loved by people<br><em class="italic-accent">who hate clutter.</em></h2>
       </div>
       <p class="section__subtitle mx-auto reveal" style="margin-bottom: var(--space-2xl);">
         Clex is designed around the idea that your files are yours, and they should move fast.
       </p>
-      <div class="trust__items stagger-group">
+
+      <!-- Creem-style stacked pastel cards: visualizes the Drop → Prepare → Share flow -->
+      <div class="creem-stack reveal" aria-label="The Clex workspace flow">
+        <div class="creem-stack__card creem-stack__card--lavender">
+          <span class="creem-stack__tag">Step 01</span>
+          <span class="creem-stack__title">Drop files</span>
+          <span class="creem-stack__sub">PDF · Image · DOCX · ZIP</span>
+          <span class="creem-stack__glyph" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+          </span>
+          <span class="creem-stack__arrow" aria-hidden="true"></span>
+        </div>
+        <div class="creem-stack__card creem-stack__card--peach">
+          <span class="creem-stack__tag">Step 02</span>
+          <span class="creem-stack__title">Prepare in-tab</span>
+          <span class="creem-stack__sub">Compress · Merge · Convert</span>
+          <span class="creem-stack__glyph" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+          </span>
+          <span class="creem-stack__arrow" aria-hidden="true"></span>
+        </div>
+        <div class="creem-stack__card creem-stack__card--mint">
+          <span class="creem-stack__tag">Step 03</span>
+          <span class="creem-stack__title">Share direct</span>
+          <span class="creem-stack__sub">P2P · LAN · Drive fallback</span>
+          <span class="creem-stack__glyph" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.59 13.51 6.83 3.98M15.41 6.51 8.59 10.49"/></svg>
+          </span>
+        </div>
+      </div>
+
+      <div class="creem-chip-row reveal" style="margin-top:1.5rem;">
+        <span class="creem-chip">
+          <span class="creem-chip__icon" aria-hidden="true">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </span>
+          Zero server storage
+        </span>
+        <span class="creem-chip">
+          <span class="creem-chip__icon" aria-hidden="true">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6M15.5 7.5l3 3L22 7l-3-3"/></svg>
+          </span>
+          End-to-end encrypted
+        </span>
+        <span class="creem-chip">
+          <span class="creem-chip__icon" aria-hidden="true">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14 0M1.42 9A16 16 0 0 1 22.58 9M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1"/></svg>
+          </span>
+          Offline ready
+        </span>
+        <span class="creem-chip">
+          <span class="creem-chip__icon" aria-hidden="true">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+          </span>
+          Local network speed
+        </span>
+        <span class="creem-chip">
+          <span class="creem-chip__icon" aria-hidden="true">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+          </span>
+          Pause &amp; resume
+        </span>
+      </div>
+
+      <div class="tilt-strip reveal" style="margin-top:2.5rem;">
+        <span class="tilt-card">
+          <span class="tilt-card__icon" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          </span>
+          No Server Storage
+        </span>
+        <span class="tilt-card">
+          <span class="tilt-card__icon" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </span>
+          No Account Required
+        </span>
+        <span class="tilt-card">
+          <span class="tilt-card__icon" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14 0M1.42 9A16 16 0 0 1 22.58 9M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1"/></svg>
+          </span>
+          Offline Capable
+        </span>
+        <span class="tilt-card">
+          <span class="tilt-card__icon" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+          </span>
+          Local Speed
+        </span>
+        <span class="tilt-card">
+          <span class="tilt-card__icon" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          </span>
+          Browser-Based
+        </span>
+        <span class="tilt-card">
+          <span class="tilt-card__icon" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>
+          </span>
+          Open Architecture
+        </span>
+      </div>
+
+      <div class="trust__items stagger-group" hidden>
         <div class="trust__item hover-lift">
           <span class="trust__icon">🔒</span>
           No Server Storage
-        </div>
-        <div class="trust__item hover-lift">
-          <span class="trust__icon">👤</span>
-          No Account Required
-        </div>
-        <div class="trust__item hover-lift">
-          <span class="trust__icon">📡</span>
-          Offline Capable
-        </div>
-        <div class="trust__item hover-lift">
-          <span class="trust__icon">⚡</span>
-          Local Speed
-        </div>
-        <div class="trust__item hover-lift">
-          <span class="trust__icon">🌐</span>
-          Browser-Based
-        </div>
-        <div class="trust__item hover-lift">
-          <span class="trust__icon">🔓</span>
-          Open Architecture
         </div>
       </div>
     </div>
@@ -696,7 +1011,6 @@
 
         <div class="cta-card__actions">
           <a href="/workspace" class="pill-btn pill-btn--primary magnetic" data-magnetic="0.22">
-            <span class="pill-btn__icon">🚀</span>
             <span class="pill-btn__label">Open Workspace</span>
             <span class="pill-btn__arrow">→</span>
           </a>
@@ -713,21 +1027,27 @@
       </div>
       <div class="featured-pills" data-reveal>
         <span class="featured-pill">
-          <span class="featured-pill__icon featured-pill__icon--green">⚡</span>
+          <span class="featured-pill__icon featured-pill__icon--green" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+          </span>
           <span class="featured-pill__copy">
             <span class="featured-pill__title">WebRTC</span>
             <span class="featured-pill__sub">Direct browser P2P</span>
           </span>
         </span>
         <span class="featured-pill">
-          <span class="featured-pill__icon featured-pill__icon--lavender">🛡</span>
+          <span class="featured-pill__icon featured-pill__icon--lavender" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </span>
           <span class="featured-pill__copy">
             <span class="featured-pill__title">End-to-end</span>
             <span class="featured-pill__sub">Zero server storage</span>
           </span>
         </span>
         <span class="featured-pill">
-          <span class="featured-pill__icon featured-pill__icon--peach">◐</span>
+          <span class="featured-pill__icon featured-pill__icon--peach" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18"/></svg>
+          </span>
           <span class="featured-pill__copy">
             <span class="featured-pill__title">Direct+</span>
             <span class="featured-pill__sub">Reliability layer</span>
@@ -738,101 +1058,75 @@
   </section>
 
   <!-- ═══ Footer ═══ -->
-  <footer class="footer">
-    <div class="container">
-      <div class="footer__grid">
-        <div class="footer__brand">
-          <div class="footer__logo" aria-label="Clex">
-            <img src="/brand/clex-logo.png" alt="" class="footer__logo-image">
-            <span class="footer__logo-wordmark">Clex</span>
-          </div>
-          <p class="footer__desc">
-            Drop files, prepare them in-browser, and share through the fastest route available. Private by default, built for the open web.
-          </p>
-        </div>
+  <footer class="footer footer--v2">
+    <div class="container footer__container">
+      <!-- BIG WORDMARK -->
+      <div class="footer__hero">
+        <a href="/" class="footer__wordmark" aria-label="Clex home">Clex<em class="italic-accent">.</em></a>
+        <p class="footer__tagline">
+          Drop. Prepare. <em class="italic-accent">Share it.</em>
+        </p>
+      </div>
+
+      <!-- LINK COLUMNS -->
+      <div class="footer__cols">
         <div class="footer__col">
           <h4 class="footer__col-title">Product</h4>
-          <nav class="footer__links">
-            <a href="/features" class="footer__link">Features</a>
-            <a href="/vault" class="footer__link">Vault</a>
-            <a href="/how-it-works" class="footer__link">How It Works</a>
-            <a href="/workspace" class="footer__link">Workspace</a>
-            <a href="/chain" class="footer__link">Chain</a>
-            <a href="/getting-started" class="footer__link">Get Started</a>
-          </nav>
+          <a href="/features" class="footer__link">Features</a>
+          <a href="/vault" class="footer__link">Vault</a>
+          <a href="/how-it-works" class="footer__link">How It Works</a>
+          <a href="/workspace" class="footer__link">Workspace</a>
+          <a href="/chain" class="footer__link">Chain</a>
         </div>
         <div class="footer__col">
-          <h4 class="footer__col-title">Support</h4>
-          <nav class="footer__links">
-            <a href="/faq" class="footer__link">FAQ</a>
-            <a href="/getting-started" class="footer__link">Onboarding</a>
-            <a href="mailto:hello@clex.in" class="footer__link">Contact</a>
-          </nav>
+          <h4 class="footer__col-title">Resources</h4>
+          <a href="/getting-started" class="footer__link">Getting Started</a>
+          <a href="/developers" class="footer__link">Developers</a>
+          <a href="/faq" class="footer__link">FAQ</a>
+          <a href="mailto:hello@clex.in" class="footer__link">Contact</a>
         </div>
         <div class="footer__col">
           <h4 class="footer__col-title">Legal</h4>
-          <nav class="footer__links">
-            <a href="/privacy" class="footer__link">Privacy Policy</a>
-            <a href="/terms" class="footer__link">Terms of Service</a>
-          </nav>
+          <a href="/privacy" class="footer__link">Privacy Policy</a>
+          <a href="/terms" class="footer__link">Terms of Service</a>
+        </div>
+        <div class="footer__col footer__col--meta">
+          <h4 class="footer__col-title">Built by</h4>
+          <a href="https://abhnv.in" target="_blank" rel="noopener noreferrer" class="footer__author">
+            <span class="footer__author-avatar">A</span>
+            <span class="footer__author-text">
+              <span class="footer__author-name">Abhinav</span>
+              <span class="footer__author-meta">abhnv.in</span>
+            </span>
+          </a>
+          <div class="footer__socials">
+            <a class="footer__social" href="https://www.linkedin.com/in/abhnv07/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M20.45 20.45h-3.55v-5.57c0-1.33-.03-3.04-1.85-3.04-1.86 0-2.14 1.45-2.14 2.95v5.66H9.36V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.38-1.85 3.61 0 4.27 2.38 4.27 5.47v6.27ZM5.34 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12ZM7.12 20.45H3.56V9h3.56v11.45ZM22.22 0H1.77C.79 0 0 .77 0 1.72v20.56C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.72V1.72C24 .77 23.2 0 22.22 0Z"/></svg>
+            </a>
+            <a class="footer__social" href="https://x.com/Abhnv8" target="_blank" rel="noopener noreferrer" aria-label="X">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+            </a>
+            <a class="footer__social" href="https://github.com/Abhinavv-007/clex" target="_blank" rel="noopener noreferrer" aria-label="GitHub">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.57.1.78-.25.78-.55v-1.93c-3.2.7-3.87-1.54-3.87-1.54-.52-1.32-1.27-1.67-1.27-1.67-1.04-.71.08-.7.08-.7 1.15.08 1.75 1.18 1.75 1.18 1.02 1.75 2.68 1.25 3.34.96.1-.74.4-1.25.72-1.54-2.55-.29-5.24-1.28-5.24-5.7 0-1.26.45-2.29 1.18-3.1-.12-.29-.51-1.46.11-3.05 0 0 .96-.31 3.15 1.18a10.94 10.94 0 0 1 5.74 0c2.19-1.49 3.15-1.18 3.15-1.18.62 1.59.23 2.76.11 3.05.74.81 1.18 1.84 1.18 3.1 0 4.43-2.7 5.4-5.27 5.69.41.36.78 1.06.78 2.14v3.18c0 .31.21.66.79.55 4.56-1.52 7.85-5.83 7.85-10.91C23.5 5.65 18.35.5 12 .5z"/></svg>
+            </a>
+            <a class="footer__social" href="mailto:abhnv@abhnv.in" aria-label="Email">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3.5 6.75A2.25 2.25 0 0 1 5.75 4.5h12.5a2.25 2.25 0 0 1 2.25 2.25v10.5a2.25 2.25 0 0 1-2.25 2.25H5.75a2.25 2.25 0 0 1-2.25-2.25V6.75Z"/><path d="m4.25 7.5 6.75 4.9a1.75 1.75 0 0 0 2 0L19.75 7.5" stroke-linecap="round"/></svg>
+            </a>
+          </div>
         </div>
       </div>
-      <div class="footer__signature">
-        <div class="footer__signature-copy">
-          <p class="footer__signature-heading">
-            <span class="footer__signature-kicker">Built by</span>
-            <span class="footer__signature-name">Abhinav</span>
-          </p>
-          <p class="footer__signature-text">
-            Fast tools, private transfers, and browser-native delivery.
-          </p>
-        </div>
-        <div class="footer__signature-links">
-          <a href="https://www.linkedin.com/in/abhnv07/" target="_blank" rel="noopener noreferrer" class="footer__signature-link footer__signature-link--linkedin" aria-label="Abhinav on LinkedIn">
-            <span class="footer__signature-icon" aria-hidden="true">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" focusable="false">
-                <path d="M20.45 20.45h-3.55v-5.57c0-1.33-.03-3.04-1.85-3.04-1.86 0-2.14 1.45-2.14 2.95v5.66H9.36V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.38-1.85 3.61 0 4.27 2.38 4.27 5.47v6.27ZM5.34 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12ZM7.12 20.45H3.56V9h3.56v11.45ZM22.22 0H1.77C.79 0 0 .77 0 1.72v20.56C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.72V1.72C24 .77 23.2 0 22.22 0Z"/>
-              </svg>
-            </span>
-            <span>LinkedIn</span>
-          </a>
-          <a href="mailto:abhnv@abhnv.in" class="footer__signature-link footer__signature-link--mail" aria-label="Email Abhinav">
-            <span class="footer__signature-icon" aria-hidden="true">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" focusable="false">
-                <path d="M3.5 6.75a2.25 2.25 0 0 1 2.25-2.25h12.5a2.25 2.25 0 0 1 2.25 2.25v10.5a2.25 2.25 0 0 1-2.25 2.25H5.75A2.25 2.25 0 0 1 3.5 17.25V6.75Z" stroke="currentColor" stroke-width="1.6"/>
-                <path d="M4.25 7.5 11 12.4a1.75 1.75 0 0 0 2 0L19.75 7.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-                <circle cx="18.5" cy="6" r="2.5" fill="var(--accent, #6366f1)" stroke="var(--bg-card, #fff)" stroke-width="1"/>
-              </svg>
-            </span>
-            <span>abhnv@abhnv.in</span>
-          </a>
-          <a href="https://abhnv.in" target="_blank" rel="noopener noreferrer" class="footer__signature-link footer__signature-link--site" aria-label="Visit abhnv.in">
-            <span class="footer__signature-icon" aria-hidden="true">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" focusable="false">
-                <circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.6"/>
-                <path d="M3.5 12h17M12 3.5c2.4 2.4 3.6 5.5 3.6 8.5s-1.2 6.1-3.6 8.5M12 3.5C9.6 5.9 8.4 9 8.4 12s1.2 6.1 3.6 8.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-                <path d="M5.5 8.5h13M5.5 15.5h13" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" opacity="0.55"/>
-              </svg>
-            </span>
-            <span>abhnv.in</span>
-          </a>
-          <a href="https://abhnv.me" target="_blank" rel="noopener noreferrer" class="footer__signature-link footer__signature-link--me" aria-label="Visit abhnv.me">
-            <span class="footer__signature-icon" aria-hidden="true">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" focusable="false">
-                <circle cx="12" cy="9" r="3.5" stroke="currentColor" stroke-width="1.6"/>
-                <path d="M5 20a7 7 0 0 1 14 0" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-                <circle cx="18.5" cy="5.5" r="2" fill="currentColor" opacity="0.85"/>
-              </svg>
-            </span>
-            <span>abhnv.me</span>
-          </a>
-        </div>
+
+      <!-- BIG GLYPH STRIP -->
+      <div class="footer__glyph" aria-hidden="true">
+        DROP. PREPARE. <em class="italic-accent">SHARE&nbsp;IT.</em>
       </div>
+
       <div class="footer__bottom">
-        <span class="footer__copyright">© 2026 Clex. All rights reserved.</span>
+        <span class="footer__copyright">© 2026 Clex · Built privacy-first</span>
         <div class="footer__legal">
           <a href="/privacy" class="footer__legal-link">Privacy</a>
           <a href="/terms" class="footer__legal-link">Terms</a>
+          <a href="https://github.com/Abhinavv-007/clex" target="_blank" rel="noopener noreferrer" class="footer__legal-link">Open Source</a>
         </div>
       </div>
     </div>
