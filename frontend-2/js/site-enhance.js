@@ -114,26 +114,28 @@ function initWritingAccents() {
   const accents = document.querySelectorAll('.italic-accent, .hero__title-word--italic');
   if (!accents.length) return;
 
+  const reveal = (el) => {
+    el.classList.add('clex-write--visible');
+  };
+
   accents.forEach((accent, index) => {
     if (!(accent instanceof HTMLElement)) return;
     accent.classList.add('clex-write');
     accent.style.setProperty('--write-delay', `${Math.min(index * 45, 320)}ms`);
   });
 
+  document.querySelectorAll('.hero .clex-write, .hero__title-word--italic').forEach(reveal);
+
   if (!('IntersectionObserver' in window) || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
-    accents.forEach((accent) => accent.classList.add('clex-write--visible'));
+    accents.forEach(reveal);
     return;
   }
-
-  const reveal = (el) => {
-    el.classList.add('clex-write--visible');
-  };
 
   const revealVisibleNow = () => {
     accents.forEach((accent) => {
       if (!(accent instanceof HTMLElement) || accent.classList.contains('clex-write--visible')) return;
       const rect = accent.getBoundingClientRect();
-      if (rect.bottom >= 0 && rect.top <= window.innerHeight * 0.92) reveal(accent);
+      if (rect.bottom >= -80 && rect.top <= window.innerHeight + 220) reveal(accent);
     });
   };
 
@@ -147,7 +149,11 @@ function initWritingAccents() {
 
   accents.forEach((accent) => io.observe(accent));
   requestAnimationFrame(revealVisibleNow);
+  [180, 520, 980, 1600].forEach((delay) => window.setTimeout(revealVisibleNow, delay));
+  window.addEventListener('load', revealVisibleNow, { once: true });
   window.addEventListener('scroll', revealVisibleNow, { passive: true });
+  window.addEventListener('resize', revealVisibleNow, { passive: true });
+  window.addEventListener('orientationchange', revealVisibleNow, { passive: true });
 }
 
 function releaseDesignBoot() {

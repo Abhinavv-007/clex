@@ -301,7 +301,7 @@
     background: rgba(34, 197, 94, 0.18);
   }
 
-  @media (max-width: 480px) {
+  @media (max-width: 640px) {
     .tr-card {
       gap: 10px;
       padding: 12px;
@@ -328,6 +328,18 @@
     }
 
     .tr-cell dd {
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+
+    .tr-hash {
+      flex-wrap: wrap;
+      justify-content: center;
+      text-align: center;
+    }
+
+    .tr-hash__value {
+      flex: 1 1 100%;
       white-space: normal;
       overflow-wrap: anywhere;
     }
