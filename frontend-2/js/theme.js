@@ -6,7 +6,7 @@
    ============================================ */
 
 const THEME_KEY = 'clex-theme-v2';
-const REVEAL_DURATION_MS = 720;
+const REVEAL_DURATION_MS = 220;
 const REVEAL_EASING = 'cubic-bezier(0.65, 0, 0.35, 1)';
 let revealOverlayActive = false;
 
@@ -23,21 +23,12 @@ export function initTheme() {
 export function toggleTheme(event) {
   const current = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
   const next = current === 'dark' ? 'light' : 'dark';
-  const origin = computeOrigin(event);
-  const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-
-  if (reduced) {
-    applyTheme(next);
-    persistTheme(next);
-    return;
-  }
-
-  if (typeof document.startViewTransition === 'function') {
-    runViewTransitionReveal(next, origin);
-  } else {
-    runClipPathReveal(next, origin);
-  }
+  document.documentElement.classList.add('clex-theme-switching');
+  applyTheme(next);
   persistTheme(next);
+  window.setTimeout(() => {
+    document.documentElement.classList.remove('clex-theme-switching');
+  }, REVEAL_DURATION_MS);
 }
 
 /**
@@ -47,6 +38,7 @@ function applyTheme(theme) {
   document.documentElement.setAttribute('data-theme', theme);
   document.documentElement.classList.toggle('dark', theme === 'dark');
   document.documentElement.style.colorScheme = theme;
+  window.dispatchEvent(new CustomEvent('clex-theme-change', { detail: { theme } }));
   const toggleBtn = document.getElementById('theme-toggle');
   if (toggleBtn) {
     ensureToggleIcons(toggleBtn);

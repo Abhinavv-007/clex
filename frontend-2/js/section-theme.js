@@ -19,8 +19,12 @@ export function initSectionTheme() {
   // No sections marked? Use a single active theme based on the page's html
   // data-theme so the nav still gets brand-consistent colors on every page.
   if (!sections.length) {
-    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-    setActive(isDark ? 'dark' : 'cream');
+    const syncDocumentTheme = () => {
+      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      setActive(isDark ? 'dark' : 'cream');
+    };
+    syncDocumentTheme();
+    window.addEventListener('clex-theme-change', syncDocumentTheme);
     return;
   }
 
@@ -54,5 +58,6 @@ export function initSectionTheme() {
   };
   window.addEventListener('scroll', onScroll, { passive: true });
   window.addEventListener('resize', onScroll, { passive: true });
+  window.addEventListener('clex-theme-change', update);
   update();
 }

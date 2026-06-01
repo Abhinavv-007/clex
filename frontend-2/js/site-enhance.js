@@ -115,7 +115,14 @@ function initWritingAccents() {
   if (!accents.length) return;
 
   const reveal = (el) => {
+    if (!(el instanceof HTMLElement) || el.classList.contains('clex-write--done')) return;
     el.classList.add('clex-write--visible');
+    const computedDelay = Number.parseFloat(getComputedStyle(el).getPropertyValue('--write-delay')) || 0;
+    const complete = () => {
+      el.classList.add('clex-write--done');
+    };
+    el.addEventListener('animationend', complete, { once: true });
+    window.setTimeout(complete, 2350 + computedDelay);
   };
 
   accents.forEach((accent, index) => {
@@ -135,7 +142,7 @@ function initWritingAccents() {
     accents.forEach((accent) => {
       if (!(accent instanceof HTMLElement) || accent.classList.contains('clex-write--visible')) return;
       const rect = accent.getBoundingClientRect();
-      if (rect.bottom >= -80 && rect.top <= window.innerHeight + 220) reveal(accent);
+      if (rect.bottom >= -160 && rect.top <= window.innerHeight * 1.85) reveal(accent);
     });
   };
 
@@ -145,11 +152,14 @@ function initWritingAccents() {
       reveal(entry.target);
       io.unobserve(entry.target);
     });
-  }, { rootMargin: '0px 0px 8% 0px', threshold: 0 });
+  }, { rootMargin: '55% 0px 55% 0px', threshold: 0 });
 
   accents.forEach((accent) => io.observe(accent));
   requestAnimationFrame(revealVisibleNow);
-  [180, 520, 980, 1600].forEach((delay) => window.setTimeout(revealVisibleNow, delay));
+  [180, 520, 980, 1600, 2600].forEach((delay) => window.setTimeout(revealVisibleNow, delay));
+  window.setTimeout(() => {
+    document.querySelectorAll('footer .clex-write').forEach(reveal);
+  }, 1800);
   window.addEventListener('load', revealVisibleNow, { once: true });
   window.addEventListener('scroll', revealVisibleNow, { passive: true });
   window.addEventListener('resize', revealVisibleNow, { passive: true });

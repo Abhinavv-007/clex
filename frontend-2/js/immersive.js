@@ -8,7 +8,6 @@ const REDUCED = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').ma
 export function initImmersive() {
   injectAmbientBlobs();
   if (REDUCED()) return;
-  trackCursorSpotlight();
   initCursorFollower();
   trackNavSpotlight();
   initLiveTransferCard();
