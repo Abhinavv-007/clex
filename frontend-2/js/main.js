@@ -29,6 +29,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   injectGlobalScaffolding();
   normalizeSharedFooter();
   normalizeHeadingPunctuation();
+  initSiteEnhance();
 
   // Theme toggle button
   const themeToggle = document.getElementById('theme-toggle');
@@ -47,7 +48,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Section-driven theme morph + hero interactive effects
   initSectionTheme();
   initHeroEffects();
-  initSiteEnhance();
   initImmersive();
 
   // Lazy load animations only when needed
@@ -67,6 +67,7 @@ function injectGlobalScaffolding() {
 function normalizeSharedFooter() {
   const footer = document.querySelector('footer');
   if (!footer) return;
+  if (footer.classList.contains('footer--v2')) return;
   footer.outerHTML = getSharedFooterHTML();
 }
 

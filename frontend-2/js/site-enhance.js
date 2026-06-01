@@ -11,10 +11,13 @@
 
 export function initSiteEnhance() {
   injectPageHeroDecor();
-  upgradePageHeroTitles();
+  upgradeCursiveLanguage();
+  initWritingAccents();
+  releaseDesignBoot();
   if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
   initUniversalMagnetic();
   initRipples();
+  initLiquidInteractives();
   initSmoothHashScroll();
 }
 
@@ -53,12 +56,29 @@ function injectPageHeroDecor() {
 }
 
 /**
- * Find every .page-hero__title and the last visible "line" (after the
- * trailing <br>, or last word if no <br>) and wrap it in <em class="italic-accent">.
- * Skips titles already containing an .italic-accent or em.
+ * Turn existing page/section title endings into the same colorful handwritten
+ * accent language used by the landing page.
  */
-function upgradePageHeroTitles() {
-  document.querySelectorAll('.page-hero__title').forEach((title) => {
+function upgradeCursiveLanguage() {
+  document.querySelectorAll('.text-accent, .chain-hero__title-accent').forEach((el) => {
+    el.classList.add('italic-accent');
+  });
+
+  const selectors = [
+    '.page-hero__title',
+    '.section__title',
+    '.page-section__title',
+    '.cta-strip__title',
+    '.banner__text',
+    '.legal-section__title',
+    '.faq-section__title',
+    '.gs-step__title',
+    '.giant-step__title',
+    '.chain-explorer__title',
+    '.dev-access__title',
+  ];
+
+  document.querySelectorAll(selectors.join(',')).forEach((title) => {
     if (!(title instanceof HTMLElement)) return;
     if (title.querySelector('em, .italic-accent')) return;
 
@@ -70,11 +90,14 @@ function upgradePageHeroTitles() {
       if (tail) title.innerHTML = `${head}<em class="italic-accent">${tail}</em>`;
       return;
     }
-    // No <br>: italicize last word.
+
     const text = title.textContent || '';
-    const m = text.match(/^([\s\S]*?)(\S+)\s*$/);
-    if (m && m[2]) {
-      title.innerHTML = `${escapeHtml(m[1])}<em class="italic-accent">${escapeHtml(m[2])}</em>`;
+    const words = text.trim().split(/\s+/);
+    const count = words.length >= 4 ? 2 : 1;
+    const accent = words.splice(-count).join(' ');
+    const head = words.join(' ');
+    if (accent) {
+      title.innerHTML = `${head ? `${escapeHtml(head)} ` : ''}<em class="italic-accent">${escapeHtml(accent)}</em>`;
     }
   });
 }
@@ -85,6 +108,55 @@ function escapeHtml(s) {
     .replaceAll('&', '&amp;')
     .replaceAll('<', '&lt;')
     .replaceAll('>', '&gt;');
+}
+
+function initWritingAccents() {
+  const accents = document.querySelectorAll('.italic-accent, .hero__title-word--italic');
+  if (!accents.length) return;
+
+  accents.forEach((accent, index) => {
+    if (!(accent instanceof HTMLElement)) return;
+    accent.classList.add('clex-write');
+    accent.style.setProperty('--write-delay', `${Math.min(index * 45, 320)}ms`);
+  });
+
+  if (!('IntersectionObserver' in window) || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+    accents.forEach((accent) => accent.classList.add('clex-write--visible'));
+    return;
+  }
+
+  const reveal = (el) => {
+    el.classList.add('clex-write--visible');
+  };
+
+  const revealVisibleNow = () => {
+    accents.forEach((accent) => {
+      if (!(accent instanceof HTMLElement) || accent.classList.contains('clex-write--visible')) return;
+      const rect = accent.getBoundingClientRect();
+      if (rect.bottom >= 0 && rect.top <= window.innerHeight * 0.92) reveal(accent);
+    });
+  };
+
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (!entry.isIntersecting) return;
+      reveal(entry.target);
+      io.unobserve(entry.target);
+    });
+  }, { rootMargin: '0px 0px 8% 0px', threshold: 0 });
+
+  accents.forEach((accent) => io.observe(accent));
+  requestAnimationFrame(revealVisibleNow);
+  window.addEventListener('scroll', revealVisibleNow, { passive: true });
+}
+
+function releaseDesignBoot() {
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      document.documentElement.classList.remove('clex-design-booting');
+      document.documentElement.classList.add('clex-design-ready');
+    });
+  });
 }
 
 /* ---------- Universal magnetic on every primary button ---------- */
@@ -145,6 +217,30 @@ function initRipples() {
   targets.forEach((el) => {
     if (!(el instanceof HTMLElement)) return;
     el.addEventListener('pointerdown', (e) => ripple(e, el));
+  });
+}
+
+function initLiquidInteractives() {
+  const targets = document.querySelectorAll(
+    '.btn, .pill-btn, .faq-category-btn, .card, .tool-card, .tip-card, .dpc-cell, .delivery-flow__node, .vault-spotlight__note, .stat-orb, .accordion__item'
+  );
+  targets.forEach((el) => {
+    if (!(el instanceof HTMLElement)) return;
+    let raf = 0;
+    let pos = { x: 50, y: 50 };
+    const apply = () => {
+      raf = 0;
+      el.style.setProperty('--liquid-x', `${pos.x}%`);
+      el.style.setProperty('--liquid-y', `${pos.y}%`);
+    };
+    el.addEventListener('pointermove', (event) => {
+      const rect = el.getBoundingClientRect();
+      pos = {
+        x: ((event.clientX - rect.left) / rect.width) * 100,
+        y: ((event.clientY - rect.top) / rect.height) * 100,
+      };
+      if (!raf) raf = requestAnimationFrame(apply);
+    }, { passive: true });
   });
 }
 
