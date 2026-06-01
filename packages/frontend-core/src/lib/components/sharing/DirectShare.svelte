@@ -195,6 +195,9 @@
   .ds-root { display: flex; flex-direction: column; gap: 0; min-width: 0; }
 
   .ds-card {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
     background: rgba(255, 255, 255, 0.015);
     border: 1px dashed rgba(255, 255, 255, 0.1);
     border-radius: 12px;
@@ -208,6 +211,10 @@
   .ds-card-center {
     align-items: center;
     text-align: center;
+  }
+
+  .ds-card-center > :global(.tr-card) {
+    align-self: stretch;
   }
 
   .ds-card-error {

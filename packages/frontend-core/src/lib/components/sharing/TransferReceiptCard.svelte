@@ -98,6 +98,9 @@
 
 <style>
   .tr-card {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
     display: flex;
     flex-direction: column;
     gap: 12px;
@@ -127,7 +130,9 @@
     font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.04em;
-    flex-shrink: 0;
+    flex: 1 1 140px;
+    min-width: 0;
+    white-space: nowrap;
   }
 
   .tr-badge__dot {
@@ -162,6 +167,10 @@
     cursor: pointer;
     transition: background 150ms ease, border-color 150ms ease;
     min-width: 0;
+    max-width: 100%;
+    flex: 1 1 150px;
+    justify-content: flex-end;
+    overflow: hidden;
   }
 
   .tr-id:hover { background: rgba(255,255,255,0.06); border-color: var(--border-hard); color: var(--text-1); }
@@ -177,6 +186,10 @@
   .tr-id__value {
     font-family: var(--font-mono);
     color: var(--text-1);
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .tr-id__copy {
@@ -220,6 +233,7 @@
     white-space: nowrap;
     text-align: right;
     min-width: 0;
+    max-width: 100%;
   }
 
   .tr-cap { text-transform: uppercase; letter-spacing: 0.05em; font-size: 11px !important; }
@@ -255,6 +269,8 @@
     cursor: pointer;
     color: var(--text-1);
     min-width: 0;
+    width: 100%;
+    overflow: hidden;
   }
 
   .tr-hash__value {
@@ -286,6 +302,42 @@
   }
 
   @media (max-width: 480px) {
-    .tr-grid { grid-template-columns: 1fr; }
+    .tr-card {
+      gap: 10px;
+      padding: 12px;
+      border-radius: 12px;
+    }
+
+    .tr-head {
+      gap: 8px;
+    }
+
+    .tr-badge,
+    .tr-id {
+      flex-basis: 100%;
+      justify-content: center;
+    }
+
+    .tr-grid {
+      grid-template-columns: 1fr;
+      gap: 2px;
+    }
+
+    .tr-cell {
+      gap: 10px;
+    }
+
+    .tr-cell dd {
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+
+    .tr-hash-block {
+      padding: 10px;
+    }
+
+    .tr-hash__copy {
+      padding-inline: 7px;
+    }
   }
 </style>

@@ -38,9 +38,11 @@ export function initNav(activePage = '') {
   const mobileMenu = document.getElementById('nav-mobile-menu');
 
   if (hamburger && mobileMenu) {
+    hamburger.setAttribute('aria-expanded', 'false');
     hamburger.addEventListener('click', () => {
       const isOpen = hamburger.classList.toggle('nav__hamburger--open');
       mobileMenu.classList.toggle('nav__mobile-menu--open', isOpen);
+      hamburger.setAttribute('aria-expanded', String(isOpen));
       document.body.style.overflow = isOpen ? 'hidden' : '';
     });
 
@@ -49,8 +51,17 @@ export function initNav(activePage = '') {
       link.addEventListener('click', () => {
         hamburger.classList.remove('nav__hamburger--open');
         mobileMenu.classList.remove('nav__mobile-menu--open');
+        hamburger.setAttribute('aria-expanded', 'false');
         document.body.style.overflow = '';
       });
+    });
+
+    window.addEventListener('keydown', (event) => {
+      if (event.key !== 'Escape') return;
+      hamburger.classList.remove('nav__hamburger--open');
+      mobileMenu.classList.remove('nav__mobile-menu--open');
+      hamburger.setAttribute('aria-expanded', 'false');
+      document.body.style.overflow = '';
     });
   }
 

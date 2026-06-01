@@ -101,9 +101,9 @@ function getSharedFooterHTML() {
   <footer class="footer footer--v2">
     <div class="container footer__container">
       <div class="footer__hero">
-        <a href="/" class="footer__wordmark" aria-label="Clex home">Clex<em class="italic-accent">.</em></a>
+        <a href="/" class="footer__wordmark" aria-label="Clex home">Clex</a>
         <p class="footer__tagline">
-          Move files <em class="italic-accent">keep control</em>
+          Send files <em class="italic-accent">stay private</em>
         </p>
       </div>
 
@@ -155,7 +155,7 @@ function getSharedFooterHTML() {
       </div>
 
       <div class="footer__glyph" aria-hidden="true">
-        MOVE FILES <em class="italic-accent">KEEP&nbsp;CONTROL</em>
+        SEND FAST <em class="italic-accent">stay&nbsp;private</em>
       </div>
 
       <div class="footer__bottom">

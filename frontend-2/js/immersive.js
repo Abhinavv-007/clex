@@ -9,7 +9,9 @@ export function initImmersive() {
   injectAmbientBlobs();
   if (REDUCED()) return;
   trackCursorSpotlight();
+  initCursorFollower();
   trackNavSpotlight();
+  initLiveTransferCard();
   initRevealObserver();
   initAnimatedCounters();
 }
@@ -58,6 +60,90 @@ function trackNavSpotlight() {
     pending = { x: e.clientX - r.left, y: e.clientY - r.top };
     if (!raf) raf = requestAnimationFrame(apply);
   }, { passive: true });
+}
+
+function initCursorFollower() {
+  if (!window.matchMedia?.('(pointer: fine)').matches || window.innerWidth < 900) return;
+  if (document.querySelector('.clex-cursor-follower')) return;
+
+  const dot = document.createElement('div');
+  dot.className = 'clex-cursor-follower';
+  dot.setAttribute('aria-hidden', 'true');
+  document.body.appendChild(dot);
+  document.body.classList.add('clex-cursor-active');
+
+  let x = window.innerWidth / 2;
+  let y = window.innerHeight / 2;
+  let tx = x;
+  let ty = y;
+  let raf = 0;
+
+  const tick = () => {
+    x += (tx - x) * 0.28;
+    y += (ty - y) * 0.28;
+    dot.style.transform = `translate3d(${x}px, ${y}px, 0) translate(-50%, -50%)`;
+    raf = requestAnimationFrame(tick);
+  };
+
+  window.addEventListener('pointermove', (e) => {
+    tx = e.clientX;
+    ty = e.clientY;
+    dot.classList.add('clex-cursor-follower--visible');
+    if (!raf) tick();
+  }, { passive: true });
+
+  window.addEventListener('pointerdown', () => {
+    dot.classList.add('clex-cursor-follower--down');
+    window.setTimeout(() => dot.classList.remove('clex-cursor-follower--down'), 140);
+  }, { passive: true });
+
+  document.addEventListener('pointerover', (e) => {
+    const target = e.target instanceof Element ? e.target : null;
+    dot.classList.toggle(
+      'clex-cursor-follower--hot',
+      Boolean(target?.closest('a, button, input, textarea, select, [role="button"], .data-stream__row'))
+    );
+  }, { passive: true });
+}
+
+function initLiveTransferCard() {
+  document.querySelectorAll('.data-stream').forEach((card) => {
+    const rows = Array.from(card.querySelectorAll('.data-stream__row')).filter((row) => {
+      return !(row instanceof HTMLElement) || window.getComputedStyle(row).display !== 'none';
+    });
+    if (!rows.length) return;
+
+    let active = 0;
+    let interval = 0;
+    const setActive = (index) => {
+      active = (index + rows.length) % rows.length;
+      rows.forEach((row, rowIndex) => {
+        row.classList.toggle('data-stream__row--active', rowIndex === active);
+        row.classList.toggle('data-stream__row--complete', rowIndex < active);
+      });
+      const progress = ((active + 1) / rows.length) * 100;
+      if (card instanceof HTMLElement) {
+        card.style.setProperty('--stream-progress', `${progress}%`);
+        card.dataset.phase = rows[active]?.querySelector('.data-stream__tag')?.textContent?.trim() || '';
+      }
+    };
+
+    const play = () => {
+      window.clearInterval(interval);
+      interval = window.setInterval(() => setActive(active + 1), 1500);
+    };
+
+    rows.forEach((row, index) => {
+      row.addEventListener('pointerenter', () => setActive(index), { passive: true });
+      row.addEventListener('click', () => {
+        setActive(index);
+        play();
+      });
+    });
+
+    setActive(0);
+    play();
+  });
 }
 
 function initRevealObserver() {
