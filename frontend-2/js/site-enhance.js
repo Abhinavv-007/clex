@@ -111,7 +111,7 @@ function escapeHtml(s) {
 }
 
 function initWritingAccents() {
-  const accents = document.querySelectorAll('.italic-accent, .hero__title-word--italic');
+  const accents = document.querySelectorAll('.italic-accent, .hero__title-word--italic, .text-accent, .chain-hero__title-accent');
   if (!accents.length) return;
 
   const reveal = (el) => {
@@ -122,13 +122,13 @@ function initWritingAccents() {
       el.classList.add('clex-write--done');
     };
     el.addEventListener('animationend', complete, { once: true });
-    window.setTimeout(complete, 2350 + computedDelay);
+    window.setTimeout(complete, 3150 + computedDelay);
   };
 
   accents.forEach((accent, index) => {
     if (!(accent instanceof HTMLElement)) return;
     accent.classList.add('clex-write');
-    accent.style.setProperty('--write-delay', `${Math.min(index * 45, 320)}ms`);
+    accent.style.setProperty('--write-delay', `${Math.min(index * 70, 520)}ms`);
   });
 
   document.querySelectorAll('.hero .clex-write, .hero__title-word--italic').forEach(reveal);
