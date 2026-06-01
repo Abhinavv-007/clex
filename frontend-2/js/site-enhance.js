@@ -12,39 +12,10 @@
 export function initSiteEnhance() {
   injectPageHeroDecor();
   upgradePageHeroTitles();
-  initScrollProgress();
   if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
   initUniversalMagnetic();
   initRipples();
-  initSubtleTilt();
   initSmoothHashScroll();
-}
-
-/* ---------- Scroll progress bar (fixed, top of viewport) ---------- */
-function initScrollProgress() {
-  if (document.querySelector('.clex-scroll-progress')) return;
-  const wrap = document.createElement('div');
-  wrap.className = 'clex-scroll-progress';
-  wrap.setAttribute('aria-hidden', 'true');
-  const bar = document.createElement('span');
-  bar.className = 'clex-scroll-progress__bar';
-  wrap.appendChild(bar);
-  document.body.appendChild(wrap);
-
-  let raf = 0;
-  const apply = () => {
-    raf = 0;
-    const doc = document.documentElement;
-    const max = (doc.scrollHeight - doc.clientHeight) || 1;
-    const pct = Math.max(0, Math.min(1, doc.scrollTop / max));
-    bar.style.width = `${(pct * 100).toFixed(2)}%`;
-  };
-  const onScroll = () => {
-    if (!raf) raf = requestAnimationFrame(apply);
-  };
-  window.addEventListener('scroll', onScroll, { passive: true });
-  window.addEventListener('resize', onScroll, { passive: true });
-  apply();
 }
 
 /**

@@ -18,18 +18,33 @@ function initSpotlight() {
   if (!heros.length) return;
   heros.forEach((hero) => {
     if (!(hero instanceof HTMLElement)) return;
+    let raf = 0;
+    let rect = hero.getBoundingClientRect();
+    let pending = { x: 50, y: 35 };
+    let current = { x: 50, y: 35 };
+    const apply = () => {
+      raf = 0;
+      current.x += (pending.x - current.x) * 0.28;
+      current.y += (pending.y - current.y) * 0.28;
+      hero.style.setProperty('--mx', `${current.x.toFixed(2)}%`);
+      hero.style.setProperty('--my', `${current.y.toFixed(2)}%`);
+      if (Math.abs(pending.x - current.x) > 0.08 || Math.abs(pending.y - current.y) > 0.08) {
+        raf = requestAnimationFrame(apply);
+      }
+    };
     /** @param {PointerEvent} e */
     const onMove = (e) => {
-      const rect = hero.getBoundingClientRect();
-      const x = ((e.clientX - rect.left) / rect.width) * 100;
-      const y = ((e.clientY - rect.top) / rect.height) * 100;
-      hero.style.setProperty('--mx', `${x}%`);
-      hero.style.setProperty('--my', `${y}%`);
+      pending = {
+        x: ((e.clientX - rect.left) / rect.width) * 100,
+        y: ((e.clientY - rect.top) / rect.height) * 100,
+      };
+      if (!raf) raf = requestAnimationFrame(apply);
     };
-    hero.addEventListener('pointermove', onMove);
+    hero.addEventListener('pointerenter', () => { rect = hero.getBoundingClientRect(); });
+    hero.addEventListener('pointermove', onMove, { passive: true });
     hero.addEventListener('pointerleave', () => {
-      hero.style.setProperty('--mx', `50%`);
-      hero.style.setProperty('--my', `35%`);
+      pending = { x: 50, y: 35 };
+      if (!raf) raf = requestAnimationFrame(apply);
     });
   });
 }
@@ -81,12 +96,17 @@ function initBlobParallax() {
   if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
   const blobs = document.querySelectorAll('[data-parallax]');
   if (!blobs.length) return;
+  let raf = 0;
   const onScroll = () => {
+    if (raf) return;
+    raf = requestAnimationFrame(() => {
+      raf = 0;
     const y = window.scrollY;
     blobs.forEach((b) => {
       if (!(b instanceof HTMLElement)) return;
       const speed = parseFloat(b.getAttribute('data-parallax') || '0.15');
       b.style.transform = `translate3d(0, ${y * speed}px, 0)`;
+    });
     });
   };
   window.addEventListener('scroll', onScroll, { passive: true });
@@ -99,20 +119,17 @@ function initAgentPillCopy() {
   const mono = document.querySelector('.hero__agent-pill-mono');
   btn.addEventListener('click', async () => {
     const text = mono?.textContent?.trim() || 'https://clex.in/workspace';
-    btn.dataset.loading = 'true';
     try {
       await navigator.clipboard.writeText(text);
-      const original = btn.innerHTML;
+      const original = btn.textContent;
       btn.textContent = '✓';
       btn.style.background = '#c8ff00';
       setTimeout(() => {
-        btn.innerHTML = original;
+        btn.textContent = original;
         btn.style.background = '';
       }, 1400);
     } catch {
       // clipboard not available — ignore
-    } finally {
-      delete btn.dataset.loading;
     }
   });
 }

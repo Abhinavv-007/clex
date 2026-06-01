@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="icon" type="image/png" href="/brand/clex-logo.png">
   <link rel="apple-touch-icon" href="/brand/clex-logo.png">
-  <title>Clex — Privacy-First File Workspace | Drop · Prepare · Share (P2P + Vault)</title>
+  <title>Clex — Privacy-First File Workspace | Move Files, Keep Control</title>
   <meta name="description" content="Clex is a privacy-first file workspace — drop files, prepare them with built-in PDF/image tools, then deliver via direct P2P (Clex Direct+), local network, or Google Drive. No server storage, no accounts. Includes encrypted Vault notes and secret links.">
   <meta name="keywords" content="clex, clex.in, file sharing, P2P transfer, WebRTC file transfer, AirDrop alternative, Clex Direct+, reliable file transfer, chunk verification, transfer receipt, file workspace, PDF tools, image compression, encrypted notes, vault, secret links, privacy-first">
   <meta name="author" content="Abhinav Raj">
@@ -36,7 +36,7 @@
         "@id": "https://clex.in/#website",
         "url": "https://clex.in/",
         "name": "Clex",
-        "description": "Privacy-first file workspace — drop · prepare · share via P2P, local network, or Google Drive.",
+        "description": "Privacy-first file workspace — drop, prepare, share via P2P, local network, or Google Drive.",
         "publisher": { "@id": "https://clex.in/#organization" },
         "inLanguage": "en"
       },
@@ -88,14 +88,14 @@
   <script>
     (() => {
       try {
-        const theme = localStorage.getItem('clex-theme') === 'light' ? 'light' : 'dark';
+        const theme = localStorage.getItem('clex-theme-v2') === 'dark' ? 'dark' : 'light';
         document.documentElement.setAttribute('data-theme', theme);
         document.documentElement.classList.toggle('dark', theme === 'dark');
         document.documentElement.style.colorScheme = theme;
       } catch {
-        document.documentElement.setAttribute('data-theme', 'dark');
-        document.documentElement.classList.add('dark');
-        document.documentElement.style.colorScheme = 'dark';
+        document.documentElement.setAttribute('data-theme', 'light');
+        document.documentElement.classList.remove('dark');
+        document.documentElement.style.colorScheme = 'light';
       }
     })();
   </script>
@@ -107,6 +107,8 @@
   <link rel="stylesheet" href="/css/layout.css">
   <link rel="stylesheet" href="/css/animations.css">
   <link rel="stylesheet" href="/css/pages/home.css">
+  <link rel="stylesheet" href="/css/global-enhance.css">
+  <link rel="stylesheet" href="/css/creem-design.css">
 
   <script type="module" src="/js/main.js"></script>
 </head>
@@ -218,18 +220,18 @@
 
       <h1 class="hero__title hero__title--mega" data-reveal>
         <span class="hero__title-row">
-          <span class="hero__title-word">Drop</span>
-          <span class="hero__title-word">Prepare</span>
+          <span class="hero__title-word">Move</span>
+          <span class="hero__title-word">files</span>
         </span>
         <span class="hero__title-row hero__title-row--accent">
-          <span class="hero__title-word hero__title-word--italic">Share</span>
-          <span class="hero__title-word hero__title-word--soft">it</span>
+          <span class="hero__title-word hero__title-word--soft">Keep</span>
+          <span class="hero__title-word hero__title-word--italic">control</span>
         </span>
       </h1>
 
       <p class="hero__subtitle lead" data-reveal>
-        One browser-based workspace to prepare and deliver files —
-        with <strong>direct P2P transfer</strong>, smart tools, and <strong>zero server storage</strong>.
+        Prepare, protect, and deliver files from one browser tab —
+        with <strong>direct P2P transfer</strong>, smart routing, and <strong>zero server storage</strong>.
       </p>
 
       <!-- AI agent pill (Creem-inspired) -->
@@ -387,7 +389,7 @@
           <span class="pill-badge__dot"></span>
           The Flow
         </span>
-        <h2 class="section__title section__title--mixed">One workspace,<br><span class="italic-accent">three moves</span></h2>
+        <h2 class="section__title section__title--mixed">One workspace,<br><span class="italic-accent">three moves.</span></h2>
         <p class="section__subtitle mx-auto">
           Stop bouncing between apps. Clex connects preparation and delivery into a single, continuous motion.
         </p>
@@ -482,7 +484,7 @@
           <span class="pill-badge__dot"></span>
           Vault
         </span>
-        <h2 class="section__title section__title--mixed">The private side<br><span class="italic-accent italic-accent--lavender">of the same system</span></h2>
+        <h2 class="section__title section__title--mixed">The private side<br><span class="italic-accent italic-accent--lavender">of the same system.</span></h2>
         <p class="section__subtitle mx-auto">
           Workspace prepares and delivers files. Vault handles encrypted notes, controlled secret links, and timed Drive handoffs without feeling like a separate app.
         </p>
@@ -623,7 +625,7 @@
           <span class="pill-badge__dot"></span>
           Smart Routing
         </span>
-        <h2 class="section__title section__title--mixed">Three paths,<br><span class="italic-accent italic-accent--cyan">one decision engine</span></h2>
+        <h2 class="section__title section__title--mixed">Three paths,<br><span class="italic-accent italic-accent--cyan">one decision engine.</span></h2>
         <p class="section__subtitle mx-auto">
           Clex detects your network, finds the other device, and picks the fastest route — or lets you choose.
         </p>
@@ -788,43 +790,43 @@
           <span class="pill-badge__icon">✦</span>
           Built-In Tools
         </span>
-        <h2 class="section__title section__title--mixed">Prepare files<br><em class="italic-accent">without leaving the tab</em></h2>
+        <h2 class="section__title section__title--mixed">Prepare files<br><em class="italic-accent">without leaving the tab.</em></h2>
       </div>
 
       <!-- Bento spotlight: tools at a glance -->
       <div class="bento reveal">
         <div class="bento__cell bento__cell--big bento__cell--lavender">
           <span class="bento__tag">Image Tools</span>
-          <h3 class="bento__title">Compress, resize, convert<br>without ever leaving the tab</h3>
+          <h3 class="bento__title">Compress, resize, convert<br>without ever leaving the tab.</h3>
           <p class="bento__sub">JPEG · PNG · WebP · AVIF · SVG. Zero upload. Pure browser.</p>
           <span class="bento__big-num" data-count-to="80" data-count-suffix="%">0%</span>
           <span class="bento__sub">smaller files on average</span>
         </div>
         <div class="bento__cell bento__cell--tall bento__cell--peach">
           <span class="bento__tag">PDF Suite</span>
-          <h3 class="bento__title">Merge, split, extract</h3>
+          <h3 class="bento__title">Merge, split, extract.</h3>
           <p class="bento__sub">Drag pages between PDFs visually.</p>
         </div>
         <div class="bento__cell bento__cell--small bento__cell--mint">
           <span class="bento__tag">DOCX → PDF</span>
-          <h3 class="bento__title">Word goes in<br>PDF comes out</h3>
+          <h3 class="bento__title">Word goes in.<br>PDF comes out.</h3>
         </div>
         <div class="bento__cell bento__cell--small bento__cell--yellow">
           <span class="bento__tag">ZIP Bundles</span>
-          <h3 class="bento__title">Pack everything in one</h3>
+          <h3 class="bento__title">Pack everything in one.</h3>
         </div>
         <div class="bento__cell bento__cell--wide bento__cell--ink">
           <span class="bento__tag">Smart Chaining</span>
-          <h3 class="bento__title">Compress → Convert → Merge → ZIP — one continuous flow</h3>
+          <h3 class="bento__title">Compress → Convert → Merge → ZIP — one continuous flow.</h3>
           <p class="bento__sub">Operations chain automatically. No re-upload between steps.</p>
         </div>
         <div class="bento__cell bento__cell--small">
           <span class="bento__tag">Offline</span>
-          <h3 class="bento__title">Works without internet</h3>
+          <h3 class="bento__title">Works without internet.</h3>
         </div>
         <div class="bento__cell bento__cell--small bento__cell--lavender">
           <span class="bento__tag">No Account</span>
-          <h3 class="bento__title">No login · No friction</h3>
+          <h3 class="bento__title">No login. No friction.</h3>
         </div>
       </div>
 
@@ -863,7 +865,7 @@
           <span class="pill-badge__dot"></span>
           Built Different
         </span>
-        <h2 class="section__title section__title--mixed">Loved by people<br><em class="italic-accent">who hate clutter</em></h2>
+        <h2 class="section__title section__title--mixed">Loved by people<br><em class="italic-accent">who hate clutter.</em></h2>
       </div>
       <p class="section__subtitle mx-auto reveal" style="margin-bottom: var(--space-2xl);">
         Clex is designed around the idea that your files are yours, and they should move fast.
@@ -1064,7 +1066,7 @@
       <div class="footer__hero">
         <a href="/" class="footer__wordmark" aria-label="Clex home">Clex<em class="italic-accent">.</em></a>
         <p class="footer__tagline">
-          Drop · Prepare · <em class="italic-accent">Share it</em>
+          Move files <em class="italic-accent">keep control</em>
         </p>
       </div>
 
@@ -1118,11 +1120,11 @@
 
       <!-- BIG GLYPH STRIP -->
       <div class="footer__glyph" aria-hidden="true">
-        DROP · PREPARE · <em class="italic-accent">SHARE&nbsp;IT</em>
+        MOVE FILES <em class="italic-accent">KEEP&nbsp;CONTROL</em>
       </div>
 
       <div class="footer__bottom">
-        <span class="footer__copyright">© 2026 Clex · Built privacy-first</span>
+        <span class="footer__copyright">© 2026 Clex · Privacy-first</span>
         <div class="footer__legal">
           <a href="/privacy" class="footer__legal-link">Privacy</a>
           <a href="/terms" class="footer__legal-link">Terms</a>

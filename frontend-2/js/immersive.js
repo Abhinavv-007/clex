@@ -12,10 +12,6 @@ export function initImmersive() {
   trackNavSpotlight();
   initRevealObserver();
   initAnimatedCounters();
-  initMagneticTilt();
-  initCursorFollower();
-  initMascotEyes();
-  initChunkGridStagger();
 }
 
 function injectAmbientBlobs() {
@@ -28,7 +24,9 @@ function injectAmbientBlobs() {
 }
 
 function trackCursorSpotlight() {
+  if (!window.matchMedia?.('(pointer: fine)').matches || window.innerWidth < 900) return;
   let raf = 0;
+  let last = 0;
   let pending = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
   const apply = () => {
     raf = 0;
@@ -36,6 +34,9 @@ function trackCursorSpotlight() {
     document.documentElement.style.setProperty('--cursor-y', `${pending.y}px`);
   };
   window.addEventListener('pointermove', (e) => {
+    const now = performance.now();
+    if (now - last < 34) return;
+    last = now;
     pending = { x: e.clientX, y: e.clientY };
     if (!raf) raf = requestAnimationFrame(apply);
   }, { passive: true });
@@ -83,20 +84,17 @@ function initAnimatedCounters() {
     const decimals = parseInt(el.dataset.countDecimals || '0', 10);
     const suffix = el.dataset.countSuffix || '';
     const prefix = el.dataset.countPrefix || '';
-    const dur = 1400;
+    const dur = 900;
     const start = performance.now();
+    const finalText = `${prefix}${target.toFixed(decimals)}${suffix}`;
+    if (el instanceof HTMLElement) {
+      el.style.minWidth = `${Math.max(finalText.length, el.textContent?.length || 0)}ch`;
+    }
     const tick = (now) => {
       const t = Math.min(1, (now - start) / dur);
       const v = target * ease(t);
-      el.textContent = `${prefix}${v.toFixed(decimals)}${suffix}`;
-      if (t < 1) {
-        requestAnimationFrame(tick);
-      } else {
-        // Pulse glow on the host cell when count completes
-        const host = el.closest('.stat-orb, .creem-counter__cell, .bento__cell') || el;
-        host.classList.add('pulse-glow');
-        setTimeout(() => host.classList.remove('pulse-glow'), 700);
-      }
+      el.textContent = t === 1 ? finalText : `${prefix}${v.toFixed(decimals)}${suffix}`;
+      if (t < 1) requestAnimationFrame(tick);
     };
     requestAnimationFrame(tick);
   };
@@ -109,142 +107,4 @@ function initAnimatedCounters() {
     });
   }, { threshold: 0.5 });
   counters.forEach((el) => io.observe(el));
-}
-
-function initMagneticTilt() {
-  const cards = document.querySelectorAll('.bento__cell, .peer-node, .creem-stack__card');
-  cards.forEach((card) => {
-    if (!(card instanceof HTMLElement)) return;
-    const max = 6;
-    card.addEventListener('pointermove', (e) => {
-      const r = card.getBoundingClientRect();
-      const cx = (e.clientX - r.left) / r.width - 0.5;
-      const cy = (e.clientY - r.top) / r.height - 0.5;
-      card.style.transform = `perspective(900px) rotateX(${-cy * max}deg) rotateY(${cx * max}deg) translateZ(0)`;
-    });
-    card.addEventListener('pointerleave', () => { card.style.transform = ''; });
-  });
-}
-
-/* ---------- Custom cursor follower (12px circle, mix-blend-mode) ---------- */
-function initCursorFollower() {
-  // Skip on touch devices
-  const fine = window.matchMedia?.('(hover: hover) and (pointer: fine)').matches;
-  if (!fine) return;
-  if (document.querySelector('.clex-cursor-follower')) return;
-
-  const dot = document.createElement('div');
-  dot.className = 'clex-cursor-follower';
-  dot.setAttribute('aria-hidden', 'true');
-  document.body.appendChild(dot);
-  // Hide native cursor across the page (CSS fallback handles inputs)
-  document.body.classList.add('clex-cursor-active');
-
-  let mouseX = window.innerWidth / 2;
-  let mouseY = window.innerHeight / 2;
-  let curX = mouseX;
-  let curY = mouseY;
-  let raf = 0;
-  let active = false;
-
-  const tick = () => {
-    raf = 0;
-    curX += (mouseX - curX) * 0.35;
-    curY += (mouseY - curY) * 0.35;
-    dot.style.transform = `translate3d(${curX - 7}px, ${curY - 7}px, 0)`;
-    if (Math.abs(mouseX - curX) > 0.4 || Math.abs(mouseY - curY) > 0.4) {
-      raf = requestAnimationFrame(tick);
-    }
-  };
-
-  window.addEventListener('pointermove', (e) => {
-    mouseX = e.clientX;
-    mouseY = e.clientY;
-    if (!active) {
-      active = true;
-      dot.classList.add('is-active');
-    }
-    if (!raf) raf = requestAnimationFrame(tick);
-  }, { passive: true });
-
-  window.addEventListener('pointerleave', () => {
-    active = false;
-    dot.classList.remove('is-active');
-  });
-
-  // Grow on interactive elements
-  const hotSelector = 'a, button, .btn, .pill-btn, .card, .bento__cell, [role="button"]';
-  document.addEventListener('pointerover', (e) => {
-    const t = e.target;
-    if (t instanceof Element && t.closest(hotSelector)) {
-      dot.classList.add('is-hot');
-    }
-  });
-  document.addEventListener('pointerout', (e) => {
-    const t = e.target;
-    if (t instanceof Element && t.closest(hotSelector)) {
-      dot.classList.remove('is-hot');
-    }
-  });
-}
-
-/* ---------- Mascot eyes track cursor ---------- */
-function initMascotEyes() {
-  const pupils = document.querySelectorAll('.hero__mascot-pupil');
-  if (!pupils.length) return;
-  const fine = window.matchMedia?.('(hover: hover) and (pointer: fine)').matches;
-  if (!fine) return;
-
-  let raf = 0;
-  let pendingX = 0;
-  let pendingY = 0;
-
-  const apply = () => {
-    raf = 0;
-    pupils.forEach((p) => {
-      if (!(p instanceof HTMLElement)) return;
-      p.style.setProperty('--pupil-x', `${pendingX}px`);
-      p.style.setProperty('--pupil-y', `${pendingY}px`);
-      p.style.transform = `translate(${pendingX}px, ${pendingY}px)`;
-    });
-  };
-
-  window.addEventListener('pointermove', (e) => {
-    const cx = window.innerWidth / 2;
-    const cy = window.innerHeight / 2;
-    const dx = (e.clientX - cx) / cx; // -1..1
-    const dy = (e.clientY - cy) / cy;
-    pendingX = Math.max(-4, Math.min(4, dx * 4));
-    pendingY = Math.max(-4, Math.min(4, dy * 4));
-    if (!raf) raf = requestAnimationFrame(apply);
-  }, { passive: true });
-}
-
-/* ---------- Chunk grid wave stagger via --row / --col CSS vars ---------- */
-function initChunkGridStagger() {
-  const grids = document.querySelectorAll('.chunk-grid');
-  grids.forEach((grid) => {
-    if (!(grid instanceof HTMLElement)) return;
-    const cells = grid.querySelectorAll('.chunk-grid__cell');
-    if (!cells.length) return;
-
-    const computeCols = () => {
-      const styles = getComputedStyle(grid);
-      const colsTemplate = styles.gridTemplateColumns || '';
-      const colCount = colsTemplate.split(' ').filter(Boolean).length || 8;
-      cells.forEach((cell, i) => {
-        if (!(cell instanceof HTMLElement)) return;
-        const row = Math.floor(i / colCount);
-        const col = i % colCount;
-        cell.style.setProperty('--row', String(row));
-        cell.style.setProperty('--col', String(col));
-      });
-    };
-
-    computeCols();
-    if ('ResizeObserver' in window) {
-      const ro = new ResizeObserver(() => computeCols());
-      ro.observe(grid);
-    }
-  });
 }

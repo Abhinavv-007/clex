@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,14 +10,14 @@
   <script>
     (() => {
       try {
-        const theme = localStorage.getItem('clex-theme') === 'light' ? 'light' : 'dark';
+        const theme = localStorage.getItem('clex-theme-v2') === 'dark' ? 'dark' : 'light';
         document.documentElement.setAttribute('data-theme', theme);
         document.documentElement.classList.toggle('dark', theme === 'dark');
         document.documentElement.style.colorScheme = theme;
       } catch {
-        document.documentElement.setAttribute('data-theme', 'dark');
-        document.documentElement.classList.add('dark');
-        document.documentElement.style.colorScheme = 'dark';
+        document.documentElement.setAttribute('data-theme', 'light');
+        document.documentElement.classList.remove('dark');
+        document.documentElement.style.colorScheme = 'light';
       }
     })();
   </script>
@@ -30,6 +30,8 @@
   <link rel="stylesheet" href="/css/animations.css">
   <link rel="stylesheet" href="/css/pages/home.css">
   <link rel="stylesheet" href="/css/pages/faq.css">
+  <link rel="stylesheet" href="/css/global-enhance.css">
+  <link rel="stylesheet" href="/css/creem-design.css">
 
   <script type="module" src="/js/main.js"></script>
 </head>

@@ -5,7 +5,7 @@
    to a CSS clip-path animation everywhere else.
    ============================================ */
 
-const THEME_KEY = 'clex-theme';
+const THEME_KEY = 'clex-theme-v2';
 const REVEAL_DURATION_MS = 720;
 const REVEAL_EASING = 'cubic-bezier(0.65, 0, 0.35, 1)';
 let revealOverlayActive = false;
@@ -49,6 +49,7 @@ function applyTheme(theme) {
   document.documentElement.style.colorScheme = theme;
   const toggleBtn = document.getElementById('theme-toggle');
   if (toggleBtn) {
+    ensureToggleIcons(toggleBtn);
     toggleBtn.setAttribute('aria-label', `Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`);
   }
 }
@@ -63,9 +64,9 @@ function persistTheme(theme) {
 function readTheme() {
   try {
     const saved = localStorage.getItem(THEME_KEY);
-    return saved === 'light' ? 'light' : 'dark';
+    return saved === 'dark' ? 'dark' : 'light';
   } catch {
-    return 'dark';
+    return 'light';
   }
 }
 
@@ -143,7 +144,7 @@ function runClipPathReveal(next, origin) {
   }
   revealOverlayActive = true;
   const overlay = document.createElement('div');
-  overlay.className = 'clex-theme-reveal';
+  overlay.className = 'clex-theme-v2-reveal';
   overlay.style.position = 'fixed';
   overlay.style.inset = '0';
   overlay.style.zIndex = '99999';
@@ -171,4 +172,18 @@ function runClipPathReveal(next, origin) {
 function readBgColor() {
   const style = getComputedStyle(document.documentElement);
   return style.getPropertyValue('--bg-primary').trim() || '#0a0a0a';
+}
+
+/** @param {HTMLElement} toggleBtn */
+function ensureToggleIcons(toggleBtn) {
+  if (toggleBtn.querySelector('.nav__theme-toggle-icon')) return;
+  toggleBtn.innerHTML = `
+    <svg class="nav__theme-toggle-icon nav__theme-toggle-icon--sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="4"/>
+      <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
+    </svg>
+    <svg class="nav__theme-toggle-icon nav__theme-toggle-icon--moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+    </svg>
+  `;
 }
