@@ -24,14 +24,14 @@
   --border:         rgba(0,0,0,0.10);
   --border-strong:  rgba(0,0,0,0.20);
   --border-hard:    #000000;
-  --border-focus:   #FFE600;
+  --border-focus:   #C4B5FD;
 
   /* Shadows — neo-brutalist hard offset */
   --shadow-sm:      3px 3px 0 #000000;
   --shadow-md:      4px 4px 0 #000000;
   --shadow-lg:      6px 6px 0 #000000;
   --shadow-xl:      8px 8px 0 #000000;
-  --shadow-accent:  4px 4px 0 #FFE600;
+  --shadow-accent:  4px 4px 0 #C4B5FD;
 
   /* Text */
   --text-1:   #0A0A0C;
@@ -39,11 +39,11 @@
   --text-3:   #8A8790;
   --text-inv: #FFFFFF;
 
-  /* Accent — yellow, used sparingly for maximum impact */
-  --accent:         #FFE600;
-  --accent-dim:     rgba(255,230,0,0.12);
-  --accent-border:  rgba(255,230,0,0.35);
-  --accent-text:    #3B3520;
+  /* Accent — pastel brand palette */
+  --accent:         #C4B5FD;
+  --accent-dim:     rgba(196,181,253,0.18);
+  --accent-border:  rgba(196,181,253,0.45);
+  --accent-text:    #5B3FC0;
   --accent-fg:      #000000;
 
   /* Status */
@@ -80,23 +80,23 @@
   --border:         rgba(255,255,255,0.08);
   --border-strong:  rgba(255,255,255,0.16);
   --border-hard:    rgba(255,255,255,0.75);
-  --border-focus:   #FFE600;
+  --border-focus:   #FFC6A5;
 
   /* Dark mode hard shadows use white (slightly transparent) */
   --shadow-sm:      3px 3px 0 rgba(255,255,255,0.65);
   --shadow-md:      4px 4px 0 rgba(255,255,255,0.65);
   --shadow-lg:      6px 6px 0 rgba(255,255,255,0.65);
   --shadow-xl:      8px 8px 0 rgba(255,255,255,0.65);
-  --shadow-accent:  4px 4px 0 #FFE600;
+  --shadow-accent:  4px 4px 0 #FFC6A5;
 
   --text-1:   #F0F0F5;
   --text-2:   #9898A8;
   --text-3:   #58586A;
   --text-inv: #09090B;
 
-  --accent:         #FFE600;
-  --accent-dim:     rgba(255,230,0,0.12);
-  --accent-border:  rgba(255,230,0,0.35);
+  --accent:         #FFC6A5;
+  --accent-dim:     rgba(255,198,165,0.18);
+  --accent-border:  rgba(255,198,165,0.42);
   --accent-text:    var(--accent);
   --accent-fg:      #000000;
 
@@ -247,10 +247,10 @@ img, svg { display: block; max-width: 100%; }
     box-shadow: var(--shadow-lg);
   }
 
-  /* Accent CTA — always yellow */
+  /* Accent CTA — pastel brand gradient */
   .btn-accent {
     @apply btn;
-    background: var(--accent);
+    background: linear-gradient(135deg, #C4B5FD 0%, #FFC6A5 52%, #B6F0C4 100%);
     color: #000000;
     border: 2px solid #000000;
     box-shadow: 4px 4px 0 #000000;

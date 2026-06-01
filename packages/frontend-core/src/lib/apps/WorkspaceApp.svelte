@@ -45,8 +45,8 @@
   <div class="ws-inner">
     <div class="ws-header">
       <div class="ws-title-block">
-        <h1 class="ws-title">Workspace</h1>
-        <p class="ws-sub">Prepare and share your files</p>
+        <h1 class="ws-title"><span>File</span> <em>workspace</em></h1>
+        <p class="ws-sub">Drop, prepare, and send files from one fluid private workspace.</p>
       </div>
 
       <div class="ws-mobile-tabs">
@@ -123,16 +123,35 @@
   }
 
   .ws-title {
-    font-size: 22px;
-    font-weight: 700;
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: clamp(2.8rem, 7vw, 6.2rem);
+    line-height: 0.92;
+    font-weight: 900;
     color: var(--text-1);
-    letter-spacing: -0.02em;
+    letter-spacing: -0.055em;
+    text-wrap: balance;
+  }
+
+  .ws-title em {
+    display: inline-block;
+    font-family: var(--font-italic);
+    font-style: normal;
+    font-weight: 400;
+    letter-spacing: 0;
+    color: transparent;
+    background: linear-gradient(135deg, #6b4dff 0%, #ff7a3d 54%, #ffb800 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    filter: drop-shadow(0 10px 24px rgba(255,122,61,0.16));
   }
 
   .ws-sub {
-    font-size: 12px;
-    color: var(--text-3);
-    margin-top: 2px;
+    max-width: 44rem;
+    font-size: clamp(1rem, 1.7vw, 1.35rem);
+    color: var(--text-2);
+    margin: 10px 0 0;
+    line-height: 1.45;
   }
 
   .ws-mobile-tabs {

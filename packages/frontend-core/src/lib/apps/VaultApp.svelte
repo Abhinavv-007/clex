@@ -543,13 +543,6 @@
   $: panel = $ui.activePanel
   $: pairingOpen = $ui.pairingModalOpen
   $: infoPanelCollapsed = $ui.infoPanelCollapsed
-  $: panelTitle = panel === 'notes'
-    ? 'Encrypted notes, private links, and timed handoffs'
-    : panel === 'secrets'
-      ? 'Private links with controls you choose'
-      : panel === 'share'
-        ? 'Google Drive handoff with Vault links'
-        : 'Devices, storage, encryption, and account controls'
   $: panelSubtitle = panel === 'notes'
     ? 'Keep notes local first, sync live over shared rooms, and fall back to encrypted room backups without leaving the same workspace shell.'
     : panel === 'secrets'
@@ -594,7 +587,17 @@
       <div class="va-shell-header">
         <div class="va-title-block">
           <p class="va-kicker">Vault</p>
-          <h1 class="va-title">{panelTitle}</h1>
+          <h1 class="va-title">
+            {#if panel === 'notes'}
+              Encrypted notes <em>stay private</em>
+            {:else if panel === 'secrets'}
+              Private links <em>with control</em>
+            {:else if panel === 'share'}
+              Drive handoffs <em>without the mess</em>
+            {:else}
+              Control the <em>Vault</em>
+            {/if}
+          </h1>
           <p class="va-sub">{panelSubtitle}</p>
         </div>
 
@@ -739,18 +742,32 @@
   .va-title {
     margin: 0;
     font-family: var(--font-display);
-    font-size: clamp(1.9rem, 2.8vw, 2.55rem);
-    line-height: 1.02;
-    letter-spacing: -0.03em;
+    font-size: clamp(2.7rem, 5.4vw, 5.8rem);
+    line-height: 0.95;
+    letter-spacing: -0.055em;
+    font-weight: 900;
     color: var(--text-1);
     text-wrap: balance;
+  }
+
+  .va-title em {
+    display: inline-block;
+    font-family: var(--font-italic);
+    font-style: normal;
+    font-weight: 400;
+    letter-spacing: 0;
+    color: transparent;
+    background: linear-gradient(135deg, #6b4dff 0%, #ff7a3d 54%, #ffb800 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    filter: drop-shadow(0 10px 24px rgba(255,122,61,0.16));
   }
 
   .va-sub {
     margin: 12px 0 0;
     max-width: 64ch;
-    font-size: 15px;
-    line-height: 1.65;
+    font-size: clamp(1rem, 1.35vw, 1.22rem);
+    line-height: 1.55;
     color: var(--text-2);
   }
 
