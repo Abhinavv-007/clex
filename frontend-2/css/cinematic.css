@@ -2087,3 +2087,195 @@ body {
   background: #07060f;
   border-color: rgba(255,255,255,0.18);
 }
+
+/* ============================================================
+   FOOTER + PHONE + STORE POLISH
+   ============================================================ */
+
+/* Kill ghost right column on dark footer */
+.footer.footer--v2 {
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  width: 100% !important;
+  max-width: 100vw !important;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+.footer.footer--v2 .footer__container {
+  max-width: var(--container-wide, 1320px) !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+/* Coming-soon store cards (App Store + Google Play) */
+.clex-link__cta-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  margin-top: 1.2rem;
+}
+.clex-link__store-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.7rem;
+  max-width: 460px;
+}
+@media (max-width: 520px) {
+  .clex-link__store-row { grid-template-columns: 1fr; max-width: 100%; }
+}
+.clex-link__store {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.85rem 1rem;
+  border-radius: 14px;
+  border: 1.5px solid rgba(14,14,13,0.92);
+  background: rgba(14,14,13,0.94);
+  color: #f4eee0;
+  text-decoration: none;
+  cursor: not-allowed;
+  overflow: hidden;
+  isolation: isolate;
+  /* Frosted glass */
+  backdrop-filter: blur(10px) saturate(1.2);
+  -webkit-backdrop-filter: blur(10px) saturate(1.2);
+  box-shadow: 0 1px 0 rgba(255,255,255,0.06) inset, 4px 4px 0 rgba(14,14,13,0.85);
+}
+.clex-link__store--coming::before {
+  /* Diagonal blur scrim — gives "coming soon" frosted look */
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, rgba(196,181,253,0.18) 0%, rgba(255,138,31,0.18) 100%);
+  z-index: 0;
+}
+.clex-link__store > * { position: relative; z-index: 2; }
+.clex-link__store-coming {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 3;
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 0.18rem 0.45rem;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #c4b5fd 0%, #ff8a1f 100%);
+  color: #1a1822;
+  box-shadow: 0 2px 8px -2px rgba(255,138,31,0.5);
+}
+.clex-link__store svg { flex-shrink: 0; }
+.clex-link__store-text { display: flex; flex-direction: column; line-height: 1.05; gap: 1px; }
+.clex-link__store-text em {
+  font-size: 0.62rem;
+  font-style: normal;
+  font-weight: 600;
+  opacity: 0.7;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.clex-link__store-text strong {
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+[data-theme="light"] .clex-link__store {
+  background: rgba(14,14,13,0.92);
+  color: #f4eee0;
+}
+
+/* ============================================================
+   PHONE — modern minimal, soft glass shadow, faint glow
+   ============================================================ */
+.clex-phone {
+  /* lighter chassis, softer corners, no hard offset shadow */
+  background:
+    linear-gradient(150deg, #2a2532 0%, #16131e 38%, #0a0810 100%) !important;
+  border: 1px solid rgba(0,0,0,0.85) !important;
+  border-radius: 50px !important;
+  box-shadow:
+    /* close shadow under phone */
+    0 30px 50px -22px rgba(14,14,13,0.55),
+    /* color glow */
+    0 50px 80px -36px rgba(139,92,246,0.42),
+    0 60px 90px -40px rgba(255,138,31,0.32),
+    /* bezel glints */
+    inset 0 0 0 1.5px rgba(255,255,255,0.05),
+    inset 0 1.5px 0 rgba(255,255,255,0.22),
+    inset 0 -2px 6px rgba(0,0,0,0.7),
+    inset 1.5px 0 0 rgba(255,255,255,0.07),
+    inset -1.5px 0 0 rgba(255,255,255,0.04) !important;
+  padding: 12px !important;
+  /* slight lift instead of hard tilt */
+  transform: rotate(-2.5deg) !important;
+}
+.clex-phone--right {
+  transform: rotate(2.5deg) translateX(20px) translateY(20px) !important;
+}
+.clex-phone__notch {
+  width: 88px !important;
+  height: 26px !important;
+  top: 14px !important;
+  background: #000 !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,0.08),
+    inset 0 1px 2px rgba(0,0,0,0.95),
+    0 0 8px rgba(0,0,0,0.6) !important;
+}
+.clex-phone__screen {
+  border-radius: 38px !important;
+  background:
+    radial-gradient(120% 70% at 50% 0%, rgba(196,181,253,0.16), transparent 55%),
+    linear-gradient(180deg, #15131e 0%, #0a0810 100%) !important;
+  background-blend-mode: screen, normal;
+  padding: 42px 16px 16px !important;
+}
+
+/* Active peer card — keep glow but more polished */
+.clex-phone__peer--active {
+  background:
+    linear-gradient(135deg, rgba(255,138,31,0.18) 0%, rgba(196,181,253,0.16) 100%) !important;
+  border-color: rgba(255,138,31,0.6) !important;
+  box-shadow: 0 0 0 1px rgba(255,138,31,0.25), 0 6px 18px -8px rgba(255,138,31,0.5);
+}
+
+/* Accept button — premium gradient with glow */
+.clex-phone__btn--primary {
+  background: linear-gradient(135deg, #c4b5fd 0%, #ff8a1f 100%) !important;
+  color: #1a1822 !important;
+  border-color: rgba(0,0,0,0.5) !important;
+  box-shadow:
+    0 0 18px rgba(255,138,31,0.55),
+    0 4px 12px rgba(255,138,31,0.45),
+    inset 0 1px 0 rgba(255,255,255,0.4) !important;
+}
+
+/* File card — subtler, more glassmorphic */
+.clex-phone__file-card {
+  background: linear-gradient(135deg, rgba(196,181,253,0.16) 0%, rgba(255,138,31,0.16) 100%) !important;
+  border: 1px solid rgba(255,138,31,0.32) !important;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
+}
+
+/* Beam — thinner, brighter neon */
+.clex-link__beam {
+  height: 1.5px !important;
+  filter: drop-shadow(0 0 6px rgba(255,138,31,0.7)) drop-shadow(0 0 16px rgba(196,181,253,0.45)) !important;
+}
+.clex-link__beam-pulse {
+  width: 10px !important;
+  height: 10px !important;
+  top: -4px !important;
+}
+
+/* Floor reflection — only show on light bg */
+[data-theme="light"] .clex-link-section .clex-phone::before {
+  /* reflect element — soft shadow under phone */
+  background:
+    linear-gradient(140deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0) 28%, rgba(255,255,255,0) 70%, rgba(255,255,255,0.04) 100%) !important;
+}
