@@ -106,24 +106,37 @@
             <span class="section__label">API Access</span>
             <h2 class="dev-access__title">Create your API key</h2>
             <p class="dev-access__text">
-              Use the same Firebase Google login as Clex AI to create a Clex API key. Send it as <code>Authorization: Bearer &lt;key&gt;</code> for protected Clex API routes.
+              No signup. We generate a key bound to this device fingerprint + IP. Rate-limit applies per fingerprint, not per account. Send it as <code>Authorization: Bearer &lt;key&gt;</code> for protected Clex API routes.
             </p>
           </div>
           <div class="dev-access__status">
-            <span id="dev-user-label">Sign in to create an API key</span>
-            <small id="dev-token-status">Ready</small>
+            <span id="dev-user-label">Click <b>Generate API key</b> to mint one</span>
+            <small id="dev-token-status">Device-bound · 60 req/min · 100MB/day</small>
           </div>
         </div>
 
         <div class="dev-access__actions">
-          <button class="btn btn--primary" id="dev-google-signin" type="button">Sign in with Google</button>
-          <button class="btn btn--secondary" id="dev-create-token" type="button">Create API key</button>
-          <button class="btn btn--secondary" id="dev-copy-token" type="button">Copy key</button>
-          <button class="btn btn--ghost" id="dev-google-signout" type="button">Sign out</button>
+          <button class="btn btn--primary" id="dev-create-token" type="button">
+            <span class="dev-btn__icon" aria-hidden="true">⚡</span>
+            <span>Generate API key</span>
+          </button>
+          <button class="btn btn--secondary" id="dev-copy-token" type="button">
+            <span class="dev-btn__icon" aria-hidden="true">⧉</span>
+            <span>Copy key</span>
+          </button>
+          <button class="btn btn--ghost" id="dev-rotate-token" type="button">
+            <span class="dev-btn__icon" aria-hidden="true">↻</span>
+            <span>Rotate</span>
+          </button>
         </div>
 
         <label class="dev-token-label" for="dev-token-output">Your API key</label>
-        <textarea class="dev-token-output" id="dev-token-output" rows="4" readonly placeholder="Sign in with Google first"></textarea>
+        <textarea class="dev-token-output" id="dev-token-output" rows="4" readonly placeholder="Click Generate to mint a fingerprint-bound key"></textarea>
+
+        <div class="dev-access__fingerprint" aria-live="polite">
+          <span class="dev-fp__label">Device fingerprint</span>
+          <code id="dev-fp-display">—</code>
+        </div>
       </div>
     </div>
   </section>

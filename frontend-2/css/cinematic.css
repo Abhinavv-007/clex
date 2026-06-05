@@ -2107,7 +2107,7 @@ body {
   margin-right: auto !important;
 }
 
-/* Coming-soon store cards (App Store + Google Play) */
+/* Coming-soon store cards (App Store + Google Play) — symmetric pair */
 .clex-link__cta-grid {
   display: flex;
   flex-direction: column;
@@ -2117,7 +2117,7 @@ body {
 .clex-link__store-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0.7rem;
+  gap: 0.85rem;
   max-width: 460px;
 }
 @media (max-width: 520px) {
@@ -2125,66 +2125,197 @@ body {
 }
 .clex-link__store {
   position: relative;
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 0.7rem;
-  padding: 0.85rem 1rem;
+  gap: 0.8rem;
+  padding: 1rem 1.1rem 1rem 1.1rem;
+  height: 64px;
   border-radius: 14px;
   border: 1.5px solid rgba(14,14,13,0.92);
-  background: rgba(14,14,13,0.94);
+  background: linear-gradient(160deg, #1a1822 0%, #0a0810 100%);
   color: #f4eee0;
   text-decoration: none;
   cursor: not-allowed;
-  overflow: hidden;
+  overflow: visible;
   isolation: isolate;
-  /* Frosted glass */
-  backdrop-filter: blur(10px) saturate(1.2);
-  -webkit-backdrop-filter: blur(10px) saturate(1.2);
   box-shadow: 0 1px 0 rgba(255,255,255,0.06) inset, 4px 4px 0 rgba(14,14,13,0.85);
+  transition: transform 320ms var(--cine-ease-out);
 }
+.clex-link__store:hover { transform: translate(-2px,-2px); }
 .clex-link__store--coming::before {
-  /* Diagonal blur scrim — gives "coming soon" frosted look */
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(120deg, rgba(196,181,253,0.18) 0%, rgba(255,138,31,0.18) 100%);
+  border-radius: inherit;
+  background: linear-gradient(120deg, rgba(196,181,253,0.06) 0%, rgba(255,138,31,0.10) 100%);
   z-index: 0;
 }
 .clex-link__store > * { position: relative; z-index: 2; }
 .clex-link__store-coming {
   position: absolute;
-  top: 6px;
-  right: 6px;
+  top: -10px;
+  right: 12px;
   z-index: 3;
-  font-size: 0.58rem;
+  font-size: 0.56rem;
   font-weight: 800;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  padding: 0.18rem 0.45rem;
+  padding: 0.22rem 0.55rem;
   border-radius: 999px;
   background: linear-gradient(135deg, #c4b5fd 0%, #ff8a1f 100%);
   color: #1a1822;
-  box-shadow: 0 2px 8px -2px rgba(255,138,31,0.5);
+  box-shadow: 0 4px 12px -4px rgba(255,138,31,0.55);
+  white-space: nowrap;
 }
-.clex-link__store svg { flex-shrink: 0; }
-.clex-link__store-text { display: flex; flex-direction: column; line-height: 1.05; gap: 1px; }
+.clex-link__store svg {
+  flex-shrink: 0;
+  fill: #f4eee0;
+  width: 28px;
+  height: 28px;
+  filter: drop-shadow(0 0 8px rgba(255,255,255,0.18));
+}
+.clex-link__store-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.05;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+}
 .clex-link__store-text em {
-  font-size: 0.62rem;
+  font-size: 0.6rem;
   font-style: normal;
-  font-weight: 600;
-  opacity: 0.7;
-  letter-spacing: 0.06em;
+  font-weight: 700;
+  opacity: 0.62;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 .clex-link__store-text strong {
-  font-size: 0.95rem;
+  font-size: 1.02rem;
   font-weight: 800;
   letter-spacing: -0.01em;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+[data-theme="light"] .clex-link__store {
+  background: linear-gradient(160deg, #1a1822 0%, #0e0c18 100%);
 }
 
-[data-theme="light"] .clex-link__store {
-  background: rgba(14,14,13,0.92);
-  color: #f4eee0;
+/* ============================================================
+   MASCOT pupil tracker (returned to /developers code panel)
+   ============================================================ */
+.dce-mascot {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  width: 64px;
+  height: 64px;
+  z-index: 4;
+  pointer-events: none;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+.dce-mascot-avatar {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #fff 0%, #ffd9b8 28%, #ff9a5c 65%, #c46bc2 100%);
+  box-shadow:
+    0 0 0 2px rgba(14,14,13,0.95),
+    0 0 24px rgba(255,138,31,0.65),
+    inset 0 -3px 10px rgba(0,0,0,0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  animation: dce-mascot-bob 3.4s ease-in-out infinite;
+}
+@keyframes dce-mascot-bob {
+  0%,100% { transform: translateY(0) rotate(-2deg); }
+  50%     { transform: translateY(-3px) rotate(2deg); }
+}
+.dce-mascot-eye {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #15131e;
+  position: relative;
+  overflow: hidden;
+}
+.dce-mascot-pupil {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #fff;
+  transform: translate(-50%, -50%);
+  transition: transform 60ms linear;
+  animation: dce-blink 5.6s ease-in-out infinite;
+}
+@keyframes dce-blink {
+  0%, 92%, 100% { transform: translate(-50%, -50%) scaleY(1); }
+  94% { transform: translate(-50%, -50%) scaleY(0.05); }
+}
+.dce-mascot-badge {
+  position: absolute;
+  bottom: -4px;
+  right: -6px;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 0.7rem;
+  font-weight: 800;
+  background: #15131e;
+  color: #ff8a1f;
+  padding: 0.18rem 0.4rem;
+  border-radius: 999px;
+  border: 1.5px solid rgba(14,14,13,0.95);
+  box-shadow: 0 0 8px rgba(255,138,31,0.4);
+}
+
+/* ============================================================
+   MICRO-ANIMATIONS — eye-pleasing + universal
+   ============================================================ */
+@media (prefers-reduced-motion: no-preference) {
+  /* Subtle button micro-bounce on press (universal) */
+  button:active, .pill-btn:active, .btn:active, a.pill-btn:active {
+    transform: scale(0.97) !important;
+    transition: transform 120ms ease-out !important;
+  }
+  /* Sticker chips wobble on hover */
+  .pill-badge, .cine-chip, .cine-rail__num, .clex-chip,
+  .va-kicker, .cs-kicker, .ws-kicker, .page-hero__label {
+    transition: transform 320ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .pill-badge:hover, .cine-chip:hover {
+    transform: rotate(-2deg) scale(1.04);
+  }
+  /* Card lift micro-tilt on hover */
+  .feature-card, .tool-card, .tip-card {
+    transition: transform 380ms var(--cine-ease-out), box-shadow 380ms var(--cine-ease-out);
+  }
+  /* Subtle continuous breathe on hero CTAs (extra polish) */
+  .hero__actions .pill-btn--primary {
+    animation: clex-cta-breathe 4.2s ease-in-out infinite;
+  }
+  @keyframes clex-cta-breathe {
+    0%,100% { box-shadow: 4px 4px 0 #0a0a0a, 0 0 0 rgba(255,138,31,0); }
+    50%     { box-shadow: 4px 4px 0 #0a0a0a, 0 0 24px rgba(255,138,31,0.35); }
+  }
+  /* Float-tag drift idle */
+  .hero__float-tag-dot { animation: clex-dot-pulse 2s ease-in-out infinite; }
+  @keyframes clex-dot-pulse {
+    0%,100% { box-shadow: 0 0 0 rgba(255,138,31,0); transform: scale(1); }
+    50%     { box-shadow: 0 0 8px currentColor; transform: scale(1.3); }
+  }
+  /* Anchor hover slide */
+  a:not(.pill-btn):not(.btn):not(.nav__link):not(.footer__link):not(.cine-window__copy):not(.dev-endpoint__copy) {
+    transition: color 200ms ease;
+  }
 }
 
 /* ============================================================
@@ -2278,4 +2409,52 @@ body {
   /* reflect element — soft shadow under phone */
   background:
     linear-gradient(140deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0) 28%, rgba(255,255,255,0) 70%, rgba(255,255,255,0.04) 100%) !important;
+}
+
+/* ============================================================
+   DEV ACCESS card — fingerprint-bound key UI
+   ============================================================ */
+.dev-access__fingerprint {
+  margin-top: 1rem;
+  padding: 0.65rem 0.9rem;
+  border-radius: 12px;
+  background: rgba(14,14,13,0.04);
+  border: 1px dashed rgba(14,14,13,0.18);
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  font-size: 0.78rem;
+}
+[data-theme="dark"] .dev-access__fingerprint {
+  background: rgba(255,255,255,0.04);
+  border-color: rgba(255,255,255,0.12);
+}
+.dev-fp__label {
+  font-size: 0.66rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--text-tertiary);
+}
+#dev-fp-display {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 0.82rem;
+  color: #ff8a1f;
+}
+.dev-access__actions .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.dev-btn__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  font-size: 14px;
+}
+#dev-copy-token.is-copied {
+  background: linear-gradient(135deg, #7edc8b 0%, #34c759 100%) !important;
+  color: #fff !important;
 }

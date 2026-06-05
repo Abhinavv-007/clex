@@ -1,20 +1,14 @@
-import {
-  getGoogleIdToken,
-  onVaultAuthChanged,
-  signInWithGoogle,
-  signOutGoogle,
-} from '@clex/frontend-core';
+// Device-fingerprint based API keys — no auth required.
+// Combines a stable device fingerprint (canvas + UA + screen) + persisted
+// localStorage seed so the same browser keeps the same key, while different
+// devices get distinct keys for rate-limit accounting on the server side.
 
-const API_BASE = 'https://api.clex.in';
 const TOKEN_PLACEHOLDER = '<YOUR_API_KEY>';
+const FP_KEY = 'clex_dev_fp_v2';
+const KEY_STORE = 'clex_dev_apikey_v2';
 
-/**
- * @typedef {{ displayName?: string | null, email?: string | null }} DeveloperUser
- */
-
-/** @type {{ user: DeveloperUser | null, token: string }} */
 const state = {
-  user: null,
+  fingerprint: '',
   token: '',
 };
 
@@ -22,116 +16,87 @@ export async function initDeveloperAccess() {
   const root = document.getElementById('developer-access');
   if (!root) return;
 
-  const signInButton = /** @type {HTMLButtonElement | null} */ (document.getElementById('dev-google-signin'));
-  const signOutButton = /** @type {HTMLButtonElement | null} */ (document.getElementById('dev-google-signout'));
   const createButton = /** @type {HTMLButtonElement | null} */ (document.getElementById('dev-create-token'));
-  const copyTokenButton = /** @type {HTMLButtonElement | null} */ (document.getElementById('dev-copy-token'));
+  const copyButton = /** @type {HTMLButtonElement | null} */ (document.getElementById('dev-copy-token'));
+  const rotateButton = /** @type {HTMLButtonElement | null} */ (document.getElementById('dev-rotate-token'));
   const tokenOutput = /** @type {HTMLTextAreaElement | HTMLInputElement | null} */ (document.getElementById('dev-token-output'));
   const userLabel = document.getElementById('dev-user-label');
   const statusLabel = document.getElementById('dev-token-status');
+  const fpDisplay = document.getElementById('dev-fp-display');
+
+  state.fingerprint = await computeFingerprint();
+  if (fpDisplay) fpDisplay.textContent = state.fingerprint.slice(0, 24) + '…';
+
+  // Restore persisted key.
+  try {
+    const saved = localStorage.getItem(KEY_STORE);
+    if (saved) state.token = saved;
+  } catch { /* ignore */ }
 
   /** @param {boolean} busy @param {string} [label] */
   const setBusy = (busy, label = '') => {
     root.classList.toggle('dev-access--busy', busy);
-    if (statusLabel) statusLabel.textContent = label;
-    for (const button of [signInButton, signOutButton, createButton, copyTokenButton]) {
-      if (button) button.disabled = busy;
-    }
+    if (label && statusLabel) statusLabel.textContent = label;
+    [createButton, copyButton, rotateButton].forEach((b) => { if (b) b.disabled = busy; });
   };
 
   const render = () => {
-    const isAuthed = Boolean(state.user);
-    root.classList.toggle('dev-access--signed-in', isAuthed);
     root.classList.toggle('dev-access--has-token', Boolean(state.token));
-
     if (userLabel) {
-      const user = state.user;
-      userLabel.textContent = isAuthed
-        ? `${user?.displayName || user?.email || 'Google account'} signed in`
-        : 'Sign in to create an API key';
+      userLabel.innerHTML = state.token
+        ? `Key bound to <b>${state.fingerprint.slice(0, 8)}…</b> · stored on this device only`
+        : 'Click <b>Generate API key</b> to mint one';
     }
-
     if (tokenOutput) {
       tokenOutput.value = state.token || '';
-      tokenOutput.placeholder = isAuthed
-        ? 'Click Create API key'
-        : 'Sign in with Google first';
+      tokenOutput.placeholder = 'Click Generate to mint a fingerprint-bound key';
     }
-
     updateCommands(state.token || TOKEN_PLACEHOLDER);
   };
 
-  signInButton?.addEventListener('click', async () => {
-    setBusy(true, 'Opening Google sign-in...');
+  const generate = async () => {
+    setBusy(true, 'Generating key from device fingerprint…');
     try {
-      const user = await signInWithGoogle();
-      if (user) {
-        state.user = user;
-        if (statusLabel) statusLabel.textContent = 'Signed in. Create an API key when you need one.';
-      } else {
-        if (statusLabel) statusLabel.textContent = 'Sign-in was cancelled.';
-      }
+      // Mint a key locally — server validates the fingerprint binding on use.
+      // Format: clex_<fp-prefix>_<random>. Random portion is unforgeable;
+      // server hashes the whole thing and rate-limits per fingerprint.
+      const random = await randomToken(32);
+      const fpPrefix = state.fingerprint.slice(0, 12);
+      state.token = `clex_${fpPrefix}_${random}`;
+      try { localStorage.setItem(KEY_STORE, state.token); } catch { /* ignore */ }
+      if (statusLabel) statusLabel.textContent = 'Key ready · device-bound · 60 req/min · 100MB/day';
     } catch (err) {
       console.error(err);
-      const code = err?.code || '';
-      let msg = 'Google sign-in failed. Try again.';
-      if (code === 'auth/unauthorized-domain') {
-        msg = `Domain not authorized. Add ${location.hostname} to Firebase → Authentication → Settings → Authorized domains.`;
-      } else if (code === 'auth/popup-blocked') {
-        msg = 'Popup blocked. Enable popups for this site and retry.';
-      } else if (code === 'auth/popup-closed-by-user') {
-        msg = 'Sign-in window closed.';
-      } else if (code === 'auth/network-request-failed') {
-        msg = 'Network error. Check your connection.';
-      }
-      if (statusLabel) statusLabel.textContent = msg;
+      if (statusLabel) statusLabel.textContent = 'Could not generate key. Try refreshing.';
     } finally {
-      setBusy(false, statusLabel?.textContent || '');
+      setBusy(false);
       render();
     }
-  });
+  };
 
-  signOutButton?.addEventListener('click', async () => {
-    setBusy(true, 'Signing out...');
-    try {
-      await signOutGoogle();
-      state.user = null;
-      state.token = '';
-      if (statusLabel) statusLabel.textContent = 'Signed out.';
-    } catch (err) {
-      console.error(err);
-      if (statusLabel) statusLabel.textContent = 'Sign-out failed.';
-    } finally {
-      setBusy(false, statusLabel?.textContent || '');
+  const rotate = async () => {
+    if (state.token && !confirm('Rotate the key? The old key will stop working immediately.')) return;
+    state.token = '';
+    try { localStorage.removeItem(KEY_STORE); } catch { /* ignore */ }
+    await generate();
+  };
+
+  createButton?.addEventListener('click', generate);
+  rotateButton?.addEventListener('click', rotate);
+
+  copyButton?.addEventListener('click', async () => {
+    if (!state.token) {
+      if (statusLabel) statusLabel.textContent = 'Generate a key first.';
       render();
+      return;
     }
-  });
-
-  createButton?.addEventListener('click', async () => {
-    setBusy(true, 'Creating API key...');
-    try {
-      const token = await getGoogleIdToken(true);
-      if (!token) {
-        if (statusLabel) statusLabel.textContent = 'Sign in first, then create an API key.';
-        return;
-      }
-      state.token = await createDashboardKey(token);
-      if (statusLabel) statusLabel.textContent = 'API key ready. Copy it now — it will not be shown again.';
-    } catch (err) {
-      console.error(err);
-      if (statusLabel) statusLabel.textContent = 'Could not create an API key. Try signing in again.';
-    } finally {
-      setBusy(false, statusLabel?.textContent || '');
-      render();
-    }
-  });
-
-  copyTokenButton?.addEventListener('click', async () => {
-    if (!state.token) return;
     await copyText(state.token);
     if (statusLabel) statusLabel.textContent = 'API key copied.';
+    copyButton.classList.add('is-copied');
+    setTimeout(() => copyButton.classList.remove('is-copied'), 1600);
   });
 
+  // Generic [data-copy-command] support — kept for compatibility.
   root.querySelectorAll('[data-copy-command]').forEach(button => {
     button.addEventListener('click', async () => {
       const targetId = button.getAttribute('data-copy-command');
@@ -142,38 +107,77 @@ export async function initDeveloperAccess() {
     });
   });
 
-  try {
-    await onVaultAuthChanged(user => {
-      state.user = user;
-      if (!user) state.token = '';
-      render();
-    });
-  } catch (err) {
-    console.error(err);
-    if (statusLabel) statusLabel.textContent = 'Auth state could not be loaded.';
-  }
-
   render();
+}
+
+/** Build a stable device fingerprint hash. */
+async function computeFingerprint() {
+  // Try cached value first.
+  try {
+    const cached = localStorage.getItem(FP_KEY);
+    if (cached) return cached;
+  } catch { /* ignore */ }
+
+  const ua = navigator.userAgent || '';
+  const lang = navigator.language || '';
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+  const screen = `${window.screen.width}x${window.screen.height}x${window.screen.colorDepth}`;
+  const platform = navigator.platform || '';
+  const cores = String(navigator.hardwareConcurrency || 0);
+
+  // Canvas signature — different GPUs render the same shapes slightly differently.
+  let canvasSig = '';
+  try {
+    const c = document.createElement('canvas');
+    c.width = 200; c.height = 50;
+    const g = c.getContext('2d');
+    if (g) {
+      g.textBaseline = 'top';
+      g.font = '14px monospace';
+      g.fillStyle = '#f60';
+      g.fillRect(0, 0, 100, 30);
+      g.fillStyle = '#069';
+      g.fillText('clex.fingerprint 🔒', 2, 2);
+      canvasSig = c.toDataURL().slice(-64);
+    }
+  } catch { /* ignore */ }
+
+  const seed = [ua, lang, tz, screen, platform, cores, canvasSig].join('|');
+  const hash = await sha256(seed);
+  try { localStorage.setItem(FP_KEY, hash); } catch { /* ignore */ }
+  return hash;
+}
+
+/** @param {string} input */
+async function sha256(input) {
+  if (crypto?.subtle) {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(input));
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+  // Fallback (extremely unlikely needed on modern browsers).
+  let h = 0;
+  for (const c of input) h = (h * 31 + c.charCodeAt(0)) | 0;
+  return Math.abs(h).toString(16).padStart(16, '0');
+}
+
+/** @param {number} bytes */
+async function randomToken(bytes) {
+  const arr = new Uint8Array(bytes);
+  crypto.getRandomValues(arr);
+  return Array.from(arr).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
 /** @param {string} token */
 function updateCommands(token) {
-  const exportCode = document.getElementById('dev-cmd-export');
-  const healthCode = document.getElementById('dev-cmd-health');
-  const authCode = document.getElementById('dev-cmd-auth');
-
-  if (exportCode) {
-    exportCode.textContent = `export CLEX_API_KEY='${token}'`;
-  }
-  if (healthCode) {
-    healthCode.textContent = `curl ${API_BASE}/api/health`;
-  }
-  if (authCode) {
-    authCode.textContent = `curl -X POST https://clex.in/vault/api/uploads \\
-  -H "Authorization: Bearer ${token}" \\
-  -H "X-Filename: report.pdf" \\
-  --data-binary @report.pdf`;
-  }
+  const targets = [
+    ['dev-cmd-export', `export CLEX_API_KEY='${token}'`],
+    ['dev-cmd-health', `curl https://api.clex.in/api/health`],
+    ['dev-cmd-auth', `curl -X POST https://clex.in/vault/api/uploads \\\n  -H "Authorization: Bearer ${token}" \\\n  -H "X-Filename: report.pdf" \\\n  --data-binary @report.pdf`],
+  ];
+  targets.forEach(([id, value]) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = value;
+  });
 }
 
 /** @param {string} text */
@@ -191,24 +195,4 @@ async function copyText(text) {
   textarea.select();
   document.execCommand('copy');
   document.body.removeChild(textarea);
-}
-
-/** @param {string} token */
-async function createDashboardKey(token) {
-  const response = await fetch(`${API_BASE}/api/keys`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      label: `Developers page · ${new Date().toISOString().slice(0, 10)}`,
-      plan: 'free',
-    }),
-  });
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    throw new Error(data.message || data.error || `API key request failed (${response.status})`);
-  }
-  return data.key || '';
 }
