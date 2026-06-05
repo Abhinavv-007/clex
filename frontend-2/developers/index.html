@@ -36,6 +36,7 @@
   <link rel="stylesheet" href="/css/pages/developers.css">
   <link rel="stylesheet" href="/css/global-enhance.css">
   <link rel="stylesheet" href="/css/creem-design.css">
+  <link rel="stylesheet" href="/css/cinematic.css">
 
   <script type="module" src="/js/main.js"></script>
 </head>
@@ -135,36 +136,82 @@
         <p class="section__subtitle">Copy these in order. The key command updates automatically after you create a key.</p>
       </div>
 
-      <div class="dev-command-list reveal">
-        <article class="dev-command">
-          <div class="dev-command__top">
-            <span class="dev-command__step">01</span>
-            <h3>Save your key</h3>
-            <button type="button" data-copy-command="dev-cmd-export">Copy</button>
+      <!-- Interactive Tabbed Code Editor Widget -->
+      <div class="dev-code-editor reveal">
+        <div class="dce-header">
+          <div class="dce-dots">
+            <span class="dce-dot dce-dot--red"></span>
+            <span class="dce-dot dce-dot--yellow"></span>
+            <span class="dce-dot dce-dot--green"></span>
           </div>
-          <pre class="dev-code"><code id="dev-cmd-export">export CLEX_API_KEY='&lt;YOUR_API_KEY&gt;'</code></pre>
-        </article>
+          <div class="dce-tabs">
+            <button class="dce-tab dce-tab--active" data-tab="curl" type="button">curl</button>
+            <button class="dce-tab" data-tab="python" type="button">Python</button>
+            <button class="dce-tab" data-tab="node" type="button">Node.js</button>
+          </div>
+          <button class="dce-copy" type="button" id="dce-copy-btn">Copy code</button>
+        </div>
+        <div class="dce-content">
+          <div class="dce-pane dce-pane--active" id="pane-curl">
+            <pre class="dev-code"><code id="dev-cmd-export"># 01. Save your API key
+export CLEX_API_KEY='&lt;YOUR_API_KEY&gt;'
 
-        <article class="dev-command">
-          <div class="dev-command__top">
-            <span class="dev-command__step">02</span>
-            <h3>Check the API</h3>
-            <button type="button" data-copy-command="dev-cmd-health">Copy</button>
-          </div>
-          <pre class="dev-code"><code id="dev-cmd-health">curl https://api.clex.in/api/health</code></pre>
-        </article>
-
-        <article class="dev-command">
-          <div class="dev-command__top">
-            <span class="dev-command__step">03</span>
-            <h3>Send an authenticated request</h3>
-            <button type="button" data-copy-command="dev-cmd-auth">Copy</button>
-          </div>
-          <pre class="dev-code"><code id="dev-cmd-auth">curl -X POST https://clex.in/vault/api/uploads \
-  -H "Authorization: Bearer &lt;YOUR_API_KEY&gt;" \
+# 02. Upload a file via API
+curl -X POST https://clex.in/vault/api/uploads \
+  -H "Authorization: Bearer $CLEX_API_KEY" \
   -H "X-Filename: report.pdf" \
   --data-binary @report.pdf</code></pre>
-        </article>
+          </div>
+          <div class="dce-pane" id="pane-python">
+            <pre class="dev-code"><code>import os, requests
+
+# Read file bytes and POST directly to Clex private upload
+with open("report.pdf", "rb") as f:
+    r = requests.post(
+        "https://clex.in/vault/api/uploads",
+        headers={
+            "Authorization": f"Bearer {os.getenv('CLEX_API_KEY')}",
+            "X-Filename": "report.pdf",
+            "X-Expires-In": "86400",
+        },
+        data=f,
+    )
+
+r.raise_for_status()
+print(f"Share URL: {r.json()['shareUrl']}")</code></pre>
+          </div>
+          <div class="dce-pane" id="pane-node">
+            <pre class="dev-code"><code>import { readFile } from 'node:fs/promises';
+
+// Read file and POST directly to Clex API upload
+const fileBuffer = await readFile('report.pdf');
+const res = await fetch('https://clex.in/vault/api/uploads', {
+  method: 'POST',
+  headers: {
+    'Authorization': `Bearer ${process.env.CLEX_API_KEY}`,
+    'X-Filename': 'report.pdf',
+  },
+  body: fileBuffer,
+});
+
+if (!res.ok) throw new Error(`Upload failed: ${res.status}`);
+const { shareUrl } = await res.json();
+console.log(`Share URL: ${shareUrl}`);</code></pre>
+          </div>
+        </div>
+        
+        <!-- Peeking Mascot -->
+        <div class="dce-mascot">
+          <div class="dce-mascot-avatar">
+            <span class="dce-mascot-eye">
+              <span class="dce-mascot-pupil"></span>
+            </span>
+            <span class="dce-mascot-eye dce-mascot-eye--right">
+              <span class="dce-mascot-pupil dce-mascot-pupil--right"></span>
+            </span>
+          </div>
+          <div class="dce-mascot-badge">&lt;/&gt;</div>
+        </div>
       </div>
     </div>
   </section>
@@ -185,11 +232,15 @@
         </div>
       </div>
 
-      <div class="dev-endpoint reveal">
+      <div class="dev-endpoint reveal" data-cine-block>
         <div class="dev-endpoint__head">
           <span class="dev-endpoint__method dev-endpoint__method--post">POST</span>
           <code class="dev-endpoint__path">/vault/api/uploads</code>
           <span class="dev-endpoint__tag dev-endpoint__tag--stable">Stable</span>
+          <button class="dev-endpoint__copy" type="button" data-cine-copy aria-label="Copy code">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            <span>Copy</span>
+          </button>
         </div>
         <p class="dev-endpoint__desc">
           Upload a file using a Bearer API key. Returns a share URL, an internal id, and rate-limit headers (<code>X-RateLimit-Limit</code>, <code>X-RateLimit-Remaining</code>, <code>X-RateLimit-Reset</code>). The body is the raw file bytes; metadata travels in headers (<code>X-Filename</code>, optional <code>X-Expires-In</code>).
@@ -211,11 +262,15 @@ curl -X POST https://clex.in/vault/api/uploads \
 }</code></pre>
       </div>
 
-      <div class="dev-endpoint reveal">
+      <div class="dev-endpoint reveal" data-cine-block>
         <div class="dev-endpoint__head">
           <span class="dev-endpoint__method dev-endpoint__method--post">POST</span>
           <code class="dev-endpoint__path">/vault/api/uploads</code>
           <span class="dev-endpoint__tag">Python</span>
+          <button class="dev-endpoint__copy" type="button" data-cine-copy aria-label="Copy code">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            <span>Copy</span>
+          </button>
         </div>
         <pre class="dev-code"><code>import os, requests
 
@@ -234,11 +289,15 @@ r.raise_for_status()
 print(r.json()["shareUrl"])</code></pre>
       </div>
 
-      <div class="dev-endpoint reveal">
+      <div class="dev-endpoint reveal" data-cine-block>
         <div class="dev-endpoint__head">
           <span class="dev-endpoint__method dev-endpoint__method--post">POST</span>
           <code class="dev-endpoint__path">/vault/api/uploads</code>
           <span class="dev-endpoint__tag">Node / fetch</span>
+          <button class="dev-endpoint__copy" type="button" data-cine-copy aria-label="Copy code">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            <span>Copy</span>
+          </button>
         </div>
         <pre class="dev-code"><code>import { readFile } from 'node:fs/promises'
 
@@ -258,22 +317,34 @@ const { shareUrl } = await res.json()
 console.log(shareUrl)</code></pre>
       </div>
 
-      <div class="dev-endpoint reveal">
+      <div class="dev-endpoint reveal" data-cine-block>
         <div class="dev-endpoint__head">
           <span class="dev-endpoint__method dev-endpoint__method--get">GET</span>
           <code class="dev-endpoint__path">/vault/api/uploads</code>
           <span class="dev-endpoint__tag dev-endpoint__tag--stable">Stable</span>
+          <button class="dev-endpoint__copy" type="button" data-cine-copy aria-label="Copy code">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            <span>Copy</span>
+          </button>
         </div>
         <p class="dev-endpoint__desc">List uploads owned by the authenticated user. Authenticate via Bearer key (returns only that key's uploads) or <code>X-Vault-UID</code> (returns everything).</p>
+        <pre class="dev-code"><code>curl https://clex.in/vault/api/uploads \
+  -H "Authorization: Bearer $CLEX_API_KEY"</code></pre>
       </div>
 
-      <div class="dev-endpoint reveal">
+      <div class="dev-endpoint reveal" data-cine-block>
         <div class="dev-endpoint__head">
           <span class="dev-endpoint__method dev-endpoint__method--delete">DELETE</span>
           <code class="dev-endpoint__path">/vault/api/uploads/:id</code>
           <span class="dev-endpoint__tag dev-endpoint__tag--stable">Stable</span>
+          <button class="dev-endpoint__copy" type="button" data-cine-copy aria-label="Copy code">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            <span>Copy</span>
+          </button>
         </div>
         <p class="dev-endpoint__desc">Revoke an upload. Subsequent share-link hits return 410.</p>
+        <pre class="dev-code"><code>curl -X DELETE https://clex.in/vault/api/uploads/ap_xxx \
+  -H "Authorization: Bearer $CLEX_API_KEY"</code></pre>
       </div>
 
       <div class="dev-callout reveal">
@@ -288,29 +359,85 @@ console.log(shareUrl)</code></pre>
     </div>
   </section>
 
-  <section class="section dev-simple" id="what-it-does">
+  <section class="section dev-simple" id="what-it-does" data-section-theme="dark">
     <div class="container">
-      <div class="section__header reveal">
-        <span class="section__label">How It Works</span>
-        <h2 class="section__title">API controls metadata.<br>WebRTC moves files.</h2>
+      <div class="section__header text-center reveal">
+        <span class="section__label">AI &amp; Automation</span>
+        <h2 class="section__title">Built for the <span class="italic-accent" style="text-transform:none">AI era</span></h2>
+        <p class="section__subtitle mx-auto">Import our docs into your LLM, or run our WebRTC-based CLI tools directly from your terminal.</p>
       </div>
 
-      <div class="dev-simple__grid stagger-group">
-        <div class="dev-simple__item">
-          <h3>API</h3>
-          <p>Health checks, auth, transfer metadata, receipts, and future room controls.</p>
+      <div class="grid grid-2 gap-xl stagger-group" style="margin-top: 3.2rem;">
+        <!-- Card 1: Open in LLM -->
+        <div class="card card--accent hover-lift reveal" style="padding: 2.2rem; background: var(--bg-card); border: 2px solid var(--border-bold); box-shadow: var(--shadow-md); border-radius: 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.2rem;">
+            <span class="badge badge--accent">AI-Ready Docs</span>
+            <div style="font-size: 1.2rem;">🤖</div>
+          </div>
+          <h3 class="card__title" style="font-size: clamp(1.4rem, 2.5vw, 1.85rem) !important; font-weight: 800; margin-bottom: 0.6rem;">Open in your LLM</h3>
+          <p class="card__text" style="margin-bottom: 1.8rem;">One click to prompt ChatGPT, Claude, or Cursor with any API reference.</p>
+          
+          <!-- Mock dropdown interface -->
+          <div style="background: var(--bg-primary); border: 2px solid var(--border-bold); border-radius: 12px; padding: 1rem; overflow: hidden; box-shadow: inset 0 2px 8px rgba(0,0,0,0.06);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.6rem;">
+              <span style="font-family: var(--font-mono); font-size: 0.78rem; color: var(--text-secondary);">docs.clex.in/uploads</span>
+              <span class="badge" style="font-size: 0.7rem; padding: 2px 6px;">Active</span>
+            </div>
+            <div style="font-family: var(--font-sans); font-size: 0.85rem; display: flex; flex-direction: column; gap: 0.4rem;">
+              <div style="padding: 0.45rem 0.75rem; background: var(--surface-2); border-radius: 6px; display: flex; justify-content: space-between; align-items: center; border: 1.5px solid var(--border-color);">
+                <span>ChatGPT Context</span> <span style="font-size: 0.8rem;">✨</span>
+              </div>
+              <div style="padding: 0.45rem 0.75rem; background: var(--accent); color: var(--c-ink); border-radius: 6px; display: flex; justify-content: space-between; align-items: center; font-weight: 700; border: 2px solid var(--border-bold); box-shadow: 2px 2px 0 var(--border-bold);">
+                <span>Claude Context (Recommended)</span> <span style="font-size: 0.8rem;">✓</span>
+              </div>
+              <div style="padding: 0.45rem 0.75rem; background: var(--surface-2); border-radius: 6px; display: flex; justify-content: space-between; align-items: center; border: 1.5px solid var(--border-color); opacity: 0.8;">
+                <span>Cursor Rules</span> <span style="font-size: 0.8rem;">⚡</span>
+              </div>
+            </div>
+          </div>
         </div>
-        <div class="dev-simple__item">
-          <h3>WebSocket</h3>
-          <p>Connects two peers by relaying offer, answer, and ICE messages.</p>
-        </div>
-        <div class="dev-simple__item">
-          <h3>WebRTC</h3>
-          <p>Sends file chunks directly between devices. Clex does not receive raw file bytes.</p>
+
+        <!-- Card 2: Vibe code with AI -->
+        <div class="card hover-lift reveal" style="padding: 2.2rem; background: var(--bg-card); border: 2px solid var(--border-bold); box-shadow: var(--shadow-md); border-radius: 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.2rem;">
+            <span class="badge badge--outline">CLI Integration</span>
+            <div style="font-size: 1.2rem;">⚡</div>
+          </div>
+          <h3 class="card__title" style="font-size: clamp(1.4rem, 2.5vw, 1.85rem) !important; font-weight: 800; margin-bottom: 0.6rem;">Vibe code with AI</h3>
+          <p class="card__text" style="margin-bottom: 1.8rem;">Let your AI agent orchestrate local and direct transfers in the shell.</p>
+
+          <!-- Mock terminal -->
+          <div class="cli-terminal" id="vibe-terminal" style="background: #090a0f; border: 3px solid var(--border-bold); border-radius: 14px; padding: 1.2rem; font-family: var(--font-mono); font-size: 0.82rem; color: #f8f6ee; line-height: 1.5; box-shadow: 6px 6px 0 var(--border-bold); min-height: 190px; overflow: hidden; position: relative;">
+            <div style="display: flex; gap: 6px; margin-bottom: 0.8rem; align-items: center;">
+              <span style="width: 8px; height: 8px; border-radius: 50%; background: #ff5f56; display: inline-block;"></span>
+              <span style="width: 8px; height: 8px; border-radius: 50%; background: #ffbd2e; display: inline-block;"></span>
+              <span style="width: 8px; height: 8px; border-radius: 50%; background: #27c93f; display: inline-block;"></span>
+              <span style="margin-left: 6px; color: rgba(255,255,255,0.3); font-size: 0.72rem;">~/my-project</span>
+            </div>
+            <div class="terminal-body" style="min-height: 120px;">
+              <span style="color: #7edc8b;">$</span> <span class="terminal-cmd" style="font-weight: 700;"></span><span class="terminal-cursor" style="font-weight: bold; color: #fff;">|</span>
+              <div class="terminal-output" style="margin-top: 0.4rem; white-space: pre-line;"></div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div class="dev-note reveal">
+      <div class="dev-simple__grid stagger-group" style="margin-top: 3.5rem;">
+        <div class="dev-simple__item">
+          <h3>API Gateway</h3>
+          <p>Orchestrates rooms, authenticates secure keys, and stores upload metadata. No raw file bytes are kept on Clex servers.</p>
+        </div>
+        <div class="dev-simple__item">
+          <h3>WebSocket Signaling</h3>
+          <p>Facilitates peer discovery by relaying WebRTC handshake offers, answers, and ICE routing descriptors in real-time.</p>
+        </div>
+        <div class="dev-simple__item">
+          <h3>P2P Routing Engine</h3>
+          <p>Pipes file data chunks directly between user devices (browser-to-browser), preserving client privacy and encryption.</p>
+        </div>
+      </div>
+
+      <div class="dev-note reveal" style="margin-top: 2rem;">
         The token shown here is a Google Firebase ID token. It is meant for protected API calls and expires automatically; create a fresh one when needed.
       </div>
     </div>

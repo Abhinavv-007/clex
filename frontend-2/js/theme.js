@@ -6,7 +6,7 @@
    ============================================ */
 
 const THEME_KEY = 'clex-theme-v2';
-const REVEAL_DURATION_MS = 220;
+const REVEAL_DURATION_MS = 620;
 const REVEAL_EASING = 'cubic-bezier(0.65, 0, 0.35, 1)';
 let revealOverlayActive = false;
 
@@ -23,12 +23,23 @@ export function initTheme() {
 export function toggleTheme(event) {
   const current = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
   const next = current === 'dark' ? 'light' : 'dark';
+  const origin = computeOrigin(event);
+
   document.documentElement.classList.add('clex-theme-switching');
-  applyTheme(next);
-  persistTheme(next);
-  window.setTimeout(() => {
+  const finishSwitch = () => {
     document.documentElement.classList.remove('clex-theme-switching');
-  }, REVEAL_DURATION_MS);
+  };
+
+  if (typeof document.startViewTransition === 'function') {
+    runViewTransitionReveal(next, origin).finally(() => {
+      window.setTimeout(finishSwitch, 80);
+    });
+    return;
+  }
+
+  runClipPathReveal(next, origin);
+  window.setTimeout(finishSwitch, REVEAL_DURATION_MS + 120);
+  persistTheme(next);
 }
 
 /**
@@ -104,9 +115,10 @@ function runViewTransitionReveal(next, origin) {
   const r = maxRadius(origin);
   const transition = document.startViewTransition(() => {
     applyTheme(next);
+    persistTheme(next);
   });
-  transition.ready.then(() => {
-    document.documentElement.animate(
+  return transition.ready.then(() => {
+    return document.documentElement.animate(
       [
         { clipPath: `circle(0px at ${x}px ${y}px)` },
         { clipPath: `circle(${r}px at ${x}px ${y}px)` },
@@ -116,7 +128,7 @@ function runViewTransitionReveal(next, origin) {
         easing: REVEAL_EASING,
         pseudoElement: '::view-transition-new(root)',
       },
-    );
+    ).finished;
   }).catch(() => { /* ignore — transition may abort */ });
 }
 

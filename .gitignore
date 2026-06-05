@@ -27,3 +27,4 @@ Thumbs.db
 graphify-out/
 graphify-active-corpus/
 .graphify_python
+.playwright-mcp/

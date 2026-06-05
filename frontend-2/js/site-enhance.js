@@ -14,11 +14,14 @@ export function initSiteEnhance() {
   upgradeCursiveLanguage();
   initWritingAccents();
   releaseDesignBoot();
+  initCodeTabs();
+  initTerminalAnimation();
   if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
   initUniversalMagnetic();
   initRipples();
   initLiquidInteractives();
   initSmoothHashScroll();
+  initMascotEyeTracker();
 }
 
 /**
@@ -114,37 +117,94 @@ function initWritingAccents() {
   const accents = document.querySelectorAll('.italic-accent, .hero__title-word--italic, .text-accent, .chain-hero__title-accent');
   if (!accents.length) return;
 
-  const reveal = (el) => {
-    if (!(el instanceof HTMLElement) || el.classList.contains('clex-write--done')) return;
-    el.classList.add('clex-write--visible');
-    const computedDelay = Number.parseFloat(getComputedStyle(el).getPropertyValue('--write-delay')) || 0;
-    const complete = () => {
-      el.classList.add('clex-write--done');
+  const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+
+  // Strip any legacy split spans so the gradient is one continuous fill.
+  const restoreText = (el) => {
+    const charSpans = el.querySelectorAll('.hand-char');
+    if (!charSpans.length) return;
+    const text = [...charSpans].map((s) => s.textContent || '').join('');
+    el.textContent = text;
+    delete el.dataset.handSplit;
+  };
+
+  // Measure inner glyph rect (not padding) using a Range.
+  const measureWritingArea = (el) => {
+    const wrapRect = el.getBoundingClientRect();
+    let textRect = null;
+    try {
+      const range = document.createRange();
+      range.selectNodeContents(el);
+      const r = range.getBoundingClientRect();
+      if (r && r.width > 0) textRect = r;
+    } catch { /* ignore */ }
+    const r = textRect || wrapRect;
+    return {
+      startX: r.left - wrapRect.left,
+      endX: r.right - wrapRect.left,
+      midY: ((r.top + r.bottom) / 2) - wrapRect.top,
     };
-    el.addEventListener('animationend', complete, { once: true });
-    window.setTimeout(complete, 3150 + computedDelay);
+  };
+
+  const reveal = (el) => {
+    if (!(el instanceof HTMLElement) || el.classList.contains('clex-hand--done')) return;
+    restoreText(el);
+
+    if (reduced) {
+      el.classList.add('clex-hand', 'clex-hand--done');
+      return;
+    }
+
+    el.classList.add('clex-hand', 'clex-hand--writing');
+
+    requestAnimationFrame(() => {
+      const area = measureWritingArea(el);
+      el.style.setProperty('--hand-pen-y', `${area.midY}px`);
+
+      const len = (el.textContent || '').trim().length || 6;
+      const writeMs = Math.min(2400, Math.max(900, len * 75 + 320));
+      const startDelay = Number.parseFloat(getComputedStyle(el).getPropertyValue('--write-delay')) || 0;
+      const tStart = performance.now() + startDelay;
+      const span = area.endX - area.startX;
+
+      const ease = (t) => {
+        if (t <= 0) return 0;
+        if (t >= 1) return 1;
+        return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+      };
+
+      const step = (now) => {
+        const t = (now - tStart) / writeMs;
+        const k = ease(t);
+        el.style.setProperty('--hand-p', `${Math.min(108, k * 108)}%`);
+        const x = area.startX + span * Math.min(1, k);
+        el.style.setProperty('--hand-pen-x', `${Math.max(0, x)}px`);
+        if (t < 1) {
+          requestAnimationFrame(step);
+        } else {
+          el.classList.remove('clex-hand--writing');
+          el.classList.add('clex-hand--done');
+          el.style.setProperty('--hand-p', `120%`);
+          el.style.setProperty('--hand-pen-x', `${span}px`);
+        }
+      };
+      requestAnimationFrame(step);
+    });
   };
 
   accents.forEach((accent, index) => {
     if (!(accent instanceof HTMLElement)) return;
-    accent.classList.add('clex-write');
+    accent.classList.add('clex-hand');
     accent.style.setProperty('--write-delay', `${Math.min(index * 70, 520)}ms`);
+    accent.style.setProperty('--hand-p', '0%');
   });
 
-  document.querySelectorAll('.hero .clex-write, .hero__title-word--italic').forEach(reveal);
+  document.querySelectorAll('.hero .clex-hand, .hero__title-word--italic').forEach(reveal);
 
-  if (!('IntersectionObserver' in window) || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+  if (reduced || !('IntersectionObserver' in window)) {
     accents.forEach(reveal);
     return;
   }
-
-  const revealVisibleNow = () => {
-    accents.forEach((accent) => {
-      if (!(accent instanceof HTMLElement) || accent.classList.contains('clex-write--visible')) return;
-      const rect = accent.getBoundingClientRect();
-      if (rect.bottom >= -160 && rect.top <= window.innerHeight * 1.85) reveal(accent);
-    });
-  };
 
   const io = new IntersectionObserver((entries) => {
     entries.forEach((entry) => {
@@ -152,18 +212,20 @@ function initWritingAccents() {
       reveal(entry.target);
       io.unobserve(entry.target);
     });
-  }, { rootMargin: '55% 0px 55% 0px', threshold: 0 });
+  }, { rootMargin: '20% 0px 20% 0px', threshold: 0.05 });
 
   accents.forEach((accent) => io.observe(accent));
-  requestAnimationFrame(revealVisibleNow);
-  [180, 520, 980, 1600, 2600].forEach((delay) => window.setTimeout(revealVisibleNow, delay));
-  window.setTimeout(() => {
-    document.querySelectorAll('footer .clex-write').forEach(reveal);
-  }, 1800);
-  window.addEventListener('load', revealVisibleNow, { once: true });
-  window.addEventListener('scroll', revealVisibleNow, { passive: true });
-  window.addEventListener('resize', revealVisibleNow, { passive: true });
-  window.addEventListener('orientationchange', revealVisibleNow, { passive: true });
+
+  const sweep = () => {
+    accents.forEach((accent) => {
+      if (!(accent instanceof HTMLElement)) return;
+      if (accent.classList.contains('clex-hand--done') || accent.classList.contains('clex-hand--writing')) return;
+      const rect = accent.getBoundingClientRect();
+      if (rect.bottom >= -160 && rect.top <= window.innerHeight * 1.4) reveal(accent);
+    });
+  };
+  window.setTimeout(sweep, 800);
+  window.addEventListener('load', sweep, { once: true });
 }
 
 function releaseDesignBoot() {
@@ -293,3 +355,203 @@ function initSmoothHashScroll() {
     });
   });
 }
+
+/* ---------- Mascot Pupils Pointer Tracking (Cinematic) ---------- */
+function initMascotEyeTracker() {
+  const pupils = document.querySelectorAll('.hero__mascot-pupil, .dce-mascot-pupil');
+  if (!pupils.length) return;
+
+  window.addEventListener('pointermove', (e) => {
+    pupils.forEach((pupil) => {
+      const rect = pupil.getBoundingClientRect();
+      const eyeX = rect.left + rect.width / 2;
+      const eyeY = rect.top + rect.height / 2;
+      
+      const angle = Math.atan2(e.clientY - eyeY, e.clientX - eyeX);
+      const distance = Math.min(6, Math.hypot(e.clientX - eyeX, e.clientY - eyeY) / 75);
+      
+      const dx = Math.cos(angle) * distance;
+      const dy = Math.sin(angle) * distance;
+      
+      pupil.style.transform = `translate(${dx}px, ${dy}px)`;
+      pupil.style.animation = 'none';
+    });
+  });
+
+  window.addEventListener('pointerleave', () => {
+    pupils.forEach((pupil) => {
+      pupil.style.transform = '';
+      pupil.style.animation = ''; // restore idle blink animation
+    });
+  });
+}
+
+/* ---------- Tabbed Code Editor Tabs and Copy (Cinematic) ---------- */
+function initCodeTabs() {
+  const tabs = document.querySelectorAll('.dce-tab');
+  const panes = document.querySelectorAll('.dce-pane');
+  const copyBtn = document.getElementById('dce-copy-btn');
+
+  tabs.forEach((tab) => {
+    tab.addEventListener('click', () => {
+      const tabName = tab.getAttribute('data-tab');
+      if (!tabName) return;
+
+      // Active state for tab button
+      tabs.forEach((t) => t.classList.remove('dce-tab--active'));
+      tab.classList.add('dce-tab--active');
+
+      // Active state for pane content
+      panes.forEach((p) => {
+        if (p.id === `pane-${tabName}`) {
+          p.classList.add('dce-pane--active');
+        } else {
+          p.classList.remove('dce-pane--active');
+        }
+      });
+    });
+  });
+
+  if (copyBtn) {
+    copyBtn.addEventListener('click', async () => {
+      const activePane = document.querySelector('.dce-pane--active code');
+      if (!activePane) return;
+
+      const codeText = activePane.textContent || '';
+      try {
+        await navigator.clipboard.writeText(codeText.trim());
+        const originalText = copyBtn.textContent;
+        copyBtn.textContent = 'Copied!';
+        copyBtn.classList.add('dce-copied');
+        setTimeout(() => {
+          copyBtn.textContent = originalText;
+          copyBtn.classList.remove('dce-copied');
+        }, 2000);
+      } catch (err) {
+        console.warn('Failed to copy code: ', err);
+      }
+    });
+  }
+}
+
+/* ---------- AI CLI Terminal Mockup Interactive Animation ---------- */
+function initTerminalAnimation() {
+  const terminal = document.getElementById('vibe-terminal');
+  if (!terminal) return;
+
+  const cmdEl = terminal.querySelector('.terminal-cmd');
+  const outputEl = terminal.querySelector('.terminal-output');
+  const cursorEl = terminal.querySelector('.terminal-cursor');
+
+  if (!cmdEl || !outputEl) return;
+
+  const command = 'npx -y clex-cli upload presentation.pdf';
+  const steps = [
+    { text: '⚙ Reading presentation.pdf (3.4 MB)...', color: '#25b6e8', delay: 700 },
+    { text: '✔ Signalled peer & connected over LAN', color: '#7edc8b', delay: 900 },
+    { text: '[Direct+] Transferred 14/14 chunks (100% verified)', color: '#c46bc2', delay: 800 },
+    { text: '✔ Transfer receipt proof generated successfully', color: '#7edc8b', delay: 600 },
+    { text: 'Delivered: https://clex.in/share/A9R2D', color: '#ff941f', delay: 700, isLink: true }
+  ];
+
+  let typingTimer = null;
+  let executionTimers = [];
+
+  const runAnimation = () => {
+    // Clear any previous execution timers and states
+    executionTimers.forEach(t => window.clearTimeout(t));
+    window.clearTimeout(typingTimer);
+    executionTimers = [];
+
+    cmdEl.textContent = '';
+    outputEl.innerHTML = '';
+    cursorEl.style.display = 'inline';
+
+    let charIdx = 0;
+    const typeChar = () => {
+      if (charIdx < command.length) {
+        cmdEl.textContent += command[charIdx];
+        charIdx++;
+        typingTimer = window.setTimeout(typeChar, 40 + Math.random() * 40);
+      } else {
+        // Typing complete, hide cursor after a tiny delay and run steps
+        cursorEl.style.display = 'none';
+        runSteps(0);
+      }
+    };
+
+    const runSteps = (stepIdx) => {
+      if (stepIdx >= steps.length) {
+        // Complete! Loop back after 10 seconds
+        const resetTimer = window.setTimeout(() => {
+          runAnimation();
+        }, 10000);
+        executionTimers.push(resetTimer);
+        return;
+      }
+
+      const step = steps[stepIdx];
+      const stepTimer = window.setTimeout(() => {
+        const line = document.createElement('div');
+        line.style.opacity = '0';
+        line.style.transform = 'translateY(6px)';
+        line.style.transition = 'all 300ms ease';
+        line.style.marginBottom = '0.35rem';
+
+        if (step.isLink) {
+          const prefix = document.createElement('span');
+          prefix.style.color = step.color;
+          prefix.textContent = 'Delivered: ';
+          
+          const link = document.createElement('a');
+          link.href = 'https://clex.in/share/A9R2D';
+          link.target = '_blank';
+          link.style.color = '#c4b5fd';
+          link.style.textDecoration = 'underline';
+          link.style.fontWeight = '700';
+          link.textContent = 'https://clex.in/share/A9R2D';
+          
+          line.appendChild(prefix);
+          line.appendChild(link);
+        } else {
+          line.style.color = step.color;
+          line.textContent = step.text;
+        }
+
+        outputEl.appendChild(line);
+        
+        // Force reflow
+        line.offsetHeight;
+        line.style.opacity = '1';
+        line.style.transform = 'translateY(0)';
+
+        // Auto-scroll terminal if it overflows
+        terminal.scrollTop = terminal.scrollHeight;
+
+        runSteps(stepIdx + 1);
+      }, step.delay);
+
+      executionTimers.push(stepTimer);
+    };
+
+    typeChar();
+  };
+
+  // Run observer to check viewport intersection
+  if (!('IntersectionObserver' in window)) {
+    runAnimation();
+    return;
+  }
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        runAnimation();
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.15 });
+
+  observer.observe(terminal);
+}
+

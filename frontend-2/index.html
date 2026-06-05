@@ -113,6 +113,7 @@
   <link rel="stylesheet" href="/css/pages/home.css">
   <link rel="stylesheet" href="/css/global-enhance.css">
   <link rel="stylesheet" href="/css/creem-design.css">
+  <link rel="stylesheet" href="/css/cinematic.css">
 
   <script type="module" src="/js/main.js"></script>
 </head>
@@ -437,31 +438,43 @@
           </p>
         </div>
 
-        <!-- Stacked pastel flow card replaces old island grid -->
+        <!-- Horizontal cinematic workspace flow diagram -->
         <div class="creem-stack reveal" aria-label="Workspace flow">
           <div class="creem-stack__card creem-stack__card--lavender">
             <span class="creem-stack__tag">Drop</span>
             <span class="creem-stack__title">photo.heic</span>
             <span class="creem-stack__sub">4.2 MB · captured today</span>
-            <span class="creem-stack__glyph creem-stack__glyph--down" aria-hidden="true">
+            <span class="creem-stack__glyph" aria-hidden="true">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
             </span>
-            <span class="creem-stack__arrow" aria-hidden="true"></span>
           </div>
+          
+          <!-- Dotted flow connection -->
+          <div class="creem-flow-pipe" aria-hidden="true">
+            <span class="creem-flow-dots"></span>
+            <span class="creem-flow-arrow">→</span>
+          </div>
+
           <div class="creem-stack__card creem-stack__card--peach">
             <span class="creem-stack__tag">Prepare</span>
             <span class="creem-stack__title">→ webp · 480 KB</span>
-            <span class="creem-stack__sub">88% smaller · same quality</span>
+            <span class="creem-stack__sub">88% smaller · WebP compression</span>
             <span class="creem-stack__glyph" aria-hidden="true">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m13 2-9 13h6l-2 7 9-13h-6l2-7z"/></svg>
             </span>
-            <span class="creem-stack__arrow" aria-hidden="true"></span>
           </div>
+
+          <!-- Dotted flow connection -->
+          <div class="creem-flow-pipe" aria-hidden="true">
+            <span class="creem-flow-dots"></span>
+            <span class="creem-flow-arrow">→</span>
+          </div>
+
           <div class="creem-stack__card creem-stack__card--mint">
             <span class="creem-stack__tag">Share</span>
             <span class="creem-stack__title">Direct P2P</span>
-            <span class="creem-stack__sub">peer reachable · WebRTC</span>
-            <span class="creem-stack__glyph creem-stack__glyph--right" aria-hidden="true">
+            <span class="creem-stack__sub">peer reachable · WebRTC Direct+</span>
+            <span class="creem-stack__glyph" aria-hidden="true">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
             </span>
           </div>
@@ -784,6 +797,121 @@
 
   <svg class="section-divider section-divider--dark-to-peach" viewBox="0 0 1440 80" preserveAspectRatio="none" aria-hidden="true">
     <path d="M0,40 C240,0 480,80 720,40 C960,0 1200,80 1440,40 L1440,0 L0,0 Z"></path>
+  </svg>
+
+  <!-- ═══ Clex Link ═══ -->
+  <section class="clex-link-section" id="clex-link" data-section-theme="cream" aria-labelledby="clex-link-title">
+    <div class="container">
+      <div class="clex-link__copy" data-cine="rise">
+        <span class="clex-link__eyebrow">
+          <span class="clex-link__eyebrow-dot"></span>
+          New on Mobile
+        </span>
+        <h2 id="clex-link-title" class="clex-link__title">
+          Clex Link.<br><em class="italic-accent italic-accent--lavender">Devices nearby, in one tap</em>
+        </h2>
+        <p class="clex-link__sub">
+          Open the Clex app and a sender shows up on every device within range — like AirDrop or Quick Share, just open and private. The receiver gets a request, accepts it, and the file streams over WebRTC. Zero pairing, zero accounts.
+        </p>
+        <ul class="clex-link__bullets" role="list">
+          <li class="clex-link__bullet"><span><b>Proximity discovery</b> — Bluetooth + mDNS find peers on the same network, no QR codes</span></li>
+          <li class="clex-link__bullet"><span><b>One-tap consent</b> — receiver confirms with a single button, no typing</span></li>
+          <li class="clex-link__bullet"><span><b>Direct+ delivery</b> — chunk-verified WebRTC, ACK/retry, verified receipt</span></li>
+          <li class="clex-link__bullet"><span><b>End-to-end encrypted</b> — keys derived per session, nothing stored anywhere</span></li>
+        </ul>
+        <div class="hero__actions" style="display:flex; gap:0.6rem; flex-wrap:wrap;">
+          <a href="https://apps.apple.com" class="pill-btn pill-btn--primary magnetic" data-magnetic="0.22">
+            <span class="pill-btn__label">Get Clex Mobile</span>
+            <span class="pill-btn__arrow" aria-hidden="true">→</span>
+          </a>
+          <a href="/how-it-works#clex-link" class="pill-btn pill-btn--ghost magnetic" data-magnetic="0.18">
+            <span class="pill-btn__label">How proximity works</span>
+          </a>
+        </div>
+      </div>
+
+      <div class="clex-link__stage" data-cine="zoom" aria-hidden="true">
+        <div class="clex-link-radar">
+          <span class="clex-link-radar__ring clex-link-radar__ring--1"></span>
+          <span class="clex-link-radar__ring clex-link-radar__ring--2"></span>
+          <span class="clex-link-radar__ring clex-link-radar__ring--3"></span>
+        </div>
+
+        <!-- SENDER phone -->
+        <div class="clex-phone clex-phone--left">
+          <span class="clex-phone__notch"></span>
+          <div class="clex-phone__screen">
+            <div class="clex-phone__statusbar"><span>9:41</span><span>●●●</span></div>
+            <div class="clex-phone__title">Send to nearby</div>
+            <div class="clex-phone__hint">3 devices in range</div>
+            <div class="clex-phone__peer clex-phone__peer--active">
+              <span class="clex-phone__peer-dot"></span>
+              <span style="display:flex;flex-direction:column;gap:1px">
+                <span class="clex-phone__peer-name">Maya's iPhone</span>
+                <span class="clex-phone__peer-meta">2 m · LAN · ready</span>
+              </span>
+            </div>
+            <div class="clex-phone__peer">
+              <span class="clex-phone__peer-dot"></span>
+              <span style="display:flex;flex-direction:column;gap:1px">
+                <span class="clex-phone__peer-name">Studio MacBook</span>
+                <span class="clex-phone__peer-meta">5 m · Wi-Fi</span>
+              </span>
+            </div>
+            <div class="clex-phone__peer">
+              <span class="clex-phone__peer-dot" style="background:#c4b5fd; box-shadow:0 0 8px #c4b5fd"></span>
+              <span style="display:flex;flex-direction:column;gap:1px">
+                <span class="clex-phone__peer-name">Pixel · Drive</span>
+                <span class="clex-phone__peer-meta">via cloud relay</span>
+              </span>
+            </div>
+            <div class="clex-phone__file-card">
+              <div class="clex-phone__file-name">deck-final.pdf</div>
+              <div class="clex-phone__file-meta">3.4 MB · 14 chunks</div>
+              <div class="clex-phone__progress"><span></span></div>
+              <div class="clex-phone__btn-row">
+                <span class="clex-phone__btn">Cancel</span>
+                <span class="clex-phone__btn clex-phone__btn--primary">Sending</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <span class="clex-link__beam" aria-hidden="true">
+          <span class="clex-link__beam-pulse"></span>
+        </span>
+
+        <!-- RECEIVER phone -->
+        <div class="clex-phone clex-phone--right">
+          <span class="clex-phone__notch"></span>
+          <div class="clex-phone__screen">
+            <div class="clex-phone__statusbar"><span>9:41</span><span>●●●</span></div>
+            <div class="clex-phone__title">Incoming file</div>
+            <div class="clex-phone__hint">From Abhinav's Mac · 2 m away</div>
+            <div class="clex-phone__file-card" style="margin-top:18px">
+              <div class="clex-phone__file-name">deck-final.pdf</div>
+              <div class="clex-phone__file-meta">3.4 MB · verified hash</div>
+              <div class="clex-phone__progress"><span style="width:0; animation:none; background:transparent"></span></div>
+              <div class="clex-phone__btn-row">
+                <span class="clex-phone__btn">Decline</span>
+                <span class="clex-phone__btn clex-phone__btn--primary">Accept</span>
+              </div>
+            </div>
+            <div class="clex-phone__peer" style="margin-top:auto">
+              <span class="clex-phone__peer-dot"></span>
+              <span style="display:flex;flex-direction:column;gap:1px">
+                <span class="clex-phone__peer-name">Direct+</span>
+                <span class="clex-phone__peer-meta">end-to-end encrypted</span>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <svg class="section-divider section-divider--cream-to-peach" viewBox="0 0 1440 80" preserveAspectRatio="none" aria-hidden="true">
+    <path d="M0,40 C240,0 480,80 720,40 C960,0 1200,80 1440,40 L1440,80 L0,80 Z"></path>
   </svg>
 
   <!-- ═══ Features Grid ═══ -->

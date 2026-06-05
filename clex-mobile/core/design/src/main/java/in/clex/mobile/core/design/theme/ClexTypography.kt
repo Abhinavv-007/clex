@@ -9,11 +9,11 @@ import androidx.compose.ui.text.googlefonts.GoogleFont
 import in.clex.mobile.core.design.R
 
 // ────────────────────────────────────────────────────────────────────────────
-// Clex Typography
-// Source: tokens.css
-//   --font-display: 'Space Mono', 'Courier New', monospace
-//   --font-body:    'Inter', -apple-system, …, sans-serif
-//   --font-mono:    'Space Mono', 'Courier New', monospace
+// Clex Typography — synced to clex.in website (Geist + Pacifico cursive)
+// Mirrors:
+//   --font-display: 'Geist', 'Hanken Grotesk', system-ui, sans-serif
+//   --font-italic:  'Pacifico', 'Caveat Brush', cursive
+//   --font-mono:    'JetBrains Mono', monospace
 // ────────────────────────────────────────────────────────────────────────────
 
 private val provider = GoogleFont.Provider(
@@ -22,65 +22,35 @@ private val provider = GoogleFont.Provider(
     certificates      = R.array.com_google_android_gms_fonts_certs,
 )
 
-val SpaceMonoFont = FontFamily(
-    Font(
-        googleFont    = GoogleFont("Space Mono"),
-        fontProvider  = provider,
-        weight        = FontWeight.Normal,
-        style         = FontStyle.Normal,
-    ),
-    Font(
-        googleFont    = GoogleFont("Space Mono"),
-        fontProvider  = provider,
-        weight        = FontWeight.Bold,
-        style         = FontStyle.Normal,
-    ),
-    Font(
-        googleFont    = GoogleFont("Space Mono"),
-        fontProvider  = provider,
-        weight        = FontWeight.Normal,
-        style         = FontStyle.Italic,
-    ),
+val GeistFont = FontFamily(
+    Font(googleFont = GoogleFont("Geist"), fontProvider = provider, weight = FontWeight.Light),
+    Font(googleFont = GoogleFont("Geist"), fontProvider = provider, weight = FontWeight.Normal),
+    Font(googleFont = GoogleFont("Geist"), fontProvider = provider, weight = FontWeight.Medium),
+    Font(googleFont = GoogleFont("Geist"), fontProvider = provider, weight = FontWeight.SemiBold),
+    Font(googleFont = GoogleFont("Geist"), fontProvider = provider, weight = FontWeight.Bold),
+    Font(googleFont = GoogleFont("Geist"), fontProvider = provider, weight = FontWeight.ExtraBold),
+    Font(googleFont = GoogleFont("Geist"), fontProvider = provider, weight = FontWeight.Black),
 )
 
-val InterFont = FontFamily(
-    Font(
-        googleFont    = GoogleFont("Inter"),
-        fontProvider  = provider,
-        weight        = FontWeight.Normal,
-        style         = FontStyle.Normal,
-    ),
-    Font(
-        googleFont    = GoogleFont("Inter"),
-        fontProvider  = provider,
-        weight        = FontWeight.Medium,
-        style         = FontStyle.Normal,
-    ),
-    Font(
-        googleFont    = GoogleFont("Inter"),
-        fontProvider  = provider,
-        weight        = FontWeight.SemiBold,
-        style         = FontStyle.Normal,
-    ),
-    Font(
-        googleFont    = GoogleFont("Inter"),
-        fontProvider  = provider,
-        weight        = FontWeight.Bold,
-        style         = FontStyle.Normal,
-    ),
-    Font(
-        googleFont    = GoogleFont("Inter"),
-        fontProvider  = provider,
-        weight        = FontWeight.ExtraBold,
-        style         = FontStyle.Normal,
-    ),
+val PacificoFont = FontFamily(
+    Font(googleFont = GoogleFont("Pacifico"), fontProvider = provider, weight = FontWeight.Normal),
 )
 
-/** Display / monospace font — Space Mono. Used for headings, codes, buttons. */
-val ClexDisplayFont = SpaceMonoFont
+val JetBrainsMonoFont = FontFamily(
+    Font(googleFont = GoogleFont("JetBrains Mono"), fontProvider = provider, weight = FontWeight.Normal),
+    Font(googleFont = GoogleFont("JetBrains Mono"), fontProvider = provider, weight = FontWeight.Medium),
+    Font(googleFont = GoogleFont("JetBrains Mono"), fontProvider = provider, weight = FontWeight.Bold),
+)
 
-/** Body / UI font — Inter. Used for body text, labels, descriptions. */
-val ClexBodyFont = InterFont
+/** Display heading font — Geist. Used for h1/h2/h3, big titles. */
+val ClexDisplayFont = GeistFont
 
-/** Monospace font — Space Mono (same as Display). Used for room codes, code blocks. */
-val ClexMonoFont = SpaceMonoFont
+/** Body / UI font — Geist (single family for consistency). */
+val ClexBodyFont = GeistFont
+
+/** Cursive accent font — Pacifico. Used for italic accent words ("stay private"). */
+val ClexCursiveFont = PacificoFont
+
+/** Monospace font — JetBrains Mono. Used for room codes, code blocks, API keys. */
+val ClexMonoFont = JetBrainsMonoFont
+

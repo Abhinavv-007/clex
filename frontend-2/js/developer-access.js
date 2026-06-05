@@ -73,7 +73,18 @@ export async function initDeveloperAccess() {
       }
     } catch (err) {
       console.error(err);
-      if (statusLabel) statusLabel.textContent = 'Google sign-in failed. Check Firebase auth settings.';
+      const code = err?.code || '';
+      let msg = 'Google sign-in failed. Try again.';
+      if (code === 'auth/unauthorized-domain') {
+        msg = `Domain not authorized. Add ${location.hostname} to Firebase → Authentication → Settings → Authorized domains.`;
+      } else if (code === 'auth/popup-blocked') {
+        msg = 'Popup blocked. Enable popups for this site and retry.';
+      } else if (code === 'auth/popup-closed-by-user') {
+        msg = 'Sign-in window closed.';
+      } else if (code === 'auth/network-request-failed') {
+        msg = 'Network error. Check your connection.';
+      }
+      if (statusLabel) statusLabel.textContent = msg;
     } finally {
       setBusy(false, statusLabel?.textContent || '');
       render();

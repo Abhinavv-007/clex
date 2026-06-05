@@ -13,6 +13,7 @@ import { initSectionTheme } from './section-theme.js';
 import { initHeroEffects } from './hero-effects.js';
 import { initSiteEnhance } from './site-enhance.js';
 import { initImmersive } from './immersive.js';
+import { initCinematic } from './cinematic.js';
 
 // ── Initialize on DOM ready ──
 document.addEventListener('DOMContentLoaded', async () => {
@@ -49,6 +50,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   initSectionTheme();
   initHeroEffects();
   initImmersive();
+  initCinematic();
 
   // Lazy load animations only when needed
   loadAnimations();
@@ -72,13 +74,19 @@ function normalizeSharedFooter() {
 }
 
 function normalizeHeadingPunctuation() {
+  // Pass 1: walk text in major typography blocks, strip a trailing period
+  // (we still allow punctuation that isn't a period like "?", "!", "+").
   const selectors = [
-    'h1',
-    'h2',
-    'h3',
+    'h1', 'h2', 'h3',
     '.page-hero__title',
+    '.page-hero__eyebrow',
     '.section__title',
+    '.section__title--mixed',
     '.cta-strip__title',
+    '.cta-final h2',
+    '.dpc-title',
+    '.banner__text',
+    '.banner--statement',
     '.footer__tagline',
     '.footer__glyph',
     '.bento__title',
@@ -90,11 +98,23 @@ function normalizeHeadingPunctuation() {
     let node = walker.nextNode();
     while (node) {
       if (node.textContent) {
-        node.textContent = node.textContent.replace(/([A-Za-z\)])\.(\s*)$/g, '$1$2');
+        node.textContent = node.textContent.replace(/([A-Za-z\)\+])\.(\s*)$/g, '$1$2');
       }
       node = walker.nextNode();
     }
   });
+
+  // Pass 2: scrub italic-accents + their cursive friends. They are inline
+  // ends-of-headings, so the trailing period almost always reads wrong.
+  document.querySelectorAll('.italic-accent, .hero__title-word--italic, .text-accent, .chain-hero__title-accent')
+    .forEach((el) => {
+      // Whole-element textContent strip (handles cases where . is the last
+      // glyph in the run regardless of whitespace/entities).
+      const t = (el.textContent || '').replace(/\.\s*$/g, '').trim();
+      if (t && t !== el.textContent) {
+        el.textContent = t;
+      }
+    });
 }
 
 function getSharedFooterHTML() {

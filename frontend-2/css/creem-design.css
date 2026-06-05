@@ -3,7 +3,8 @@
    Loaded last via main.js; wins specificity site-wide.
    ============================================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@500;600;700;800;900&family=Boldonse&family=Pacifico&family=Caveat+Brush&family=Inter:wght@400;500;600;700;800&display=block');
+@import url('https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@500;600;700;800;900&family=Boldonse&family=Pacifico&family=Caveat+Brush&family=Inter:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=Dancing+Script:wght@500;600;700&display=swap');
 @import url('https://api.fontshare.com/v2/css?f[]=chillax@700,800,900&f[]=clash-display@600,700&display=swap');
 
 /* ---------------- TOKENS ---------------- */
@@ -261,52 +262,8 @@
   text-shadow: 0 18px 40px rgba(0,0,0,0.22);
 }
 
-/* Final stability overrides. Keep this block at EOF so page CSS cannot hide first-screen UI. */
-.italic-accent.clex-write.clex-write--done,
-.hero__title-word--italic.clex-write.clex-write--done,
-html.clex-design-ready .italic-accent.clex-write.clex-write--done,
-html.clex-design-ready .hero__title-word--italic.clex-write.clex-write--done {
-  clip-path: inset(-0.28em -0.28em -0.62em -0.18em round 0.18em) !important;
-  opacity: 1 !important;
-  transform: translateY(0) rotate(0deg) scale(1) !important;
-  filter: drop-shadow(0 10px 26px rgba(255,122,61,0.16)) !important;
-}
-
-.hero .hero__subtitle,
-.hero .hero__actions,
-.hero .hero__feature-trio,
-.hero .hero__agent-pill,
-.hero .hero__visual,
-.hero [data-reveal] {
-  opacity: 1 !important;
-  visibility: visible !important;
-  animation-name: none !important;
-}
-
-.banner.reveal-scale,
-.banner.reveal-scale:not(.is-visible),
-.banner.reveal-scale.is-visible {
-  opacity: 1 !important;
-  transform: none !important;
-  transition: none !important;
-}
-
-/* Writing + hero stability pass: keep after all previous overrides. */
-.italic-accent.clex-write.clex-write--done,
-.hero__title-word--italic.clex-write.clex-write--done,
-html.clex-design-ready .italic-accent.clex-write.clex-write--done,
-html.clex-design-ready .hero__title-word--italic.clex-write.clex-write--done {
-  clip-path: inset(-0.28em -0.28em -0.62em -0.18em round 0.18em) !important;
-  opacity: 1 !important;
-  transform: translateY(0) rotate(0deg) scale(1) !important;
-  filter: drop-shadow(0 10px 26px rgba(255,122,61,0.16)) !important;
-}
-
-.italic-accent.clex-write.clex-write--done::after,
-.hero__title-word--italic.clex-write.clex-write--done::after {
-  content: none !important;
-  display: none !important;
-}
+/* [LEGACY-NEUTRALIZED] done-state overrides — now handled by mask-sweep system at EOF */
+/* .italic-accent.clex-write.clex-write--done { clip-path / opacity / filter } */
 
 .hero .hero__subtitle,
 .hero .hero__actions,
@@ -525,8 +482,8 @@ h1, h2, h3, .hero__title, .hero__title--mega, .page-hero__title,
   align-items: baseline;
 }
 @media (max-width: 640px) {
-  .hero__title--mega { font-size: clamp(3.2rem, 14vw, 5.2rem) !important; }
-  .hero__title-row--accent { gap: 0.3rem !important; }
+  .hero__title--mega { font-size: clamp(1.8rem, 11vw, 3.8rem) !important; }
+  .hero__title-row--accent { gap: 0.3rem !important; flex-wrap: wrap !important; justify-content: center !important; }
   .hero__title-word--italic { font-size: 0.92em !important; }
 }
 .section__title { padding-bottom: 0.24em !important; }
@@ -2729,35 +2686,8 @@ html.clex-design-booting footer:not(.footer--v2) {
   overflow: visible !important;
 }
 
-.italic-accent.clex-write,
-.hero__title-word--italic.clex-write {
-  --write-delay: 0ms;
-  clip-path: inset(0 100% 0 -0.16em round 0.18em);
-  transform: translateY(0.08em) rotate(-0.35deg);
-  opacity: 0.001;
-}
-
-.italic-accent.clex-write::after,
-.hero__title-word--italic.clex-write::after {
-  content: none !important;
-  display: none !important;
-}
-
-.italic-accent.clex-write--visible,
-.hero__title-word--italic.clex-write--visible {
-  animation: clex-handwrite 1420ms cubic-bezier(0.22,1,0.36,1) var(--write-delay) both;
-}
-.italic-accent.clex-write--visible::after,
-.hero__title-word--italic.clex-write--visible::after {
-  animation: none !important;
-}
-
-.italic-accent.clex-write:not(.clex-write--visible),
-.hero__title-word--italic.clex-write:not(.clex-write--visible) {
-  clip-path: inset(-0.25em -0.22em -0.45em -0.16em round 0.18em);
-  opacity: 1;
-  transform: none;
-}
+/* [LEGACY-NEUTRALIZED] Original handwrite system — superseded by mask-sweep at EOF */
+/* .italic-accent.clex-write, .hero__title-word--italic.clex-write { ... } */
 
 @keyframes clex-handwrite {
   0% {
@@ -2953,20 +2883,11 @@ html.clex-design-booting footer:not(.footer--v2) {
   text-decoration: none !important;
 }
 
-.italic-accent::after,
-.hero__title-word--italic::after,
-.text-accent::after,
-.chain-hero__title-accent::after {
-  content: none !important;
-  display: none !important;
-}
+/* [LEGACY-NEUTRALIZED] Global ::after kill — conflicts with sparkle pen pseudo-element */
+/* .italic-accent::after, etc. { content: none; } */
 
-html.clex-design-ready .italic-accent.clex-write:not(.clex-write--visible),
-html.clex-design-ready .hero__title-word--italic.clex-write:not(.clex-write--visible) {
-  clip-path: inset(-0.25em -0.22em -0.45em -0.16em round 0.18em);
-  opacity: 1;
-  transform: none;
-}
+/* [LEGACY-NEUTRALIZED] clex-design-ready fallback — handled by mask-sweep system */
+/* html.clex-design-ready .italic-accent.clex-write:not(.clex-write--visible) { ... } */
 
 .banner.banner--marquee,
 .banner.banner--dark {
@@ -3266,36 +3187,8 @@ html.clex-design-ready .hero__title-word--italic.clex-write:not(.clex-write--vis
   display: none !important;
 }
 
-.italic-accent.clex-write,
-.hero__title-word--italic.clex-write {
-  clip-path: inset(-0.25em -0.22em -0.45em -0.16em round 0.18em) !important;
-  opacity: 1 !important;
-}
-
-.italic-accent.clex-write--visible,
-.hero__title-word--italic.clex-write--visible {
-  animation: clex-handwrite-readable 1180ms cubic-bezier(0.22,1,0.36,1) var(--write-delay) both !important;
-}
-
-@keyframes clex-handwrite-readable {
-  0% {
-    clip-path: inset(-0.25em -0.22em -0.45em -0.16em round 0.18em);
-    opacity: 1;
-    transform: translateY(0.06em) rotate(-0.45deg) scale(0.985);
-    filter: blur(0.9px) drop-shadow(0 2px 10px rgba(107,77,255,0.08));
-  }
-  62% {
-    opacity: 1;
-    transform: translateY(-0.01em) rotate(0.18deg) scale(1.012);
-    filter: blur(0.2px) drop-shadow(0 12px 28px rgba(255,122,61,0.18));
-  }
-  100% {
-    clip-path: inset(-0.25em -0.22em -0.45em -0.16em round 0.18em);
-    opacity: 1;
-    transform: translateY(0) rotate(0deg) scale(1);
-    filter: drop-shadow(0 8px 22px rgba(255,122,61,0.14));
-  }
-}
+/* [LEGACY-NEUTRALIZED] COLD-LOAD handwrite-readable — superseded by mask-sweep at EOF */
+/* .italic-accent.clex-write { clip-path open, opacity:1 — was preventing hidden state } */
 
 .nav__logo::before {
   content: none !important;
@@ -3503,48 +3396,8 @@ body[class*="section-theme-"] #main-nav .nav__actions .btn.btn--primary.btn--sma
   margin-bottom: -0.16em;
 }
 
-.italic-accent.clex-write,
-.hero__title-word--italic.clex-write {
-  clip-path: inset(-0.28em 100% -0.62em -0.18em round 0.18em) !important;
-  opacity: 0.001 !important;
-  transform: translateY(0.08em) rotate(-0.35deg) scale(0.992) !important;
-  filter: blur(1.4px) drop-shadow(0 2px 10px rgba(107,77,255,0)) !important;
-}
-
-.italic-accent.clex-write--visible,
-.hero__title-word--italic.clex-write--visible {
-  animation: clex-handwrite-premium 1880ms cubic-bezier(0.18,1,0.26,1) var(--write-delay) both !important;
-}
-
-html.clex-design-ready .italic-accent.clex-write:not(.clex-write--visible),
-html.clex-design-ready .hero__title-word--italic.clex-write:not(.clex-write--visible) {
-  clip-path: inset(-0.28em 100% -0.62em -0.18em round 0.18em) !important;
-  opacity: 0.001 !important;
-  transform: translateY(0.08em) rotate(-0.35deg) scale(0.992) !important;
-}
-
-@keyframes clex-handwrite-premium {
-  0% {
-    clip-path: inset(-0.28em 100% -0.62em -0.18em round 0.18em);
-    opacity: 0.001;
-    transform: translateY(0.08em) rotate(-0.35deg) scale(0.992);
-    filter: blur(1.4px) drop-shadow(0 2px 10px rgba(107,77,255,0));
-  }
-  16% {
-    opacity: 1;
-  }
-  68% {
-    clip-path: inset(-0.28em 9% -0.62em -0.18em round 0.18em);
-    transform: translateY(-0.015em) rotate(0.16deg) scale(1.012);
-    filter: blur(0.25px) drop-shadow(0 12px 30px rgba(255,122,61,0.20));
-  }
-  100% {
-    clip-path: inset(-0.28em -0.28em -0.62em -0.18em round 0.18em);
-    opacity: 1;
-    transform: translateY(0) rotate(0deg) scale(1);
-    filter: drop-shadow(0 10px 26px rgba(255,122,61,0.16));
-  }
-}
+/* [LEGACY-NEUTRALIZED] PREMIUM handwrite — superseded by mask-sweep at EOF */
+/* .italic-accent.clex-write { clip-path / opacity / clex-handwrite-premium } */
 
 .footer__glyph {
   overflow: visible !important;
@@ -4380,55 +4233,14 @@ body.section-theme-dark .hero__subtitle {
 }
 
 /* Final polish pass: keep the landing page cinematic without the broken overlap. */
-.italic-accent.clex-write,
-.hero__title-word--italic.clex-write {
-  clip-path: inset(-0.32em 78% -0.7em -0.2em round 0.18em) !important;
-  opacity: 1 !important;
-  filter: blur(0.65px) drop-shadow(0 2px 12px rgba(107,77,255,0.08)) !important;
-}
-
-.italic-accent.clex-write--visible,
-.hero__title-word--italic.clex-write--visible {
-  animation: clex-handwrite-premium 2050ms cubic-bezier(0.2, 1, 0.24, 1) var(--write-delay) both !important;
-}
-
-@keyframes clex-handwrite-premium {
-  0% {
-    clip-path: inset(-0.32em 78% -0.7em -0.2em round 0.18em);
-    opacity: 1;
-    transform: translateY(0.055em) rotate(-0.28deg) scale(0.996);
-    filter: blur(0.75px) drop-shadow(0 3px 12px rgba(107,77,255,0.10));
-  }
-  32% {
-    clip-path: inset(-0.32em 46% -0.7em -0.2em round 0.18em);
-    transform: translateY(0.02em) rotate(-0.12deg) scale(1.002);
-    filter: blur(0.36px) drop-shadow(0 9px 24px rgba(191,91,142,0.16));
-  }
-  72% {
-    clip-path: inset(-0.32em 8% -0.7em -0.2em round 0.18em);
-    transform: translateY(-0.012em) rotate(0.12deg) scale(1.012);
-    filter: blur(0.16px) drop-shadow(0 14px 32px rgba(255,122,61,0.20));
-  }
-  100% {
-    clip-path: inset(-0.32em -0.32em -0.7em -0.2em round 0.18em);
-    opacity: 1;
-    transform: translateY(0) rotate(0deg) scale(1);
-    filter: drop-shadow(0 10px 26px rgba(255,122,61,0.16));
-  }
-}
+/* [LEGACY-NEUTRALIZED] Final polish handwrite-premium — superseded by mask-sweep at EOF */
+/* .italic-accent.clex-write { clip-path partial reveal, clex-handwrite-premium v2 } */
 
 .footer__glyph,
 .footer__glyph .clex-write {
   overflow: visible !important;
   line-height: 1.26 !important;
   padding-bottom: 0.18em !important;
-}
-
-.italic-accent.clex-write.clex-write--done,
-.hero__title-word--italic.clex-write.clex-write--done,
-html.clex-design-ready .italic-accent.clex-write.clex-write--done,
-html.clex-design-ready .hero__title-word--italic.clex-write.clex-write--done {
-  clip-path: none !important;
 }
 
 @media (min-width: 980px) {
@@ -4517,11 +4329,20 @@ html.clex-design-ready .hero__title-word--italic.clex-write.clex-write--done {
 }
 
 .hero.hero--cinematic::after,
-.hero__mascot,
-.stat-orbs,
 .hero__scroll-indicator,
 .section-divider--mega {
   display: none !important;
+}
+
+.hero.hero--cinematic .hero__mascot {
+  display: inline-flex !important;
+  margin-top: 0.5rem !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.hero.hero--cinematic .stat-orbs {
+  display: flex !important;
+  margin-top: 1.5rem !important;
 }
 
 .hero__container {
@@ -4564,7 +4385,7 @@ html.clex-design-ready .hero__title-word--italic.clex-write.clex-write--done {
   max-width: none !important;
   margin: 0 auto !important;
   padding: 0 !important;
-  font-size: clamp(5.8rem, 9.2vw, 10rem) !important;
+  font-size: clamp(3.2rem, 9.2vw, 10rem) !important;
   line-height: 0.86 !important;
   letter-spacing: -0.06em !important;
   text-align: center !important;
@@ -4714,48 +4535,9 @@ html.clex-design-ready .hero__title-word--italic.clex-write.clex-write--done {
   background-image: linear-gradient(135deg, #d9c8ff 0%, #ffc2ca 48%, #ffd479 100%) !important;
 }
 
-.italic-accent.clex-write,
-.hero__title-word--italic.clex-write,
-.text-accent.clex-write,
-.chain-hero__title-accent.clex-write {
-  clip-path: none !important;
-  opacity: 1 !important;
-  transform: none !important;
-  filter: drop-shadow(0 10px 24px rgba(255,122,61,0.10)) !important;
-  background-size: 0% 100% !important;
-}
-
-.italic-accent.clex-write--visible,
-.hero__title-word--italic.clex-write--visible,
-.text-accent.clex-write--visible,
-.chain-hero__title-accent.clex-write--visible {
-  animation: clex-script-fill 1650ms cubic-bezier(0.2, 1, 0.24, 1) var(--write-delay) both !important;
-}
-
-.italic-accent.clex-write--done,
-.hero__title-word--italic.clex-write--done,
-.text-accent.clex-write--done,
-.chain-hero__title-accent.clex-write--done {
-  clip-path: none !important;
-  background-size: 100% 100% !important;
-  animation: none !important;
-}
-
-@keyframes clex-script-fill {
-  0% {
-    background-size: 0% 100%;
-    filter: blur(0.8px) drop-shadow(0 4px 12px rgba(107,77,255,0.10));
-    transform: translateY(0.035em) rotate(-0.18deg);
-  }
-  58% {
-    filter: blur(0.18px) drop-shadow(0 14px 28px rgba(255,122,61,0.18));
-  }
-  100% {
-    background-size: 100% 100%;
-    filter: drop-shadow(0 10px 24px rgba(255,122,61,0.14));
-    transform: translateY(0) rotate(0deg);
-  }
-}
+/* [LEGACY-NEUTRALIZED] Script-fill system — was setting background-size:0% which made text invisible.
+   This was the ROOT CAUSE of the broken handwriting. Superseded by mask-sweep at EOF. */
+/* .italic-accent.clex-write { background-size: 0% 100% — killed all text } */
 
 @media (max-width: 900px) {
   .hero.hero--cinematic {
@@ -4763,7 +4545,7 @@ html.clex-design-ready .hero__title-word--italic.clex-write.clex-write--done {
   }
 
   .hero__title.hero__title--mega {
-    font-size: clamp(3.9rem, 15vw, 7.2rem) !important;
+    font-size: clamp(2.4rem, 12vw, 6.2rem) !important;
     line-height: 0.9 !important;
   }
 
@@ -4826,12 +4608,6 @@ html.clex-design-ready .hero__title-word--italic.clex-write.clex-write--done {
    FINAL HANDWRITING PASS: one write-on system for every cursive accent.
    This intentionally comes last so older reveal experiments cannot override it.
    ============================================================= */
-@property --clex-write-right {
-  syntax: '<percentage>';
-  inherits: false;
-  initial-value: 100%;
-}
-
 .italic-accent,
 .hero__title-word--italic,
 .text-accent,
@@ -4841,14 +4617,18 @@ html.clex-design-ready .hero__title-word--italic.clex-write.clex-write--done {
   display: inline-block !important;
   overflow: visible !important;
   isolation: isolate !important;
-  padding: 0 0.08em 0.16em !important;
-  margin-bottom: -0.06em !important;
+  
+  /* Increased line height and padding to prevent descender cut-off */
+  line-height: 1.38 !important;
+  padding: 0.12em 0.22em 0.38em !important;
+  margin-top: -0.1em !important;
+  margin-bottom: -0.28em !important;
+  
   font-family: var(--font-italic) !important;
   font-style: normal !important;
   font-weight: 400 !important;
   text-transform: none !important;
   letter-spacing: 0 !important;
-  line-height: 1.08 !important;
   color: transparent !important;
   -webkit-text-fill-color: transparent !important;
   background-image: var(--clex-script-gradient) !important;
@@ -4858,7 +4638,7 @@ html.clex-design-ready .hero__title-word--italic.clex-write.clex-write--done {
   -webkit-background-clip: text !important;
   background-clip: text !important;
   clip-path: none !important;
-  filter: drop-shadow(0 13px 28px rgba(255, 122, 61, 0.12));
+  filter: drop-shadow(0 10px 22px rgba(255, 122, 61, 0.12));
 }
 
 .italic-accent--lavender,
@@ -4872,138 +4652,434 @@ html.clex-design-ready .hero__title-word--italic.clex-write.clex-write--done {
 }
 
 .italic-accent--lime {
-  --clex-script-gradient: linear-gradient(112deg, #c8ff00 0%, #7edc8b 34%, #ffb05c 100%);
+  --clex-script-gradient: linear-gradient(112deg, #80c800 0%, #3ebd64 34%, #ff8a1f 100%);
 }
 
-[data-theme="dark"] .italic-accent,
-[data-theme="dark"] .hero__title-word--italic,
-[data-theme="dark"] .text-accent,
-[data-theme="dark"] .chain-hero__title-accent,
-body.section-theme-dark .italic-accent,
-body.section-theme-dark .hero__title-word--italic,
-body.section-theme-dark .text-accent,
-body.section-theme-dark .chain-hero__title-accent {
-  --clex-script-gradient: linear-gradient(112deg, #d9c8ff 0%, #ffc1d3 44%, #ffd18a 100%);
+/* Dark background overrides (use pastel gradients for high contrast) */
+html[data-theme="dark"] .italic-accent,
+html[data-theme="dark"] .hero__title-word--italic,
+html[data-theme="dark"] .text-accent,
+html[data-theme="dark"] .chain-hero__title-accent,
+.footer .italic-accent,
+.footer .hero__title-word--italic,
+.footer .text-accent,
+.footer .chain-hero__title-accent {
+  --clex-script-gradient: linear-gradient(112deg, #d9c8ff 0%, #ffc1d3 44%, #ffd18a 100%) !important;
 }
 
+/* Animation State: Initial hidden state — THE SINGLE SOURCE OF TRUTH */
 .italic-accent.clex-write,
 .hero__title-word--italic.clex-write,
 .text-accent.clex-write,
 .chain-hero__title-accent.clex-write {
-  --clex-write-right: 100%;
+  color: transparent !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+  -webkit-background-clip: text !important;
+  background-size: 100% 100% !important; /* CRITICAL: override legacy 0% that killed text */
+  
+  /* Reset any legacy clip-path / transform / opacity overrides */
+  clip-path: none !important;
   opacity: 1 !important;
-  transform: translateY(0.035em) rotate(-0.2deg) !important;
-  clip-path: inset(-0.42em var(--clex-write-right) -0.82em -0.24em round 0.2em) !important;
-  background-size: 100% 100% !important;
-  filter: blur(0.4px) drop-shadow(0 7px 18px rgba(139, 92, 246, 0.12)) !important;
-  will-change: clip-path, transform, filter;
+  transform: none !important;
+  filter: none !important;
+  
+  /* Mask sweep setup — the actual hide mechanism */
+  -webkit-mask-image: linear-gradient(105deg, #000, #000 42%, transparent 58%, transparent) !important;
+  -webkit-mask-size: 240% 100% !important;
+  -webkit-mask-position: 100% 0; /* Animated, no !important */
+  -webkit-mask-repeat: no-repeat !important;
+  
+  mask-image: linear-gradient(105deg, #000, #000 42%, transparent 58%, transparent) !important;
+  mask-size: 240% 100% !important;
+  mask-position: 100% 0; /* Animated, no !important */
+  mask-repeat: no-repeat !important;
+  
+  /* Prevent any default/legacy animations/transitions from overriding this state */
+  animation: none !important;
+  transition: none !important;
 }
 
+/* Sparkle Pen: initial state */
 .italic-accent.clex-write::after,
 .hero__title-word--italic.clex-write::after,
 .text-accent.clex-write::after,
 .chain-hero__title-accent.clex-write::after {
   content: '' !important;
+  display: block !important; /* Force block layout override */
   position: absolute !important;
-  z-index: 3 !important;
-  left: -0.12em !important;
-  top: 0.08em !important;
-  width: 0.16em !important;
-  height: 0.92em !important;
-  min-width: 8px !important;
-  border-radius: 999px !important;
-  background:
-    radial-gradient(circle at 50% 18%, rgba(255,255,255,0.95), transparent 26%),
-    linear-gradient(180deg, #fff2b2, #ff7a3d 45%, #8b5cf6 100%) !important;
-  box-shadow:
-    0 0 0 2px rgba(255,255,255,0.28),
-    0 0 22px rgba(255,122,61,0.42),
-    0 0 38px rgba(139,92,246,0.26) !important;
-  opacity: 0 !important;
-  transform: translateX(0) rotate(8deg) scaleY(0.82) !important;
-  transform-origin: center !important;
-  pointer-events: none !important;
+  z-index: 5 !important;
+  top: 50% !important;
+  left: 0 !important;
+  width: 22px !important;
+  height: 22px !important;
+  margin-top: -11px !important;
+  margin-left: -11px !important;
+  background: radial-gradient(circle, #ffffff 30%, #ff8a1f 65%, rgba(255,138,31,0) 100%) !important;
+  
+  /* 4-pointed star clip */
+  clip-path: polygon(50% 0%, 61% 39%, 100% 50%, 61% 61%, 50% 100%, 39% 61%, 0% 50%, 39% 39%) !important;
+  -webkit-clip-path: polygon(50% 0%, 61% 39%, 100% 50%, 61% 61%, 50% 100%, 39% 61%, 0% 50%, 39% 39%) !important;
+  
+  box-shadow: 
+    0 0 12px #ff8a1f, 
+    0 0 24px #ffc95a, 
+    0 0 40px #8b5cf6 !important;
+  
+  opacity: 0; /* Animated, no !important */
+  transform: translateX(0) scale(0) rotate(0deg); /* Animated, no !important */
+  
+  /* Prevent any legacy animations/transitions */
+  animation: none !important;
+  transition: none !important;
 }
 
+/* Triggered State: run keyframe animations */
 .italic-accent.clex-write--visible,
 .hero__title-word--italic.clex-write--visible,
 .text-accent.clex-write--visible,
 .chain-hero__title-accent.clex-write--visible {
-  animation: clex-handwriting-mask 2400ms cubic-bezier(0.18, 0.94, 0.18, 1) var(--write-delay, 0ms) both !important;
+  /* Override any legacy animations with !important */
+  animation: clex-mask-sweep-new 2200ms cubic-bezier(0.25, 1, 0.5, 1) var(--write-delay, 0ms) both !important;
 }
 
 .italic-accent.clex-write--visible::after,
 .hero__title-word--italic.clex-write--visible::after,
 .text-accent.clex-write--visible::after,
 .chain-hero__title-accent.clex-write--visible::after {
-  animation: clex-handwriting-pen 2400ms cubic-bezier(0.18, 0.94, 0.18, 1) var(--write-delay, 0ms) both !important;
+  /* Dynamic translation based on JavaScript calculated width */
+  animation: clex-sparkle-sweep-new 2200ms cubic-bezier(0.25, 1, 0.5, 1) var(--write-delay, 0ms) both !important;
 }
 
+/* Done state: remove mask to free up render resources and ensure 100% crispness */
 .italic-accent.clex-write--done,
 .hero__title-word--italic.clex-write--done,
 .text-accent.clex-write--done,
 .chain-hero__title-accent.clex-write--done {
-  clip-path: none !important;
-  transform: none !important;
-  filter: drop-shadow(0 13px 28px rgba(255, 122, 61, 0.13)) !important;
+  -webkit-mask-image: none !important;
+  mask-image: none !important;
   animation: none !important;
+  filter: drop-shadow(0 10px 22px rgba(255, 122, 61, 0.12)) !important;
 }
 
 .italic-accent.clex-write--done::after,
 .hero__title-word--italic.clex-write--done::after,
 .text-accent.clex-write--done::after,
 .chain-hero__title-accent.clex-write--done::after {
-  opacity: 0 !important;
+  content: none !important;
+  display: none !important;
   animation: none !important;
 }
 
-@keyframes clex-handwriting-mask {
+/* New Keyframes */
+@keyframes clex-mask-sweep-new {
   0% {
-    --clex-write-right: 100%;
-    transform: translateY(0.04em) rotate(-0.24deg) scale(0.996);
-    filter: blur(0.65px) drop-shadow(0 4px 14px rgba(139,92,246,0.10));
-  }
-  24% {
-    --clex-write-right: 68%;
-    transform: translateY(0.01em) rotate(-0.08deg) scale(1.004);
-  }
-  58% {
-    --clex-write-right: 27%;
-    filter: blur(0.16px) drop-shadow(0 14px 30px rgba(216,95,139,0.19));
-  }
-  82% {
-    --clex-write-right: 5%;
-    transform: translateY(-0.01em) rotate(0.08deg) scale(1.01);
+    -webkit-mask-position: 100% 0;
+    mask-position: 100% 0;
   }
   100% {
-    --clex-write-right: -34%;
-    transform: translateY(0) rotate(0deg) scale(1);
-    filter: drop-shadow(0 13px 28px rgba(255,122,61,0.14));
+    -webkit-mask-position: 0% 0;
+    mask-position: 0% 0;
   }
 }
 
-@keyframes clex-handwriting-pen {
-  0%, 3% {
+@keyframes clex-sparkle-sweep-new {
+  0% {
     opacity: 0;
-    transform: translateX(0) rotate(9deg) scaleY(0.8);
+    transform: translateX(0) scale(0) rotate(0deg);
   }
-  10% {
-    opacity: 0.95;
+  5% {
+    opacity: 1;
+    transform: translateX(0) scale(1.4) rotate(15deg);
   }
-  28% {
-    transform: translateX(calc(var(--clex-write-distance, 1) * 28ch)) rotate(2deg) scaleY(0.96);
-  }
-  62% {
-    transform: translateX(calc(var(--clex-write-distance, 1) * 64ch)) rotate(-5deg) scaleY(1);
-  }
-  88% {
-    opacity: 0.92;
-    transform: translateX(calc(var(--clex-write-distance, 1) * 96ch)) rotate(7deg) scaleY(0.92);
+  90% {
+    opacity: 1;
+    transform: translateX(var(--text-width, 100%)) scale(1.4) rotate(345deg);
   }
   100% {
     opacity: 0;
-    transform: translateX(calc(var(--clex-write-distance, 1) * 108ch)) rotate(7deg) scaleY(0.82);
+    transform: translateX(var(--text-width, 100%)) scale(0) rotate(360deg);
   }
+}
+
+/* ─────────────────────────────────────────────────────────
+   ADVANCED INTERACTIVE & CINEMATIC EFFECTS (creem-stack, etc)
+   ───────────────────────────────────────────────────────── */
+.creem-flow-pipe {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  width: 70px;
+  height: 24px;
+}
+
+.creem-flow-dots {
+  width: 100%;
+  height: 4px;
+  background: repeating-linear-gradient(90deg, var(--border-bold) 0 4px, transparent 4px 10px);
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  animation: flow-dot-dash 1.5s linear infinite;
+}
+
+.creem-flow-arrow {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: var(--border-bold);
+  position: absolute;
+  right: -2px;
+  animation: flow-arrow-bump 1.5s ease-in-out infinite;
+}
+
+@keyframes flow-dot-dash {
+  0% { background-position: 0 0; }
+  100% { background-position: 30px 0; }
+}
+
+@keyframes flow-arrow-bump {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(4px); }
+}
+
+@media (min-width: 768px) {
+  .creem-stack {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 0.8rem !important;
+    margin: 2.5rem auto 1.5rem !important;
+  }
+  .creem-stack__card {
+    flex: 0 1 310px !important;
+    margin: 0 !important;
+  }
+}
+
+@media (max-width: 767px) {
+  .creem-stack {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 1.2rem !important;
+  }
+  .creem-flow-pipe {
+    transform: rotate(90deg) !important;
+    margin: 0.2rem 0 !important;
+  }
+}
+
+/* Cinematic Primary Button Shine */
+.btn--primary, .pill-btn--primary {
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+.btn--primary::before, .pill-btn--primary::before {
+  content: '' !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: -150% !important;
+  width: 50% !important;
+  height: 100% !important;
+  background: linear-gradient(90deg, 
+    rgba(255, 255, 255, 0) 0%, 
+    rgba(255, 255, 255, 0.38) 50%, 
+    rgba(255, 255, 255, 0) 100%
+  ) !important;
+  transform: skewX(-25deg) !important;
+  pointer-events: none !important;
+}
+
+.btn--primary:hover::before, .pill-btn--primary:hover::before {
+  animation: clex-btn-shine 850ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards !important;
+}
+
+@keyframes clex-btn-shine {
+  0% { left: -150%; }
+  100% { left: 150%; }
+}
+
+/* Tabbed Code Editor Widget (Screenshot 1) */
+.dev-code-editor {
+  position: relative !important;
+  background: #09090b !important;
+  border: 3px solid var(--border-bold) !important;
+  box-shadow: 10px 10px 0 var(--border-bold) !important;
+  border-radius: 18px !important;
+  overflow: visible !important;
+  margin-top: 2.2rem !important;
+  margin-bottom: 3.5rem !important;
+}
+
+.dce-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 0.85rem 1.25rem !important;
+  border-bottom: 2px solid var(--border-bold) !important;
+  background: rgba(255,255,255,0.03) !important;
+}
+
+.dce-dots {
+  display: flex !important;
+  gap: 6px !important;
+  align-items: center !important;
+}
+
+.dce-dot {
+  width: 11px !important;
+  height: 11px !important;
+  border-radius: 50% !important;
+  border: 1px solid rgba(0,0,0,0.2) !important;
+}
+
+.dce-dot--red { background: #ff5f56 !important; }
+.dce-dot--yellow { background: #ffbd2e !important; }
+.dce-dot--green { background: #27c93f !important; }
+
+.dce-tabs {
+  display: flex !important;
+  gap: 4px !important;
+  margin-left: 1.5rem !important;
+  margin-right: auto !important;
+}
+
+.dce-tab {
+  padding: 4px 12px !important;
+  border-radius: 6px !important;
+  border: 1.5px solid transparent !important;
+  background: transparent !important;
+  color: rgba(255,255,255,0.45) !important;
+  font-family: var(--font-mono) !important;
+  font-size: 0.8rem !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  transition: all 180ms ease !important;
+}
+
+.dce-tab:hover {
+  color: #fff !important;
+}
+
+.dce-tab--active {
+  background: rgba(255,255,255,0.08) !important;
+  border-color: rgba(255,255,255,0.15) !important;
+  color: var(--accent) !important;
+}
+
+.dce-copy {
+  padding: 4px 12px !important;
+  border-radius: 8px !important;
+  border: 2px solid var(--border-bold) !important;
+  background: rgba(255,255,255,0.1) !important;
+  color: #fff !important;
+  font-family: var(--font-sans) !important;
+  font-weight: 700 !important;
+  font-size: 0.8rem !important;
+  box-shadow: 2px 2px 0 var(--border-bold) !important;
+  cursor: pointer !important;
+  transition: all 150ms ease !important;
+}
+
+.dce-copy:hover {
+  transform: translate(-1px, -1px) !important;
+  box-shadow: 3px 3px 0 var(--border-bold) !important;
+  background: rgba(255,255,255,0.16) !important;
+}
+
+.dce-copy.dce-copied {
+  background: #27c93f !important;
+  border-color: #000 !important;
+  color: #000 !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.dce-content {
+  padding: 1.5rem !important;
+  max-height: 380px !important;
+  overflow-y: auto !important;
+}
+
+.dce-pane {
+  display: none !important;
+}
+
+.dce-pane--active {
+  display: block !important;
+}
+
+.dce-pane pre, .dce-pane code {
+  background: transparent !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  font-size: clamp(0.78rem, 1.2vw, 0.92rem) !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: #f3f4f6 !important;
+}
+
+/* Peeking Mascot (Screenshot 1) */
+.dce-mascot {
+  position: absolute !important;
+  bottom: -43px !important;
+  left: 20px !important;
+  z-index: 100 !important;
+  display: flex !important;
+  align-items: flex-end !important;
+  pointer-events: none !important;
+}
+
+.dce-mascot-avatar {
+  position: relative !important;
+  width: 54px !important;
+  height: 48px !important;
+  background: #f8fbff !important;
+  border: 3px solid var(--border-bold) !important;
+  border-radius: 50% 50% 0 0 !important;
+  box-shadow: inset 0 -4px 0 rgba(0,0,0,0.06) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 5px !important;
+  padding-bottom: 6px !important;
+}
+
+.dce-mascot-eye {
+  position: relative !important;
+  width: 12px !important;
+  height: 15px !important;
+  background: #000 !important;
+  border-radius: 50% !important;
+  overflow: hidden !important;
+}
+
+.dce-mascot-pupil {
+  position: absolute !important;
+  top: 2px !important;
+  left: 2px !important;
+  width: 4px !important;
+  height: 4px !important;
+  background: #fff !important;
+  border-radius: 50% !important;
+}
+
+.dce-mascot-badge {
+  background: var(--accent) !important;
+  border: 2.5px solid var(--border-bold) !important;
+  border-radius: 8px !important;
+  padding: 2px 6px !important;
+  font-family: var(--font-mono) !important;
+  font-size: 0.7rem !important;
+  font-weight: 900 !important;
+  color: #000 !important;
+  box-shadow: 2px 2px 0 var(--border-bold) !important;
+  margin-left: -8px !important;
+  margin-bottom: 4px !important;
 }
 
 .footer__glyph,
@@ -5021,6 +5097,9 @@ body.section-theme-dark .chain-hero__title-accent {
   .chain-hero__title-accent.clex-write {
     clip-path: none !important;
     transform: none !important;
+    -webkit-mask-image: none !important;
+    mask-image: none !important;
+    animation: none !important;
   }
 
   .italic-accent.clex-write::after,
@@ -5028,6 +5107,7 @@ body.section-theme-dark .chain-hero__title-accent {
   .text-accent.clex-write::after,
   .chain-hero__title-accent.clex-write::after {
     content: none !important;
+    display: none !important;
   }
 }
 
@@ -5250,4 +5330,268 @@ body.section-theme-dark .hero__visual .data-stream__row {
     overflow: hidden !important;
     text-overflow: ellipsis !important;
   }
+}
+
+/* CLI terminal interactive styles */
+.terminal-cursor {
+  animation: cli-cursor-blink 1s step-end infinite !important;
+  font-weight: bold;
+}
+
+@keyframes cli-cursor-blink {
+  from, to { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* =============================================================
+   HANDWRITING v3 — single-element cinematic stroke wipe
+   Sharp narrow mask edge driven by --hand-p, pen-tip rides edge.
+   No per-char split → gradient stays unbroken & crisp.
+   ============================================================= */
+
+@property --hand-p {
+  syntax: '<percentage>';
+  initial-value: 0%;
+  inherits: false;
+}
+
+/* Override every legacy selector */
+.italic-accent.clex-write,
+.italic-accent.clex-write--visible,
+.italic-accent.clex-write--done,
+.hero__title-word--italic.clex-write,
+.hero__title-word--italic.clex-write--visible,
+.hero__title-word--italic.clex-write--done,
+.text-accent.clex-write,
+.chain-hero__title-accent.clex-write {
+  -webkit-mask-image: none !important;
+  mask-image: none !important;
+  -webkit-mask-size: auto !important;
+  mask-size: auto !important;
+  animation: none !important;
+}
+
+.italic-accent.clex-write::after,
+.italic-accent.clex-write--visible::after,
+.italic-accent.clex-write--done::after,
+.hero__title-word--italic.clex-write::after,
+.text-accent.clex-write::after,
+.chain-hero__title-accent.clex-write::after {
+  content: none !important;
+  display: none !important;
+  animation: none !important;
+}
+
+/* Base accent — high-contrast, descender-safe, subpixel-sharp */
+.italic-accent,
+.hero__title-word--italic,
+.text-accent,
+.chain-hero__title-accent {
+  --hand-grad: linear-gradient(112deg, #8b5cf6 0%, #d85f8b 46%, #ff8a1f 82%, #ffd46a 100%);
+  font-family: 'Pacifico', 'Caveat Brush', 'Caveat', cursive !important;
+  font-weight: 400 !important;
+  font-style: normal !important;
+  font-feature-settings: 'kern' 1, 'liga' 1 !important;
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
+  text-rendering: geometricPrecision !important;
+  letter-spacing: 0.005em !important;
+  line-height: 1.36 !important;
+  display: inline-block !important;
+  position: relative !important;
+  overflow: visible !important;
+  isolation: isolate !important;
+  padding: 0.16em 0.18em 0.46em !important;
+  margin: -0.06em -0.05em -0.36em !important;
+  color: transparent !important;
+  -webkit-text-fill-color: transparent !important;
+  background-image: var(--hand-grad) !important;
+  background-repeat: no-repeat !important;
+  background-position: 0 50% !important;
+  background-size: 100% 110% !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  filter: drop-shadow(0 6px 14px rgba(255,122,61,0.18)) drop-shadow(0 1px 0 rgba(0,0,0,0.04));
+  clip-path: none !important;
+  transform: none !important;
+}
+
+.italic-accent--lavender {
+  --hand-grad: linear-gradient(112deg, #6d3ff5 0%, #9b4dff 32%, #d44a8e 64%, #ff7a3d 100%) !important;
+  filter: drop-shadow(0 8px 18px rgba(140,80,255,0.32)) drop-shadow(0 1px 0 rgba(0,0,0,0.06)) !important;
+}
+.italic-accent--cyan {
+  --hand-grad: linear-gradient(112deg, #15a3d8 0%, #6b4dff 38%, #ff7a3d 100%) !important;
+  filter: drop-shadow(0 8px 18px rgba(45,170,230,0.30)) !important;
+}
+.italic-accent--lime {
+  --hand-grad: linear-gradient(112deg, #5fae00 0%, #2bb564 36%, #ff8a1f 100%) !important;
+  filter: drop-shadow(0 8px 18px rgba(110,200,40,0.30)) !important;
+}
+.italic-accent--peach {
+  --hand-grad: linear-gradient(112deg, #ff5f3d 0%, #ff8a1f 50%, #ffc95a 100%) !important;
+}
+
+html[data-theme="dark"] .italic-accent,
+html[data-theme="dark"] .hero__title-word--italic,
+html[data-theme="dark"] .text-accent,
+html[data-theme="dark"] .chain-hero__title-accent,
+.section--dark .italic-accent,
+[data-section-theme="dark"] .italic-accent,
+.banner--dark .italic-accent,
+.footer .italic-accent {
+  --hand-grad: linear-gradient(112deg, #d3bbff 0%, #ffb9d6 50%, #ffd198 100%) !important;
+  filter: drop-shadow(0 10px 24px rgba(180,140,255,0.38)) !important;
+}
+
+/* Section-dark + lavender variant — keep the same light pastel
+   since dark backgrounds need pastels regardless of color name. */
+.section--dark .italic-accent--lavender,
+[data-section-theme="dark"] .italic-accent--lavender,
+.banner--dark .italic-accent--lavender {
+  --hand-grad: linear-gradient(112deg, #d8c2ff 0%, #ffaecf 38%, #ffc99a 78%, #ffe19f 100%) !important;
+  filter: drop-shadow(0 10px 24px rgba(200,160,255,0.45)) !important;
+}
+.section--dark .italic-accent--cyan,
+[data-section-theme="dark"] .italic-accent--cyan {
+  --hand-grad: linear-gradient(112deg, #7eecff 0%, #b9c8ff 50%, #ffc89c 100%) !important;
+  filter: drop-shadow(0 10px 22px rgba(110,210,255,0.45)) !important;
+}
+.section--dark .italic-accent--lime,
+[data-section-theme="dark"] .italic-accent--lime {
+  --hand-grad: linear-gradient(112deg, #d6ff7e 0%, #aef0a8 50%, #ffd07e 100%) !important;
+  filter: drop-shadow(0 10px 22px rgba(180,255,80,0.45)) !important;
+}
+
+/* Section-lavender (light bg) lavender accent: deep gradient stays */
+html[data-theme="dark"] .italic-accent--lavender,
+.section--lavender .italic-accent--lavender,
+[data-section-theme="lavender"] .italic-accent--lavender {
+  --hand-grad: linear-gradient(112deg, #4f1fff 0%, #8a3dff 32%, #c54580 68%, #ff6a25 100%) !important;
+  filter: drop-shadow(0 10px 22px rgba(120,60,255,0.38)) !important;
+}
+
+/* On lavender (light) section, dark theme should still pastel */
+html[data-theme="dark"] .section--lavender .italic-accent--lavender,
+html[data-theme="dark"] [data-section-theme="lavender"] .italic-accent--lavender {
+  --hand-grad: linear-gradient(112deg, #d8c2ff 0%, #ffaecf 38%, #ffc99a 78%, #ffe19f 100%) !important;
+}
+
+/* WRITING SYSTEM */
+.italic-accent.clex-hand,
+.hero__title-word--italic.clex-hand,
+.text-accent.clex-hand,
+.chain-hero__title-accent.clex-hand {
+  --hand-p: 0%;
+  /* sharp 4% soft edge — pen tip not blurry */
+  -webkit-mask-image: linear-gradient(94deg,
+    rgba(0,0,0,1) 0%,
+    rgba(0,0,0,1) calc(var(--hand-p) - 4%),
+    rgba(0,0,0,0) var(--hand-p),
+    rgba(0,0,0,0) 100%) !important;
+          mask-image: linear-gradient(94deg,
+    rgba(0,0,0,1) 0%,
+    rgba(0,0,0,1) calc(var(--hand-p) - 4%),
+    rgba(0,0,0,0) var(--hand-p),
+    rgba(0,0,0,0) 100%) !important;
+  -webkit-mask-repeat: no-repeat !important;
+          mask-repeat: no-repeat !important;
+  -webkit-mask-size: 100% 100% !important;
+          mask-size: 100% 100% !important;
+  transition: --hand-p 0ms linear; /* JS drives this; transition lets reduced-motion skip */
+  will-change: --hand-p;
+}
+
+.italic-accent.clex-hand--done,
+.hero__title-word--italic.clex-hand--done,
+.text-accent.clex-hand--done,
+.chain-hero__title-accent.clex-hand--done {
+  -webkit-mask-image: none !important;
+          mask-image: none !important;
+}
+
+/* Pen-tip — JS sets --hand-pen-x relative to writable region */
+.italic-accent.clex-hand::before,
+.hero__title-word--italic.clex-hand::before,
+.text-accent.clex-hand::before,
+.chain-hero__title-accent.clex-hand::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: var(--hand-pen-y, 50%);
+  transform: translate(var(--hand-pen-x, 0px), -50%) scale(1);
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 35% 35%, #fff 0%, #ffd46a 22%, #ff8a1f 55%, rgba(255,138,31,0) 100%);
+  box-shadow:
+    0 0 10px rgba(255,138,31,0.95),
+    0 0 22px rgba(255,200,90,0.65),
+    0 0 38px rgba(139,92,246,0.55);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 5;
+  transition: opacity 220ms ease;
+  will-change: transform, opacity;
+}
+.italic-accent.clex-hand--writing::before,
+.hero__title-word--italic.clex-hand--writing::before,
+.text-accent.clex-hand--writing::before,
+.chain-hero__title-accent.clex-hand--writing::before {
+  opacity: 1;
+  animation: clex-pen-wobble 720ms ease-in-out infinite;
+}
+
+@keyframes clex-pen-wobble {
+  0%,100% { filter: hue-rotate(0deg); }
+  50%     { filter: hue-rotate(-12deg) brightness(1.15); }
+}
+
+/* Underline ink trail — grows behind pen, fades out at end */
+.italic-accent.clex-hand::after,
+.hero__title-word--italic.clex-hand::after,
+.text-accent.clex-hand::after,
+.chain-hero__title-accent.clex-hand::after {
+  content: '' !important;
+  display: block !important;
+  position: absolute !important;
+  left: 0.18em;
+  bottom: 0.22em;
+  width: var(--hand-pen-x, 0px);
+  height: 2px;
+  border-radius: 2px;
+  background: var(--hand-grad);
+  opacity: 0.42;
+  pointer-events: none;
+  z-index: 1;
+  transition: opacity 600ms ease;
+  animation: none !important;
+  clip-path: none !important;
+  -webkit-mask-image: none !important;
+  mask-image: none !important;
+  box-shadow: 0 0 8px rgba(255,138,31,0.4);
+  margin: 0 !important;
+  transform: none !important;
+}
+.italic-accent.clex-hand--done::after,
+.hero__title-word--italic.clex-hand--done::after,
+.text-accent.clex-hand--done::after,
+.chain-hero__title-accent.clex-hand--done::after {
+  opacity: 0;
+  transition: opacity 700ms ease 220ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .italic-accent.clex-hand,
+  .hero__title-word--italic.clex-hand,
+  .text-accent.clex-hand,
+  .chain-hero__title-accent.clex-hand {
+    -webkit-mask-image: none !important;
+            mask-image: none !important;
+  }
+  .italic-accent.clex-hand::before,
+  .italic-accent.clex-hand::after,
+  .hero__title-word--italic.clex-hand::before,
+  .hero__title-word--italic.clex-hand::after { display: none !important; }
 }
