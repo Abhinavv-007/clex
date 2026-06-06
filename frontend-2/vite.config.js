@@ -24,6 +24,7 @@ const devSlashlessRouteMap = new Map([
   ['/vault', '/vault/index.html'],
   ['/vault/secret', '/vault/secret/index.html'],
   ['/vault/share', '/vault/share/index.html'],
+  ['/admin', '/admin/index.html'],
 ]);
 
 const previewSlashlessRouteMap = new Map([
@@ -42,6 +43,7 @@ const previewSlashlessRouteMap = new Map([
   ['/vault', '/vault'],
   ['/vault/secret', '/vault/secret'],
   ['/vault/share', '/vault/share'],
+  ['/admin', '/admin'],
 ]);
 
 /**
@@ -206,6 +208,7 @@ export default defineConfig({
         vault: r('vault/index.html'),
         'vault-secret': r('vault/secret/index.html'),
         'vault-share': r('vault/share/index.html'),
+        admin: r('admin/index.html'),
       },
     },
   },

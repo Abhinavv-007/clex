@@ -14,6 +14,7 @@ const flatRoutes = [
   'faq',
   'privacy',
   'terms',
+  'admin',
 ];
 
 for (const route of flatRoutes) {

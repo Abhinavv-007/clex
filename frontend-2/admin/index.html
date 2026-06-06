@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/png" href="/brand/clex-logo.png">
+  <link rel="apple-touch-icon" href="/brand/clex-logo.png">
+  <title>Admin · Clex AI control room</title>
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="description" content="Restricted operator console for Clex.">
+  <script>
+    // Admin defaults to dark — operators get the cinema mood.
+    document.documentElement.setAttribute('data-theme', 'dark');
+    document.documentElement.classList.add('dark');
+    document.documentElement.style.colorScheme = 'dark';
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=Inter:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="/css/reset.css">
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/pages/admin.css">
+</head>
+<body data-page="admin">
+  <main class="admin-shell">
+    <!-- ── Login view ── -->
+    <section class="admin-login" id="admin-login">
+      <div class="admin-login__card">
+        <div class="admin-login__brand">
+          <span class="admin-login__mark"></span>
+          <span class="admin-login__crumb">CLEX · ADMIN</span>
+        </div>
+        <h1 class="admin-login__title">
+          Clex AI<br>
+          <em>control room.</em>
+        </h1>
+        <p class="admin-login__lede">
+          Restricted area. Sign in with the admin secret or a registered passkey.
+        </p>
+
+        <div class="seg" role="tablist" aria-label="Authentication method">
+          <button class="seg__opt is-active" data-method="password" role="tab">Password</button>
+          <button class="seg__opt" data-method="passkey" role="tab">Passkey</button>
+        </div>
+
+        <form id="admin-login-form" class="admin-login__form" autocomplete="off" novalidate>
+          <label class="admin-field" data-method="password">
+            <span class="admin-field__label">ADMIN SECRET</span>
+            <input
+              class="admin-field__input"
+              type="password"
+              id="admin-secret"
+              autocomplete="current-password"
+              placeholder="••••••••••••••••"
+              spellcheck="false"
+              required>
+          </label>
+
+          <div class="admin-passkey-blurb" data-method="passkey" hidden>
+            Tap continue to sign in with a hardware-backed passkey already registered to this admin.
+          </div>
+
+          <button type="submit" class="btn-gold" id="admin-continue">Continue</button>
+          <p class="admin-error" id="admin-error" hidden></p>
+        </form>
+      </div>
+    </section>
+
+    <!-- ── Dashboard view ── -->
+    <section class="admin-dash" id="admin-dash" hidden>
+      <aside class="admin-dash__rail">
+        <div class="admin-dash__brand">
+          <span class="admin-login__mark"></span>
+          <span>Clex / Admin</span>
+        </div>
+        <nav class="admin-dash__nav" id="admin-nav">
+          <button class="nav-item is-active" data-tab="overview"><span class="nav-item__dot"></span>Overview</button>
+          <button class="nav-item" data-tab="users"><span class="nav-item__dot"></span>Users</button>
+          <button class="nav-item" data-tab="feed"><span class="nav-item__dot"></span>Live feed</button>
+          <button class="nav-item" data-tab="audit"><span class="nav-item__dot"></span>Audit log</button>
+          <button class="nav-item" data-tab="passkeys"><span class="nav-item__dot"></span>Passkeys</button>
+        </nav>
+        <div class="admin-dash__rail-bottom">
+          <div class="admin-session" id="admin-session-meta">—</div>
+          <button class="btn-ghost" id="admin-logout">Sign out</button>
+        </div>
+      </aside>
+
+      <div class="admin-dash__main">
+        <header class="admin-dash__head">
+          <div>
+            <h1 class="admin-dash__title">Admin <em>Control</em></h1>
+            <p class="admin-dash__lede">
+              Users, sessions, transfers, audit, passkeys.
+            </p>
+          </div>
+          <div class="admin-dash__head-actions">
+            <button class="btn-ghost" id="admin-refresh">Refresh</button>
+          </div>
+        </header>
+
+        <!-- ── Overview tab ── -->
+        <section class="tab-panel is-active" id="tab-overview" data-tab="overview">
+          <div class="tile-grid" id="overview-tiles"></div>
+          <div class="card-grid">
+            <div class="card">
+              <div class="card__head">
+                <h2 class="card__title"><em>Recent</em> transfers</h2>
+                <span class="card__lede">last 20 KV-tracked transfer sessions</span>
+              </div>
+              <div class="card__body" id="overview-transfers"><div class="empty">loading…</div></div>
+            </div>
+            <div class="card">
+              <div class="card__head">
+                <h2 class="card__title"><em>Service</em> health</h2>
+                <span class="card__lede">cron, bindings, version</span>
+              </div>
+              <div class="card__body" id="overview-health"><div class="empty">loading…</div></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ── Users tab ── -->
+        <section class="tab-panel" id="tab-users" data-tab="users">
+          <div class="users-toolbar">
+            <input class="users-search" id="users-search" placeholder="Search by email or UID…">
+            <button class="btn-ghost" id="users-refresh">Refresh</button>
+          </div>
+          <div class="card">
+            <div class="card__body">
+              <div class="users-table" id="users-table"><div class="empty">loading…</div></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ── Live feed tab ── -->
+        <section class="tab-panel" id="tab-feed" data-tab="feed">
+          <div class="feed-grid">
+            <div class="card">
+              <div class="card__head">
+                <h2 class="card__title"><em>API key</em> creations</h2>
+                <span class="card__lede">who created which key, when</span>
+              </div>
+              <div class="card__body" id="feed-keys"><div class="empty">loading…</div></div>
+            </div>
+            <div class="card">
+              <div class="card__head">
+                <h2 class="card__title"><em>API</em> calls</h2>
+                <span class="card__lede">recent route hits per user</span>
+              </div>
+              <div class="card__body" id="feed-api"><div class="empty">loading…</div></div>
+            </div>
+            <div class="card">
+              <div class="card__head">
+                <h2 class="card__title"><em>User</em> IP history</h2>
+                <span class="card__lede">signed-in account access by IP and time</span>
+              </div>
+              <div class="card__body" id="feed-ip"><div class="empty">loading…</div></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ── Audit tab ── -->
+        <section class="tab-panel" id="tab-audit" data-tab="audit">
+          <div class="card">
+            <div class="card__head">
+              <h2 class="card__title"><em>Login</em> events</h2>
+              <span class="card__lede">password and passkey admin sign-in attempts</span>
+            </div>
+            <div class="card__body" id="audit-list"><div class="empty">loading…</div></div>
+          </div>
+          <div class="card">
+            <div class="card__head">
+              <h2 class="card__title"><em>Worker</em> events</h2>
+              <span class="card__lede">process boot + 5xx response surface</span>
+            </div>
+            <div class="card__body" id="audit-system"><div class="empty">loading…</div></div>
+          </div>
+        </section>
+
+        <!-- ── Passkeys tab ── -->
+        <section class="tab-panel" id="tab-passkeys" data-tab="passkeys">
+          <div class="card">
+            <div class="card__head">
+              <h2 class="card__title"><em>Registered</em> passkeys</h2>
+              <span class="card__lede">Hardware-backed sign-in keys for this admin.</span>
+            </div>
+            <div class="card__body" id="passkeys-list"><div class="empty">loading…</div></div>
+            <div class="card__foot">
+              <button class="btn-gold" id="passkey-add">+ Add a passkey on this device</button>
+              <p class="passkey-msg" id="passkey-msg" hidden></p>
+            </div>
+          </div>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="/js/admin/index.js"></script>
+</body>
+</html>
