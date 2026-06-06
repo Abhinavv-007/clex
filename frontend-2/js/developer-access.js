@@ -45,7 +45,7 @@ export async function initDeveloperAccess() {
     if (userLabel) {
       userLabel.innerHTML = state.token
         ? `Key bound to <b>${state.fingerprint.slice(0, 8)}…</b> · stored on this device only`
-        : 'Click <b>Generate API key</b> to mint one';
+        : 'Click <b>Generate api key</b> to mint one';
     }
     if (tokenOutput) {
       tokenOutput.value = state.token || '';
@@ -91,7 +91,7 @@ export async function initDeveloperAccess() {
       return;
     }
     await copyText(state.token);
-    if (statusLabel) statusLabel.textContent = 'API key copied.';
+    if (statusLabel) statusLabel.textContent = 'api key copied.';
     copyButton.classList.add('is-copied');
     setTimeout(() => copyButton.classList.remove('is-copied'), 1600);
   });

@@ -2206,22 +2206,27 @@ body {
 /* ============================================================
    MASCOT pupil tracker (returned to /developers code panel)
    ============================================================ */
+.dev-code-editor-wrap {
+  position: relative;
+  overflow: visible;
+}
 .dce-mascot {
   position: absolute;
-  bottom: 12px;
-  right: 12px;
-  width: 64px;
-  height: 64px;
-  z-index: 4;
+  bottom: -22px;
+  right: -10px;
+  width: 78px;
+  height: 78px;
+  z-index: 6;
   pointer-events: none;
   display: flex;
   align-items: flex-end;
   justify-content: center;
+  filter: drop-shadow(0 12px 22px rgba(255,138,31,0.35));
 }
 .dce-mascot-avatar {
   position: relative;
-  width: 56px;
-  height: 56px;
+  width: 70px;
+  height: 70px;
   border-radius: 50%;
   background: radial-gradient(circle at 35% 35%, #fff 0%, #ffd9b8 28%, #ff9a5c 65%, #c46bc2 100%);
   box-shadow:
@@ -2231,7 +2236,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 7px;
+  gap: 8px;
   animation: dce-mascot-bob 3.4s ease-in-out infinite;
 }
 @keyframes dce-mascot-bob {

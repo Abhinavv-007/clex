@@ -103,14 +103,14 @@
       <div class="dev-access reveal" id="developer-access">
         <div class="dev-access__header">
           <div>
-            <span class="section__label">API Access</span>
-            <h2 class="dev-access__title">Create your API key</h2>
+            <span class="section__label section__label--soft">api access</span>
+            <h2 class="dev-access__title">Create your api key</h2>
             <p class="dev-access__text">
-              No signup. We generate a key bound to this device fingerprint + IP. Rate-limit applies per fingerprint, not per account. Send it as <code>Authorization: Bearer &lt;key&gt;</code> for protected Clex API routes.
+              No signup. We mint a key bound to this device fingerprint + IP. Rate-limit applies per fingerprint, not per account. Send it as <code>Authorization: Bearer &lt;key&gt;</code> for protected Clex api routes.
             </p>
           </div>
           <div class="dev-access__status">
-            <span id="dev-user-label">Click <b>Generate API key</b> to mint one</span>
+            <span id="dev-user-label">Click <b>Generate api key</b> to mint one</span>
             <small id="dev-token-status">Device-bound · 60 req/min · 100MB/day</small>
           </div>
         </div>
@@ -118,7 +118,7 @@
         <div class="dev-access__actions">
           <button class="btn btn--primary" id="dev-create-token" type="button">
             <span class="dev-btn__icon" aria-hidden="true">⚡</span>
-            <span>Generate API key</span>
+            <span>Generate api key</span>
           </button>
           <button class="btn btn--secondary" id="dev-copy-token" type="button">
             <span class="dev-btn__icon" aria-hidden="true">⧉</span>
@@ -130,7 +130,7 @@
           </button>
         </div>
 
-        <label class="dev-token-label" for="dev-token-output">Your API key</label>
+        <label class="dev-token-label" for="dev-token-output">Your api key</label>
         <textarea class="dev-token-output" id="dev-token-output" rows="4" readonly placeholder="Click Generate to mint a fingerprint-bound key"></textarea>
 
         <div class="dev-access__fingerprint" aria-live="polite">
@@ -150,7 +150,8 @@
       </div>
 
       <!-- Interactive Tabbed Code Editor Widget -->
-      <div class="dev-code-editor reveal">
+      <div class="dev-code-editor-wrap reveal">
+      <div class="dev-code-editor">
         <div class="dce-header">
           <div class="dce-dots">
             <span class="dce-dot dce-dot--red"></span>
@@ -212,8 +213,10 @@ const { shareUrl } = await res.json();
 console.log(`Share URL: ${shareUrl}`);</code></pre>
           </div>
         </div>
-        
-        <!-- Peeking Mascot -->
+        </div>
+
+        <!-- Peeking Mascot — placed in wrapper so the editor's overflow clip
+             does not crop it. -->
         <div class="dce-mascot">
           <div class="dce-mascot-avatar">
             <span class="dce-mascot-eye">
