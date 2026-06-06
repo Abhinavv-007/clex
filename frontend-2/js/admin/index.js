@@ -180,16 +180,39 @@ function showLogin() {
 async function showDash() {
   $('#admin-login').hidden = true
   $('#admin-dash').hidden = false
-  // Auth-check / load /me
-  const me = await apiFetch('/api/admin/me')
-  if (me.status !== 200) {
+  // Auth-check / load /me. Hard-fail back to login on 401, but tolerate
+  // transient 5xx by surfacing a banner instead of bouncing the user.
+  try {
+    const me = await apiFetch('/api/admin/me')
+    if (me.status === 401 || me.status === 403) {
+      clearSession()
+      showLogin()
+      return
+    }
+    if (me.status !== 200) {
+      console.error('admin /me failed', me)
+      $('#admin-error').textContent = `Session check failed (${me.status}). Try again.`
+      $('#admin-error').hidden = false
+      return
+    }
+    state.user = me.body?.session
+    paintSessionMeta()
+  } catch (err) {
+    console.error('admin /me threw', err)
     clearSession()
     showLogin()
+    const el = $('#admin-error')
+    if (el) {
+      el.textContent = (err && err.message) ? err.message : 'Could not reach api.clex.in.'
+      el.hidden = false
+    }
     return
   }
-  state.user = me.body?.session
-  paintSessionMeta()
-  await loadOverview()
+  // Overview load is best-effort — surface errors in the panel rather
+  // than blocking the whole dashboard render.
+  loadOverview().catch(err => {
+    console.error('admin loadOverview failed', err)
+  })
 }
 
 function paintSessionMeta() {

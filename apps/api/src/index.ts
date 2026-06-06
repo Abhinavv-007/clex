@@ -39,7 +39,8 @@ import {
   handleMintKey,
   handleRevokeKey,
 } from './apiKeysHandlers'
-import { handleDashboard } from './dashboard'
+import { handleDashboard as _unusedDashboard } from './dashboard'
+void _unusedDashboard
 
 const TOKEN_PICKUP_PATH = '/api/auth/gdrive/token'
 const STATE_COOKIE = 'gdrive_state'
@@ -1074,21 +1075,16 @@ async function dispatch(request: Request, env: Env): Promise<Response> {
       return new Response(null, { status: 204, headers })
     }
 
-    // ─── Operator dashboard (HTML SPA at api.clex.in/dashboard) ──────
-    // The dashboard is the canonical UI for managing Clex API keys and
-    // watching live metrics. Lives at /dashboard so it can also be
-    // mounted under clex.in/api on the same worker if api.clex.in isn't
-    // routed yet.
+    // ─── Operator dashboard ───────────────────────────────────────────
+    // The dashboard now lives entirely on clex.in/admin (Pages-served HTML
+    // matching the rest of the site). Both api.clex.in/ and any
+    // /dashboard request redirect there so there is one canonical UI.
     if (
-      (url.pathname === '/dashboard' || url.pathname === '/dashboard/') &&
+      ((url.pathname === '/dashboard' || url.pathname === '/dashboard/') ||
+       (url.pathname === '/' && url.hostname.startsWith('api.'))) &&
       request.method === 'GET'
     ) {
-      return handleDashboard(request, env)
-    }
-    // On the api.clex.in hostname, treat the bare root as the dashboard
-    // entry point (clex.in's marketing site already lives on the apex).
-    if (url.pathname === '/' && request.method === 'GET' && url.hostname.startsWith('api.')) {
-      return handleDashboard(request, env)
+      return Response.redirect('https://clex.in/admin', 302)
     }
 
     // ─── API key management ───────────────────────────────────────────
