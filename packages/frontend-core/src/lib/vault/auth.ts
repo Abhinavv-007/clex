@@ -33,29 +33,22 @@ export interface VaultUser {
 type FirebaseApp = import('firebase/app').FirebaseApp
 type FirebaseAuth = import('firebase/auth').Auth
 let _auth: FirebaseAuth | null = null
-let analyticsInitStarted = false
-
 async function getFirebaseApp(): Promise<FirebaseApp> {
   const { initializeApp, getApps, getApp } = await import('firebase/app')
-  const app = getApps().length ? getApp() : initializeApp(FIREBASE_CONFIG)
-  void initFirebaseAnalytics(app)
-  return app
+  return getApps().length ? getApp() : initializeApp(FIREBASE_CONFIG)
 }
 
-async function initFirebaseAnalytics(app: FirebaseApp): Promise<void> {
-  if (analyticsInitStarted || typeof window === 'undefined') return
-  analyticsInitStarted = true
-
-  try {
-    const { getAnalytics, isSupported } = await import('firebase/analytics')
-    if (await isSupported()) {
-      getAnalytics(app)
-    }
-  } catch {
-    // Analytics is optional. Auth must continue to work in browsers that block
-    // analytics storage, during SSR-like test runs, and in privacy modes.
-  }
-}
+// NOTE: Google Analytics for Firebase used to be initialised here, on every
+// call to getFirebaseApp() — so merely resolving the auth state started it.
+// It sets _ga / _ga_* cookies and reports usage telemetry, which is neither
+// strictly necessary nor consented to, and under GDPR/ePrivacy that needs an
+// opt-in before a single byte is written. Nothing in Clex read the data, and
+// the product is positioned as privacy-first with a storage disclosure that
+// states there is no analytics and no cookie.
+//
+// If analytics is wanted later it has to be: (1) off by default, (2) started
+// only after an explicit opt-in recorded by the storage notice, and (3)
+// listed on /cookies before it ships.
 
 async function getFirebaseAuth(): Promise<FirebaseAuth> {
   if (_auth) return _auth

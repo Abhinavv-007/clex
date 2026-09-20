@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Fonts: one request, from <head>, so they download in parallel with the
+       stylesheets instead of being chained behind a CSS @import. Geist is the
+       display/body face, Pacifico the script accent, JetBrains Mono + Space
+       Mono the monospace pair. -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800;900&family=Hanken+Grotesk:wght@500;600;700;800;900&family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&family=Pacifico&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap">
+  <script>document.documentElement.classList.add('clex-design-booting');</script>
+  <link rel="icon" type="image/png" href="/brand/clex-logo.png">
+  <link rel="apple-touch-icon" href="/brand/clex-logo.png">
+  <title>Cookies &amp; Browser Storage — Clex</title>
+  <meta name="description" content="Exactly what Clex stores in your browser, why, how long it lasts, and how to clear it. Clex sets no cookies and runs no analytics or advertising trackers.">
+  <script>
+    // Theme bootstrap — must stay inline and render-blocking so the correct
+    // palette is committed before first paint. Mirrors readTheme() in js/theme.js.
+    (() => {
+      try {
+        const saved = localStorage.getItem('clex-theme-v2');
+        const theme = (saved === 'dark' || saved === 'light')
+          ? saved
+          : (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        document.documentElement.setAttribute('data-theme', theme);
+        document.documentElement.classList.toggle('dark', theme === 'dark');
+        document.documentElement.style.colorScheme = theme;
+      } catch {
+        document.documentElement.setAttribute('data-theme', 'light');
+        document.documentElement.classList.remove('dark');
+        document.documentElement.style.colorScheme = 'light';
+      }
+    })();
+  </script>
+
+  <link rel="stylesheet" href="/css/reset.css">
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/animations.css">
+  <link rel="stylesheet" href="/css/pages/home.css">
+  <link rel="stylesheet" href="/css/pages/legal.css">
+  <link rel="stylesheet" href="/css/global-enhance.css">
+  <link rel="stylesheet" href="/css/creem-design.css">
+  <link rel="stylesheet" href="/css/cinematic.css">
+
+  <script type="module" src="/js/main.js"></script>
+</head>
+<body data-page="cookies">
+
+  <!-- ═══ Navigation ═══ -->
+  <nav class="nav" id="main-nav">
+    <div class="nav__inner">
+      <a href="/" class="nav__logo" aria-label="Clex home">
+        <img src="/brand/clex-logo.png" alt="" class="nav__logo-image">
+        <span class="nav__logo-wordmark">Clex</span>
+      </a>
+      <div class="nav__links">
+        <a href="/features" class="nav__link" data-page="features">Features</a>
+        <a href="/vault" class="nav__link" data-page="vault">Vault</a>
+        <a href="/how-it-works" class="nav__link" data-page="how-it-works">How It Works</a>
+        <a href="/chain" class="nav__link" data-page="chain">Chain</a>
+        <a href="/developers" class="nav__link" data-page="developers">Developers</a>
+        <a href="/getting-started" class="nav__link" data-page="getting-started">Get Started</a>
+        <a href="/faq" class="nav__link" data-page="faq">FAQ</a>
+      </div>
+      <div class="nav__actions">
+        <button class="nav__theme-toggle" id="theme-toggle" aria-label="Toggle theme">☀</button>
+        <a href="/workspace" class="btn btn--primary btn--small desktop-only">Open Workspace →</a>
+      </div>
+      <button class="nav__hamburger" id="nav-hamburger" aria-label="Toggle menu">
+        <span class="nav__hamburger-line"></span>
+        <span class="nav__hamburger-line"></span>
+        <span class="nav__hamburger-line"></span>
+      </button>
+    </div>
+  </nav>
+  <div class="nav__mobile-menu" id="nav-mobile-menu">
+    <a href="/" class="nav__mobile-link">Home</a>
+    <a href="/features" class="nav__mobile-link">Features</a>
+    <a href="/vault" class="nav__mobile-link">Vault</a>
+    <a href="/how-it-works" class="nav__mobile-link">How It Works</a>
+    <a href="/chain" class="nav__mobile-link">Chain</a>
+    <a href="/developers" class="nav__mobile-link">Developers</a>
+    <a href="/getting-started" class="nav__mobile-link">Get Started</a>
+    <a href="/faq" class="nav__mobile-link">FAQ</a>
+    <a href="/workspace" class="nav__mobile-link" style="color: var(--accent-text);">Open Workspace →</a>
+  </div>
+
+  <!-- ═══ Hero ═══ -->
+  <section class="legal-hero">
+    <div class="container">
+      <span class="page-hero__label reveal">Legal</span>
+      <h1 class="page-hero__title reveal">Cookies &amp; <em>browser storage</em></h1>
+      <div class="legal-hero__meta page-hero__meta reveal">Last updated: September 20, 2026</div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="legal-highlights stagger-group">
+        <div class="legal-highlight">
+          <div class="legal-highlight__icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="9.5" cy="10" r="1"/><circle cx="14" cy="13.5" r="1"/><circle cx="10.5" cy="15" r="1"/></svg></div>
+          <h3 class="legal-highlight__title">No cookies</h3>
+          <p class="legal-highlight__text">Clex sets no HTTP cookies at all. Everything below lives in your browser&rsquo;s own storage and never travels with a request.</p>
+        </div>
+        <div class="legal-highlight">
+          <div class="legal-highlight__icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M6 6l12 12"/></svg></div>
+          <h3 class="legal-highlight__title">No trackers</h3>
+          <p class="legal-highlight__text">No analytics, no advertising pixels, no fingerprinting, no session replay, no third-party tag manager.</p>
+        </div>
+        <div class="legal-highlight">
+          <div class="legal-highlight__icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4l6 6"/><path d="M13 9l-7 7-2 5 5-2 7-7"/><path d="M9.5 12.5l2 2"/></svg></div>
+          <h3 class="legal-highlight__title">Yours to clear</h3>
+          <p class="legal-highlight__text">All of it is local. Clearing site data in your browser removes every item listed here, permanently.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container legal-body">
+      <div class="legal-sections">
+
+        <div class="legal-section reveal">
+          <div class="legal-section__number">Section 01</div>
+          <h2 class="legal-section__title">The short version</h2>
+          <p class="legal-section__text">
+            Clex does not set cookies. It does use three browser storage mechanisms &mdash; <strong>localStorage</strong>, <strong>sessionStorage</strong> and <strong>IndexedDB</strong> &mdash; because the product is a browser application: your vault, your encryption keys and your in-progress transfers have to live somewhere, and we would rather that were your device than our server.
+          </p>
+          <p class="legal-section__text">
+            Everything in the table below is <strong>strictly necessary</strong> for a feature you chose to use. Under the ePrivacy Directive and UK PECR, strictly necessary storage does not require prior consent, which is why you are not asked to click through a consent wall to read this page. We show a one-time notice instead, so the disclosure is still made.
+          </p>
+        </div>
+
+        <div class="legal-section reveal">
+          <div class="legal-section__number">Section 02</div>
+          <h2 class="legal-section__title">Everything Clex stores</h2>
+          <p class="legal-section__text">This list is exhaustive for clex.in as of the date above.</p>
+
+          <h3 class="legal-subsection__title">Always present</h3>
+          <ul class="legal-section__list">
+            <li><strong><code>clex-theme-v2</code></strong> &mdash; localStorage. Whether you chose light or dark. Kept until you clear site data. Without it the site re-guesses your theme on every page load and flashes.</li>
+            <li><strong><code>clex-storage-notice-v1</code></strong> &mdash; localStorage. Records that you have seen the storage notice, so it is not shown again. Kept until you clear site data.</li>
+          </ul>
+
+          <h3 class="legal-subsection__title">Only if you open the Vault</h3>
+          <ul class="legal-section__list">
+            <li><strong><code>vault-data-v1</code></strong> &mdash; IndexedDB. Your notes and folders, encrypted before they are written. Kept until you delete them or clear site data.</li>
+            <li><strong><code>vault-crypto-v1</code></strong> &mdash; IndexedDB. The encryption keys for the above, generated on your device. <strong>Never transmitted to Clex.</strong> Kept until you clear site data &mdash; clearing it without a backup makes existing notes unrecoverable, by design.</li>
+            <li><strong><code>clex_vault_share_resume</code></strong> &mdash; localStorage. Lets an interrupted vault share pick up where it left off. Cleared when the share finishes.</li>
+          </ul>
+
+          <h3 class="legal-subsection__title">Only if you connect Google Drive</h3>
+          <ul class="legal-section__list">
+            <li><strong><code>clex_drive_auth</code></strong> &mdash; IndexedDB. The OAuth token for the Drive account you connected, so you are not asked to reauthorise on every upload. Removed when you disconnect Drive.</li>
+            <li><strong><code>clex_gdrive_callback_error</code></strong> &mdash; sessionStorage. Carries an authorisation error across the OAuth redirect so the page can explain what went wrong. Gone when the tab closes.</li>
+          </ul>
+
+          <h3 class="legal-subsection__title">Only if you create an API key</h3>
+          <ul class="legal-section__list">
+            <li><strong><code>clex_dev_apikey_session</code></strong> &mdash; sessionStorage. Holds the one-time plaintext of a key you just created so a page reload does not lose the only copy. Deliberately <em>not</em> localStorage: it must not outlive the tab. Gone when the tab closes.</li>
+          </ul>
+
+          <h3 class="legal-subsection__title">Only on the admin console</h3>
+          <ul class="legal-section__list">
+            <li><strong><code>clex_admin_session_id</code></strong> &mdash; sessionStorage. Identifies an authenticated admin session. Gone when the tab closes.</li>
+          </ul>
+        </div>
+
+        <div class="legal-section reveal">
+          <div class="legal-section__number">Section 03</div>
+          <h2 class="legal-section__title">What Clex does not do</h2>
+          <ul class="legal-section__list">
+            <li>No HTTP cookies, first-party or third-party</li>
+            <li>No analytics or product-telemetry SDK</li>
+            <li>No advertising or remarketing pixels, and no data sold or shared for advertising</li>
+            <li>No device fingerprinting or cross-site identifiers</li>
+            <li>No session replay or heatmap recording</li>
+            <li>No tag manager loading further scripts after the page opens</li>
+          </ul>
+        </div>
+
+        <div class="legal-section reveal">
+          <div class="legal-section__number">Section 04</div>
+          <h2 class="legal-section__title">Third parties that can see a request</h2>
+          <p class="legal-section__text">
+            These are the only external services a Clex page contacts. None of them set a cookie through Clex, but a request necessarily discloses your IP address and user agent to the service handling it.
+          </p>
+          <ul class="legal-section__list">
+            <li><strong>Google Fonts</strong> (<code>fonts.googleapis.com</code>, <code>fonts.gstatic.com</code>) &mdash; serves the typefaces. Receives your IP address when fonts are fetched. No cookie is set.</li>
+            <li><strong>Firebase Authentication</strong> (Google) &mdash; only if you sign in. Handles the sign-in itself and issues the identity token Clex verifies.</li>
+            <li><strong>Google Drive API</strong> &mdash; only if you choose the Drive route for a transfer, and only for the files you send that way.</li>
+            <li><strong>Supabase Storage</strong> &mdash; holds files uploaded through the programmatic API until they expire. Not used for direct P2P or local-network transfers.</li>
+            <li><strong>Cloudflare</strong> &mdash; serves the site and runs the API workers.</li>
+          </ul>
+        </div>
+
+        <div class="legal-section reveal">
+          <div class="legal-section__number">Section 05</div>
+          <h2 class="legal-section__title">Clearing what is stored</h2>
+          <p class="legal-section__text">
+            Everything above is under your control and none of it needs our involvement to remove.
+          </p>
+          <ul class="legal-section__list">
+            <li><strong>All of it:</strong> clear site data for clex.in in your browser settings &mdash; in Chrome and Edge under Settings &rarr; Privacy &rarr; Third-party cookies &rarr; See all site data; in Firefox under Settings &rarr; Privacy &amp; Security &rarr; Cookies and Site Data; in Safari under Settings &rarr; Privacy &rarr; Manage Website Data.</li>
+            <li><strong>Session items only:</strong> close the tab.</li>
+            <li><strong>Drive access:</strong> disconnect Drive in the workspace, and revoke Clex at <a class="link" href="https://myaccount.google.com/permissions" target="_blank" rel="noopener noreferrer">myaccount.google.com/permissions</a>.</li>
+            <li><strong>Vault notes:</strong> delete them in the Vault, or clear site data to remove the encrypted store and its keys together.</li>
+          </ul>
+          <p class="legal-section__text">
+            Using Clex in a private or incognito window means nothing persists after you close it. The workspace still works; the Vault will not remember anything between sessions.
+          </p>
+        </div>
+
+        <div class="legal-section reveal">
+          <div class="legal-section__number">Section 06</div>
+          <h2 class="legal-section__title">Changes and contact</h2>
+          <p class="legal-section__text">
+            If Clex ever adds storage that is not strictly necessary &mdash; analytics being the obvious candidate &mdash; this page will say so before it ships, and it will be opt-in rather than assumed. Questions about anything here: <a class="link" href="mailto:hello@clex.in">hello@clex.in</a>.
+          </p>
+          <p class="legal-section__text">
+            See also the <a class="link" href="/privacy">Privacy Policy</a> and the <a class="link" href="/terms">Terms of Service</a>.
+          </p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ Footer ═══ -->
+  <footer class="footer footer--v2">
+    <div class="container footer__container">
+      <div class="footer__hero">
+        <a href="/" class="footer__wordmark" aria-label="Clex home">Clex</a>
+        <p class="footer__tagline">
+          Send files <em class="italic-accent">stay private</em>
+        </p>
+      </div>
+
+      <div class="footer__cols">
+        <div class="footer__col">
+          <h4 class="footer__col-title">Product</h4>
+          <a href="/features" class="footer__link">Features</a>
+          <a href="/vault" class="footer__link">Vault</a>
+          <a href="/how-it-works" class="footer__link">How It Works</a>
+          <a href="/workspace" class="footer__link">Workspace</a>
+          <a href="/chain" class="footer__link">Chain</a>
+        </div>
+        <div class="footer__col">
+          <h4 class="footer__col-title">Resources</h4>
+          <a href="/getting-started" class="footer__link">Getting Started</a>
+          <a href="/developers" class="footer__link">Developers</a>
+          <a href="/faq" class="footer__link">FAQ</a>
+          <a href="mailto:hello@clex.in" class="footer__link">Contact</a>
+        </div>
+        <div class="footer__col">
+          <h4 class="footer__col-title">Legal</h4>
+          <a href="/privacy" class="footer__link">Privacy Policy</a>
+          <a href="/terms" class="footer__link">Terms of Service</a>
+          <a href="/cookies" class="footer__link">Cookies &amp; Storage</a>
+        </div>
+        <div class="footer__col footer__col--meta">
+          <h4 class="footer__col-title">Built by</h4>
+          <a href="https://abhnv.in" target="_blank" rel="noopener noreferrer" class="footer__author">
+            <span class="footer__author-avatar">A</span>
+            <span class="footer__author-text">
+              <span class="footer__author-name">Abhinav</span>
+              <span class="footer__author-meta">abhnv.in</span>
+            </span>
+          </a>
+          <div class="footer__socials">
+            <a class="footer__social" href="https://www.linkedin.com/in/abhnv8/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M20.45 20.45h-3.55v-5.57c0-1.33-.03-3.04-1.85-3.04-1.86 0-2.14 1.45-2.14 2.95v5.66H9.36V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.38-1.85 3.61 0 4.27 2.38 4.27 5.47v6.27ZM5.34 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12ZM7.12 20.45H3.56V9h3.56v11.45ZM22.22 0H1.77C.79 0 0 .77 0 1.72v20.56C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.72V1.72C24 .77 23.2 0 22.22 0Z"/></svg>
+            </a>
+            <a class="footer__social" href="https://x.com/Abhnv8" target="_blank" rel="noopener noreferrer" aria-label="X">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+            </a>
+            <a class="footer__social" href="https://github.com/Abhinavv-007/clex" target="_blank" rel="noopener noreferrer" aria-label="GitHub">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.57.1.78-.25.78-.55v-1.93c-3.2.7-3.87-1.54-3.87-1.54-.52-1.32-1.27-1.67-1.27-1.67-1.04-.71.08-.7.08-.7 1.15.08 1.75 1.18 1.75 1.18 1.02 1.75 2.68 1.25 3.34.96.1-.74.4-1.25.72-1.54-2.55-.29-5.24-1.28-5.24-5.7 0-1.26.45-2.29 1.18-3.1-.12-.29-.51-1.46.11-3.05 0 0 .96-.31 3.15 1.18a10.94 10.94 0 0 1 5.74 0c2.19-1.49 3.15-1.18 3.15-1.18.62 1.59.23 2.76.11 3.05.74.81 1.18 1.84 1.18 3.1 0 4.43-2.7 5.4-5.27 5.69.41.36.78 1.06.78 2.14v3.18c0 .31.21.66.79.55 4.56-1.52 7.85-5.83 7.85-10.91C23.5 5.65 18.35.5 12 .5z"/></svg>
+            </a>
+            <a class="footer__social" href="mailto:abhnv@abhnv.in" aria-label="Email">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3.5 6.75A2.25 2.25 0 0 1 5.75 4.5h12.5a2.25 2.25 0 0 1 2.25 2.25v10.5a2.25 2.25 0 0 1-2.25 2.25H5.75a2.25 2.25 0 0 1-2.25-2.25V6.75Z"/><path d="m4.25 7.5 6.75 4.9a1.75 1.75 0 0 0 2 0L19.75 7.5" stroke-linecap="round"/></svg>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer__glyph" aria-hidden="true">
+        SEND FAST <em class="italic-accent">stay&nbsp;private</em>
+      </div>
+
+      <div class="footer__bottom">
+        <span class="footer__copyright">© 2026 Clex · Privacy-first</span>
+        <div class="footer__legal">
+          <a href="/privacy" class="footer__legal-link">Privacy</a>
+          <a href="/terms" class="footer__legal-link">Terms</a>
+          <a href="https://github.com/Abhinavv-007/clex" target="_blank" rel="noopener noreferrer" class="footer__legal-link">Open Source</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>

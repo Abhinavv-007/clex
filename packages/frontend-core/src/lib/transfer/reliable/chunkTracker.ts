@@ -48,15 +48,52 @@ const ackKey = (fileIndex: number, chunkIndex: number): string => `${fileIndex}/
  *
  * The tracker is shared between the sender (drives retransmits) and the
  * receiver (drives verification + progress).
+ *
+ * PERFORMANCE CONTRACT
+ * --------------------
+ * The sender calls `pickNextSendable()`, `snapshot()` and `isComplete()` once
+ * per chunk. Each of those used to walk every chunk in the transfer, so the
+ * cost of sending a file grew with the square of its size: a 1 GB file is
+ * 16,384 chunks at 64 KB, which meant ~5x10^8 record visits just to bookkeep,
+ * on the same main thread that runs the UI. Large transfers crawled and got
+ * quadratically worse the bigger the file.
+ *
+ * So the counts are maintained incrementally, and the scan for the next
+ * sendable chunk is a cursor that only moves forward. Every method on the hot
+ * path is now O(1) amortised. `missingChunks()` and `resetInFlight()` are
+ * still linear, but they run once per resume, not once per chunk.
+ *
+ * Every status change must go through `setStatus()` so the counters cannot
+ * drift out of sync with the records.
  */
 export class ChunkTracker {
   private readonly chunks = new Map<string, ChunkRecord>()
-  private readonly orderedKeys: string[] = []
+  /** Send order. Parallel to the map, for O(1) positional access. */
+  private readonly ordered: ChunkRecord[] = []
   private readonly maxAttempts: number
   private readonly initialDelayMs: number
   private readonly backoffFactor: number
   private totalBytes = 0
   private totalRetries = 0
+
+  // ── Incrementally maintained counters (see PERFORMANCE CONTRACT) ────────
+  private nPending = 0
+  private nInFlight = 0
+  private nAcked = 0
+  private nVerified = 0
+  private nFailed = 0
+  private bytesAcked = 0
+  private bytesInFlight = 0
+
+  /**
+   * Index into `ordered` of the first chunk that has never been sent.
+   * Only ever moves forward; chunks that come back for a retry are held in
+   * `retryable` instead, so the cursor never has to walk backwards.
+   */
+  private cursor = 0
+
+  /** Chunks that returned to `pending` after having been sent at least once. */
+  private readonly retryable = new Set<ChunkRecord>()
 
   constructor(manifest: TransferManifest, options: ChunkTrackerOptions = {}) {
     this.maxAttempts = options.maxAttempts ?? RETRY_MAX_ATTEMPTS
@@ -84,23 +121,80 @@ export class ChunkTracker {
         expectedHash: file.chunkHashes?.[i],
       }
       this.chunks.set(key, record)
-      this.orderedKeys.push(key)
+      this.ordered.push(record)
       this.totalBytes += record.size
+      this.nPending++
     }
+  }
+
+  /**
+   * The single place a chunk's status changes. Keeps the counters, the
+   * acked-byte total and the retry set consistent with the records.
+   */
+  private setStatus(rec: ChunkRecord, next: ChunkStatus): void {
+    const prev = rec.status
+    if (prev === next) return
+
+    switch (prev) {
+      case 'pending': this.nPending--; break
+      case 'in_flight': this.nInFlight--; this.bytesInFlight -= rec.size; break
+      case 'acked': this.nAcked--; this.bytesAcked -= rec.size; break
+      case 'verified': this.nVerified--; this.bytesAcked -= rec.size; break
+      case 'failed': this.nFailed--; break
+    }
+    switch (next) {
+      case 'pending': this.nPending++; break
+      case 'in_flight': this.nInFlight++; this.bytesInFlight += rec.size; break
+      case 'acked': this.nAcked++; this.bytesAcked += rec.size; break
+      case 'verified': this.nVerified++; this.bytesAcked += rec.size; break
+      case 'failed': this.nFailed++; break
+    }
+
+    rec.status = next
+    if (next !== 'pending') this.retryable.delete(rec)
   }
 
   // ── Sender helpers ──────────────────────────────────────────────────────
 
   /** Returns the next chunk eligible to (re)send, or null if nothing is ready. */
   pickNextSendable(now: number = Date.now()): ChunkRecord | null {
-    for (const key of this.orderedKeys) {
-      const rec = this.chunks.get(key)
-      if (!rec) continue
-      if (rec.status === 'acked' || rec.status === 'verified' || rec.status === 'failed') continue
-      if (rec.status === 'in_flight') continue
-      if (rec.nextEligibleAt <= now) return rec
+    // Retries come first and win ties by send order, matching the old
+    // front-to-back scan. The set holds only chunks that have already been
+    // sent once, so it stays small on a healthy link.
+    let best: ChunkRecord | null = null
+    if (this.retryable.size > 0) {
+      for (const rec of this.retryable) {
+        if (rec.status !== 'pending') { this.retryable.delete(rec); continue }
+        if (rec.nextEligibleAt > now) continue
+        if (
+          best === null ||
+          rec.fileIndex < best.fileIndex ||
+          (rec.fileIndex === best.fileIndex && rec.chunkIndex < best.chunkIndex)
+        ) {
+          best = rec
+        }
+      }
     }
-    return null
+
+    // Then the first never-sent chunk. Anything before the cursor is either
+    // in flight, settled, failed, or already tracked in `retryable`.
+    while (this.cursor < this.ordered.length) {
+      const rec = this.ordered[this.cursor]
+      if (rec.status === 'pending') {
+        if (rec.nextEligibleAt > now) break
+        // A retried chunk that still sits at the cursor is already the best
+        // candidate by order, so prefer it over anything found above.
+        return best !== null && this.isEarlier(best, rec) ? best : rec
+      }
+      this.cursor++
+    }
+
+    return best
+  }
+
+  private isEarlier(a: ChunkRecord, b: ChunkRecord): boolean {
+    if (a.fileIndex !== b.fileIndex) return a.fileIndex < b.fileIndex
+    return a.chunkIndex < b.chunkIndex
   }
 
   markSent(fileIndex: number, chunkIndex: number, now: number = Date.now()): void {
@@ -108,7 +202,7 @@ export class ChunkTracker {
     if (!rec) return
     if (rec.attempts > 0) this.totalRetries++
     rec.attempts++
-    rec.status = 'in_flight'
+    this.setStatus(rec, 'in_flight')
     rec.lastSentAt = now
   }
 
@@ -116,13 +210,13 @@ export class ChunkTracker {
     const rec = this.chunks.get(ackKey(fileIndex, chunkIndex))
     if (!rec) return
     if (rec.status === 'verified') return
-    rec.status = 'acked'
+    this.setStatus(rec, 'acked')
   }
 
   markVerified(fileIndex: number, chunkIndex: number): void {
     const rec = this.chunks.get(ackKey(fileIndex, chunkIndex))
     if (!rec) return
-    rec.status = 'verified'
+    this.setStatus(rec, 'verified')
   }
 
   /** Schedule a retry; if the budget is exceeded, mark the chunk failed. */
@@ -130,28 +224,31 @@ export class ChunkTracker {
     const rec = this.chunks.get(ackKey(fileIndex, chunkIndex))
     if (!rec) return false
     if (rec.attempts >= this.maxAttempts) {
-      rec.status = 'failed'
+      this.setStatus(rec, 'failed')
       return false
     }
     const delay = this.initialDelayMs * Math.pow(this.backoffFactor, Math.max(0, rec.attempts - 1))
-    rec.status = 'pending'
+    this.setStatus(rec, 'pending')
     rec.nextEligibleAt = now + delay
+    this.retryable.add(rec)
     return true
   }
 
   forceResend(fileIndex: number, chunkIndex: number): void {
     const rec = this.chunks.get(ackKey(fileIndex, chunkIndex))
     if (!rec) return
-    rec.status = 'pending'
+    this.setStatus(rec, 'pending')
     rec.nextEligibleAt = 0
+    this.retryable.add(rec)
   }
 
   /** Reissue every chunk that's currently in-flight as pending — used on resume. */
   resetInFlight(): void {
-    for (const rec of this.chunks.values()) {
+    for (const rec of this.ordered) {
       if (rec.status === 'in_flight') {
-        rec.status = 'pending'
+        this.setStatus(rec, 'pending')
         rec.nextEligibleAt = 0
+        this.retryable.add(rec)
       }
     }
   }
@@ -159,7 +256,7 @@ export class ChunkTracker {
   /** Returns the chunks the receiver still needs, for resume after disconnect. */
   missingChunks(): Array<{ fileIndex: number; chunkIndex: number }> {
     const missing: Array<{ fileIndex: number; chunkIndex: number }> = []
-    for (const rec of this.chunks.values()) {
+    for (const rec of this.ordered) {
       if (rec.status !== 'verified' && rec.status !== 'acked') {
         missing.push({ fileIndex: rec.fileIndex, chunkIndex: rec.chunkIndex })
       }
@@ -168,50 +265,37 @@ export class ChunkTracker {
   }
 
   isComplete(): boolean {
-    for (const rec of this.chunks.values()) {
-      if (rec.status !== 'verified' && rec.status !== 'acked') return false
-    }
-    return true
+    return this.nAcked + this.nVerified === this.ordered.length
   }
 
   failedChunkCount(): number {
-    let n = 0
-    for (const rec of this.chunks.values()) if (rec.status === 'failed') n++
-    return n
+    return this.nFailed
   }
 
   // ── Snapshot for UI / health ────────────────────────────────────────────
 
   snapshot(): ChunkTrackerSnapshot {
-    let pending = 0
-    let inFlight = 0
-    let acked = 0
-    let verified = 0
-    let failed = 0
-    let bytesAcked = 0
-
-    for (const rec of this.chunks.values()) {
-      switch (rec.status) {
-        case 'pending': pending++; break
-        case 'in_flight': inFlight++; break
-        case 'acked': acked++; bytesAcked += rec.size; break
-        case 'verified': verified++; bytesAcked += rec.size; break
-        case 'failed': failed++; break
-      }
-    }
-
     return {
-      totalChunks: this.chunks.size,
-      pending,
-      inFlight,
-      acked,
-      verified,
-      failed,
+      totalChunks: this.ordered.length,
+      pending: this.nPending,
+      inFlight: this.nInFlight,
+      acked: this.nAcked,
+      verified: this.nVerified,
+      failed: this.nFailed,
       retries: this.totalRetries,
-      failedChunks: failed,
-      bytesAcked,
+      failedChunks: this.nFailed,
+      bytesAcked: this.bytesAcked,
       bytesTotal: this.totalBytes,
     }
+  }
+
+  /**
+   * Bytes currently on the wire. The sender gates on this rather than on a
+   * chunk count, so the window means the same thing regardless of how large
+   * a chunk the connection negotiated.
+   */
+  inFlightBytes(): number {
+    return this.bytesInFlight
   }
 
   totalRetriesCount(): number {

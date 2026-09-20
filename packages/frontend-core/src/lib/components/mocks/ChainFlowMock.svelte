@@ -165,7 +165,9 @@
     margin-top: 6px;
     font-family: var(--font-mono);
     font-size: 10px;
-    color: var(--text-3);
+    /* The step surface is accent-tinted, not a plain card: --text-3 lands at
+       3.9:1 on it, short of AA for 10px text. */
+    color: var(--text-2);
   }
 
   .cfm-step:hover {

@@ -9,7 +9,47 @@
       "svelte": "./src/index.ts",
       "default": "./src/index.ts"
     },
-    "./styles.css": "./src/styles.css"
+    "./styles.css": "./src/styles.css",
+    "./transfer/gdrive": {
+      "svelte": "./src/lib/transfer/gdrive.ts",
+      "default": "./src/lib/transfer/gdrive.ts"
+    },
+    "./utils/siteRoutes": {
+      "svelte": "./src/lib/utils/siteRoutes.ts",
+      "default": "./src/lib/utils/siteRoutes.ts"
+    },
+    "./components/mocks": {
+      "svelte": "./src/lib/components/mocks/index.ts",
+      "default": "./src/lib/components/mocks/index.ts"
+    },
+    "./apps/WorkspaceApp": {
+      "svelte": "./src/lib/apps/WorkspaceApp.svelte",
+      "default": "./src/lib/apps/WorkspaceApp.svelte"
+    },
+    "./apps/ReceiveApp": {
+      "svelte": "./src/lib/apps/ReceiveApp.svelte",
+      "default": "./src/lib/apps/ReceiveApp.svelte"
+    },
+    "./apps/ChainExplorerApp": {
+      "svelte": "./src/lib/apps/ChainExplorerApp.svelte",
+      "default": "./src/lib/apps/ChainExplorerApp.svelte"
+    },
+    "./apps/VaultApp": {
+      "svelte": "./src/lib/apps/VaultApp.svelte",
+      "default": "./src/lib/apps/VaultApp.svelte"
+    },
+    "./apps/VaultSecretApp": {
+      "svelte": "./src/lib/apps/VaultSecretApp.svelte",
+      "default": "./src/lib/apps/VaultSecretApp.svelte"
+    },
+    "./apps/VaultShareApp": {
+      "svelte": "./src/lib/apps/VaultShareApp.svelte",
+      "default": "./src/lib/apps/VaultShareApp.svelte"
+    },
+    "./apps/AccountApp": {
+      "svelte": "./src/lib/account/AccountApp.svelte",
+      "default": "./src/lib/account/AccountApp.svelte"
+    }
   },
   "scripts": {
     "build": "vite build",

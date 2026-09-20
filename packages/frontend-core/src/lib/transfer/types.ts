@@ -26,13 +26,26 @@ export interface IceCandidatePayload {
 export const CHUNK_SIZE = 64 * 1024
 export const DC_LABEL = 'clex-transfer'
 
-// Backpressure window. A 64 KB chunk needs a wider chunk window than the old
-// 256 KB path; 32 chunks capped visible progress around 2 MB and made the
-// sender appear stuck while waiting for ACKs. 128 chunks keeps roughly 8 MB in
-// flight on healthy links without returning to unsafe per-message sizes.
+// Backpressure window.
+//
+// This is expressed in BYTES, not in a chunk count. A chunk count has to be
+// re-tuned every time CHUNK_SIZE moves — the previous 32-chunk window capped
+// progress around 2 MB and made the sender look stuck, and the 128 that
+// replaced it only meant "8 MB" for as long as chunks stayed 64 KB. Bytes say
+// what is actually meant and stay correct at any chunk size.
 export const BUFFERED_AMOUNT_HIGH_WATER = 8 * 1024 * 1024 // 8 MB
 export const BUFFERED_AMOUNT_LOW_WATER = 1 * 1024 * 1024 // 1 MB
-export const MAX_IN_FLIGHT_CHUNKS = 128
+export const MAX_IN_FLIGHT_BYTES = 8 * 1024 * 1024 // 8 MB
+
+// Derived hard ceiling, so a pathologically small chunk size can't produce an
+// unbounded number of outstanding ACKs to track.
+export const MAX_IN_FLIGHT_CHUNKS = Math.ceil(MAX_IN_FLIGHT_BYTES / CHUNK_SIZE)
+
+// How many chunks the sender reads ahead from disk while earlier chunks are
+// still on the wire. Without this the send loop awaits `blob.arrayBuffer()`
+// for every chunk in turn, so throughput is bounded by per-chunk file-read
+// latency rather than by the link.
+export const SEND_READAHEAD_CHUNKS = 8
 
 // UI store writes are coalesced to this interval — without it, a 50 MB
 // transfer fires hundreds of Svelte updates per second and re-renders the

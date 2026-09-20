@@ -39,29 +39,122 @@
     { id: 'tools', label: 'Prepare' },
     { id: 'share', label: 'Share' },
   ]
+
+  // ── Modes ────────────────────────────────────────────────────────────────
+  //
+  // Vault used to live at /vault as a separate page. It is one workspace now,
+  // with two modes: moving files, and the encrypted notes/secrets store.
+  //
+  // Vault is loaded on first switch rather than up front. It carries yjs,
+  // y-webrtc and the crypto/IndexedDB layer — around 250 kB — and the common
+  // case is a visitor who came to send a file and never opens it.
+  type Mode = 'transfer' | 'vault'
+
+  export let vaultSignalingUrl = 'wss://signal.clex.in'
+  export let vaultApiUrl = '/vault/api'
+  /** Start in vault mode — set by /vault, which redirects here. */
+  export let initialMode: Mode = 'transfer'
+
+  let mode: Mode = initialMode
+  let VaultAppComponent: typeof import('./VaultApp.svelte').default | null = null
+  let vaultLoading = false
+  let vaultError = ''
+
+  async function loadVault(): Promise<void> {
+    if (VaultAppComponent || vaultLoading) return
+    vaultLoading = true
+    vaultError = ''
+    try {
+      VaultAppComponent = (await import('./VaultApp.svelte')).default
+    } catch (err) {
+      vaultError = err instanceof Error ? err.message : 'Vault could not be loaded.'
+    } finally {
+      vaultLoading = false
+    }
+  }
+
+  async function setMode(next: Mode): Promise<void> {
+    mode = next
+    if (next === 'vault') await loadVault()
+    if (typeof window === 'undefined') return
+    // Reflect the mode in the URL so it survives a reload and can be linked to.
+    const url = new URL(window.location.href)
+    if (next === 'vault') url.searchParams.set('mode', 'vault')
+    else url.searchParams.delete('mode')
+    window.history.replaceState({}, '', url)
+  }
+
+  onMount(() => {
+    if (initialMode === 'vault') void loadVault()
+  })
 </script>
 
-<div class="ws-page">
+<div class="ws-page" class:ws-page--vault={mode === 'vault'}>
   <div class="ws-inner">
-    <div class="ws-header">
-      <div class="ws-title-block">
-        <h1 class="ws-title"><span>File</span> <em>workspace</em></h1>
-        <p class="ws-sub">Drop, prepare, and send files from one fluid private workspace.</p>
+    <div class="ws-header" class:ws-header--compact={mode === 'vault'}>
+      {#if mode === 'transfer'}
+        <div class="ws-title-block">
+          <h1 class="ws-title"><span>File</span> <em>workspace</em></h1>
+          <p class="ws-sub">Drop, prepare, and send files from one fluid private workspace.</p>
+        </div>
+      {:else}
+        <!-- Vault renders its own heading, and it changes with the active
+             panel, so the workspace title would only duplicate it. -->
+        <div class="ws-title-block ws-title-block--empty" aria-hidden="true"></div>
+      {/if}
+
+      <div class="ws-modes" role="tablist" aria-label="Workspace mode">
+        <button
+          class="ws-mode"
+          class:ws-mode--active={mode === 'transfer'}
+          role="tab"
+          aria-selected={mode === 'transfer'}
+          type="button"
+          on:click={() => setMode('transfer')}
+        >Transfer</button>
+        <button
+          class="ws-mode"
+          class:ws-mode--active={mode === 'vault'}
+          role="tab"
+          aria-selected={mode === 'vault'}
+          type="button"
+          on:click={() => setMode('vault')}
+        >Vault</button>
       </div>
 
-      <div class="ws-mobile-tabs">
-        {#each panels as panel}
-          <button
-            class="wmt-btn"
-            class:wmt-active={activePanel === panel.id}
-            on:click={() => uiStore.setPanel(panel.id)}
-          >
-            {panel.label}
-          </button>
-        {/each}
-      </div>
+      {#if mode === 'transfer'}
+        <div class="ws-mobile-tabs">
+          {#each panels as panel}
+            <button
+              class="wmt-btn"
+              class:wmt-active={activePanel === panel.id}
+              on:click={() => uiStore.setPanel(panel.id)}
+            >
+              {panel.label}
+            </button>
+          {/each}
+        </div>
+      {/if}
     </div>
 
+    {#if mode === 'vault'}
+      <div class="ws-vault-slot">
+        {#if VaultAppComponent}
+          <svelte:component
+            this={VaultAppComponent}
+            signalingUrl={vaultSignalingUrl}
+            {vaultApiUrl}
+          />
+        {:else if vaultError}
+          <p class="ws-vault-msg ws-vault-msg--error">
+            {vaultError}
+            <button class="ws-vault-retry" type="button" on:click={loadVault}>Retry</button>
+          </p>
+        {:else}
+          <p class="ws-vault-msg">Opening your vault…</p>
+        {/if}
+      </div>
+    {:else}
     <div class="ws-grid">
       <aside class="ws-col ws-col-files">
         <FileList {receiveEntryHref} />
@@ -95,21 +188,25 @@
     <div class="ws-queue-row">
       <TransferQueue />
     </div>
+    {/if}
   </div>
 </div>
 
 <style>
   .ws-page {
+    /* Gutter + width track the site container so the app lines up with the
+       nav and the sections around it; at 16px/1420px the grid ran edge to
+       edge and the last column was clipped by the viewport. */
     padding:
       calc(88px + env(safe-area-inset-top, 0px))
-      calc(16px + env(safe-area-inset-right, 0px))
+      calc(clamp(1rem, 3vw, 2rem) + env(safe-area-inset-right, 0px))
       calc(48px + env(safe-area-inset-bottom, 0px))
-      calc(16px + env(safe-area-inset-left, 0px));
+      calc(clamp(1rem, 3vw, 2rem) + env(safe-area-inset-left, 0px));
     min-height: 100vh;
   }
 
   .ws-inner {
-    max-width: 1420px;
+    max-width: var(--container-max, 1280px);
     margin: 0 auto;
   }
 
@@ -154,6 +251,105 @@
     line-height: 1.45;
   }
 
+  /* ── Mode switch ──────────────────────────────────────────────────────
+     Transfer and Vault are two modes of one workspace; Vault used to be a
+     separate page at /vault, which now redirects here. */
+  .ws-modes {
+    display: inline-flex;
+    gap: 4px;
+    padding: 4px;
+    border: 2px solid var(--border-hard);
+    border-radius: 999px;
+    background: var(--surface-2);
+    box-shadow: 2px 2px 0 var(--border-hard);
+  }
+
+  .ws-mode {
+    padding: 6px 18px;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    font-family: var(--font-display);
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-2);
+    cursor: pointer;
+    transition: background 150ms var(--ease-out), color 150ms var(--ease-out);
+  }
+
+  .ws-mode:hover { color: var(--text-1); }
+
+  .ws-mode--active {
+    background: var(--surface);
+    color: var(--text-1);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+  }
+
+  .ws-vault-slot {
+    min-height: 420px;
+    margin-top: -0.5rem;
+  }
+
+  /* Vault was a standalone page, so it sizes itself to the viewport and
+     clears the fixed nav on its own. Embedded here both of those are already
+     handled by the workspace around it. */
+  .ws-vault-slot :global(.va-page) {
+    min-height: 0;
+    padding: 0;
+    background: transparent;
+  }
+
+  .ws-vault-slot :global(.va-inner) {
+    max-width: none;
+  }
+
+  /* In vault mode the title block is empty (Vault renders its own heading),
+     so the header collapses to just the mode switch instead of reserving a
+     title's worth of height above it. */
+  .ws-title-block--empty {
+    flex: 1;
+    min-height: 0;
+  }
+
+  .ws-header--compact {
+    margin-bottom: 4px;
+  }
+
+  /* Vault brings its own heading straight away, so it does not need the
+     title-sized run-up that the transfer layout leaves under the nav. */
+  .ws-page--vault {
+    padding-top: calc(var(--nav-clearance, 6.4rem) + 0.5rem) !important;
+  }
+
+  .ws-header--compact .ws-modes {
+    margin-left: auto;
+  }
+
+  .ws-vault-msg {
+    padding: 4rem 1rem;
+    text-align: center;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--text-2);
+  }
+
+  .ws-vault-msg--error { color: var(--red-text, var(--red)); }
+
+  .ws-vault-retry {
+    margin-left: 0.6rem;
+    padding: 4px 12px;
+    border: 2px solid var(--border-hard);
+    border-radius: 999px;
+    background: var(--surface);
+    font: inherit;
+    color: var(--text-1);
+    cursor: pointer;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ws-mode { transition: none; }
+  }
+
   .ws-mobile-tabs {
     display: flex;
     align-items: center;
@@ -193,7 +389,9 @@
 
   .ws-grid {
     display: none;
-    align-items: start;
+    /* Stretch, not start: the columns are panels in one surface and should
+       share a bottom edge. The sticky columns opt out individually. */
+    align-items: stretch;
   }
 
   @media (min-width: 1200px) {
@@ -250,7 +448,12 @@
     box-shadow: var(--shadow-md);
     border-radius: 16px;
     padding: 24px;
-    min-height: calc(100vh - 160px);
+    /* Sized to content, floored for visual balance. This was
+       `calc(100vh - 160px)`, which forced every column to roughly full
+       viewport height — the Prepare column carried hundreds of pixels of
+       empty space, and because the sticky columns overrode it with
+       `min-height: auto` the four columns ended at four different heights. */
+    min-height: 420px;
     min-width: 0;
   }
 

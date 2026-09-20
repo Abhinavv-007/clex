@@ -25,7 +25,8 @@ import {
   CHUNK_SIZE,
   DC_LABEL,
   DEFAULT_RELIABLE_CAPS,
-  MAX_IN_FLIGHT_CHUNKS,
+  MAX_IN_FLIGHT_BYTES,
+  SEND_READAHEAD_CHUNKS,
   RECEIVER_PROGRESS_INTERVAL_MS,
   UI_UPDATE_INTERVAL_MS,
   getRTCConfig,
@@ -140,6 +141,13 @@ export class WebRTCTransfer {
   private capabilityWaiters: Array<() => void> = []
   private capabilityTimeout: ReturnType<typeof setTimeout> | null = null
   private reliableSender: ReliableSenderState | null = null
+
+  /**
+   * In-flight chunk reads, keyed `fileIndex/chunkIndex`. Bounded by
+   * SEND_READAHEAD_CHUNKS * 2 so a stalled link cannot grow it without limit;
+   * cleared when the send loop starts and finishes.
+   */
+  private readonly readAhead = new Map<string, Promise<ArrayBuffer | null>>()
   private reliableReceiver: ReliableReceiverState | null = null
   private healthTimer: ReturnType<typeof setInterval> | null = null
   private receiverProgressTimer: ReturnType<typeof setInterval> | null = null
@@ -599,14 +607,78 @@ export class WebRTCTransfer {
     }
   }
 
-  private async runReliableSendLoop(sender: ReliableSenderState): Promise<void> {
-    const { manifest, tracker, files } = sender
+  /**
+   * Reads chunk `chunkIndex` of `fileIndex`, reusing an in-flight read-ahead
+   * promise when one exists. Returns null if the read fails or the file is
+   * gone; the caller schedules a retry.
+   */
+  private readChunkPayload(
+    sender: ReliableSenderState,
+    fileIndex: number,
+    chunkIndex: number,
+  ): Promise<ArrayBuffer | null> {
+    const key = `${fileIndex}/${chunkIndex}`
+    const pending = this.readAhead.get(key)
+    if (pending) return pending
 
-    // Sliding window: we let MAX_IN_FLIGHT_CHUNKS chunks be unacked at once.
-    // The DataChannel's bufferedAmount provides a second backpressure gate so
+    const file = sender.files[fileIndex]
+    if (!file) return Promise.resolve(null)
+
+    const chunkSize = sender.manifest.chunkSize
+    const start = chunkIndex * chunkSize
+    const end = Math.min(start + chunkSize, file.size)
+    const read = file.blob
+      .slice(start, end)
+      .arrayBuffer()
+      .catch(() => null)
+
+    this.readAhead.set(key, read)
+    return read
+  }
+
+  /**
+   * Starts reads for the chunks that follow `from`, so the next iteration of
+   * the send loop finds its payload already resolved. Reads are issued but not
+   * awaited — that is the entire point.
+   */
+  private primeReadAhead(sender: ReliableSenderState, fileIndex: number, chunkIndex: number): void {
+    if (this.readAhead.size >= SEND_READAHEAD_CHUNKS * 2) return
+
+    const entry = sender.manifest.files[fileIndex]
+    if (!entry) return
+
+    let f = fileIndex
+    let c = chunkIndex + 1
+    for (let i = 0; i < SEND_READAHEAD_CHUNKS; i++) {
+      let spec = sender.manifest.files[f]
+      if (!spec) return
+      if (c >= spec.totalChunks) {
+        // Roll into the next file so the pipeline doesn't stall at a boundary.
+        f += 1
+        c = 0
+        spec = sender.manifest.files[f]
+        if (!spec) return
+      }
+      void this.readChunkPayload(sender, f, c)
+      c += 1
+    }
+  }
+
+  private async runReliableSendLoop(sender: ReliableSenderState): Promise<void> {
+    const { manifest, tracker } = sender
+
+    // Sliding window: MAX_IN_FLIGHT_BYTES of data may be unacknowledged at
+    // once. The DataChannel's bufferedAmount is a second, independent gate so
     // we never overshoot the browser's internal queue. Together they keep the
     // wire busy on LAN (where ACKs are cheap) without ballooning peak memory
     // on slow paths.
+    //
+    // Payloads are read ahead rather than one at a time: awaiting
+    // `blob.arrayBuffer()` per chunk made throughput a function of file-read
+    // latency instead of link speed, and every await also yielded the main
+    // thread back to the UI mid-transfer.
+    this.readAhead.clear()
+
     while (!sender.cancelled && !this.failed) {
       if (sender.paused) {
         // Sleep on the wake handle so resume() can kick us out instantly.
@@ -615,11 +687,10 @@ export class WebRTCTransfer {
         continue
       }
 
-      const snapAtTop = tracker.snapshot()
-      if (snapAtTop.inFlight >= MAX_IN_FLIGHT_CHUNKS) {
-        // Window full — wait for chunk_ack to free a slot. The 50 ms ceiling
-        // is a safety net in case a kick is missed; in practice the wake
-        // resolves first.
+      if (tracker.inFlightBytes() >= MAX_IN_FLIGHT_BYTES) {
+        // Window full — wait for chunk_ack to free room. The 50 ms ceiling is
+        // a safety net in case a kick is missed; in practice the wake resolves
+        // first.
         await Promise.race([sender.wake.promise, wait(50)])
         sender.wake = makeWakeHandle()
         continue
@@ -635,29 +706,26 @@ export class WebRTCTransfer {
         continue
       }
 
+      // Issue the follow-on reads before awaiting this one, so the disk stays
+      // busy while this chunk is being framed and written.
+      this.primeReadAhead(sender, next.fileIndex, next.chunkIndex)
+
       await this.drainBuffer()
       if (this.failed || sender.cancelled) return
 
-      const file = files[next.fileIndex]
-      if (!file) {
-        // Should never happen, but bail safely.
+      const key = `${next.fileIndex}/${next.chunkIndex}`
+      const payload = await this.readChunkPayload(sender, next.fileIndex, next.chunkIndex)
+      this.readAhead.delete(key)
+
+      if (!payload) {
         tracker.scheduleRetry(next.fileIndex, next.chunkIndex)
         continue
       }
+      // `await` above yields; re-check before touching the channel.
+      if (this.failed || sender.cancelled) return
 
-      const chunkSize = manifest.chunkSize
-      const start = next.chunkIndex * chunkSize
-      const end = Math.min(start + chunkSize, file.size)
-      const slice = file.blob.slice(start, end)
-      let payload: ArrayBuffer
-      try {
-        payload = await slice.arrayBuffer()
-      } catch {
-        tracker.scheduleRetry(next.fileIndex, next.chunkIndex)
-        continue
-      }
-
-      const isLast = next.chunkIndex === manifest.files[next.fileIndex].totalChunks - 1
+      const entry = manifest.files[next.fileIndex]
+      const isLast = entry ? next.chunkIndex === entry.totalChunks - 1 : false
       const flags = frameFlags({
         retransmit: next.attempts > 0,
         last: isLast,
@@ -675,7 +743,7 @@ export class WebRTCTransfer {
         tracker.markSent(next.fileIndex, next.chunkIndex)
         // UI updates are coalesced — see scheduleUiFlush. Pulling tracker
         // snapshot per chunk + writing the Svelte store synchronously is
-        // what made the 50 MB transfer feel like 1–8 B/s in the previous
+        // what made the 50 MB transfer feel like 1-8 B/s in the previous
         // build (hundreds of reactive updates per second on the hot path).
         this.scheduleProgressFlushFromTracker(tracker)
       } catch {
@@ -686,6 +754,8 @@ export class WebRTCTransfer {
         }
       }
     }
+
+    this.readAhead.clear()
   }
 
   private finalizeReliableSender(): void {
