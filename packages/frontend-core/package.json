@@ -14,6 +14,10 @@
       "svelte": "./src/lib/transfer/gdrive.ts",
       "default": "./src/lib/transfer/gdrive.ts"
     },
+    "./transfer/signaling": {
+      "svelte": "./src/lib/transfer/signaling.ts",
+      "default": "./src/lib/transfer/signaling.ts"
+    },
     "./utils/siteRoutes": {
       "svelte": "./src/lib/utils/siteRoutes.ts",
       "default": "./src/lib/utils/siteRoutes.ts"

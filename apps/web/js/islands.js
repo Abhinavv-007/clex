@@ -21,6 +21,25 @@ function workspaceModeFromUrl() {
   }
 }
 
+/**
+ * Vault mounts inside WorkspaceApp, which takes its signaling URL as a prop —
+ * so unlike the Svelte transfer components it can't call getSignalingBaseUrl()
+ * for itself. Resolving it here keeps one variable name and one normalisation
+ * path across every entry point.
+ *
+ * The name matters: this read PUBLIC_SIGNAL_URL, which is defined in no env
+ * file and in no doc. The documented variable has always been
+ * PUBLIC_SIGNALING_URL, so setting it did nothing and Vault sync silently used
+ * the hardcoded production host — right in production, unusable anywhere else.
+ * Going through getSignalingBaseUrl() also restores the local-hostname
+ * rewriting the other call sites get, which is what lets a phone on the LAN
+ * reach the dev signaling server instead of its own localhost.
+ */
+async function resolveSignalingUrl() {
+  const { getSignalingBaseUrl } = await import('@clex/frontend-core/transfer/signaling');
+  return getSignalingBaseUrl(import.meta.env.PUBLIC_SIGNALING_URL);
+}
+
 export async function initIslands() {
   const page = document.body.getAttribute('data-page') || '';
 
@@ -39,7 +58,7 @@ export async function initIslands() {
       receivePathFormat: 'query',
       receiveEntryHref: routes.receive,
       chainApiUrl: import.meta.env.PUBLIC_CHAIN_URL ?? '',
-      vaultSignalingUrl: import.meta.env.PUBLIC_SIGNAL_URL ?? 'wss://signal.clex.in',
+      vaultSignalingUrl: await resolveSignalingUrl(),
       vaultApiUrl: '/vault/api',
       initialMode: workspaceModeFromUrl(),
     });
@@ -92,7 +111,7 @@ export async function initIslands() {
       receivePathFormat: 'query',
       receiveEntryHref: routes.receive,
       chainApiUrl: import.meta.env.PUBLIC_CHAIN_URL ?? '',
-      vaultSignalingUrl: import.meta.env.PUBLIC_SIGNAL_URL ?? 'wss://signal.clex.in',
+      vaultSignalingUrl: await resolveSignalingUrl(),
       vaultApiUrl: '/vault/api',
       initialMode: workspaceModeFromUrl(),
     });
@@ -125,7 +144,7 @@ export async function initIslands() {
       receivePathFormat: 'query',
       receiveEntryHref: routes.receive,
       chainApiUrl: import.meta.env.PUBLIC_CHAIN_URL ?? '',
-      vaultSignalingUrl: import.meta.env.PUBLIC_SIGNAL_URL ?? 'wss://signal.clex.in',
+      vaultSignalingUrl: await resolveSignalingUrl(),
       vaultApiUrl: '/vault/api',
       initialMode: 'vault',
     });

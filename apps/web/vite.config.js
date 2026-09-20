@@ -185,6 +185,14 @@ function slashlessRoutesPlugin() {
 
 export default defineConfig({
   appType: 'mpa',
+
+  // Every browser-visible variable in this project is named PUBLIC_*, and the
+  // .env examples and docs have always said so — but Vite only exposes vars
+  // matching envPrefix, which defaults to VITE_. Without this line each
+  // `import.meta.env.PUBLIC_*` read is undefined and silently falls back to a
+  // hardcoded default, so setting any of them had no effect. Production kept
+  // working only because those defaults are the production values.
+  envPrefix: ['VITE_', 'PUBLIC_'],
   plugins: [svelte(), slashlessRoutesPlugin(), socialMetaPlugin()],
   resolve: {
     alias: {

@@ -8,6 +8,9 @@ const rootDir = dirname(fileURLToPath(import.meta.url))
 const r = (value: string) => resolve(rootDir, value)
 
 export default defineConfig({
+  // Browser-visible variables in this project are named PUBLIC_*; Vite's
+  // default envPrefix is VITE_, so without this they read as undefined.
+  envPrefix: ['VITE_', 'PUBLIC_'],
   plugins: [svelte()],
   resolve: {
     alias: {
