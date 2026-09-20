@@ -23,7 +23,7 @@ The important product promise is privacy-first transfer:
 
 If you only remember four things, remember these:
 
-- `frontend-2` is the primary shipped site
+- `apps/web` is the primary shipped site
 - `packages/frontend-core` contains the real workspace, transfer, tool, and shared UI logic
 - `apps/signaling`, `apps/api`, and `apps/chain` are small purpose-built workers behind the frontend
 - `archive/old-frontend/apps-web` is a legacy SvelteKit reference, not an active surface
@@ -33,7 +33,7 @@ If you only remember four things, remember these:
 
 | Path | Role | What it really does |
 | --- | --- | --- |
-| `frontend-2/` | Primary shipped frontend | Vite multi-page site for `clex.in`; static HTML shells plus mounted Svelte islands |
+| `apps/web/` | Primary shipped frontend | Vite multi-page site for `clex.in`; static HTML shells plus mounted Svelte islands |
 | `packages/frontend-core/` | Shared runtime core | Workspace app, receive app, chain explorer, stores, transfer code, tools, utilities, shared components |
 | `apps/signaling/` | WebRTC signaling worker | Cloudflare Worker + Durable Object room server for SDP/ICE exchange and room lifecycle |
 | `apps/api/` | Google auth worker | Starts OAuth, handles callback, exchanges code for token, exposes one-time token pickup |
@@ -42,29 +42,29 @@ If you only remember four things, remember these:
 
 ### Legacy frontend note
 
-The production-oriented path in this repo is `frontend-2` plus `packages/frontend-core`.
+The production-oriented path in this repo is `apps/web` plus `packages/frontend-core`.
 
 The older SvelteKit implementation has been moved to `archive/old-frontend/apps-web` so it remains available for reference without participating in active scripts, workspace resolution, or publishable build paths.
 
 ## 3. Shipped Runtime Model
 
-### Primary runtime: `frontend-2` + `packages/frontend-core`
+### Primary runtime: `apps/web` + `packages/frontend-core`
 
 The production frontend is split into two layers:
 
-- `frontend-2` provides page shells, route rewrites, CSS, navigation, page-specific scripts, and island mount points
+- `apps/web` provides page shells, route rewrites, CSS, navigation, page-specific scripts, and island mount points
 - `packages/frontend-core` provides the actual interactive Svelte apps and shared business logic
 
 The startup flow is:
 
-1. a page in `frontend-2` loads
+1. a page in `apps/web` loads
 2. the HTML `<body>` carries a `data-page` attribute such as `home`, `workspace`, `receive`, or `chain`
-3. `frontend-2/js/main.js` initializes theme, nav, Google Drive OAuth cleanup, and then calls `initIslands()`
-4. `frontend-2/js/islands.js` looks at `data-page` and mounts the correct Svelte component from `@clex/frontend-core`
+3. `apps/web/js/main.js` initializes theme, nav, Google Drive OAuth cleanup, and then calls `initIslands()`
+4. `apps/web/js/islands.js` looks at `data-page` and mounts the correct Svelte component from `@clex/frontend-core`
 
 ### What `js/main.js` does
 
-`frontend-2/js/main.js` is the browser entrypoint. It:
+`apps/web/js/main.js` is the browser entrypoint. It:
 
 - loads shared frontend-core styles
 - initializes theme and nav behavior
@@ -90,7 +90,7 @@ The page shell decides what mounts by `data-page`:
 
 ### Route model in the primary frontend
 
-`frontend-2` is a Vite multi-page app with custom slashless route rewriting:
+`apps/web` is a Vite multi-page app with custom slashless route rewriting:
 
 - `/` maps to `index.html`
 - `/workspace` maps to `workspace/index.html`
@@ -110,7 +110,7 @@ The route rewrite plugin makes clean URLs work in dev and preview, even though t
 
 In practical terms:
 
-- `frontend-2` is the main product surface to explain first
+- `apps/web` is the main product surface to explain first
 - the archived SvelteKit code is useful as historical reference only
 - active development and publishable builds should ignore the archived frontend
 
@@ -118,7 +118,7 @@ In practical terms:
 
 ```mermaid
 flowchart LR
-    Browser["Browser: frontend-2 + frontend-core"] --> Workspace["WorkspaceApp / ReceiveApp / ChainExplorerApp"]
+    Browser["Browser: apps/web + frontend-core"] --> Workspace["WorkspaceApp / ReceiveApp / ChainExplorerApp"]
     Workspace --> Stores["Svelte stores"]
     Workspace --> Tools["Browser-side file tools"]
     Workspace --> Signal["Signaling Worker"]
@@ -148,8 +148,8 @@ This section follows the main user journey from first load to final delivery.
 
 When `/workspace` loads in the primary frontend:
 
-- `frontend-2/workspace/index.html` provides the shell
-- `frontend-2/js/islands.js` mounts `WorkspaceApp`
+- `apps/web/workspace/index.html` provides the shell
+- `apps/web/js/islands.js` mounts `WorkspaceApp`
 - `WorkspaceApp` renders four main areas:
   - `FileList`
   - `ToolChain`
@@ -727,7 +727,7 @@ There are two receive URL styles in the repo:
 
 | Frontend surface | URL style |
 | --- | --- |
-| `frontend-2` primary runtime | `/receive?code=ABC123&mode=webrtc` |
+| `apps/web` primary runtime | `/receive?code=ABC123&mode=webrtc` |
 | `archive/old-frontend/apps-web` reference | `/receive/ABC123?mode=webrtc` |
 
 ### Chain record shape
@@ -757,12 +757,12 @@ Filenames are deliberately excluded.
 
 | Service | Local command | Default/local port |
 | --- | --- | --- |
-| `frontend-2` | `pnpm dev:frontend` | `3000` |
+| `apps/web` | `pnpm dev:frontend` | `3000` |
 | `apps/signaling` | `pnpm dev:signal` | `8787` |
 | `apps/api` | `pnpm dev:api` | `8788` |
 | `apps/chain` | `pnpm dev:chain` | `8789` |
 
-`pnpm dev:web` remains as a compatibility alias and starts the same `frontend-2` dev server on `3000`.
+`pnpm dev:web` remains as a compatibility alias and starts the same `apps/web` dev server on `3000`.
 
 ### Important frontend-facing environment variables
 
@@ -771,7 +771,7 @@ Filenames are deliberately excluded.
 | `PUBLIC_SIGNALING_URL` | direct/local transfer code | WebSocket base URL for signaling |
 | `PUBLIC_STUN_SERVERS` | WebRTC config | comma-separated STUN list for direct mode |
 | `PUBLIC_API_BASE_URL` | Drive auth/upload code in frontend-core | API worker base URL; empty string means same origin |
-| `PUBLIC_CHAIN_URL` | workspace and chain explorer mounts in `frontend-2` | chain worker base URL; empty string means same origin |
+| `PUBLIC_CHAIN_URL` | workspace and chain explorer mounts in `apps/web` | chain worker base URL; empty string means same origin |
 
 ### Google OAuth and API worker configuration
 
@@ -788,7 +788,7 @@ Filenames are deliberately excluded.
 
 - in the primary frontend, `PUBLIC_API_BASE_URL` and `PUBLIC_CHAIN_URL` are supported by code but not listed in the checked-in `.env.example` files
 - for production same-origin routing, empty string works because the frontend can call `/api/...` and `/chain/...` directly on `clex.in`
-- for local `frontend-2` development, those base URLs often need to be set explicitly so calls go to ports `8788` and `8789` instead of the frontend dev server
+- for local `apps/web` development, those base URLs often need to be set explicitly so calls go to ports `8788` and `8789` instead of the frontend dev server
 
 ## 11. Observed Gaps / Reality Checks
 
@@ -879,13 +879,13 @@ The shipped runtime reads:
 
 but the checked-in env examples document only `PUBLIC_SIGNALING_URL` and `PUBLIC_STUN_SERVERS`.
 
-This makes local setup less obvious than it should be, especially when `frontend-2` runs on `3000` and the workers run on `8787`, `8788`, and `8789`.
+This makes local setup less obvious than it should be, especially when `apps/web` runs on `3000` and the workers run on `8787`, `8788`, and `8789`.
 
 ### 11.8 There are two frontend implementations with overlapping responsibilities
 
 This is still a useful maintenance fact, but only one frontend is active now:
 
-- `frontend-2` is the primary shipped site
+- `apps/web` is the primary shipped site
 - `archive/old-frontend/apps-web` preserves the older SvelteKit implementation
 - the archived frontend still contains overlapping UI, transfer, and auth code for reference
 

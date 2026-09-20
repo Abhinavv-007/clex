@@ -19,7 +19,7 @@ export * from './account'
 // `matches ? 'dark' : 'dark'` so it always chose dark, and it called
 // applyTheme() at module scope — so simply importing this barrel put
 // `class="dark"` on <html> regardless of the visitor's actual theme. Theming
-// is owned by frontend-2/js/theme.js and the inline bootstrap in each page's
+// is owned by apps/web/js/theme.js and the inline bootstrap in each page's
 // <head>, both of which drive `data-theme`.
 
 // Firebase auth

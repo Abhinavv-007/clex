@@ -188,13 +188,13 @@ export default defineConfig({
   plugins: [svelte(), slashlessRoutesPlugin(), socialMetaPlugin()],
   resolve: {
     alias: {
-      $components: r('../packages/frontend-core/src/lib/components'),
-      $stores: r('../packages/frontend-core/src/lib/stores'),
-      $tools: r('../packages/frontend-core/src/lib/tools'),
-      $transfer: r('../packages/frontend-core/src/lib/transfer'),
-      $utils: r('../packages/frontend-core/src/lib/utils'),
-      $chain: r('../packages/frontend-core/src/lib/chain'),
-      $lib: r('../packages/frontend-core/src/lib'),
+      $components: r('../../packages/frontend-core/src/lib/components'),
+      $stores: r('../../packages/frontend-core/src/lib/stores'),
+      $tools: r('../../packages/frontend-core/src/lib/tools'),
+      $transfer: r('../../packages/frontend-core/src/lib/transfer'),
+      $utils: r('../../packages/frontend-core/src/lib/utils'),
+      $chain: r('../../packages/frontend-core/src/lib/chain'),
+      $lib: r('../../packages/frontend-core/src/lib'),
     },
   },
   build: {

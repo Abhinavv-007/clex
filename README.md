@@ -5,7 +5,7 @@
 
 <div align="center">
 
-<img src="./frontend-2/public/brand/clex-logo.png" alt="Clex logo" width="128" />
+<img src="./apps/web/public/brand/clex-logo.png" alt="Clex logo" width="128" />
 
 # 📦 Clex &nbsp;·&nbsp; **Drop. Prepare. Share.**
 
@@ -202,7 +202,7 @@ Important boundaries:
 
 ```text
 .
-├── frontend-2/                # MPA frontend shipped to clex.in
+├── apps/web/                # MPA frontend shipped to clex.in
 ├── packages/frontend-core/    # Shared Svelte runtime, workspace, Vault, landing
 ├── apps/api/                  # Google Drive auth/upload worker
 ├── apps/signaling/            # WebRTC signaling worker
@@ -247,7 +247,7 @@ pnpm --filter @clex/vault-worker dev
 Frontend env:
 
 ```bash
-cp frontend-2/.env.example frontend-2/.env.local
+cp apps/web/.env.example apps/web/.env.local
 ```
 
 Default local ports:
@@ -259,7 +259,7 @@ Default local ports:
 | API worker | `8788` |
 | Chain worker | `8789` |
 
-> Vault locally: the UI is served by `frontend-2`, but its secret, pairing, and Cloud Share APIs live in `apps/vault-worker`. The frontend expects Vault APIs on `/vault/api/*` in production. For full local Vault flows, run the Vault worker and route `/vault/api/*` to it.
+> Vault locally: the UI is served by `apps/web`, but its secret, pairing, and Cloud Share APIs live in `apps/vault-worker`. The frontend expects Vault APIs on `/vault/api/*` in production. For full local Vault flows, run the Vault worker and route `/vault/api/*` to it.
 
 ---
 
@@ -287,7 +287,7 @@ pnpm --filter @clex/vault-worker db:migrate
 
 ## ✦ Deployment
 
-- `frontend-2` builds the static site and app shell.
+- `apps/web` builds the static site and app shell.
 - `apps/signaling`, `apps/api`, `apps/chain`, and `apps/vault-worker` deploy independently as Cloudflare Workers.
 - The Vault worker is expected to serve `/vault/api/*` on production.
 - Vault Cloud Share requires Supabase secrets and storage bucket configuration in the worker environment.

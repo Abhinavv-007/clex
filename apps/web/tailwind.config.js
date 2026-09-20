@@ -5,7 +5,7 @@ export default {
     './*/index.html',
     './js/**/*.js',
     './islands/**/*.{js,svelte}',
-    '../packages/frontend-core/src/**/*.{html,js,svelte,ts}',
+    '../../packages/frontend-core/src/**/*.{html,js,svelte,ts}',
   ],
   darkMode: 'class',
   theme: {
