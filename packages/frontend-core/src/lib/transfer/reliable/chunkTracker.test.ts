@@ -246,8 +246,12 @@ describe('ChunkTracker bookkeeping', () => {
 
     expect(tracker.isComplete()).toBe(true)
     expect(tracker.snapshot().acked).toBe(total)
-    // Generous ceiling — this is about catching a return to quadratic cost,
-    // not about benchmarking the machine.
-    expect(elapsed).toBeLessThan(4000)
+
+    // The ceiling is deliberately enormous. Linear bookkeeping finishes this
+    // in tens of milliseconds; the quadratic version it replaced would need
+    // ~3.6x10^9 record visits, which is minutes. Anything between those two
+    // is not a real signal, and a tight bound just makes the test fail when
+    // something else is loading the machine — which is exactly what it did.
+    expect(elapsed).toBeLessThan(30_000)
   })
 })

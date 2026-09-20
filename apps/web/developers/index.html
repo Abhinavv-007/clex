@@ -251,8 +251,8 @@ console.log(`Share URL: ${shareUrl}`);</code></pre>
           Generate a key above &mdash; no signup &mdash; then upload files with a single HTTP call. A device can hold three active keys at 60 requests a minute and 100&nbsp;MB per file; rotate a key to replace it. Signing in on <a class="link" href="/account">your account page</a> raises those limits and lets you manage keys across devices.
         </p>
         <div class="dev-hero__pills">
-          <a href="/account" class="btn btn--primary btn--small">Get a key →</a>
-          <span class="dev-pill"><span class="dev-pill__dot"></span> Up to 5 active keys per account</span>
+          <a href="#api-access" class="btn btn--primary btn--small">Get a key →</a>
+          <span class="dev-pill"><span class="dev-pill__dot"></span> 3 keys per device · 5 per account</span>
           <span class="dev-pill"><span class="dev-pill__dot"></span> Hash-only storage; plaintext shown once</span>
         </div>
       </div>
@@ -375,8 +375,9 @@ console.log(shareUrl)</code></pre>
       <div class="dev-callout reveal">
         <h3 class="dev-callout__title">Limits cheat-sheet</h3>
         <ul class="dev-list">
+          <li><strong>Anonymous key</strong> (no signup): 100&nbsp;MB per file, 60&nbsp;req/min, 3 active keys per device.</li>
           <li><strong>File size</strong> per key: 10&nbsp;MB · 100&nbsp;MB · 1&nbsp;GB · unlimited (5&nbsp;GB hard ceiling per upload).</li>
-          <li><strong>Rate</strong> per key: 10 · 30 · 100 · 1000 req/min · unlimited.</li>
+          <li><strong>Rate</strong> per key: 30 · 60 · 120 · 600&nbsp;req/min · unlimited.</li>
           <li><strong>Expiry</strong>: 5 minutes – 7 days. Default 24 hours. Pass <code>X-Expires-In</code> in seconds.</li>
           <li><strong>Plaintext key</strong>: shown exactly once at creation. Only the SHA-256 hash is stored.</li>
         </ul>
