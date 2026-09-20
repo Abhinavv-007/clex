@@ -12,7 +12,10 @@ html {
   -moz-text-size-adjust: none;
   -webkit-text-size-adjust: none;
   text-size-adjust: none;
-  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html { scroll-behavior: smooth; }
 }
 
 body {
@@ -50,6 +53,21 @@ button {
   cursor: pointer;
   border: none;
   background: none;
+}
+
+/* Interactive elements the browser doesn't give a pointer to on its own.
+   Previously hidden behind the custom-cursor layer's `cursor: none`. */
+[role="button"],
+[role="tab"],
+summary,
+label[for],
+select {
+  cursor: pointer;
+}
+
+button:disabled,
+[aria-disabled="true"] {
+  cursor: not-allowed;
 }
 
 :focus-visible {

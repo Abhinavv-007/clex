@@ -518,7 +518,7 @@
 .hero__title-word--italic {
   font-family: var(--font-italic);
   font-weight: 400;
-  font-style: italic;
+  font-style: normal; /* script face has no italic */
   color: #6b4dff;
   letter-spacing: -0.01em;
   font-size: 1.05em;
@@ -1495,7 +1495,7 @@ body.section-theme-dark .dpc-title {
 }
 .dpc-title .italic-accent {
   font-family: var(--font-italic);
-  font-style: italic;
+  font-style: normal; /* script face has no italic */
   font-weight: 400;
   background: linear-gradient(135deg, #6b4dff 0%, #ff7a3d 100%);
   -webkit-background-clip: text;
@@ -1921,7 +1921,7 @@ body.section-theme-dark .pill-btn--white {
 /* ── Italic Accent (cursive serif accent word) ── */
 .italic-accent {
   font-family: var(--font-italic);
-  font-style: italic;
+  font-style: normal; /* script face has no italic */
   font-weight: 400;
   letter-spacing: -0.005em;
   color: #6b4dff;

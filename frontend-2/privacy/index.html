@@ -3,18 +3,24 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="preconnect" href="https://api.fontshare.com" crossorigin>
+  <!-- One request per provider, issued from <head> so the fonts download in
+       parallel with the stylesheets instead of being chained behind them. -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800;900&family=Boldonse&family=Geist:wght@300;400;500;600;700;800;900&family=Hanken+Grotesk:wght@500;600;700;800;900&family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&family=Pacifico&family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap">
+  <link rel="stylesheet" href="https://api.fontshare.com/v2/css?f[]=chillax@700,800,900&f[]=clash-display@600,700&display=swap">
   <script>document.documentElement.classList.add('clex-design-booting');</script>
   <link rel="icon" type="image/png" href="/brand/clex-logo.png">
   <link rel="apple-touch-icon" href="/brand/clex-logo.png">
   <title>Privacy Policy — Clex</title>
   <meta name="description" content="Clex privacy policy covering Workspace, Vault notes, secret links, temporary Drive-share storage, Google auth, and public transfer-chain boundaries.">
   <script>
+    // Theme bootstrap — must stay inline and render-blocking so the correct
+    // palette is committed before first paint. Mirrors readTheme() in js/theme.js.
     (() => {
       try {
-        const theme = localStorage.getItem('clex-theme-v2') === 'dark' ? 'dark' : 'light';
+        const saved = localStorage.getItem('clex-theme-v2');
+        const theme = (saved === 'dark' || saved === 'light')
+          ? saved
+          : (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
         document.documentElement.setAttribute('data-theme', theme);
         document.documentElement.classList.toggle('dark', theme === 'dark');
         document.documentElement.style.colorScheme = theme;

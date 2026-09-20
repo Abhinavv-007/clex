@@ -9,29 +9,49 @@ export function initNav(activePage = '') {
   const nav = document.getElementById('main-nav');
   if (!nav) return;
 
-  // Scroll behavior
+  // Scroll behaviour: the bar sits expanded at the top of the page and
+  // collapses to a compact pill once you scroll away from it.
+  //
+  // Separate enter/exit thresholds give us hysteresis — with a single
+  // threshold the bar visibly flickers when the scroll position rests
+  // right on it (trackpad inertia, rubber-banding, anchor jumps).
+  const SHRINK_AT = 72;
+  const EXPAND_AT = 24;
   const progressBar = document.querySelector('#scroll-progress .scroll-progress__bar');
-  let lastScroll = 0;
-  let progressRaf = 0;
-  const updateProgress = () => {
-    progressRaf = 0;
-    if (!(progressBar instanceof HTMLElement)) return;
-    const doc = document.documentElement;
-    const max = (doc.scrollHeight - doc.clientHeight) || 1;
-    const pct = Math.min(100, Math.max(0, (window.scrollY / max) * 100));
-    progressBar.style.width = `${pct}%`;
-  };
-  window.addEventListener('scroll', () => {
-    const currentScroll = window.scrollY;
-    if (currentScroll > 60) {
+
+  let scrolled = false;
+  let frame = 0;
+
+  const applyScrollState = () => {
+    frame = 0;
+    const y = window.scrollY;
+
+    if (!scrolled && y > SHRINK_AT) {
+      scrolled = true;
       nav.classList.add('nav--scrolled');
-    } else {
+    } else if (scrolled && y < EXPAND_AT) {
+      scrolled = false;
       nav.classList.remove('nav--scrolled');
     }
-    lastScroll = currentScroll;
-    if (!progressRaf) progressRaf = requestAnimationFrame(updateProgress);
-  }, { passive: true });
-  updateProgress();
+
+    if (progressBar instanceof HTMLElement) {
+      const doc = document.documentElement;
+      const max = (doc.scrollHeight - doc.clientHeight) || 1;
+      const pct = Math.min(100, Math.max(0, (y / max) * 100));
+      progressBar.style.width = `${pct}%`;
+    }
+  };
+
+  // One rAF-coalesced read+write per frame instead of per scroll event.
+  const onScroll = () => {
+    if (!frame) frame = requestAnimationFrame(applyScrollState);
+  };
+
+  window.addEventListener('scroll', onScroll, { passive: true });
+  window.addEventListener('resize', onScroll, { passive: true });
+  // Restored scroll position (reload mid-page, back navigation) must not
+  // paint an expanded bar over content.
+  applyScrollState();
 
   // Mobile menu
   const hamburger = document.getElementById('nav-hamburger');

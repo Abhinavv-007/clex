@@ -3,9 +3,11 @@
    Loaded last via main.js; wins specificity site-wide.
    ============================================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@500;600;700;800;900&family=Boldonse&family=Pacifico&family=Caveat+Brush&family=Inter:wght@400;500;600;700;800&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=Dancing+Script:wght@500;600;700&display=swap');
-@import url('https://api.fontshare.com/v2/css?f[]=chillax@700,800,900&f[]=clash-display@600,700&display=swap');
+/* Webfonts are loaded via a single <link> in each page's <head>.
+   They must NOT be @imported here: a CSS @import is discovered only
+   after this file has downloaded and parsed, so it serialises the
+   font fetch behind the stylesheet fetch and blocks first paint. */
+
 
 /* ---------------- TOKENS ---------------- */
 :root,
@@ -61,10 +63,9 @@
 
   --surface-glass:  rgba(255,255,255,0.78);
 
-  --font-display:   'Chillax', 'Clash Display', 'Hanken Grotesk', system-ui, sans-serif;
-  --font-display-mega: 'Boldonse', 'Chillax', system-ui, sans-serif;
-  --font-body:      'Hanken Grotesk', 'Inter', system-ui, sans-serif;
-  --font-italic:    'Pacifico', 'Caveat Brush', cursive;
+  /* Font tokens live in tokens.css — declaring them again here is what made
+     the same token resolve differently depending on which sheets a page
+     loaded. Do not re-add them. */
 
   --gradient-hero:
     radial-gradient(60% 50% at 15% 0%,  rgba(196,181,253,0.55) 0%, transparent 60%),
@@ -912,31 +913,6 @@ pre, code, .code-block, .dev-code {
    IMMERSIVE LAYER
    ============================================================= */
 
-/* ---------------- Cursor spotlight (light theme) ---------------- */
-body::before {
-  content: '';
-  position: fixed; inset: 0;
-  pointer-events: none;
-  z-index: 0;
-  background: radial-gradient(
-    280px circle at var(--cursor-x, 50%) var(--cursor-y, 50%),
-    rgba(196,181,253,0.10),
-    transparent 60%
-  );
-  transition: opacity 240ms ease;
-  opacity: 0.55;
-}
-[data-theme="dark"] body::before {
-  background: radial-gradient(
-    280px circle at var(--cursor-x, 50%) var(--cursor-y, 50%),
-    rgba(255,180,140,0.08),
-    transparent 60%
-  );
-}
-
-@media (pointer: coarse), (max-width: 899px) {
-  body::before { display: none; }
-}
 
 /* ---------------- Floating ambient blobs (very subtle) ---------------- */
 .creem-ambient-blobs {
@@ -1741,7 +1717,7 @@ html .nav .nav__link:hover, .nav .nav__link:hover {
   max-width: 34ch;
 }
 .footer__tagline .italic-accent {
-  font-size: 1.35em !important;
+  /* font-size comes from --script-size — see the canonical script block. */
   padding-bottom: 0.22em !important;
 }
 
@@ -2351,133 +2327,6 @@ p, li, .card__text, .section__subtitle, .lead, .page-hero__subtitle {
   line-height: 1.18 !important;
 }
 
-@media (pointer: fine) and (min-width: 900px) {
-  body.clex-cursor-active,
-  body.clex-cursor-active a,
-  body.clex-cursor-active button,
-  body.clex-cursor-active [role="button"],
-  body.clex-cursor-active .data-stream__row {
-    cursor: none !important;
-  }
-
-  body.clex-cursor-active input,
-  body.clex-cursor-active textarea,
-  body.clex-cursor-active [contenteditable="true"] {
-    cursor: text !important;
-  }
-
-  .clex-cursor-follower {
-    position: fixed;
-    left: 0;
-    top: 0;
-    width: 14px;
-    height: 14px;
-    border-radius: 999px;
-    pointer-events: none;
-    z-index: 100000;
-    opacity: 0;
-    background: var(--c-ink);
-    border: 2px solid var(--c-cream-soft);
-    box-shadow:
-      0 0 0 7px rgba(196,181,253,0.20),
-      0 0 28px rgba(255,122,61,0.24);
-    transition:
-      opacity 180ms ease,
-      width 180ms cubic-bezier(0.34,1.56,0.64,1),
-      height 180ms cubic-bezier(0.34,1.56,0.64,1),
-      background 180ms ease,
-      border-color 180ms ease,
-      box-shadow 180ms ease;
-    will-change: transform;
-  }
-
-  .clex-cursor-follower--visible { opacity: 1; }
-  .clex-cursor-follower--hot {
-    width: 34px;
-    height: 34px;
-    background: rgba(255,208,179,0.68);
-    border-color: var(--c-ink);
-    box-shadow:
-      0 0 0 2px var(--c-ink),
-      0 0 0 10px rgba(255,208,179,0.18),
-      0 0 34px rgba(107,77,255,0.24);
-  }
-  .clex-cursor-follower--down {
-    width: 22px;
-    height: 22px;
-    background: var(--c-yellow);
-  }
-}
-
-.nav__inner,
-.nav--scrolled .nav__inner,
-body.section-theme-dark .nav__inner,
-body.section-theme-lavender .nav__inner,
-body.section-theme-peach .nav__inner,
-body.section-theme-cream .nav__inner,
-body[class*="section-theme-"] .nav--scrolled .nav__inner {
-  background:
-    linear-gradient(90deg, rgba(255,255,255,0.92), rgba(250,245,232,0.82)),
-    radial-gradient(120% 160% at var(--nav-x, 50%) var(--nav-y, 50%), rgba(196,181,253,0.22), transparent 52%) !important;
-  color: var(--c-ink) !important;
-  border-color: var(--c-ink) !important;
-  box-shadow:
-    4px 4px 0 var(--c-ink),
-    0 18px 42px -18px rgba(14,14,13,0.44),
-    inset 0 -5px 0 rgba(196,181,253,0.22) !important;
-}
-
-.nav--scrolled .nav__inner {
-  transform: translateY(-1px) scale(0.985);
-}
-
-.nav__logo,
-.nav__logo-wordmark,
-.nav__hamburger-line,
-body.section-theme-dark .nav__logo,
-body.section-theme-dark .nav__logo-wordmark,
-body.section-theme-dark .nav__hamburger-line {
-  color: var(--c-ink) !important;
-}
-
-.nav__logo-wordmark {
-  text-shadow: none !important;
-}
-
-.nav .nav__link,
-body.section-theme-dark .nav__link,
-body.section-theme-lavender .nav__link,
-body.section-theme-peach .nav__link,
-body.section-theme-cream .nav__link {
-  color: rgba(14,14,13,0.74) !important;
-}
-
-.nav__theme-toggle,
-body.section-theme-dark .nav__theme-toggle {
-  background: #fffaf0 !important;
-  color: var(--c-ink) !important;
-  border-color: var(--c-ink) !important;
-}
-
-.nav__actions .btn.btn--primary.btn--small,
-body.section-theme-dark .nav__actions .btn.btn--primary.btn--small,
-body.section-theme-lavender .nav__actions .btn.btn--primary.btn--small,
-body.section-theme-peach .nav__actions .btn.btn--primary.btn--small {
-  background: var(--c-peach) !important;
-  color: var(--c-ink) !important;
-  border-color: var(--c-ink) !important;
-  box-shadow: 3px 3px 0 var(--c-ink) !important;
-}
-
-.nav__hamburger {
-  background: rgba(255,255,255,0.34) !important;
-  border: 2px solid transparent !important;
-}
-.nav__hamburger--open {
-  background: linear-gradient(135deg, var(--c-lavender), var(--c-peach)) !important;
-  border-color: var(--c-ink) !important;
-  box-shadow: 3px 3px 0 var(--c-ink) !important;
-}
 
 .nav__mobile-menu {
   position: fixed !important;
@@ -3217,58 +3066,132 @@ html.clex-design-booting footer:not(.footer--v2) {
   content: url('/brand/clex-logo-dark.png');
 }
 
+/* ============================================================
+   NAV — single canonical definition.
+
+   Two rules this block exists to enforce:
+   1. The bar follows the DOCUMENT theme (data-theme), never the
+      scrolled section theme. Previously `body.section-theme-*`
+      force-painted it cream with ink text under `!important`,
+      so in dark mode it stayed white-on-black.
+   2. Expanded at the top of the page, compact once scrolled.
+      The old build set `transform: none !important` here, which
+      cancelled the shrink entirely.
+   ============================================================ */
+
 .nav__inner,
-.nav--scrolled .nav__inner,
-body.section-theme-dark .nav__inner,
-body.section-theme-lavender .nav__inner,
-body.section-theme-peach .nav__inner,
-body.section-theme-cream .nav__inner,
-body[class*="section-theme-"] .nav__inner,
-body[class*="section-theme-"] .nav--scrolled .nav__inner {
+body[class*="section-theme-"] .nav__inner {
+  /* Geometry knobs — the compact state below only re-declares these.
+     Width stays fixed on purpose: animating max-width makes the bar visibly
+     squeeze inward, which reads as a glitch rather than as a shrink. Only the
+     vertical rhythm and the shadow depth change. */
+  --nav-pad-y: 0.6rem;
+  --nav-pad-x: 1.15rem;
+  --nav-offset: 5px;
+  --nav-lift: 0px;
+
+  pointer-events: auto;
+  max-width: 1180px !important;
+  gap: 0.5rem !important;
+  padding: var(--nav-pad-y) calc(var(--nav-pad-x) * 0.48) var(--nav-pad-y) var(--nav-pad-x) !important;
+  border: 2px solid var(--border-bold) !important;
+  border-radius: 9999px !important;
   background:
-    radial-gradient(180px 120px at var(--nav-x, 50%) var(--nav-y, 50%), rgba(196,181,253,0.22), transparent 72%),
-    linear-gradient(180deg, rgba(255,255,255,0.985), rgba(250,247,238,0.95)) !important;
-  backdrop-filter: blur(6px) saturate(1.08) !important;
-  -webkit-backdrop-filter: blur(6px) saturate(1.08) !important;
-  opacity: 1 !important;
-  color: var(--c-ink) !important;
-  border-color: var(--c-ink) !important;
+    radial-gradient(200px 130px at var(--nav-x, 50%) var(--nav-y, 50%),
+      var(--accent-soft), transparent 72%),
+    var(--bg-card) !important;
+  color: var(--text-primary) !important;
   box-shadow:
-    5px 5px 0 var(--c-ink),
-    0 18px 42px -22px rgba(14,14,13,0.46),
-    inset 0 -4px 0 rgba(196,181,253,0.18) !important;
-}
-
-.nav--scrolled .nav__inner {
-  transform: none !important;
-}
-
-.nav .nav__link,
-body[class*="section-theme-"] .nav .nav__link,
-[data-theme="dark"] .nav .nav__link {
-  color: rgba(14,14,13,0.86) !important;
+    var(--nav-offset) var(--nav-offset) 0 var(--border-bold),
+    0 18px 42px -22px var(--shadow-soft) !important;
+  transform: translateY(var(--nav-lift));
   opacity: 1 !important;
+  /* No backdrop-filter: it forces a compositing layer on a fixed element
+     that spans the viewport, which was costing frames on every scroll. */
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  transition:
+    padding 360ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 360ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 360ms cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 220ms ease,
+    border-color 220ms ease;
+}
+
+/* Compact state — engaged by nav.js once the page leaves the top.
+   Deliberately understated: the bar settles a little tighter and closer to
+   the page, nothing more. */
+.nav--scrolled .nav__inner,
+body[class*="section-theme-"] .nav--scrolled .nav__inner {
+  --nav-pad-y: 0.42rem;
+  --nav-offset: 3px;
+  --nav-lift: -3px;
+}
+
+.nav__logo-wordmark {
+  font-size: 1.16rem;
   text-shadow: none !important;
 }
 
-.nav .nav__link:hover,
-.nav .nav__link--active {
-  color: var(--c-ink) !important;
-  background: rgba(196,181,253,0.26) !important;
+@media (prefers-reduced-motion: reduce) {
+  .nav__inner { transition: none !important; }
 }
+
+/* ---- Contents: all theme-token driven, no hardcoded ink/cream ---- */
 
 .nav__logo,
 .nav__logo-wordmark,
+.nav__hamburger-line,
 body[class*="section-theme-"] .nav__logo,
 body[class*="section-theme-"] .nav__logo-wordmark,
-[data-theme="dark"] .nav__logo,
-[data-theme="dark"] .nav__logo-wordmark {
-  color: var(--c-ink) !important;
+body[class*="section-theme-"] .nav__hamburger-line {
+  color: var(--text-primary) !important;
   opacity: 1 !important;
 }
 
+.nav__hamburger-line { background: var(--text-primary) !important; }
+
+.nav .nav__link,
+body[class*="section-theme-"] .nav .nav__link {
+  color: var(--text-secondary) !important;
+  opacity: 1 !important;
+  text-shadow: none !important;
+  transition: color 180ms ease, background-color 180ms ease;
+}
+
+.nav .nav__link:hover,
+.nav .nav__link--active,
+body[class*="section-theme-"] .nav .nav__link:hover,
+body[class*="section-theme-"] .nav .nav__link--active {
+  color: var(--text-primary) !important;
+  background: var(--accent-soft) !important;
+}
+
+.nav__theme-toggle,
+body[class*="section-theme-"] .nav__theme-toggle {
+  background: var(--bg-card-soft) !important;
+  color: var(--text-primary) !important;
+  border: 2px solid var(--border-bold) !important;
+}
+
+.nav__hamburger,
+body[class*="section-theme-"] .nav__hamburger {
+  background: var(--bg-card-soft) !important;
+  border: 2px solid transparent !important;
+}
+
+.nav__hamburger--open,
+body[class*="section-theme-"] .nav__hamburger--open {
+  background: linear-gradient(135deg, var(--c-lavender), var(--c-peach)) !important;
+  border-color: var(--c-ink) !important;
+  box-shadow: 3px 3px 0 var(--c-ink) !important;
+}
+
+/* The primary chip keeps its light lavender→peach→mint gradient in both
+   themes, so ink text and an ink offset stay correct either way. */
 .nav__actions .btn--primary,
-.pill-btn--primary {
+.pill-btn--primary,
+body[class*="section-theme-"] .nav__actions .btn--primary {
   background:
     linear-gradient(135deg, rgba(196,181,253,0.98), rgba(255,198,165,0.98) 52%, rgba(182,240,196,0.98)) !important;
   color: var(--c-ink) !important;
@@ -3846,39 +3769,6 @@ html.clex-theme-switching::view-transition-new(root) {
   animation-duration: 0s !important;
 }
 
-body::before {
-  display: none !important;
-}
-
-@media (pointer: fine) and (min-width: 900px) {
-  .clex-cursor-follower {
-    width: 10px !important;
-    height: 10px !important;
-    background: var(--c-ink) !important;
-    border: 0 !important;
-    box-shadow: 0 0 0 5px rgba(14,14,13,0.08) !important;
-  }
-
-  [data-theme="dark"] .clex-cursor-follower,
-  body.section-theme-dark .clex-cursor-follower {
-    background: #fff9e8 !important;
-    box-shadow: 0 0 0 5px rgba(255,249,232,0.12) !important;
-  }
-
-  .clex-cursor-follower--hot {
-    width: 18px !important;
-    height: 18px !important;
-    background: var(--c-peach) !important;
-    box-shadow: 0 0 0 2px var(--c-ink), 0 0 0 8px rgba(255,208,179,0.16) !important;
-  }
-
-  [data-theme="dark"] .clex-cursor-follower--hot,
-  body.section-theme-dark .clex-cursor-follower--hot {
-    background: #fff9e8 !important;
-    box-shadow: 0 0 0 2px rgba(255,249,232,0.82), 0 0 0 9px rgba(255,249,232,0.13) !important;
-  }
-}
-
 [data-theme="dark"] .dpc-card {
   background:
     radial-gradient(90% 90% at 78% 14%, rgba(255,122,61,0.24), transparent 62%),
@@ -4379,14 +4269,23 @@ body.section-theme-dark .hero__subtitle {
   order: 1;
 }
 
+/* These two carried no `order`, so they defaulted to 0 and rendered ABOVE the
+   eyebrow and the headline — the stat row was the first thing on the page,
+   before the visitor had been told what Clex is. Sequence is now:
+   badge → mascot → headline → subhead → CTAs → product window → features → stats. */
+.hero__mascot { order: 2; }
+.stat-orbs    { order: 9; }
+
 .hero__title.hero__title--mega {
-  order: 2;
-  width: min(100%, 1320px) !important;
+  order: 3;
+  /* Leaves a lane down each side for the floating tags. At 1320px the title's
+     box ran under them even though its centred text never reached that far. */
+  width: min(100%, 1120px) !important;
   max-width: none !important;
   margin: 0 auto !important;
   padding: 0 !important;
-  font-size: clamp(3.2rem, 9.2vw, 10rem) !important;
-  line-height: 0.86 !important;
+  font-size: clamp(2.5rem, 6.2vw, 6rem) !important;
+  line-height: 0.92 !important;
   letter-spacing: -0.06em !important;
   text-align: center !important;
   text-shadow: 0 24px 60px rgba(14,14,13,0.08);
@@ -4417,7 +4316,7 @@ body.section-theme-dark .hero__subtitle {
 }
 
 .hero__subtitle {
-  order: 3;
+  order: 4;
   max-width: 68ch !important;
   margin: clamp(0.25rem, 1vw, 0.8rem) auto 0 !important;
   padding: 0 !important;
@@ -4430,12 +4329,12 @@ body.section-theme-dark .hero__subtitle {
 }
 
 .hero__agent-pill {
-  order: 4;
+  order: 5;
   margin: 0.35rem auto 0 !important;
 }
 
 .hero__actions {
-  order: 5;
+  order: 7;
   margin: 0.45rem auto 0 !important;
   display: flex !important;
   justify-content: center !important;
@@ -4444,7 +4343,7 @@ body.section-theme-dark .hero__subtitle {
 }
 
 .hero__feature-trio {
-  order: 6;
+  order: 8;
   width: min(980px, 92vw) !important;
   max-width: 980px !important;
   margin: 1.1rem auto 0 !important;
@@ -4464,27 +4363,69 @@ body.section-theme-dark .hero__subtitle {
 
 .hero__visual {
   order: 7;
-  width: min(1080px, 92vw) !important;
-  max-width: 1080px !important;
-  margin: clamp(1.4rem, 2vw, 2rem) auto 0 !important;
-  z-index: 1 !important;
+  display: none !important; /* superseded by the live workspace below */
 }
 
-.hero__visual .data-stream {
-  width: 100% !important;
-  max-height: 520px !important;
-  padding: clamp(3.7rem, 5vw, 4.8rem) clamp(1rem, 2vw, 1.6rem) clamp(1rem, 2vw, 1.4rem) !important;
-  border-radius: clamp(28px, 3.4vw, 46px) !important;
+/* =============================================================
+   THE LANDING WORKSPACE
+
+   clex.in opens onto the working product: drop a file and share it
+   without navigating anywhere. Everything below it is the pitch, in
+   that order — you can act first and read later.
+   ============================================================= */
+.home-workspace {
+  order: 6;
+  position: relative;
+  z-index: 3;
+  width: min(1180px, 95vw);
+  margin: clamp(1.6rem, 3vw, 2.6rem) auto 0;
+}
+
+.home-workspace__frame {
+  position: relative;
+  border: 2px solid var(--border-bold);
+  border-radius: clamp(20px, 2.2vw, 30px);
+  background: var(--bg-card);
   box-shadow:
-    9px 9px 0 var(--c-ink),
-    0 28px 90px rgba(107,77,255,0.16),
-    inset 0 1px 0 rgba(255,255,255,0.78) !important;
-  overflow: hidden !important;
+    8px 8px 0 var(--border-bold),
+    0 40px 90px -40px rgba(14, 14, 13, 0.45);
+  /* The app paints its own surfaces right to the edge; clip them to the
+     frame's radius so no square corner pokes out past the border. */
+  overflow: hidden;
+  transition:
+    transform 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 420ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.hero__visual .data-stream__row {
-  min-height: clamp(3.2rem, 4vw, 4.35rem) !important;
-  font-size: clamp(0.78rem, 1vw, 1rem) !important;
+.home-workspace__frame:hover,
+.home-workspace__frame:focus-within {
+  transform: translate(-3px, -3px);
+  box-shadow:
+    11px 11px 0 var(--border-bold),
+    0 48px 110px -44px rgba(14, 14, 13, 0.5);
+}
+
+/* The app brings its own page chrome for /workspace — inside the frame that
+   would be a second full-height shell nested in the first. */
+.home-workspace__frame .workspace-shell,
+.home-workspace__frame .ws-page {
+  min-height: 0 !important;
+  background: transparent !important;
+  padding: clamp(1rem, 2vw, 1.6rem) !important;
+}
+
+/* The app's own "File workspace" headline restates the hero headline two
+   lines above it. Keep the mobile tab switcher, drop the duplicate title. */
+.home-workspace__frame .ws-title-block { display: none !important; }
+
+.home-workspace__frame .ws-header {
+  margin-bottom: clamp(0.5rem, 1vw, 0.9rem) !important;
+  padding-top: 0 !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-workspace__frame { transition: none !important; }
+  .home-workspace__frame:hover { transform: none !important; }
 }
 
 .hero__float-tag {
@@ -4605,30 +4546,69 @@ body.section-theme-dark .hero__subtitle {
 }
 
 /* =============================================================
-   FINAL HANDWRITING PASS: one write-on system for every cursive accent.
-   This intentionally comes last so older reveal experiments cannot override it.
+   THE SCRIPT FACE — one treatment for every handwritten accent.
+
+   Comes last on purpose so no earlier experiment can override it, and it
+   now covers every selector that previously styled the script face on its
+   own: `h1/h2/h3 em`, the footer glyph, the hero word and the accent spans
+   all resolve here. Metrics come from the tokens in tokens.css.
+
+   Two rules:
+   · `font-style` stays `normal`. Pacifico ships no italic, so `italic`
+     makes the browser synthesise an oblique — slanted, broken letterforms.
+   · Exactly one gradient in light, one in dark. The per-accent --lavender /
+     --cyan / --lime variants are gone: they were why the same accent word
+     read differently from section to section.
    ============================================================= */
 .italic-accent,
 .hero__title-word--italic,
 .text-accent,
-.chain-hero__title-accent {
-  --clex-script-gradient: linear-gradient(112deg, #8b5cf6 0%, #d85f8b 46%, #ff8a1f 82%, #ffd46a 100%);
+.chain-hero__title-accent,
+.footer__tagline em,
+.footer__glyph em,
+.banner__text em,
+.cta-strip__title em,
+.section__title em,
+.va-title em,
+.cs-title em,
+.ws-title em,
+.ws-page__title em,
+.account-title em,
+.receive-title em,
+.page-hero__title em,
+.features-hero__title em,
+.legal-hero__title em,
+h1 em, h2 em, h3 em {
+  --clex-script-gradient: var(--script-gradient);
   position: relative !important;
   display: inline-block !important;
   overflow: visible !important;
   isolation: isolate !important;
-  
-  /* Increased line height and padding to prevent descender cut-off */
-  line-height: 1.38 !important;
-  padding: 0.12em 0.22em 0.38em !important;
+
+  /* Leading + padding keep Pacifico's long descenders off the clip edge. */
+  line-height: var(--script-leading) !important;
+  padding: 0.14em 0.22em 0.4em !important;
   margin-top: -0.1em !important;
-  margin-bottom: -0.28em !important;
-  
-  font-family: var(--font-italic) !important;
+  margin-bottom: -0.3em !important;
+
+  font-family: var(--font-script) !important;
   font-style: normal !important;
   font-weight: 400 !important;
+  font-size: var(--script-size) !important;
   text-transform: none !important;
-  letter-spacing: 0 !important;
+  letter-spacing: var(--script-tracking) !important;
+  /* Baseline alignment is done with the padding/margin pair above, not a
+     transform — the write-on animation resets `transform`, so a transform
+     here would apply to static accents but silently drop off animated ones. */
+
+  /* Optical rendering — a script face needs kerning and ligatures on, and
+     grayscale smoothing keeps the thin joins from breaking up. */
+  font-feature-settings: 'kern' 1, 'liga' 1, 'calt' 1 !important;
+  font-kerning: normal !important;
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
+  text-rendering: optimizeLegibility !important;
+
   color: transparent !important;
   -webkit-text-fill-color: transparent !important;
   background-image: var(--clex-script-gradient) !important;
@@ -4641,30 +4621,32 @@ body.section-theme-dark .hero__subtitle {
   filter: drop-shadow(0 10px 22px rgba(255, 122, 61, 0.12));
 }
 
-.italic-accent--lavender,
-.text-accent,
-.chain-hero__title-accent {
-  --clex-script-gradient: linear-gradient(112deg, #8b5cf6 0%, #c46bc2 44%, #ff7a3d 78%, #ffc95a 100%);
-}
-
-.italic-accent--cyan {
-  --clex-script-gradient: linear-gradient(112deg, #25b6e8 0%, #8b5cf6 42%, #ff7a3d 100%);
-}
-
-.italic-accent--lime {
-  --clex-script-gradient: linear-gradient(112deg, #80c800 0%, #3ebd64 34%, #ff8a1f 100%);
-}
-
-/* Dark background overrides (use pastel gradients for high contrast) */
+/* The only legitimate variant: the light-mode gradient has no contrast on a
+   dark surface, so dark mode and the (always-dark) footer get a pastel one. */
 html[data-theme="dark"] .italic-accent,
 html[data-theme="dark"] .hero__title-word--italic,
 html[data-theme="dark"] .text-accent,
 html[data-theme="dark"] .chain-hero__title-accent,
+html[data-theme="dark"] h1 em,
+html[data-theme="dark"] h2 em,
+html[data-theme="dark"] h3 em,
+html[data-theme="dark"] .page-hero__title em,
+html[data-theme="dark"] .ws-page__title em,
+html[data-theme="dark"] .va-title em,
+html[data-theme="dark"] .cs-title em,
+html[data-theme="dark"] .ws-title em,
+html[data-theme="dark"] .account-title em,
+html[data-theme="dark"] .receive-title em,
+html[data-theme="dark"] .features-hero__title em,
+html[data-theme="dark"] .legal-hero__title em,
 .footer .italic-accent,
 .footer .hero__title-word--italic,
 .footer .text-accent,
-.footer .chain-hero__title-accent {
-  --clex-script-gradient: linear-gradient(112deg, #d9c8ff 0%, #ffc1d3 44%, #ffd18a 100%) !important;
+.footer .chain-hero__title-accent,
+.footer__tagline em,
+.footer__glyph em {
+  --clex-script-gradient: var(--script-gradient-dark) !important;
+  filter: drop-shadow(0 10px 22px rgba(255, 208, 179, 0.14));
 }
 
 /* Animation State: Initial hidden state — THE SINGLE SOURCE OF TRUTH */
@@ -5142,22 +5124,33 @@ html[data-theme="dark"] .chain-hero__title-accent,
   text-transform: uppercase !important;
 }
 
+/* Anchored in rem from the top of the hero, not in vh/%: the hero now contains
+   the live workspace, so viewport-relative offsets drifted the tags down over
+   the app — and b/d resolved to within 3rem of each other, so they overlapped.
+   These three sit in the headline band and stay clear of the workspace. */
 .hero__float-tag--a {
   left: clamp(1rem, 6vw, 7rem) !important;
-  top: clamp(7rem, 13vh, 10rem) !important;
+  top: 7rem !important;
   rotate: -5deg !important;
 }
 
 .hero__float-tag--b {
   right: clamp(1rem, 5vw, 7rem) !important;
-  top: clamp(15rem, 35vh, 27rem) !important;
+  top: 8.5rem !important;
   rotate: 5deg !important;
 }
 
 .hero__float-tag--d {
-  right: clamp(1rem, 4vw, 5rem) !important;
-  top: clamp(18rem, 45vh, 33rem) !important;
+  right: 0.75rem !important;
+  top: 23rem !important;
   rotate: -4deg !important;
+}
+
+/* Below this they crowd the headline instead of framing it. */
+@media (max-width: 1180px) {
+  .hero__float-tag--a,
+  .hero__float-tag--b,
+  .hero__float-tag--d { display: none !important; }
 }
 
 .hero__visual .data-stream {
@@ -5382,99 +5375,18 @@ body.section-theme-dark .hero__visual .data-stream__row {
   animation: none !important;
 }
 
-/* Base accent — high-contrast, descender-safe, subpixel-sharp */
+/* Legacy `--hand-grad` alias.
+   This region previously carried 11 competing gradient definitions, switched
+   by accent modifier (--lavender / --cyan / --lime / --peach) and by section
+   (.section--dark, [data-section-theme=...], .section--lavender), so the same
+   handwritten word rendered a different colour ramp in every section it
+   appeared in. They are collapsed into the one canonical gradient; the
+   remaining consumers (the ink-trail below, and cinematic.css) read it. */
 .italic-accent,
 .hero__title-word--italic,
 .text-accent,
 .chain-hero__title-accent {
-  --hand-grad: linear-gradient(112deg, #8b5cf6 0%, #d85f8b 46%, #ff8a1f 82%, #ffd46a 100%);
-  font-family: 'Pacifico', 'Caveat Brush', 'Caveat', cursive !important;
-  font-weight: 400 !important;
-  font-style: normal !important;
-  font-feature-settings: 'kern' 1, 'liga' 1 !important;
-  -webkit-font-smoothing: antialiased !important;
-  -moz-osx-font-smoothing: grayscale !important;
-  text-rendering: geometricPrecision !important;
-  letter-spacing: 0.005em !important;
-  line-height: 1.36 !important;
-  display: inline-block !important;
-  position: relative !important;
-  overflow: visible !important;
-  isolation: isolate !important;
-  padding: 0.16em 0.18em 0.46em !important;
-  margin: -0.06em -0.05em -0.36em !important;
-  color: transparent !important;
-  -webkit-text-fill-color: transparent !important;
-  background-image: var(--hand-grad) !important;
-  background-repeat: no-repeat !important;
-  background-position: 0 50% !important;
-  background-size: 100% 110% !important;
-  -webkit-background-clip: text !important;
-  background-clip: text !important;
-  filter: drop-shadow(0 6px 14px rgba(255,122,61,0.18)) drop-shadow(0 1px 0 rgba(0,0,0,0.04));
-  clip-path: none !important;
-  transform: none !important;
-}
-
-.italic-accent--lavender {
-  --hand-grad: linear-gradient(112deg, #6d3ff5 0%, #9b4dff 32%, #d44a8e 64%, #ff7a3d 100%) !important;
-  filter: drop-shadow(0 8px 18px rgba(140,80,255,0.32)) drop-shadow(0 1px 0 rgba(0,0,0,0.06)) !important;
-}
-.italic-accent--cyan {
-  --hand-grad: linear-gradient(112deg, #15a3d8 0%, #6b4dff 38%, #ff7a3d 100%) !important;
-  filter: drop-shadow(0 8px 18px rgba(45,170,230,0.30)) !important;
-}
-.italic-accent--lime {
-  --hand-grad: linear-gradient(112deg, #5fae00 0%, #2bb564 36%, #ff8a1f 100%) !important;
-  filter: drop-shadow(0 8px 18px rgba(110,200,40,0.30)) !important;
-}
-.italic-accent--peach {
-  --hand-grad: linear-gradient(112deg, #ff5f3d 0%, #ff8a1f 50%, #ffc95a 100%) !important;
-}
-
-html[data-theme="dark"] .italic-accent,
-html[data-theme="dark"] .hero__title-word--italic,
-html[data-theme="dark"] .text-accent,
-html[data-theme="dark"] .chain-hero__title-accent,
-.section--dark .italic-accent,
-[data-section-theme="dark"] .italic-accent,
-.banner--dark .italic-accent,
-.footer .italic-accent {
-  --hand-grad: linear-gradient(112deg, #d3bbff 0%, #ffb9d6 50%, #ffd198 100%) !important;
-  filter: drop-shadow(0 10px 24px rgba(180,140,255,0.38)) !important;
-}
-
-/* Section-dark + lavender variant — keep the same light pastel
-   since dark backgrounds need pastels regardless of color name. */
-.section--dark .italic-accent--lavender,
-[data-section-theme="dark"] .italic-accent--lavender,
-.banner--dark .italic-accent--lavender {
-  --hand-grad: linear-gradient(112deg, #d8c2ff 0%, #ffaecf 38%, #ffc99a 78%, #ffe19f 100%) !important;
-  filter: drop-shadow(0 10px 24px rgba(200,160,255,0.45)) !important;
-}
-.section--dark .italic-accent--cyan,
-[data-section-theme="dark"] .italic-accent--cyan {
-  --hand-grad: linear-gradient(112deg, #7eecff 0%, #b9c8ff 50%, #ffc89c 100%) !important;
-  filter: drop-shadow(0 10px 22px rgba(110,210,255,0.45)) !important;
-}
-.section--dark .italic-accent--lime,
-[data-section-theme="dark"] .italic-accent--lime {
-  --hand-grad: linear-gradient(112deg, #d6ff7e 0%, #aef0a8 50%, #ffd07e 100%) !important;
-  filter: drop-shadow(0 10px 22px rgba(180,255,80,0.45)) !important;
-}
-
-/* Section-lavender (light bg) lavender accent: deep gradient stays */
-html[data-theme="dark"] .italic-accent--lavender,
-.section--lavender .italic-accent--lavender,
-[data-section-theme="lavender"] .italic-accent--lavender {
-  --hand-grad: linear-gradient(112deg, #4f1fff 0%, #8a3dff 32%, #c54580 68%, #ff6a25 100%) !important;
-  filter: drop-shadow(0 10px 22px rgba(120,60,255,0.38)) !important;
-}
-
-/* On lavender (light) section, dark theme should still pastel */
-html[data-theme="dark"] .section--lavender .italic-accent--lavender,
-html[data-theme="dark"] [data-section-theme="lavender"] .italic-accent--lavender {
-  --hand-grad: linear-gradient(112deg, #d8c2ff 0%, #ffaecf 38%, #ffc99a 78%, #ffe19f 100%) !important;
+  --hand-grad: var(--clex-script-gradient);
 }
 
 /* WRITING SYSTEM */

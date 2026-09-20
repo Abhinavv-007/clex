@@ -3,15 +3,44 @@
    Neo-Brutalist Design System
    ============================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;500;600;700;800;900&family=Instrument+Serif:ital@0;1&family=Archivo:wght@700;800;900&display=swap');
+/* Webfonts are loaded via a single <link> in each page's <head>.
+   They must NOT be @imported here: a CSS @import is discovered only
+   after this file has downloaded and parsed, so it serialises the
+   font fetch behind the stylesheet fetch and blocks first paint. */
+
 
 :root {
-  /* ── Typography ── */
-  --font-display: 'Archivo', 'Space Mono', 'Courier New', monospace;
+  /* ── Typography ──
+     Single source of truth. These were previously declared here AND again in
+     creem-design.css with different values, so the same token resolved to a
+     serif on some pages and a script face on others. */
+  --font-display: 'Chillax', 'Clash Display', 'Hanken Grotesk', system-ui, sans-serif;
+  --font-display-mega: 'Boldonse', 'Chillax', system-ui, sans-serif;
   --font-mono-display: 'Space Mono', 'Courier New', monospace;
-  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-mono: 'Space Mono', 'Courier New', monospace;
-  --font-italic: 'Instrument Serif', 'Times New Roman', serif;
+  --font-body: 'Hanken Grotesk', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'Space Mono', 'JetBrains Mono', 'Courier New', monospace;
+
+  /* ── The script face ──
+     One family, one optical treatment, used everywhere a handwritten accent
+     appears. Pacifico ships no italic, so anything that sets `font-style:
+     italic` on it gets a synthesised oblique — slanted, distorted letterforms.
+     Every script rule must therefore pin `font-style: normal`.
+     `--font-italic` is kept as an alias so existing rules keep working. */
+  --font-script: 'Pacifico', 'Snell Roundhand', 'Brush Script MT', cursive;
+  --font-italic: var(--font-script);
+
+  /* Optical corrections, applied uniformly by the .script treatment below.
+     Pacifico runs small on the body and sits high on the baseline relative to
+     Hanken Grotesk, so it needs a size bump and a downward nudge to sit level
+     with the text it's set against. */
+  --script-size: 1.06em;
+  --script-tracking: 0.004em;
+  --script-leading: 1.3;
+  --script-shift: 0.045em;
+  --script-gradient: linear-gradient(112deg, #8b5cf6 0%, #d85f8b 46%, #ff8a1f 82%, #ffd46a 100%);
+  /* Same ramp, lifted into pastels — the light gradient has no contrast on a
+     dark surface. This is the only sanctioned variant. */
+  --script-gradient-dark: linear-gradient(112deg, #d9c8ff 0%, #ffc1d3 44%, #ffd18a 100%);
 
   /* ── Font Sizes ── */
   --text-xs: 0.75rem;

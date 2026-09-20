@@ -3,9 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="preconnect" href="https://api.fontshare.com" crossorigin>
+  <!-- One request per provider, issued from <head> so the fonts download in
+       parallel with the stylesheets instead of being chained behind them. -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800;900&family=Boldonse&family=Geist:wght@300;400;500;600;700;800;900&family=Hanken+Grotesk:wght@500;600;700;800;900&family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&family=Pacifico&family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap">
+  <link rel="stylesheet" href="https://api.fontshare.com/v2/css?f[]=chillax@700,800,900&f[]=clash-display@600,700&display=swap">
   <script>document.documentElement.classList.add('clex-design-booting');</script>
   <link rel="icon" type="image/png" href="/brand/clex-logo.png">
   <link rel="apple-touch-icon" href="/brand/clex-logo.png">
@@ -90,9 +91,14 @@
   }
   </script>
   <script>
+    // Theme bootstrap — must stay inline and render-blocking so the correct
+    // palette is committed before first paint. Mirrors readTheme() in js/theme.js.
     (() => {
       try {
-        const theme = localStorage.getItem('clex-theme-v2') === 'dark' ? 'dark' : 'light';
+        const saved = localStorage.getItem('clex-theme-v2');
+        const theme = (saved === 'dark' || saved === 'light')
+          ? saved
+          : (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
         document.documentElement.setAttribute('data-theme', theme);
         document.documentElement.classList.toggle('dark', theme === 'dark');
         document.documentElement.style.colorScheme = theme;
@@ -293,6 +299,16 @@
         </span>
       </div>
 
+      <!-- ═══ The workspace — live and usable, right here ═══
+           This is the product, not a picture of it. Drop a file and share it
+           without leaving the landing page. /workspace still exists and mounts
+           the same component for people who deep-link to it. -->
+      <div class="home-workspace" id="workspace" data-reveal>
+        <div class="home-workspace__frame">
+          <div id="workspace-app-island"></div>
+        </div>
+      </div>
+
       <div class="stat-orbs" data-reveal>
         <div class="stat-orb">
           <span class="stat-orb__num" data-count-to="0">0</span>
@@ -310,23 +326,6 @@
           <span class="stat-orb__num" data-count-to="100" data-count-suffix="%">0%</span>
           <span class="stat-orb__label">end-to-end encrypted</span>
         </div>
-      </div>
-
-      <div class="hero__visual" data-reveal>
-        <div class="data-stream" aria-hidden="true">
-          <div class="data-stream__live-label"><span></span>Live transfer route - Direct+ active</div>
-          <div class="data-stream__row"><span class="data-stream__tag data-stream__tag--lav">DROP</span><span class="data-stream__msg">photo.heic · 4.2 MB · captured today</span><span class="data-stream__time">00:00</span></div>
-          <div class="data-stream__row"><span class="data-stream__tag data-stream__tag--peach">PREP</span><span class="data-stream__msg">→ webp · 480 KB · 88% smaller</span><span class="data-stream__time">00:01</span></div>
-          <div class="data-stream__row"><span class="data-stream__tag">P2P</span><span class="data-stream__msg">peer reachable · WebRTC handshake complete</span><span class="data-stream__time">00:02</span></div>
-          <div class="data-stream__row"><span class="data-stream__tag data-stream__tag--yellow">CHUNK</span><span class="data-stream__msg">256KB · SHA-256 verified · 12/12</span><span class="data-stream__time">00:03</span></div>
-          <div class="data-stream__row"><span class="data-stream__tag">ACK</span><span class="data-stream__msg">all chunks acknowledged · 0 retries</span><span class="data-stream__time">00:04</span></div>
-          <div class="data-stream__row"><span class="data-stream__tag data-stream__tag--lav">DONE</span><span class="data-stream__msg">receipt · proof root hash · file delivered</span><span class="data-stream__time">00:05</span></div>
-          <div class="data-stream__row"><span class="data-stream__tag data-stream__tag--peach">VAULT</span><span class="data-stream__msg">note encrypted · synced to paired device</span><span class="data-stream__time">00:06</span></div>
-          <div class="data-stream__row"><span class="data-stream__tag">LAN</span><span class="data-stream__msg">192.168.1.42 ↔ 192.168.1.87 · 920 Mbps</span><span class="data-stream__time">00:07</span></div>
-          <div class="data-stream__row"><span class="data-stream__tag data-stream__tag--yellow">PDF</span><span class="data-stream__msg">3 pages merged · 1.2MB → ZIP bundle</span><span class="data-stream__time">00:08</span></div>
-          <div class="data-stream__row"><span class="data-stream__tag">P2P</span><span class="data-stream__msg">new peer joined · idle</span><span class="data-stream__time">00:09</span></div>
-        </div>
-        <div id="hero-workspace-island" hidden></div>
       </div>
 
       <!-- Scroll indicator -->

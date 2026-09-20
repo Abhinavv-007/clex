@@ -7,7 +7,11 @@
    - Native-feeling mobile redesign
    ============================================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800;900&display=swap');
+/* Webfonts are loaded via a single <link> in each page's <head>.
+   They must NOT be @imported here: a CSS @import is discovered only
+   after this file has downloaded and parsed, so it serialises the
+   font fetch behind the stylesheet fetch and blocks first paint. */
+
 
 /* Single global display font — Geist. Used for every heading, h1-h6 */
 :root {
@@ -1008,49 +1012,10 @@ html[data-theme="dark"] .hero__float-tag {
   color: var(--text-secondary) !important;
 }
 
-/* Cursive em inside app-shell titles → match landing italic-accent */
-.va-title em,
-.cs-title em,
-.ws-title em,
-.ws-page__title em,
-.account-title em,
-.receive-title em,
-.page-hero__title em,
-.features-hero__title em,
-.legal-hero__title em {
-  --hand-grad: linear-gradient(112deg, #8b5cf6 0%, #d85f8b 46%, #ff8a1f 82%, #ffd46a 100%);
-  font-family: 'Pacifico', 'Caveat Brush', cursive !important;
-  font-style: normal !important;
-  font-weight: 400 !important;
-  letter-spacing: 0.005em !important;
-  line-height: 1.36 !important;
-  display: inline-block !important;
-  position: relative !important;
-  overflow: visible !important;
-  padding: 0.04em 0.18em 0.42em !important;
-  margin: -0.06em -0.05em -0.34em !important;
-  color: transparent !important;
-  -webkit-text-fill-color: transparent !important;
-  background-image: var(--hand-grad) !important;
-  background-repeat: no-repeat !important;
-  background-position: 0 50% !important;
-  background-size: 100% 110% !important;
-  -webkit-background-clip: text !important;
-  background-clip: text !important;
-  filter: drop-shadow(0 6px 14px rgba(255,122,61,0.20));
-}
-[data-theme="dark"] .va-title em,
-[data-theme="dark"] .cs-title em,
-[data-theme="dark"] .ws-title em,
-[data-theme="dark"] .ws-page__title em,
-[data-theme="dark"] .account-title em,
-[data-theme="dark"] .receive-title em,
-[data-theme="dark"] .page-hero__title em,
-[data-theme="dark"] .features-hero__title em,
-[data-theme="dark"] .legal-hero__title em {
-  --hand-grad: linear-gradient(112deg, #d8c2ff 0%, #ffaecf 38%, #ffc99a 78%, #ffe19f 100%) !important;
-  filter: drop-shadow(0 10px 22px rgba(200,160,255,0.45));
-}
+/* App-shell cursive `em`s are covered by the canonical script block in
+   creem-design.css. The duplicate that lived here carried its own
+   padding and background-size, which is why the same accent sat at a
+   different height inside the app than on the landing page. */
 
 /* ─── Marquee slowdown + premium fade edges ─── */
 .banner--marquee {
@@ -1657,7 +1622,8 @@ a.link:hover::after, .footer__link:hover::after { right: 0; }
   font-size: clamp(2.1rem, 4.4vw, 3.4rem) !important;
 }
 .clex-link__title em {
-  font-size: 1.1em !important;
+  /* font-size comes from --script-size; a local override here made this
+     one accent read larger than every other accent on the site. */
   display: inline !important;
   white-space: normal !important;
 }

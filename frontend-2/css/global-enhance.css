@@ -532,28 +532,6 @@ body {
   color: var(--text-primary);
 }
 
-/* ---------- Fix nav bg on pages without section themes ---------- */
-body:not([class*="section-theme-"]) .nav__inner {
-  background: var(--bg-card) !important;
-  border-color: var(--border-bold) !important;
-  box-shadow: 4px 4px 0 var(--border-bold) !important;
-  color: var(--text-primary) !important;
-}
-body:not([class*="section-theme-"]) .nav__link {
-  color: var(--text-primary) !important;
-}
-[data-theme="dark"] body:not([class*="section-theme-"]) .nav__link {
-  color: var(--text-primary) !important;
-}
-
-/* Apply nav text color for all themes properly */
-.nav__logo,
-.nav__logo-wordmark { color: var(--text-primary) !important; }
-[data-theme="dark"] body.section-theme-cream .nav__logo,
-[data-theme="dark"] body.section-theme-peach .nav__logo,
-[data-theme="dark"] body.section-theme-lavender .nav__logo {
-  color: #0a0a0a !important;
-}
 
 /* ---------- Reveal-on-scroll visible state ---------- */
 .reveal,
@@ -1527,7 +1505,10 @@ body:not([class*="section-theme-"])[data-page="developers"] {
    ⚡ Theme transition — disable on color flips to
    eliminate flicker. Only animate body bg.
    ============================================ */
-.hero, .section, .footer, .nav__inner, .card, .pill-btn, .btn, .pill-badge,
+/* .nav__inner is deliberately excluded — this `!important` shorthand would
+   clobber the nav's own transition and cancel the scroll shrink. Its colour
+   transitions are declared in the canonical nav block in creem-design.css. */
+.hero, .section, .footer, .card, .pill-btn, .btn, .pill-badge,
 .hero__title, .section__title, .accordion, .badge {
   transition:
     background-color 320ms cubic-bezier(0.65, 0, 0.35, 1),

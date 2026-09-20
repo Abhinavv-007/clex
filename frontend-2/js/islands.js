@@ -13,25 +13,35 @@ function mount(Component, target, props = {}) {
 export async function initIslands() {
   const page = document.body.getAttribute('data-page') || '';
 
+  // The landing page IS the workspace. The real app mounts first and on its
+  // own, so a visitor can drop a file immediately; the illustrative mocks for
+  // the marketing sections below load afterwards and never block it.
   if (page === 'home') {
+    const workspaceTarget = document.getElementById('workspace-app-island');
+    const core = await import('@clex/frontend-core');
+
+    mount(core.WorkspaceApp, workspaceTarget, {
+      receiveBasePath: routes.receive,
+      receivePathFormat: 'query',
+      receiveEntryHref: routes.receive,
+      chainApiUrl: import.meta.env.PUBLIC_CHAIN_URL ?? '',
+    });
+
     const [
-      { HeroWorkspaceMock, RoutingEngineMock, ChainFlowMock },
       { default: DropZoneWindowIsland },
       { default: ToolChainWindowIsland },
       { default: RouteSelectionWindowIsland },
     ] = await Promise.all([
-      import('@clex/frontend-core'),
       import('../islands/DropZoneWindowIsland.svelte'),
       import('../islands/ToolChainWindowIsland.svelte'),
       import('../islands/RouteSelectionWindowIsland.svelte'),
     ]);
 
-    mount(HeroWorkspaceMock, document.getElementById('hero-workspace-island'));
-    mount(RoutingEngineMock, document.getElementById('routing-engine-island'));
+    mount(core.RoutingEngineMock, document.getElementById('routing-engine-island'));
     mount(DropZoneWindowIsland, document.getElementById('home-drop-island'));
     mount(ToolChainWindowIsland, document.getElementById('home-tools-island'));
     mount(RouteSelectionWindowIsland, document.getElementById('home-route-island'));
-    mount(ChainFlowMock, document.getElementById('home-chain-flow-island'));
+    mount(core.ChainFlowMock, document.getElementById('home-chain-flow-island'));
     return;
   }
 

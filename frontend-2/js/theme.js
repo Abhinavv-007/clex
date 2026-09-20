@@ -12,6 +12,30 @@ let revealOverlayActive = false;
 
 export function initTheme() {
   applyTheme(readTheme());
+  watchSystemTheme();
+}
+
+/**
+ * Follow the OS setting for as long as the visitor hasn't picked a theme
+ * themselves. Once they use the toggle, their choice is persisted and this
+ * listener stops overriding it.
+ */
+function watchSystemTheme() {
+  const mq = window.matchMedia?.('(prefers-color-scheme: dark)');
+  if (!mq?.addEventListener) return;
+  mq.addEventListener('change', (event) => {
+    if (hasStoredPreference()) return;
+    applyTheme(event.matches ? 'dark' : 'light');
+  });
+}
+
+function hasStoredPreference() {
+  try {
+    const saved = localStorage.getItem(THEME_KEY);
+    return saved === 'dark' || saved === 'light';
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -64,13 +88,21 @@ function persistTheme(theme) {
   try { localStorage.setItem(THEME_KEY, theme); } catch { /* ignore */ }
 }
 
+/**
+ * Must stay in lockstep with the inline bootstrap in every page's <head>.
+ * If the two disagree the page paints one theme and then visibly flips to
+ * the other once this module executes.
+ *
+ * @returns {'dark' | 'light'}
+ */
 function readTheme() {
   try {
     const saved = localStorage.getItem(THEME_KEY);
-    return saved === 'dark' ? 'dark' : 'light';
+    if (saved === 'dark' || saved === 'light') return saved;
   } catch {
     return 'light';
   }
+  return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 
 /**

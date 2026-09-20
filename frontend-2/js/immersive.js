@@ -1,5 +1,5 @@
 /* ============================================================
-   CLEX — Immersive Layer (cursor spotlight, counters, blobs)
+   CLEX — Immersive Layer (ambient blobs, reveals, counters)
    Wired in main.js. Idempotent + reduced-motion aware.
    ============================================================ */
 
@@ -8,7 +8,6 @@ const REDUCED = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').ma
 export function initImmersive() {
   injectAmbientBlobs();
   if (REDUCED()) return;
-  initCursorFollower();
   trackNavSpotlight();
   initLiveTransferCard();
   initRevealObserver();
@@ -22,26 +21,6 @@ function injectAmbientBlobs() {
   wrap.setAttribute('aria-hidden', 'true');
   wrap.innerHTML = '<span></span><span></span><span></span>';
   document.body.appendChild(wrap);
-}
-
-function trackCursorSpotlight() {
-  if (!window.matchMedia?.('(pointer: fine)').matches || window.innerWidth < 900) return;
-  let raf = 0;
-  let last = 0;
-  let pending = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
-  const apply = () => {
-    raf = 0;
-    document.documentElement.style.setProperty('--cursor-x', `${pending.x}px`);
-    document.documentElement.style.setProperty('--cursor-y', `${pending.y}px`);
-  };
-  window.addEventListener('pointermove', (e) => {
-    const now = performance.now();
-    if (now - last < 34) return;
-    last = now;
-    pending = { x: e.clientX, y: e.clientY };
-    if (!raf) raf = requestAnimationFrame(apply);
-  }, { passive: true });
-  apply();
 }
 
 function trackNavSpotlight() {
@@ -58,50 +37,6 @@ function trackNavSpotlight() {
     const r = inner.getBoundingClientRect();
     pending = { x: e.clientX - r.left, y: e.clientY - r.top };
     if (!raf) raf = requestAnimationFrame(apply);
-  }, { passive: true });
-}
-
-function initCursorFollower() {
-  if (!window.matchMedia?.('(pointer: fine)').matches || window.innerWidth < 900) return;
-  if (document.querySelector('.clex-cursor-follower')) return;
-
-  const dot = document.createElement('div');
-  dot.className = 'clex-cursor-follower';
-  dot.setAttribute('aria-hidden', 'true');
-  document.body.appendChild(dot);
-  document.body.classList.add('clex-cursor-active');
-
-  let x = window.innerWidth / 2;
-  let y = window.innerHeight / 2;
-  let tx = x;
-  let ty = y;
-  let raf = 0;
-
-  const tick = () => {
-    x += (tx - x) * 0.28;
-    y += (ty - y) * 0.28;
-    dot.style.transform = `translate3d(${x}px, ${y}px, 0) translate(-50%, -50%)`;
-    raf = requestAnimationFrame(tick);
-  };
-
-  window.addEventListener('pointermove', (e) => {
-    tx = e.clientX;
-    ty = e.clientY;
-    dot.classList.add('clex-cursor-follower--visible');
-    if (!raf) tick();
-  }, { passive: true });
-
-  window.addEventListener('pointerdown', () => {
-    dot.classList.add('clex-cursor-follower--down');
-    window.setTimeout(() => dot.classList.remove('clex-cursor-follower--down'), 140);
-  }, { passive: true });
-
-  document.addEventListener('pointerover', (e) => {
-    const target = e.target instanceof Element ? e.target : null;
-    dot.classList.toggle(
-      'clex-cursor-follower--hot',
-      Boolean(target?.closest('a, button, input, textarea, select, [role="button"], .data-stream__row'))
-    );
   }, { passive: true });
 }
 
