@@ -2635,3 +2635,16 @@ body.section-theme-dark .scroll-progress {
 @media (max-width: 640px) {
   .home-dev__pre { font-size: 0.76rem; }
 }
+
+/* @clex/cli is written and tested but not yet published to npm, so the
+   section shows what the commands are without telling anyone to install
+   something they cannot. Drop this once the package is live. */
+.home-dev__soon {
+  margin-left: 0.5rem;
+  padding: 0.1rem 0.5rem;
+  border: 1px solid rgba(255, 249, 232, 0.35);
+  border-radius: 999px;
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  color: rgba(255, 249, 232, 0.66);
+}
