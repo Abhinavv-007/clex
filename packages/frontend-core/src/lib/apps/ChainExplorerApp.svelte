@@ -88,7 +88,6 @@
   function routeIcon(route: string) {
     if (route === 'webrtc') return '⚡'
     if (route === 'local')  return '🏠'
-    if (route === 'drive')  return '☁'
     return '→'
   }
 

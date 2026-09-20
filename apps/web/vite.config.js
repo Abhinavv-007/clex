@@ -223,7 +223,6 @@ export default defineConfig({
         cookies: r('cookies/index.html'),
         vault: r('vault/index.html'),
         'vault-secret': r('vault/secret/index.html'),
-        'vault-share': r('vault/share/index.html'),
         admin: r('admin/index.html'),
       },
     },

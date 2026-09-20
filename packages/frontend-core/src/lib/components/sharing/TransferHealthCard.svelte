@@ -10,10 +10,7 @@
   $: route = $transferStore.method
   $: state = $transferStore.state
 
-  $: routeLabel =
-    route === 'drive'
-      ? 'Drive'
-      : connectionKind === 'lan'
+  $: routeLabel = connectionKind === 'lan'
         ? 'Local'
         : connectionKind === 'internet'
           ? 'Direct (Internet)'

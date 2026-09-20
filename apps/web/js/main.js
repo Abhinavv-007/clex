@@ -7,7 +7,6 @@ import '@clex/frontend-core/styles.css';
 // Deep import, not the package barrel: the barrel re-exports the whole app
 // (qrcode, marked, firebase, the transfer stack, IndexedDB), and importing
 // it here put all of that in the entry chunk of every page.
-import { clearPendingDriveReturnTo, getPendingDriveReturnTo, markDriveAuthCallbackSeen } from '@clex/frontend-core/transfer/gdrive';
 
 import { initTheme, toggleTheme } from './theme.js';
 import { initNav } from './nav.js';
@@ -47,7 +46,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   const activePage = document.body.getAttribute('data-page') || '';
   initNav(activePage);
 
-  await handleGoogleDriveOAuthCallback();
   await initIslands();
   await initPageEnhancements(activePage);
 
@@ -195,48 +193,6 @@ function getSharedFooterHTML() {
     </div>
   </footer>
   `;
-}
-
-async function handleGoogleDriveOAuthCallback() {
-  const url = new URL(window.location.href);
-  const connected = url.searchParams.get('gdrive') === 'connected';
-  const errorCode = url.searchParams.get('error');
-
-  if (!connected && !errorCode) return;
-
-  markDriveAuthCallbackSeen();
-
-  if (errorCode) {
-    try {
-      sessionStorage.setItem('clex_gdrive_callback_error', errorCode);
-    } catch {
-      // ignore sessionStorage failures
-    }
-    console.warn(`Google Drive OAuth failed: ${errorCode}`);
-  }
-
-  url.searchParams.delete('gdrive');
-  url.searchParams.delete('error');
-  const cleanedUrl = `${url.pathname}${url.search}${url.hash}`;
-
-  const returnTo = getPendingDriveReturnTo();
-  if (returnTo) {
-    clearPendingDriveReturnTo();
-    try {
-      const targetUrl = new URL(returnTo, window.location.origin);
-      targetUrl.searchParams.delete('gdrive');
-      targetUrl.searchParams.delete('error');
-      const targetPath = `${targetUrl.pathname}${targetUrl.search}${targetUrl.hash}`;
-      if (targetPath !== cleanedUrl) {
-        window.location.replace(targetPath);
-        return;
-      }
-    } catch {
-      // fall through to local URL cleanup
-    }
-  }
-
-  window.history.replaceState({}, '', cleanedUrl);
 }
 
 /** @param {string} page */

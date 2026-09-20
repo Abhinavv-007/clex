@@ -33,7 +33,7 @@
       <!-- Sub -->
       <p class="hero-sub">
         One browser workspace for preparing files and sending them anywhere —
-        direct P2P, same-network speed, or Google Drive. No accounts, no uploads,
+        direct P2P or same-network speed. No accounts, no uploads,
         no friction.
       </p>
 
@@ -95,7 +95,6 @@
         <span class="ticker-sep">·</span>
         <span>Local Network Speed</span>
         <span class="ticker-sep">·</span>
-        <span>Google Drive Fallback</span>
         <span class="ticker-sep">·</span>
         <span>Image Compression</span>
         <span class="ticker-sep">·</span>

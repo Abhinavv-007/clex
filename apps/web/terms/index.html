@@ -141,11 +141,10 @@
             <li>File preparation tools (image compression, PDF operations, DOCX to PDF conversion, ZIP bundling)</li>
             <li>File sharing via direct P2P transfer (WebRTC)</li>
             <li>File sharing via local network transfer</li>
-            <li>File sharing via Google Drive as a fallback mechanism</li>
-            <li>Vault for encrypted local notes, controlled secret links, and timed Google Drive share links</li>
+            <li>Vault for encrypted local notes and controlled secret links</li>
           </ul>
           <p class="legal-section__text">
-            Most processing happens in your browser. Direct P2P and local transfers are not stored on our servers. Google Drive fallback stores files in your Google account. Vault Cloud Share uses temporary Drive sessions with explicit size, quota, and retention limits.
+            Processing happens in your browser. Direct P2P and local transfers are never stored on our servers. Vault uses temporary Drive sessions with explicit size, quota, and retention limits.
           </p>
         </div>
 
@@ -187,25 +186,7 @@
           </ul>
         </div>
 
-        <div class="legal-section reveal">
-          <div class="legal-section__number">Section 06</div>
-          <h2 class="legal-section__title">Vault Cloud Share Terms</h2>
-          <p class="legal-section__text">
-            Cloud Share is a timed Google Drive handoff feature and is subject to operational limits:
-          </p>
-          <ul class="legal-section__list">
-            <li>Google Drive sign-in is required to upload and manage Vault Drive sessions</li>
-            <li>Each uploaded file is limited to 1 GB</li>
-            <li>Each connected account is limited to 10 GB of Vault Drive uploads per day</li>
-            <li>Vault Drive sessions are scheduled for deletion after 24 hours</li>
-            <li>Anyone with the Vault link or access code may open the file or folder until the session expires or is deleted</li>
-          </ul>
-          <p class="legal-section__text">
-            Vault Drive sharing is intended for temporary handoff, not archival use or guaranteed long-term storage.
-          </p>
-        </div>
-
-        <div class="legal-section reveal">
+<div class="legal-section reveal">
           <div class="legal-section__number">Section 07</div>
           <h2 class="legal-section__title">Intellectual Property</h2>
           <p class="legal-section__text">
@@ -223,9 +204,7 @@
             Parts of the Service rely on third-party providers. When you use those paths, their terms may also apply.
           </p>
           <ul class="legal-section__list">
-            <li>Google Drive based sharing is subject to Google's terms and policies</li>
             <li>Google/Firebase authentication is subject to Google's terms and policies</li>
-            <li>Vault Cloud Share stores files in the user's own Google Drive account and relies on Clex cleanup metadata to remove expired sessions after 24 hours</li>
           </ul>
         </div>
 

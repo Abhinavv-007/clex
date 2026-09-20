@@ -1,4 +1,4 @@
-import type { Env } from './googleAuth'
+import type { Env } from './env'
 import { base64urlEncode, randomBytes } from './crypto'
 import {
   adminError,

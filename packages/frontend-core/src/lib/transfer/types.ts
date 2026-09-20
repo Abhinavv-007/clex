@@ -217,7 +217,7 @@ export interface QueueEntry {
   fileNames: string[]
   totalSize: number
   totalChunks: number
-  route: 'webrtc' | 'local' | 'drive' | 'unknown'
+  route: 'webrtc' | 'local' | 'unknown'
   status: QueueEntryStatus
   createdAt: number
   updatedAt: number

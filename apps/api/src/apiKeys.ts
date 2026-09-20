@@ -12,7 +12,7 @@
  *   apikey:usage:{id}:{utcDate}      -> "<n>"        (per-day request counter)
  *
  */
-import type { Env } from './googleAuth'
+import type { Env } from './env'
 
 export const API_KEY_PREFIX = 'apikey:'
 const META_PREFIX = `${API_KEY_PREFIX}meta:`

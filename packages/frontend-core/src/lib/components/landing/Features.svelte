@@ -78,14 +78,6 @@
       metric: 'LAN speed',
     },
     {
-      icon: '↑',
-      title: 'Google Drive Fallback',
-      desc: 'When direct transfer isn\'t possible, upload to your own Drive and share the link.',
-      tag: 'Cloud',
-      color: 'violet',
-      metric: 'Your storage, your control',
-    },
-    {
       icon: '⬡',
       title: 'QR Code Sharing',
       desc: 'Generate a QR code from any share link. Point and receive — no typing required.',

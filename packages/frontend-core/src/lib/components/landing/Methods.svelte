@@ -41,24 +41,6 @@
       speed: 'LAN',
       speedLabel: 'throughput',
     },
-    {
-      id: 'drive',
-      num: '03',
-      label: 'Google Drive',
-      tagline: 'Secure cloud fallback',
-      desc: "When direct transfer isn't possible, connect your Google Drive. Files go to your own storage — not ours. Share a Drive link and the receiver pulls from your account.",
-      points: [
-        'Files stored in your Google Drive',
-        'Clex never stores your files',
-        'OAuth-secured, token never persisted',
-        'Direct link sharing to any recipient',
-        'Works across different networks',
-      ],
-      badge: 'Fallback',
-      badgeColor: 'violet',
-      speed: '1-click',
-      speedLabel: 'fallback switch',
-    },
   ]
 
   let sectionEl: HTMLElement
@@ -154,7 +136,6 @@
                   {#each [
                     { id: 'p2p',   label: 'Direct P2P',   badge: 'Fastest',  color: 'var(--green)'  },
                     { id: 'lan',   label: 'Network LAN',  badge: 'Local',    color: 'var(--cyan)'   },
-                    { id: 'drive', label: 'Google Drive', badge: 'Fallback', color: 'var(--violet)'  },
                   ] as r}
                     <div class="route-line" class:route-line-active={route.id === r.id} class:route-line-inactive={route.id !== r.id}>
                       <div class="route-line-track">

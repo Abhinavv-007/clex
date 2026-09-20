@@ -46,10 +46,6 @@
       "svelte": "./src/lib/apps/VaultSecretApp.svelte",
       "default": "./src/lib/apps/VaultSecretApp.svelte"
     },
-    "./apps/VaultShareApp": {
-      "svelte": "./src/lib/apps/VaultShareApp.svelte",
-      "default": "./src/lib/apps/VaultShareApp.svelte"
-    },
     "./apps/AccountApp": {
       "svelte": "./src/lib/account/AccountApp.svelte",
       "default": "./src/lib/account/AccountApp.svelte"

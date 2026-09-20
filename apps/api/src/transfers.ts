@@ -29,7 +29,7 @@
  * shape so lnch.in's developer docs and any third-party integrations
  * have something to integrate against today.
  */
-import { appendCors, type Env } from './googleAuth'
+import { appendCors, type Env } from './env'
 import { requireAdminOrSecret } from './adminPanel'
 
 const TRANSFER_KV_PREFIX = 'transfer:'
@@ -470,8 +470,6 @@ export async function handleAdminSummary(request: Request, env: Env): Promise<Re
         kv_drive_session_store: typeof env.DRIVE_SESSION_STORE?.put === 'function',
       },
       config: {
-        google_oauth_client_configured: Boolean(env.GOOGLE_CLIENT_ID),
-        google_redirect_uri: env.GOOGLE_REDIRECT_URI ?? null,
         allowed_origin: env.ALLOWED_ORIGIN ?? null,
         admin_secret_set: Boolean(env.CLEX_ADMIN_SECRET || env.ADMIN_SECRET),
       },
@@ -560,7 +558,6 @@ export async function handleAdminHealth(request: Request, env: Env): Promise<Res
         kv_drive_session_store: typeof env.DRIVE_SESSION_STORE?.put === 'function',
       },
       config: {
-        google_oauth_client_configured: Boolean(env.GOOGLE_CLIENT_ID),
         admin_secret_set: Boolean(env.CLEX_ADMIN_SECRET || env.ADMIN_SECRET),
       },
       metrics: {

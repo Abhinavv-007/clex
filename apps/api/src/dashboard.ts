@@ -3,7 +3,7 @@
  *
  * Serves the Clex API dashboard SPA from the worker. This is the page that
  */
-import type { Env } from './googleAuth'
+import type { Env } from './env'
 
 const HTML = String.raw`<!doctype html>
 <html lang="en">

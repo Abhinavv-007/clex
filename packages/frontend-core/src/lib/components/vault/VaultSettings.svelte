@@ -399,7 +399,6 @@
         </div>
 
         <p class="vst-hint">Notes stay encrypted on this device first. Sync + backup writes an encrypted snapshot keyed to your Vault room so the same Google account can recover the vault across devices.</p>
-        <p class="vst-hint">Vault Drive files live in your own Google Drive under <code>Clex Share</code>, auto-delete after 24 hours, and stay capped at 1 GB per file and 10 GB per day.</p>
       </div>
 
     <!-- ── Encryption ─────────────────────────────────────────────────── -->

@@ -273,20 +273,7 @@
           </div>
         </article>
 
-        <article class="tool-card" style="--card-color: #9B7FFF; transition-delay: 60ms;">
-          <div class="card-top">
-            <div class="tool-icon-wrap"><span class="tool-icon">↑</span></div>
-            <span class="tool-tag" style="color: color-mix(in srgb, var(--card-color) 55%, var(--text-primary)); border-color: var(--card-color); background: color-mix(in srgb, var(--card-color) 12%, transparent)">Cloud</span>
-          </div>
-          <h3 class="tool-title">Google Drive Fallback</h3>
-          <p class="tool-desc">When direct transfer isn't possible, upload to your own Drive and share the link.</p>
-          <div class="tool-metric">
-            <span class="metric-dot" style="background: var(--card-color)"></span>
-            <span class="metric-text">Your storage, your control</span>
-          </div>
-        </article>
-
-        <article class="tool-card" style="--card-color: #FFAA00; transition-delay: 120ms;">
+<article class="tool-card" style="--card-color: #FFAA00; transition-delay: 120ms;">
           <div class="card-top">
             <div class="tool-icon-wrap"><span class="tool-icon">⬡</span></div>
             <span class="tool-tag" style="color: color-mix(in srgb, var(--card-color) 55%, var(--text-primary)); border-color: var(--card-color); background: color-mix(in srgb, var(--card-color) 12%, transparent)">Share</span>
@@ -329,7 +316,7 @@
           <span class="section__label">Vault</span>
           <h2 class="page-section__title vault-spotlight__title">Vault keeps private work inside the same Clex flow</h2>
           <p class="vault-spotlight__text">
-            Vault extends Clex beyond transfer. It stores encrypted notes locally, keeps working offline, syncs paired devices peer-to-peer when available, supports Google-account recovery, and now exposes secret links plus Drive-backed timed file handoffs from the same shell.
+            Vault extends Clex beyond transfer. It stores encrypted notes locally, keeps working offline, syncs paired devices peer-to-peer when available, supports Google-account recovery, and now exposes secret links plus encrypted timed file handoffs from the same shell.
           </p>
 
           <div class="vault-spotlight__meta">
@@ -354,11 +341,7 @@
             <strong>Secret Share</strong>
             <p>Choose view once, a 60-second viewing window, no-select mode, tab-switch lock, or DevTools guard. Leave view once off and the link stays reusable until expiry.</p>
           </div>
-          <div class="vault-spotlight__note">
-            <strong>Cloud Share</strong>
-            <p>Upload into your own Google Drive, publish per-file links plus an optional folder share, and let Vault delete the whole session automatically after 24 hours.</p>
-          </div>
-        </div>
+</div>
       </div>
     </div>
   </section>
@@ -400,7 +383,6 @@
                 <th>Feature</th>
                 <th>Direct P2P</th>
                 <th>Local Network</th>
-                <th>Google Drive</th>
               </tr>
             </thead>
             <tbody>
@@ -408,43 +390,36 @@
                 <td><strong>Protocol</strong></td>
                 <td>WebRTC</td>
                 <td>Local TCP</td>
-                <td>Google APIs</td>
               </tr>
               <tr>
                 <td><strong>Server Storage</strong></td>
                 <td><span class="check"></span> None</td>
                 <td><span class="check"></span> None</td>
-                <td>Your Drive</td>
               </tr>
               <tr>
                 <td><strong>Account</strong></td>
                 <td><span class="check"></span> Not needed</td>
                 <td><span class="check"></span> Not needed</td>
-                <td>Google Auth</td>
               </tr>
               <tr>
                 <td><strong>Speed</strong></td>
                 <td>Fast</td>
                 <td><span style="color:var(--accent-text);font-weight:bold;">Fastest</span></td>
-                <td>Depends on your bandwidth</td>
               </tr>
               <tr>
                 <td><strong>File Limit</strong></td>
                 <td>Browser RAM</td>
                 <td>Browser RAM</td>
-                <td>Drive quota (2 TB on Google AI Pro)</td>
               </tr>
               <tr>
                 <td><strong>Privacy</strong></td>
                 <td><span style="color:var(--accent-text);font-weight:bold;">Maximum</span></td>
                 <td><span style="color:var(--accent-text);font-weight:bold;">Maximum</span></td>
-                <td>Google TLS</td>
               </tr>
               <tr>
                 <td><strong>When to Use</strong></td>
                 <td>Default — always try first</td>
                 <td>Same Wi-Fi, big files</td>
-                <td>Fallback, async delivery</td>
               </tr>
             </tbody>
           </table>
@@ -487,7 +462,7 @@
         <div class="card hover-lift">
           <h3 class="card__title">No Account System</h3>
           <p class="card__text">
-            P2P transfers need no login. No email, no password, no profile. Open a link and go. Google auth is only needed for Drive fallback.
+            Transfers need no login. No email, no password, no profile. Open a link and go.
           </p>
         </div>
         <div class="card hover-lift">

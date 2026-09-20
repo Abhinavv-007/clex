@@ -9,7 +9,7 @@
   }
 
   interface RouteSpec {
-    id: 'p2p' | 'lan' | 'drive'
+    id: 'p2p' | 'lan'
     label: string
     speed: string
     icon: string
@@ -35,7 +35,6 @@
   const routeModes: RouteSpec[] = [
     { id: 'p2p', label: 'Direct P2P', speed: '12ms handoff', icon: '⟷', color: 'var(--green)' },
     { id: 'lan', label: 'Local Network', speed: 'LAN throughput', icon: '⊡', color: 'var(--cyan)' },
-    { id: 'drive', label: 'Drive Fallback', speed: '1-click backup', icon: '↑', color: 'var(--accent)' },
   ]
 
   const commandChips = ['Compress', 'Convert', 'Merge PDF', 'DOCX→PDF', 'ZIP', 'Share']

@@ -19,7 +19,6 @@
   import VaultSettings from '$components/vault/VaultSettings.svelte'
   import VaultPairingModal from '$components/vault/VaultPairingModal.svelte'
   import VaultSecretCreate from '$components/vault/VaultSecretCreate.svelte'
-  import VaultCloudShare from '$components/vault/VaultCloudShare.svelte'
   import Toast from '$components/ui/Toast.svelte'
   import { uiStore } from '$stores/ui'
   import {
@@ -548,7 +547,7 @@
     : panel === 'secrets'
       ? 'Set expiry, choose the protections that actually matter, then hand off the full link or QR code.'
       : panel === 'share'
-        ? 'Push files into your own Google Drive, hand off per-file links or a folder share, and let Vault clean the session up automatically after 24 hours.'
+        ? 'Create encrypted secret links with expiry, view-once and reveal codes — the key stays in the URL fragment and never reaches the server.'
         : 'Pair devices, check storage, manage your relay access, and control the local key lifecycle from one place.'
 
   const panelTabs: { id: 'notes' | 'secrets' | 'share' | 'settings'; label: string }[] = [
@@ -626,7 +625,6 @@
 
       {:else if panel === 'share'}
         <div class="va-share-wrap">
-          <VaultCloudShare />
         </div>
 
       {:else}

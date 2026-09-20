@@ -158,14 +158,6 @@ export async function initIslands() {
     return;
   }
 
-  if (page === 'vault-share') {
-    const { default: VaultShareApp } = await import('@clex/frontend-core/apps/VaultShareApp');
-    mount(VaultShareApp, document.getElementById('vault-share-app-island'), {
-      vaultApiUrl: '/vault/api',
-    });
-    return;
-  }
-
   if (page === 'account') {
     const { default: AccountApp } = await import('@clex/frontend-core/apps/AccountApp');
     const params = new URLSearchParams(window.location.search);

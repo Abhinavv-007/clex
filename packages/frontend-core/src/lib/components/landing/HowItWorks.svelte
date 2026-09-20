@@ -19,7 +19,7 @@
     {
       num: '03',
       title: 'Share anywhere',
-      body: 'Clex picks the fastest route: direct browser-to-browser if possible, local network if you\'re nearby, or Google Drive as a secure fallback. One click.',
+      body: 'Clex picks the fastest route: direct browser-to-browser if possible, or the local network if you\'re nearby. One click.',
       detail: 'Room codes, QR codes, and direct links — receiver gets a clean pull experience.',
       visual: 'share',
     },
@@ -112,7 +112,6 @@
                     <span class="path-dot dot-cyan" /> Local LAN
                   </div>
                   <div class="route-path">
-                    <span class="path-dot dot-violet" /> Google Drive
                   </div>
                 </div>
               </div>

@@ -14,7 +14,7 @@
   <link rel="icon" type="image/png" href="/brand/clex-logo.png">
   <link rel="apple-touch-icon" href="/brand/clex-logo.png">
   <title>Clex — Privacy-First File Workspace | Move Files, Keep Control</title>
-  <meta name="description" content="Clex is a privacy-first file workspace — drop files, prepare them with built-in PDF/image tools, then deliver via direct P2P (Clex Direct+), local network, or Google Drive. No server storage, no accounts. Includes encrypted Vault notes and secret links.">
+  <meta name="description" content="Clex is a privacy-first file workspace — drop files, prepare them with built-in PDF/image tools, then deliver via direct P2P (Clex Direct+) or your local network. No server storage, no accounts. Includes encrypted Vault notes and secret links.">
   <meta name="keywords" content="clex, clex.in, file sharing, P2P transfer, WebRTC file transfer, AirDrop alternative, Clex Direct+, reliable file transfer, chunk verification, transfer receipt, file workspace, PDF tools, image compression, encrypted notes, vault, secret links, privacy-first">
   <meta name="author" content="Abhinav Raj">
   <meta name="robots" content="index, follow, max-image-preview:large">
@@ -44,7 +44,7 @@
         "@id": "https://clex.in/#website",
         "url": "https://clex.in/",
         "name": "Clex",
-        "description": "Privacy-first file workspace — drop, prepare, share via P2P, local network, or Google Drive.",
+        "description": "Privacy-first file workspace — drop, prepare, share via P2P or local network.",
         "publisher": { "@id": "https://clex.in/#organization" },
         "inLanguage": "en"
       },
@@ -69,7 +69,7 @@
             "name": "Does Clex store my files on its servers?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "No. Direct transfers move files browser-to-browser over WebRTC. The optional Drive route uploads to your own Google Drive — never to Clex's servers."
+              "text": "No. Transfers move files browser-to-browser over WebRTC — directly, or across your local network. Clex never stores your files."
             }
           },
           {
@@ -77,7 +77,7 @@
             "name": "Do I need an account to use Clex?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "No. Clex works without signup. Optional Google sign-in only unlocks Drive-backed timed sharing and personal Vault sync."
+              "text": "No. Clex works without signup. Optional Google sign-in only unlocks personal Vault sync across your devices."
             }
           },
           {
@@ -349,7 +349,6 @@
       <div class="marquee__track">
         <span class="marquee__item">WebRTC P2P</span>
         <span class="marquee__item">Local Network</span>
-        <span class="marquee__item">Google Drive</span>
         <span class="marquee__item">Image Tools</span>
         <span class="marquee__item">PDF Operations</span>
         <span class="marquee__item">PDF → Image</span>
@@ -357,7 +356,6 @@
         <span class="marquee__item">P2P Note Sync</span>
         <span class="marquee__item">Secret QR Links</span>
         <span class="marquee__item">Reveal Codes</span>
-        <span class="marquee__item">Timed Cloud Share</span>
         <span class="marquee__item">10 MB Uploads</span>
         <span class="marquee__item">100 MB Daily Relay</span>
         <span class="marquee__item">DOCX → PDF</span>
@@ -365,7 +363,6 @@
         <span class="marquee__item">Offline Ready</span>
         <span class="marquee__item">WebRTC P2P</span>
         <span class="marquee__item">Local Network</span>
-        <span class="marquee__item">Google Drive</span>
         <span class="marquee__item">Image Tools</span>
         <span class="marquee__item">PDF Operations</span>
         <span class="marquee__item">PDF → Image</span>
@@ -373,7 +370,6 @@
         <span class="marquee__item">P2P Note Sync</span>
         <span class="marquee__item">Secret QR Links</span>
         <span class="marquee__item">Reveal Codes</span>
-        <span class="marquee__item">Timed Cloud Share</span>
         <span class="marquee__item">10 MB Uploads</span>
         <span class="marquee__item">100 MB Daily Relay</span>
         <span class="marquee__item">DOCX → PDF</span>
@@ -525,20 +521,13 @@
           </p>
         </div>
 
-        <div class="card hover-lift">
-          <h3 class="card__title">Drive-Backed Timed Sharing</h3>
-          <p class="card__text">
-            Sign in with Google Drive, upload into your own <strong>Clex Share</strong> folder, generate per-file links plus an optional folder handoff, and let Vault delete the session automatically after 24 hours.
-          </p>
-        </div>
-      </div>
+</div>
 
       <div class="vault-story__chip-row reveal">
         <span class="vault-story__chip">Encrypted notes</span>
         <span class="vault-story__chip">Paired-device sync</span>
         <span class="vault-story__chip">Secret QR handoff</span>
         <span class="vault-story__chip">Reveal codes</span>
-        <span class="vault-story__chip">Drive-backed shares</span>
         <span class="vault-story__chip">1 GB per file</span>
         <span class="vault-story__chip">10 GB per day</span>
         <span class="vault-story__chip">24h cleanup</span>
@@ -739,37 +728,6 @@
             <div class="routing__method-stat">
               <span>Ideal For</span>
               <span class="routing__method-stat-value">Large Files</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="routing__method">
-          <div class="routing__method-badge">
-            <span class="badge badge--outline">
-              <span class="routing__status-dot routing__status-dot--fallback"></span>
-              Fallback
-            </span>
-          </div>
-          <h3 class="routing__method-title">Google Drive</h3>
-          <p class="routing__method-desc">
-            When direct isn't possible, Clex uses Google Drive as a secure relay. Encrypted, temporary, under your control.
-          </p>
-          <div class="routing__method-stats">
-            <div class="routing__method-stat">
-              <span>Protocol</span>
-              <span class="routing__method-stat-value">Google APIs</span>
-            </div>
-            <div class="routing__method-stat">
-              <span>Encryption</span>
-              <span class="routing__method-stat-value">Google TLS</span>
-            </div>
-            <div class="routing__method-stat">
-              <span>Account</span>
-              <span class="routing__method-stat-value">Google Auth</span>
-            </div>
-            <div class="routing__method-stat">
-              <span>Storage</span>
-              <span class="routing__method-stat-value">Your Drive</span>
             </div>
           </div>
         </div>
@@ -1029,7 +987,7 @@
         <div class="creem-stack__card creem-stack__card--mint">
           <span class="creem-stack__tag">Step 03</span>
           <span class="creem-stack__title">Share direct</span>
-          <span class="creem-stack__sub">P2P · LAN · Drive fallback</span>
+          <span class="creem-stack__sub">P2P · LAN</span>
           <span class="creem-stack__glyph" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.59 13.51 6.83 3.98M15.41 6.51 8.59 10.49"/></svg>
           </span>

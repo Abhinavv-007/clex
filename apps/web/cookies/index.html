@@ -154,13 +154,7 @@
             <li><strong><code>clex_vault_share_resume</code></strong> &mdash; localStorage. Lets an interrupted vault share pick up where it left off. Cleared when the share finishes.</li>
           </ul>
 
-          <h3 class="legal-subsection__title">Only if you connect Google Drive</h3>
-          <ul class="legal-section__list">
-            <li><strong><code>clex_drive_auth</code></strong> &mdash; IndexedDB. The OAuth token for the Drive account you connected, so you are not asked to reauthorise on every upload. Removed when you disconnect Drive.</li>
-            <li><strong><code>clex_gdrive_callback_error</code></strong> &mdash; sessionStorage. Carries an authorisation error across the OAuth redirect so the page can explain what went wrong. Gone when the tab closes.</li>
-          </ul>
-
-          <h3 class="legal-subsection__title">Only if you create an API key</h3>
+<h3 class="legal-subsection__title">Only if you create an API key</h3>
           <ul class="legal-section__list">
             <li><strong><code>clex_dev_apikey_session</code></strong> &mdash; sessionStorage. Holds the one-time plaintext of a key you just created so a page reload does not lose the only copy. Deliberately <em>not</em> localStorage: it must not outlive the tab. Gone when the tab closes.</li>
           </ul>
@@ -193,7 +187,6 @@
           <ul class="legal-section__list">
             <li><strong>Google Fonts</strong> (<code>fonts.googleapis.com</code>, <code>fonts.gstatic.com</code>) &mdash; serves the typefaces. Receives your IP address when fonts are fetched. No cookie is set.</li>
             <li><strong>Firebase Authentication</strong> (Google) &mdash; only if you sign in. Handles the sign-in itself and issues the identity token Clex verifies.</li>
-            <li><strong>Google Drive API</strong> &mdash; only if you choose the Drive route for a transfer, and only for the files you send that way.</li>
             <li><strong>Supabase Storage</strong> &mdash; holds files uploaded through the programmatic API until they expire. Not used for direct P2P or local-network transfers.</li>
             <li><strong>Cloudflare</strong> &mdash; serves the site and runs the API workers.</li>
           </ul>

@@ -184,7 +184,7 @@
       </div>
       <p class="error-msg">{$transferStore.error}</p>
       <div class="error-tip">
-        Try <strong>Google Drive</strong> as a fallback — upload your files and share the link.
+        Try <strong>Local</strong> mode if you are on the same network, or check that both devices can reach the signaling server.
       </div>
       <button class="btn-secondary ds-cancel-btn" on:click={reset}>Try again</button>
     </div>

@@ -12,7 +12,6 @@
   export let routes: MockRoute[] = [
     { label: 'Direct P2P (WebRTC)', status: 'Connected', color: 'var(--green)', active: true },
     { label: 'Local Network', status: 'Available', color: 'var(--cyan)' },
-    { label: 'Google Drive', status: 'Standby', color: 'var(--amber)' },
   ]
 
   let activeIndex = Math.max(routes.findIndex(route => route.active), 0)

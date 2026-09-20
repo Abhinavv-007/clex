@@ -1,20 +1,24 @@
-export interface GoogleOAuthConfigStatus {
-  configured: boolean
-  missing: string[]
-}
-
+/**
+ * Shared worker environment and HTTP helpers.
+ *
+ * This was `googleAuth.ts` and carried the Google Drive OAuth flow alongside
+ * the `Env` type and CORS/cookie helpers that every other module imports.
+ * Drive is gone — Clex transfers are direct P2P and local-network only — so
+ * what remains is the shared plumbing, under a name that says so.
+ */
 export interface Env {
+  /**
+   * General-purpose KV store. The name is historical — it was added for Drive
+   * OAuth sessions, but admin sessions and passkey records live here too, and
+   * the binding name is fixed by wrangler.toml and by the data already in it.
+   */
+  DRIVE_SESSION_STORE: KVNamespace
   ALLOWED_ORIGIN: string
   FRONTEND_BASE_URL: string
-  GOOGLE_CLIENT_ID?: string
-  GOOGLE_CLIENT_SECRET?: string
-  GOOGLE_REDIRECT_URI?: string
-  GOOGLE_DRIVE_SCOPE?: string
   FIREBASE_PROJECT_ID?: string
   WEBAUTHN_RP_ID?: string
   WEBAUTHN_RP_NAME?: string
   OAUTH_TOKEN_ENCRYPTION_SECRET?: string
-  DRIVE_SESSION_STORE: KVNamespace
   /**
    * Server-side admin secret consumed by /api/admin/* and forwarded by
    * lnch.in's `CLEX_ADMIN_SECRET` proxy. Falls back to `ADMIN_SECRET` for
@@ -22,19 +26,6 @@ export interface Env {
    */
   CLEX_ADMIN_SECRET?: string
   ADMIN_SECRET?: string
-}
-
-export function getGoogleOAuthConfigStatus(source: Env): GoogleOAuthConfigStatus {
-  const missing: string[] = []
-
-  if (!hasConfiguredValue(source.GOOGLE_CLIENT_ID)) missing.push('GOOGLE_CLIENT_ID')
-  if (!hasConfiguredValue(source.GOOGLE_CLIENT_SECRET)) missing.push('GOOGLE_CLIENT_SECRET')
-  if (!hasConfiguredValue(source.GOOGLE_REDIRECT_URI)) missing.push('GOOGLE_REDIRECT_URI')
-
-  return {
-    configured: missing.length === 0,
-    missing,
-  }
 }
 
 function hasConfiguredValue(value: string | undefined): boolean {

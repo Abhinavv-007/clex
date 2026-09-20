@@ -4,7 +4,6 @@
   import { uiStore } from '$stores/ui'
   import { siteRoutes } from '$utils'
   import DirectShare from '$components/sharing/DirectShare.svelte'
-  import DriveShare from '$components/sharing/DriveShare.svelte'
 
   export let receiveBasePath = siteRoutes.receive
   export let receivePathFormat: 'segment' | 'query' = 'segment'
@@ -16,7 +15,6 @@
   const methods: { id: TransferMethod; label: string; desc: string }[] = [
     { id: 'webrtc', label: 'Direct',  desc: 'P2P' },
     { id: 'local',  label: 'Local',   desc: 'LAN' },
-    { id: 'drive',  label: 'Drive',   desc: 'Cloud' },
   ]
 
   $: activeMethod = $transferStore.method
@@ -61,11 +59,7 @@
 
   <!-- Content -->
   <div class="sp-content" class:sp-content-disabled={!$hasFiles}>
-    {#if activeMethod === 'webrtc' || activeMethod === 'local'}
-      <DirectShare {receiveBasePath} {receivePathFormat} />
-    {:else if activeMethod === 'drive'}
-      <DriveShare />
-    {/if}
+    <DirectShare {receiveBasePath} {receivePathFormat} />
   </div>
 </div>
 

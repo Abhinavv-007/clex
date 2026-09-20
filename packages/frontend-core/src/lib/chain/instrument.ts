@@ -45,7 +45,7 @@ export function initChainInstrumentation(client: ChainClient): () => void {
   let lastTerminalStatus: string | null = null
 
   async function createSessionForTransfer(method: string): Promise<ActiveSession | null> {
-    const route = method === 'drive' ? 'drive' : method === 'local' ? 'local' : 'webrtc'
+    const route = method === 'local' ? 'local' : 'webrtc'
 
     if (active?.route === route) return active
     if (activePromise) return activePromise

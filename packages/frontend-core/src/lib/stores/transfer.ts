@@ -16,7 +16,7 @@ export type TransferState =
   | 'complete'
   | 'failed'
 
-export type TransferMethod = 'webrtc' | 'local' | 'drive'
+export type TransferMethod = 'webrtc' | 'local'
 
 /** Which on-wire protocol the active transfer is using. */
 export type TransferProtocol = 'legacy' | 'reliable'
@@ -63,7 +63,6 @@ export interface TransferStore {
   connectionKind: ConnectionKind
   diagnosticCode: string | null
   error: string | null
-  driveLink: string | null
   currentFile: TransferPreviewFile | null
   receivedFiles: ReceivedFile[]
   /** Reliable transfer additions — all default to safe values for legacy mode. */
@@ -95,7 +94,6 @@ function makeInitial(): TransferStore {
     connectionKind: 'unknown',
     diagnosticCode: null,
     error: null,
-    driveLink: null,
     currentFile: null,
     receivedFiles: [],
     protocol: 'legacy',
@@ -130,7 +128,6 @@ function createTransferStore() {
         nearby: false,
         connectionKind: 'unknown',
         diagnosticCode: null,
-        driveLink: null,
         peerChainId: null,
         currentFile: null,
         receivedFiles: [],
@@ -182,9 +179,6 @@ function createTransferStore() {
         currentFile: null,
         diagnosticCode: diagnosticCode ?? s.diagnosticCode,
       }))
-    },
-    setDriveLink(driveLink: string) {
-      update(s => ({ ...s, state: 'complete', driveLink, peerChainId: null, currentFile: null, receivedFiles: [] }))
     },
     addReceivedFile(file: ReceivedFile) {
       update(s => ({

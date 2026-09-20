@@ -157,8 +157,7 @@
           <ul class="legal-section__list">
             <li><strong>Signaling and routing data:</strong> Temporary identifiers and network metadata used to establish P2P sessions and route transfers.</li>
             <li><strong>Operational logs:</strong> Our host (Cloudflare) records ordinary request logs &mdash; IP address, timestamp, path, status &mdash; to serve the site and mitigate abuse. Clex runs no analytics product, no page-view counter and no telemetry SDK. See <a class="link" href="/cookies">Cookies &amp; Browser Storage</a> for the full list of what is stored on your device.</li>
-            <li><strong>Google account data:</strong> When you choose Google Drive fallback or Vault Cloud Share, authentication is handled through Google/Firebase flows. We may receive identifiers such as UID, email address, display name, and avatar URL that are necessary to show account state and apply quotas.</li>
-            <li><strong>Temporary Drive-share metadata:</strong> For Vault Cloud Share we store share metadata such as file name, size, MIME type, upload time, delete time, owner identifiers, share codes, and Drive item ids so the timed Drive session can function and clean itself up.</li>
+            <li><strong>Google account data:</strong> When you enable Vault sync across devices, authentication is handled through Google/Firebase flows. We may receive identifiers such as UID, email address, display name, and avatar URL that are necessary to show account state and apply quotas.</li>
             <li><strong>Secret status metadata:</strong> For Vault Secret Share we store encrypted payloads, expiry timestamps, open-status metadata, and the selected protection policy until the secret expires or is consumed.</li>
           </ul>
         </div>
@@ -206,29 +205,14 @@
           </ul>
         </div>
 
-        <div class="legal-section reveal">
-          <div class="legal-section__number">Section 07</div>
-          <h2 class="legal-section__title">Vault Cloud Share and Temporary Drive Sessions</h2>
-          <p class="legal-section__text">
-            Vault Cloud Share is different from direct transfer. It is a temporary Drive-backed feature that writes uploads into the user's own <strong>Google Drive</strong> account under the <strong>Clex Share</strong> folder so files can be picked up later through a timed Vault link.
-          </p>
-          <ul class="legal-section__list">
-            <li>Google Drive sign-in is required so Vault can publish files in the user's Drive account and enforce daily quotas</li>
-            <li>Vault Drive shares are limited to 1 GB per file and 10 GB per day per connected account</li>
-            <li>Drive sessions are scheduled for deletion after 24 hours</li>
-            <li>Recipients who have the Vault link or access code may access the file or folder until the session expires or is deleted</li>
-            <li>We store encrypted refresh tokens and share metadata so the 24-hour cleanup job can remove expired Drive files and folders automatically</li>
-          </ul>
-        </div>
-
-        <div class="legal-section reveal">
+<div class="legal-section reveal">
           <div class="legal-section__number">Section 08</div>
           <h2 class="legal-section__title">Google Auth, Cookies, and Local Storage</h2>
           <p class="legal-section__text">
             We use local browser storage for preferences such as theme and for Vault's local state. We do not use advertising cookies or third-party behavioral trackers as part of the core product.
           </p>
           <ul class="legal-section__list">
-            <li>Google OAuth or Firebase-based sign-in is used only when you choose features that require it, such as Google Drive fallback or Vault Cloud Share</li>
+            <li>Google OAuth or Firebase-based sign-in is used only when you choose features that require it, such as Vault sync across devices</li>
             <li>We do not receive or store your Google password</li>
             <li>Local browser storage may retain preferences, local Vault state, and other product settings until you clear it</li>
           </ul>

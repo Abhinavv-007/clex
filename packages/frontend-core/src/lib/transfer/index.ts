@@ -1,22 +1,3 @@
-export {
-  clearPendingDriveReturnTo,
-  clearToken,
-  consumeDriveAuthError,
-  disconnectGoogleDrive,
-  getDriveApiBaseUrl,
-  getPendingDriveReturnTo,
-  getDriveSession,
-  getStoredToken,
-  hasToken,
-  initiateGoogleAuth,
-  markDriveAuthCallbackSeen,
-  persistPendingDriveReturnTo,
-  pickupToken,
-  storeToken,
-  uploadDriveBatch,
-  uploadToDrive,
-} from './gdrive'
-export type { DriveUploadBatchResult, GoogleDriveUser, UploadResult } from './gdrive'
 
 export {
   classifyConnectionKind,

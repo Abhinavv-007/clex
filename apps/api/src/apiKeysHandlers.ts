@@ -2,7 +2,7 @@ import {
   appendCors,
   parseCookies,
   type Env,
-} from './googleAuth'
+} from './env'
 import { verifyFirebaseAuthHeader } from './firebase'
 import {
   dailyUsageWindow,

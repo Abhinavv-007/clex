@@ -20,7 +20,6 @@
       links: [
         { href: routes.howItWorks, label: 'Direct P2P' },
         { href: routes.howItWorks, label: 'Local network' },
-        { href: routes.howItWorks, label: 'Google Drive' },
         { href: routes.receive, label: 'Receive files' },
       ],
     },
@@ -71,7 +70,7 @@
 
       <p class="brand-tagline">
         Prepare files and share them from one place —
-        direct P2P, local network, or Google Drive.
+        direct P2P or local network.
       </p>
 
       <div class="brand-badges">

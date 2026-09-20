@@ -150,7 +150,7 @@
           <div class="gs-step__content">
             <h2 class="gs-step__title">Share</h2>
             <p class="gs-step__text">
-              Click "Share" and Clex generates a unique 6-character code. Send it to the recipient — they open it in their browser and the transfer begins. Clex automatically tries direct P2P first, then local network, then Google Drive as fallback.
+              Click "Share" and Clex generates a unique 6-character code. Send it to the recipient — they open it in their browser and the transfer begins. Clex tries direct P2P first, then the local network when both devices are on the same Wi-Fi.
             </p>
             <div class="gs-step__tip">
               Tip: For P2P, both sender and receiver need to keep their browser tabs open until the transfer completes.
@@ -202,7 +202,7 @@
         <div class="card hover-lift">
           <h3 class="card__title">Open Vault</h3>
           <p class="card__text">
-            Go to the Vault page from the main navigation. Notes open instantly in the browser, and you can switch between Notes, Secret Share, Cloud Share, and Settings from the same shell.
+            Go to the Vault page from the main navigation. Notes open instantly in the browser, and you can switch between Notes, Secret Share, Secret Links, and Settings from the same shell.
           </p>
         </div>
         <div class="card hover-lift">
@@ -217,13 +217,7 @@
             View once, 60-second viewing window, no select, tab-switch lock, and DevTools guard are optional. If view once stays off, the recipient can reopen the link until it expires.
           </p>
         </div>
-        <div class="card hover-lift">
-          <h3 class="card__title">Use Cloud Share for Timed File Links</h3>
-          <p class="card__text">
-            Sign in with Google, upload files up to 10 MB each, and send the timed link or QR code. Vault keeps the daily relay budget at 100 MB and deletes each relay file after 24 hours.
-          </p>
-        </div>
-      </div>
+</div>
     </div>
   </section>
 
@@ -260,13 +254,7 @@
             Transferring to someone on the same Wi-Fi? Clex detects this and uses local network transfer for maximum speed. Great for large files.
           </p>
         </div>
-        <div class="tip-card hover-lift">
-          <h3 class="tip-card__title">Google Drive Fallback</h3>
-          <p class="tip-card__text">
-            When direct transfer isn't possible (different networks, NAT issues), Clex can use Google Drive as a secure relay. Files go to your Drive, not Clex's servers.
-          </p>
-        </div>
-        <div class="tip-card hover-lift">
+<div class="tip-card hover-lift">
           <h3 class="tip-card__title">No Data Retention</h3>
           <p class="tip-card__text">
             For P2P and local transfers, files exist only in browser memory during the transfer. When you close the tab, they're gone. Zero server-side storage.

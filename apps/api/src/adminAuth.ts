@@ -1,4 +1,4 @@
-import type { Env } from './googleAuth'
+import type { Env } from './env'
 import { randomHex, safeEqual } from './crypto'
 
 export const ADMIN_SESSION_HEADER = 'x-admin-session'
