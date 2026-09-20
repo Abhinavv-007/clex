@@ -271,7 +271,9 @@
   font-size: var(--text-xs);
   text-transform: uppercase;
   letter-spacing: var(--tracking-wide);
-  color: var(--accent);
+  /* --accent is a pastel; as small text on a light card it lands at
+     1.85:1. --accent-text is the readable member of the same ramp. */
+  color: var(--accent-text);
 }
 
 .hiw-protocol-card__chip {
@@ -310,7 +312,9 @@
   height: 22px;
   border-radius: 50%;
   background: color-mix(in srgb, var(--accent) 18%, transparent);
-  color: var(--accent);
+  /* --accent is a pastel; as small text on a light card it lands at
+     1.85:1. --accent-text is the readable member of the same ramp. */
+  color: var(--accent-text);
   font-family: var(--font-mono);
   font-size: 11px;
   font-weight: var(--weight-bold);
@@ -325,12 +329,14 @@
   font-size: var(--text-xs);
   text-transform: uppercase;
   letter-spacing: var(--tracking-wide);
-  color: var(--accent);
+  /* --accent is a pastel; as small text on a light card it lands at
+     1.85:1. --accent-text is the readable member of the same ramp. */
+  color: var(--accent-text);
   align-self: flex-start;
-  border-bottom: 1px dashed color-mix(in srgb, var(--accent) 50%, transparent);
+  border-bottom: 1px dashed color-mix(in srgb, var(--accent-text) 50%, transparent);
   padding-bottom: 2px;
 }
 
 .hiw-protocol-card__link:hover {
-  border-bottom-color: var(--accent);
+  border-bottom-color: var(--accent-text);
 }

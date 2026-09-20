@@ -40,9 +40,14 @@ const previewSlashlessRouteMap = new Map([
   ['/faq', '/faq'],
   ['/privacy', '/privacy'],
   ['/terms', '/terms'],
-  ['/vault', '/vault'],
-  ['/vault/secret', '/vault/secret'],
-  ['/vault/share', '/vault/share'],
+  // Nested routes keep their directory in dist (see flatten-pages-output.mjs),
+  // so they must point at the file. Cloudflare Pages resolves the directory
+  // index by itself; `vite preview` does not, and an identity mapping makes
+  // the middleware fall through to a directory and 404 — which meant these
+  // routes could not be tested locally at all.
+  ['/vault', '/vault/index.html'],
+  ['/vault/secret', '/vault/secret/index.html'],
+  ['/vault/share', '/vault/share/index.html'],
   ['/admin', '/admin'],
 ]);
 

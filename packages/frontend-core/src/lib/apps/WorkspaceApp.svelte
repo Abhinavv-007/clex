@@ -100,16 +100,19 @@
 
 <style>
   .ws-page {
+    /* Gutter + width track the site container so the app lines up with the
+       nav and the sections around it; at 16px/1420px the grid ran edge to
+       edge and the last column was clipped by the viewport. */
     padding:
       calc(88px + env(safe-area-inset-top, 0px))
-      calc(16px + env(safe-area-inset-right, 0px))
+      calc(clamp(1rem, 3vw, 2rem) + env(safe-area-inset-right, 0px))
       calc(48px + env(safe-area-inset-bottom, 0px))
-      calc(16px + env(safe-area-inset-left, 0px));
+      calc(clamp(1rem, 3vw, 2rem) + env(safe-area-inset-left, 0px));
     min-height: 100vh;
   }
 
   .ws-inner {
-    max-width: 1420px;
+    max-width: var(--container-max, 1280px);
     margin: 0 auto;
   }
 
@@ -193,7 +196,9 @@
 
   .ws-grid {
     display: none;
-    align-items: start;
+    /* Stretch, not start: the columns are panels in one surface and should
+       share a bottom edge. The sticky columns opt out individually. */
+    align-items: stretch;
   }
 
   @media (min-width: 1200px) {
@@ -250,7 +255,12 @@
     box-shadow: var(--shadow-md);
     border-radius: 16px;
     padding: 24px;
-    min-height: calc(100vh - 160px);
+    /* Sized to content, floored for visual balance. This was
+       `calc(100vh - 160px)`, which forced every column to roughly full
+       viewport height — the Prepare column carried hundreds of pixels of
+       empty space, and because the sticky columns overrode it with
+       `min-height: auto` the four columns ended at four different heights. */
+    min-height: 420px;
     min-width: 0;
   }
 

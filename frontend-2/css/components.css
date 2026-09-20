@@ -695,3 +695,39 @@
 .tooltip:hover::after {
   opacity: 1;
 }
+
+/* ============================================
+   Inline link
+
+   `.link` was used in the markup but never defined, so inline links
+   inherited body colour and were indistinguishable from the text around
+   them. Colour alone is not a sufficient affordance (WCAG 1.4.1), hence
+   the underline.
+
+   --accent-text is the AA-safe purple: 5.1:1 on the peach cards, 7.2:1 on
+   white, and it flips to a light tint in dark mode.
+   ============================================ */
+.link {
+  color: var(--accent-text);
+  font-weight: 700;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.18em;
+  text-decoration-color: color-mix(in srgb, var(--accent-text) 45%, transparent);
+  border-radius: 3px;
+  transition:
+    text-decoration-color var(--duration-fast, 150ms) ease,
+    color var(--duration-fast, 150ms) ease;
+}
+
+.link:hover,
+.link:focus-visible {
+  text-decoration-color: currentColor;
+}
+
+/* Inside the fixed-pastel cards the surface never flips, so the light-mode
+   purple stays correct in both themes. */
+[data-theme="dark"] .dpc-card .link,
+[data-theme="dark"] .routing__method--primary .link {
+  color: #5b3fc0;
+}

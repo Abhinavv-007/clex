@@ -1,266 +1,16 @@
 /* ============================================
    CLEX — Homepage Styles
+
+   Nav rules do NOT belong here. This sheet is emitted as its own chunk that
+   the build loads AFTER the bundle containing creem-design.css, which
+   inverts the authored cascade — so the superseded "glass capsule" nav that
+   used to live here (dark translucent bar, lime glow, plus
+   `body.section-theme-dark .nav__inner { background:#141414 !important }`)
+   won over the canonical nav and repainted the bar dark in light mode.
+   The nav is owned by the canonical block in creem-design.css.
    ============================================ */
 
-/* ── Navigation (translucent glass capsule) ── */
-.nav {
-  position: fixed;
-  top: clamp(10px, 1.6vw, 18px);
-  left: 0;
-  right: 0;
-  z-index: var(--z-sticky);
-  padding: 0 clamp(12px, 3vw, 28px);
-  pointer-events: none;
-  transition: top var(--duration-normal) var(--ease-out);
-}
 
-.nav--scrolled {
-  top: clamp(8px, 1vw, 12px);
-}
-
-.nav__inner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: clamp(10px, 1.6vw, 18px);
-  max-width: var(--container-wide);
-  margin: 0 auto;
-  padding: clamp(8px, 1vw, 12px) clamp(14px, 2vw, 20px);
-  pointer-events: auto;
-  position: relative;
-  border-radius: 9999px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.015)),
-    rgba(14, 14, 14, 0.55);
-  backdrop-filter: blur(20px) saturate(140%);
-  -webkit-backdrop-filter: blur(20px) saturate(140%);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    0 14px 36px rgba(0, 0, 0, 0.36);
-}
-
-[data-theme="light"] .nav__inner {
-  border-color: rgba(20, 20, 20, 0.08);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0.55)),
-    rgba(245, 240, 232, 0.6);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.7),
-    0 12px 28px rgba(40, 30, 10, 0.12);
-}
-
-.nav__inner::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  background: radial-gradient(120% 180% at 50% -40%, rgba(200, 255, 0, 0.16), transparent 60%);
-  opacity: 0.55;
-  mix-blend-mode: screen;
-}
-
-.nav--scrolled .nav__inner {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02)),
-    rgba(10, 10, 10, 0.72);
-}
-
-[data-theme="light"] .nav--scrolled .nav__inner {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.72)),
-    rgba(245, 240, 232, 0.78);
-}
-
-.nav__logo {
-  color: var(--text-primary);
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
-  position: relative;
-  z-index: 1;
-}
-
-.nav__logo-image {
-  width: 36px;
-  height: 36px;
-  object-fit: cover;
-  object-position: center;
-  flex: 0 0 auto;
-  clip-path: inset(7%);
-  transform: scale(1.14);
-  transform-origin: center;
-}
-
-.nav__logo-wordmark {
-  font-family: var(--font-display);
-  font-size: clamp(1.15rem, 1.6vw, 1.45rem);
-  font-weight: var(--weight-bold);
-  text-transform: uppercase;
-  letter-spacing: var(--tracking-wide);
-  line-height: 1;
-}
-
-.nav__links {
-  display: flex;
-  align-items: center;
-  gap: clamp(0.55rem, 1.2vw, 1rem);
-  padding: 4px 6px;
-  border-radius: 9999px;
-  background: rgba(255, 255, 255, 0.025);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  position: relative;
-  z-index: 1;
-}
-
-[data-theme="light"] .nav__links {
-  background: rgba(255, 255, 255, 0.4);
-  border-color: rgba(20, 20, 20, 0.06);
-}
-
-.nav__link {
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  text-transform: uppercase;
-  letter-spacing: var(--tracking-wide);
-  color: var(--text-secondary);
-  transition: color var(--duration-fast);
-  position: relative;
-  padding: 8px 12px;
-  border-radius: 9999px;
-}
-
-.nav__link:hover,
-.nav__link--active {
-  color: var(--text-primary);
-  background: rgba(255, 255, 255, 0.04);
-}
-
-[data-theme="light"] .nav__link:hover,
-[data-theme="light"] .nav__link--active {
-  background: rgba(20, 20, 20, 0.04);
-}
-
-.nav__link::after {
-  content: '';
-  position: absolute;
-  bottom: 4px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 0;
-  height: 2px;
-  border-radius: 2px;
-  background: var(--accent);
-  box-shadow: 0 0 12px color-mix(in srgb, var(--accent) 60%, transparent);
-  transition: width var(--duration-normal) var(--ease-out);
-}
-
-.nav__link:hover::after,
-.nav__link--active::after {
-  width: 22px;
-}
-
-.nav__actions {
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
-  position: relative;
-  z-index: 1;
-}
-
-.nav__theme-toggle {
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 9999px;
-  background: rgba(255, 255, 255, 0.03);
-  color: var(--text-primary);
-  cursor: pointer;
-  transition: all var(--duration-fast);
-  font-size: var(--text-base);
-}
-
-[data-theme="light"] .nav__theme-toggle {
-  background: rgba(255, 255, 255, 0.6);
-  border-color: rgba(20, 20, 20, 0.08);
-}
-
-.nav__theme-toggle:hover {
-  border-color: color-mix(in srgb, var(--accent) 65%, transparent);
-  background: var(--accent-muted);
-}
-
-/* Mobile Nav */
-.nav__hamburger {
-  display: none;
-  flex-direction: column;
-  gap: 5px;
-  width: 32px;
-  cursor: pointer;
-  padding: 4px;
-  background: none;
-  border: none;
-}
-
-.nav__hamburger-line {
-  height: 3px;
-  background: var(--text-primary);
-  transition: all var(--duration-normal) var(--ease-out);
-  border-radius: 0;
-}
-
-.nav__hamburger--open .nav__hamburger-line:nth-child(1) {
-  transform: rotate(45deg) translate(5px, 6px);
-}
-.nav__hamburger--open .nav__hamburger-line:nth-child(2) {
-  opacity: 0;
-}
-.nav__hamburger--open .nav__hamburger-line:nth-child(3) {
-  transform: rotate(-45deg) translate(5px, -6px);
-}
-
-.nav__mobile-menu {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: var(--bg-primary);
-  z-index: var(--z-overlay);
-  padding: 5rem var(--container-padding) var(--space-3xl);
-  flex-direction: column;
-  gap: var(--space-lg);
-  border-bottom: var(--border-heavy) solid var(--border-bold);
-}
-
-.nav__mobile-menu--open {
-  display: flex;
-}
-
-.nav__mobile-link {
-  font-family: var(--font-display);
-  font-size: var(--text-3xl);
-  text-transform: uppercase;
-  color: var(--text-primary);
-  padding: var(--space-md) 0;
-  border-bottom: var(--border-medium) solid var(--border-color);
-  transition: color var(--duration-fast);
-}
-
-.nav__mobile-link:hover {
-  color: var(--accent-text);
-}
-
-@media (max-width: 899px) {
-  .nav__links { display: none; }
-  .nav__hamburger { display: flex; }
-  .nav__actions .btn { display: none; }
-}
 
 /* ── Hero (Creem-inspired cinematic redesign) ── */
 .hero {
@@ -1157,10 +907,8 @@
 
 .footer__legal-link:hover {
   color: var(--accent-text);
-}
-
-@media (max-width: 899px) {
-  .hero__grid {
+}@media (max-width: 899px) {
+.hero__grid {
     grid-template-columns: 1fr;
     gap: var(--space-3xl);
   }
@@ -1205,13 +953,6 @@
   }
   .features-grid .card:last-child {
     border-bottom: none;
-  }
-  .nav__logo-image {
-    width: 42px;
-    height: 42px;
-  }
-  .nav__logo-wordmark {
-    font-size: clamp(1.25rem, 5vw, 1.55rem);
   }
   .footer__logo-image {
     width: 52px;
@@ -1590,20 +1331,21 @@ body.section-theme-dark .dpc-cell-val {
   line-height: 1.6;
   color: rgba(26, 20, 48, 0.65);
 }
+/* Link styling is owned by `.link` in components.css. This rule only needs
+   to exist because the Direct+ card keeps a fixed peach surface in both
+   themes; #6b4dff on that peach is 3.6:1, short of AA. */
 .dpc-foot a {
-  color: #6b4dff;
-  font-weight: 700;
-  text-decoration: underline;
-  text-decoration-thickness: 1.5px;
-  text-underline-offset: 3px;
+  color: var(--accent-text);
 }
 [data-theme="dark"] .dpc-foot,
 body.section-theme-dark .dpc-foot {
   color: rgba(240, 240, 232, 0.65);
 }
+/* The card surface stays peach in dark mode too, so the light-mode purple
+   remains the correct choice — a pastel here would be 1.6:1. */
 [data-theme="dark"] .dpc-foot a,
 body.section-theme-dark .dpc-foot a {
-  color: #c4b5ff;
+  color: #5b3fc0;
 }
 
 /* Inline accents used in Step #03 share card */
@@ -1652,136 +1394,6 @@ body.section-theme-lavender {
 body.section-theme-peach {
   background-color: #ffe9d7;
   color: #1f1408;
-}
-
-/* ── Pill Navigation (neo-brutalist offset shadow, reactive to section theme) ── */
-.nav {
-  pointer-events: none;
-  transition: top 300ms var(--ease-out);
-}
-.nav__inner {
-  /* Hard outline + offset shadow look */
-  border: 2px solid #0a0a0a !important;
-  background: #ffffff !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-  box-shadow: 4px 4px 0 #0a0a0a !important;
-  transition:
-    background-color 400ms var(--ease-out),
-    color 400ms var(--ease-out),
-    border-color 400ms var(--ease-out),
-    box-shadow 400ms var(--ease-out);
-}
-.nav__inner::before { display: none; }
-
-body.section-theme-dark .nav__inner {
-  background: #141414 !important;
-  border-color: #f0f0e8 !important;
-  box-shadow: 4px 4px 0 #f0f0e8 !important;
-}
-body.section-theme-lavender .nav__inner {
-  background: #ffffff !important;
-  border-color: #1a1430 !important;
-  box-shadow: 4px 4px 0 #6b4dff !important;
-}
-body.section-theme-peach .nav__inner {
-  background: #ffffff !important;
-  border-color: #0a0a0a !important;
-  box-shadow: 4px 4px 0 #ff7a3d !important;
-}
-
-.nav__logo {
-  color: #0a0a0a !important;
-  transition: color 300ms var(--ease-out);
-}
-body.section-theme-dark .nav__logo { color: #f0f0e8 !important; }
-
-.nav__links {
-  background: transparent !important;
-  border: none !important;
-  padding: 2px 4px !important;
-}
-
-.nav__link {
-  color: #2a2620 !important;
-  font-weight: 700;
-  transition: color 200ms var(--ease-out), background 200ms var(--ease-out), box-shadow 200ms var(--ease-out), transform 200ms var(--ease-out);
-  border-radius: 9999px;
-  padding: 8px 14px !important;
-  border: 2px solid transparent;
-}
-body.section-theme-dark .nav__link { color: #c8c4b8 !important; }
-
-.nav__link:hover,
-.nav__link--active {
-  color: #0a0a0a !important;
-  background: var(--accent) !important;
-  border-color: #0a0a0a;
-  box-shadow: 3px 3px 0 #0a0a0a;
-  transform: translate(-1px, -1px);
-}
-body.section-theme-dark .nav__link:hover,
-body.section-theme-dark .nav__link--active {
-  color: #0a0a0a !important;
-}
-body.section-theme-lavender .nav__link:hover,
-body.section-theme-lavender .nav__link--active {
-  background: #c9b8ff !important;
-  color: #1a1430 !important;
-}
-body.section-theme-peach .nav__link:hover,
-body.section-theme-peach .nav__link--active {
-  background: #ffb380 !important;
-  color: #1f1408 !important;
-}
-
-.nav__link::after { display: none !important; }
-
-.nav__theme-toggle {
-  width: 38px;
-  height: 38px;
-  border: 2px solid #0a0a0a !important;
-  background: #ffffff !important;
-  color: #0a0a0a !important;
-  box-shadow: 3px 3px 0 #0a0a0a;
-  border-radius: 9999px;
-  transition: all 200ms var(--ease-out);
-}
-body.section-theme-dark .nav__theme-toggle {
-  background: #1a1a1a !important;
-  border-color: #f0f0e8 !important;
-  color: #f0f0e8 !important;
-  box-shadow: 3px 3px 0 #f0f0e8;
-}
-.nav__theme-toggle:hover {
-  transform: translate(-2px, -2px);
-  box-shadow: 5px 5px 0 #0a0a0a;
-  background: var(--accent) !important;
-}
-body.section-theme-dark .nav__theme-toggle:hover {
-  box-shadow: 5px 5px 0 var(--accent);
-}
-
-/* The nav's "Open Workspace" small button — clean pill, no hatched bleed */
-.nav__actions .btn.btn--primary.btn--small {
-  background: var(--accent) !important;
-  color: #0a0a0a !important;
-  border: 2px solid #0a0a0a !important;
-  border-radius: 9999px !important;
-  padding: 0.55rem 1.1rem !important;
-  box-shadow: 3px 3px 0 #0a0a0a !important;
-  position: relative;
-  font-weight: 800;
-  text-transform: none;
-  letter-spacing: 0.02em;
-  transition: transform 180ms var(--ease-out), box-shadow 180ms var(--ease-out);
-}
-.nav__actions .btn.btn--primary.btn--small::after {
-  display: none;
-}
-.nav__actions .btn.btn--primary.btn--small:hover {
-  transform: translate(-2px, -2px);
-  box-shadow: 5px 5px 0 #0a0a0a !important;
 }
 
 /* ── Pill Badge (sits above headings) ── */
@@ -2424,20 +2036,6 @@ body.section-theme-dark .italic-accent--cyan { color: #b89dff; }
   color: #f0f0e8;
 }
 
-/* Make nav links readable on every theme */
-.nav__link {
-  color: #2a2620 !important;
-}
-body.section-theme-dark .nav__link {
-  color: #e8e6dc !important;
-}
-body.section-theme-lavender .nav__link {
-  color: #1a1430 !important;
-}
-body.section-theme-peach .nav__link {
-  color: #1f1408 !important;
-}
-
 /* ============================================
    ⚡ CINEMATIC HERO EXTENSIONS
    ============================================ */
@@ -2700,51 +2298,6 @@ body.section-theme-peach .nav__link {
 /* Mega divider between hero and dark section */
 .section-divider--mega {
   height: clamp(80px, 8vw, 140px);
-}
-
-/* ============================================
-   ⚡ NAV REACTIVE COLOR (smooth section blend)
-   ============================================ */
-.nav__inner {
-  border-radius: 9999px;
-  transition:
-    background-color 600ms var(--ease-out),
-    color 600ms var(--ease-out),
-    border-color 600ms var(--ease-out),
-    box-shadow 600ms var(--ease-out),
-    transform 250ms var(--ease-out) !important;
-}
-
-.nav--scrolled .nav__inner {
-  transform: scale(0.97);
-  box-shadow: 5px 5px 0 #0a0a0a, 0 12px 36px rgba(0, 0, 0, 0.18) !important;
-}
-
-body.section-theme-dark .nav--scrolled .nav__inner {
-  box-shadow: 5px 5px 0 #c8ff00, 0 12px 36px rgba(0, 0, 0, 0.5) !important;
-}
-
-/* Add stripey-shadow accent treatment to "Open Workspace" similar to creem button */
-.nav__actions .btn.btn--primary.btn--small {
-  background: #ffd84a !important;
-  color: #0a0a0a !important;
-}
-body.section-theme-dark .nav__actions .btn.btn--primary.btn--small {
-  background: #c8ff00 !important;
-}
-body.section-theme-lavender .nav__actions .btn.btn--primary.btn--small {
-  background: #c4b5ff !important;
-}
-body.section-theme-peach .nav__actions .btn.btn--primary.btn--small {
-  background: #ffc6a5 !important;
-}
-
-/* Logo wordmark gets subtle gradient on dark */
-body.section-theme-dark .nav__logo-wordmark {
-  background: linear-gradient(135deg, #f0f0e8 0%, #c8ff00 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
 }
 
 /* ============================================

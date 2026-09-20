@@ -13,12 +13,10 @@
    font fetch behind the stylesheet fetch and blocks first paint. */
 
 
-/* Single global display font — Geist. Used for every heading, h1-h6 */
-:root {
-  --font-display:      'Geist', 'Hanken Grotesk', 'Inter', system-ui, sans-serif !important;
-  --font-display-mega: 'Geist', 'Hanken Grotesk', 'Inter', system-ui, sans-serif !important;
-  --font-body:         'Geist', 'Hanken Grotesk', 'Inter', system-ui, sans-serif !important;
-}
+/* Geist is declared as --font-display / --font-display-mega / --font-body in
+   tokens.css. It used to be re-declared here under !important, which meant the
+   Chillax, Clash Display and Boldonse faces named in tokens.css were fetched
+   on every page load and never rendered. */
 
 html, body,
 h1, h2, h3, h4, h5, h6,
@@ -209,6 +207,15 @@ html[data-theme="dark"] .hero__float-tag {
 .section--dark .orbit-node {
   background: rgba(36,32,52,0.92) !important;
   border-color: rgba(255,255,255,0.18) !important;
+  color: #f4eee0 !important;
+}
+
+/* The label sets its own `color: var(--c-ink)`, so it never inherited the
+   light colour above — the node read as ink-on-deep-violet at 1.22:1. */
+[data-theme="dark"] .orbit-node__label,
+[data-theme="dark"] .orbit-node__meta,
+.section--dark .orbit-node__label,
+.section--dark .orbit-node__meta {
   color: #f4eee0 !important;
 }
 

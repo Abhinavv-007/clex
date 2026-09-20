@@ -14,11 +14,11 @@
      Single source of truth. These were previously declared here AND again in
      creem-design.css with different values, so the same token resolved to a
      serif on some pages and a script face on others. */
-  --font-display: 'Chillax', 'Clash Display', 'Hanken Grotesk', system-ui, sans-serif;
-  --font-display-mega: 'Boldonse', 'Chillax', system-ui, sans-serif;
+  --font-display: 'Geist', 'Hanken Grotesk', 'Inter', system-ui, sans-serif;
+  --font-display-mega: 'Geist', 'Hanken Grotesk', 'Inter', system-ui, sans-serif;
   --font-mono-display: 'Space Mono', 'Courier New', monospace;
-  --font-body: 'Hanken Grotesk', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-mono: 'Space Mono', 'JetBrains Mono', 'Courier New', monospace;
+  --font-body: 'Geist', 'Hanken Grotesk', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Space Mono', 'Courier New', monospace;
 
   /* ── The script face ──
      One family, one optical treatment, used everywhere a handwritten accent

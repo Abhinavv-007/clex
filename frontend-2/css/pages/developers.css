@@ -352,6 +352,16 @@
   color: #f8f6ee !important;
 }
 
+/* This section paints its own dark gradient, so its contents are set in cream.
+   The shared .section__label rule gives every eyebrow a white pill, which left
+   cream text on white at 1.08:1 — the label has to carry a dark pill here. */
+#quick-commands .section__label,
+.dev-code-header .section__label {
+  background: rgba(20, 20, 24, 0.92) !important;
+  border-color: rgba(168, 139, 250, 0.76) !important;
+  box-shadow: 4px 4px 0 rgba(168, 139, 250, 0.42) !important;
+}
+
 #quick-commands .section__title .italic-accent,
 #quick-commands .section__title .text-accent,
 #quick-commands .section__title .clex-write {

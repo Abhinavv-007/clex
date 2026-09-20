@@ -30,6 +30,19 @@
   --c-blue:         #b5dcff;
   --c-ink:          #0e0e0d;
   --c-ink-soft:     #2a2a28;
+  /* Theme-INVARIANT paper, the counterpart to the theme-invariant inks.
+     Chips and cells that sit on the fixed pastel cards must not use
+     --bg-card: that flips dark while --c-ink does not, which left ink text
+     on a near-black chip at 1.07:1. If the text is --c-ink, the surface
+     under it has to be --c-paper. */
+  --c-paper:        #ffffff;
+  --c-paper-soft:   #fffdf7;
+
+  /* Section washes. The pastels are only legible under dark text, so dark
+     mode swaps in deep tints of the same hues and keeps light text. */
+  --c-peach-wash:    var(--c-peach);
+  --c-lavender-wash: var(--c-lavender);
+  --c-mint-wash:     var(--c-mint);
 
   --bg-primary:     var(--c-cream);
   --bg-secondary:   var(--c-cream-deep);
@@ -42,7 +55,9 @@
 
   --text-primary:   var(--c-ink);
   --text-secondary: #4a4642;
-  --text-tertiary:  #7a7670;
+  /* #7a7670 managed 4.5:1 on pure white but only 3.9:1 on the cream page
+     background it is actually set against, so captions failed WCAG AA. */
+  --text-tertiary:  #6b6760;
   --text-inverse:   #faf5e8;
   --text-on-accent: var(--c-ink);
 
@@ -352,7 +367,8 @@
 
   --text-primary:   #f5efdf;
   --text-secondary: #b9b3a4;
-  --text-tertiary:  #807a6c;
+  /* #807a6c fell to 4.2:1 on --bg-card. 5.9:1 here. */
+  --text-tertiary:  #9a9384;
   --text-inverse:   #0e0e0d;
   --text-on-accent: #0e0e0d;
 
@@ -368,6 +384,12 @@
   --shadow-soft:    rgba(0,0,0,0.55);
 
   --surface-glass:  rgba(22,22,20,0.78);
+
+  /* --c-paper deliberately does NOT flip: it exists to guarantee a light
+     surface under --c-ink text. Only the section washes change. */
+  --c-peach-wash:    #3a2a1f;
+  --c-lavender-wash: #241f3d;
+  --c-mint-wash:     #16291e;
 
   --gradient-hero:
     radial-gradient(60% 50% at 15% 0%,  rgba(107,77,255,0.30) 0%, transparent 60%),
@@ -744,11 +766,11 @@ body[class*="section-theme-"] .tool-card {
 html .section--cream,
 html [data-theme] .section--cream { background: var(--bg-primary) !important; color: var(--text-primary) !important; }
 html .section--peach,
-html [data-theme] .section--peach { background: linear-gradient(180deg, var(--bg-primary) 0%, var(--c-peach) 100%) !important; color: var(--text-primary) !important; }
+html [data-theme] .section--peach { background: linear-gradient(180deg, var(--bg-primary) 0%, var(--c-peach-wash) 100%) !important; color: var(--text-primary) !important; }
 html .section--lavender,
-html [data-theme] .section--lavender { background: linear-gradient(180deg, var(--bg-primary) 0%, var(--c-lavender) 100%) !important; color: var(--text-primary) !important; }
+html [data-theme] .section--lavender { background: linear-gradient(180deg, var(--bg-primary) 0%, var(--c-lavender-wash) 100%) !important; color: var(--text-primary) !important; }
 html .section--mint,
-html [data-theme] .section--mint { background: linear-gradient(180deg, var(--bg-primary) 0%, var(--c-mint) 100%) !important; color: var(--text-primary) !important; }
+html [data-theme] .section--mint { background: linear-gradient(180deg, var(--bg-primary) 0%, var(--c-mint-wash) 100%) !important; color: var(--text-primary) !important; }
 html[data-theme="light"] .section--dark,
 html[data-theme="light"] .section--ivory {
   background:
@@ -1006,7 +1028,7 @@ pre, code, .code-block, .dev-code {
 .peer-node__meta { font-family: var(--font-body); font-weight: 600; color: var(--c-ink-soft); font-size: 0.8rem; }
 .peer-node__chip {
   display: inline-flex; gap: 0.3rem; align-items: center;
-  background: var(--bg-card); color: var(--c-ink);
+  background: var(--c-paper); color: var(--c-ink);
   border: 1.5px solid var(--c-ink);
   border-radius: 9999px;
   font-family: var(--font-body); font-size: 0.7rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase;
@@ -1115,7 +1137,7 @@ pre, code, .code-block, .dev-code {
 .bento__tag {
   font-family: var(--font-body); font-weight: 800; font-size: 0.7rem; letter-spacing: 0.08em;
   text-transform: uppercase; color: var(--c-ink-soft);
-  background: var(--bg-card); border: 1.5px solid var(--c-ink);
+  background: var(--c-paper); border: 1.5px solid var(--c-ink);
   border-radius: 9999px; padding: 0.22rem 0.6rem;
   width: fit-content;
 }
@@ -1257,7 +1279,7 @@ pre, code, .code-block, .dev-code {
 .creem-stack__tag {
   font-family: var(--font-body); font-size: 0.7rem; font-weight: 800;
   letter-spacing: 0.06em; text-transform: uppercase;
-  background: var(--bg-card); color: var(--c-ink);
+  background: var(--c-paper); color: var(--c-ink);
   border: 1.5px solid var(--c-ink); border-radius: 9999px;
   padding: 0.18rem 0.55rem; width: fit-content;
 }
@@ -1421,7 +1443,7 @@ pre, code, .code-block, .dev-code {
 /* DPC card (Direct+) */
 .dpc-card { background: var(--c-peach) !important; color: var(--c-ink) !important; padding: clamp(1.5rem, 4vw, 3rem) !important; }
 [data-theme="dark"] .dpc-card { background: var(--c-peach) !important; color: var(--c-ink) !important; }
-.dpc-cell { background: var(--bg-card) !important; color: var(--c-ink) !important; border: 2px solid var(--c-ink) !important; box-shadow: 3px 3px 0 var(--c-ink) !important; border-radius: 14px !important; }
+.dpc-cell { background: var(--c-paper) !important; color: var(--c-ink) !important; border: 2px solid var(--c-ink) !important; box-shadow: 3px 3px 0 var(--c-ink) !important; border-radius: 14px !important; }
 .dpc-cell-key { color: var(--c-ink) !important; font-weight: 800; }
 .dpc-cell-val { color: var(--c-ink-soft) !important; }
 .dpc-tag { background: var(--c-ink) !important; color: var(--accent-warm) !important; font-family: var(--font-body); font-weight: 800; }
@@ -1553,8 +1575,36 @@ body[class*="section-theme-"] .nav__inner {
 .nav__hamburger--open .nav__hamburger-line:nth-child(1) { transform: rotate(45deg) !important; }
 .nav__hamburger--open .nav__hamburger-line:nth-child(2) { opacity: 0; transform: scaleX(0.35) !important; }
 .nav__hamburger--open .nav__hamburger-line:nth-child(3) { transform: rotate(-45deg) !important; }
+/* Mobile nav. These rules used to live in pages/home.css; without them the
+   bar kept all seven links plus the CTA and wrapped onto a second row — 117px
+   tall at 390px wide, which pushed it down over the hero eyebrow. */
 @media (max-width: 899px) {
+  .nav__links { display: none !important; }
+  /* The CTA is repeated at the bottom of the mobile menu. */
+  .nav__actions .btn--primary,
+  .nav__actions .btn--small { display: none !important; }
   .nav__hamburger { display: grid !important; }
+  .nav__inner { flex-wrap: nowrap !important; }
+}
+
+@media (min-width: 900px) {
+  .nav__hamburger { display: none !important; }
+}
+
+/* The nav is fixed, so the first section on every page has to clear it. This
+   is expressed once, against the bar's real height, instead of being
+   re-guessed by each of the hero's padding rules. */
+:root { --nav-clearance: 6.4rem; }
+
+@media (max-width: 899px) {
+  :root { --nav-clearance: 7.2rem; }
+}
+
+html body .hero,
+html body .page-hero,
+html body .ws-page,
+html body .workspace-shell {
+  padding-top: max(var(--nav-clearance), var(--section-top-padding, 0px));
 }
 
 /* CINEMATIC NAV LINK HOVER: gradient sweep + glow underline */
@@ -2083,7 +2133,7 @@ html .nav .nav__link:hover, .nav .nav__link:hover {
   padding: 1rem;
 }
 .tilt-card {
-  background: var(--bg-card);
+  background: var(--c-paper);
   border: 2px solid var(--c-ink);
   border-radius: 18px;
   box-shadow: 5px 5px 0 var(--c-ink);
@@ -3090,6 +3140,14 @@ body[class*="section-theme-"] .nav__inner {
   --nav-offset: 5px;
   --nav-lift: 0px;
 
+  /* Layout. This used to come from pages/home.css; that sheet no longer
+     styles the nav, so the canonical block owns the geometry too. */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 auto;
+  position: relative;
+
   pointer-events: auto;
   max-width: 1180px !important;
   gap: 0.5rem !important;
@@ -3138,6 +3196,29 @@ body[class*="section-theme-"] .nav--scrolled .nav__inner {
 }
 
 /* ---- Contents: all theme-token driven, no hardcoded ink/cream ---- */
+
+/* Layout for the nav's three groups. Previously supplied by pages/home.css;
+   without it the logo mark and wordmark stacked instead of sitting inline. */
+.nav__logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.nav__links {
+  display: flex;
+  align-items: center;
+  gap: clamp(0.3rem, 1vw, 0.75rem);
+}
+
+.nav__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 0 0 auto;
+}
 
 .nav__logo,
 .nav__logo-wordmark,
@@ -3784,7 +3865,8 @@ html.clex-theme-switching::view-transition-new(root) {
   color: #fff9e8 !important;
 }
 
-[data-theme="dark"] .dpc-label,
+/* .dpc-label is excluded: its chip keeps a white background in both themes
+   (see cinematic.css), so cream text on it landed at 1.05:1. */
 [data-theme="dark"] .dpc-cell-key {
   color: rgba(255,249,232,0.72) !important;
 }

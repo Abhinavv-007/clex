@@ -3,10 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- One request per provider, issued from <head> so the fonts download in
-       parallel with the stylesheets instead of being chained behind them. -->
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800;900&family=Boldonse&family=Geist:wght@300;400;500;600;700;800;900&family=Hanken+Grotesk:wght@500;600;700;800;900&family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&family=Pacifico&family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap">
-  <link rel="stylesheet" href="https://api.fontshare.com/v2/css?f[]=chillax@700,800,900&f[]=clash-display@600,700&display=swap">
+  <!-- Fonts: one request, from <head>, so they download in parallel with the
+       stylesheets instead of being chained behind a CSS @import. Geist is the
+       display/body face, Pacifico the script accent, JetBrains Mono + Space
+       Mono the monospace pair. -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800;900&family=Hanken+Grotesk:wght@500;600;700;800;900&family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&family=Pacifico&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap">
   <script>document.documentElement.classList.add('clex-design-booting');</script>
   <link rel="icon" type="image/png" href="/brand/clex-logo.png">
   <link rel="apple-touch-icon" href="/brand/clex-logo.png">
@@ -143,7 +146,7 @@
         <article class="tool-card" style="--card-color: #22D3EE; transition-delay: 0ms;">
           <div class="card-top">
             <div class="tool-icon-wrap"><span class="tool-icon">⇩</span></div>
-            <span class="tool-tag" style="color: var(--card-color); border-color: var(--card-color); background: color-mix(in srgb, var(--card-color) 12%, transparent)">Images</span>
+            <span class="tool-tag" style="color: color-mix(in srgb, var(--card-color) 55%, var(--text-primary)); border-color: var(--card-color); background: color-mix(in srgb, var(--card-color) 12%, transparent)">Images</span>
           </div>
           <h3 class="tool-title">Image Compression</h3>
           <p class="tool-desc">Reduce image size by up to 90% while preserving visual quality. JPEG, PNG, WebP supported.</p>
@@ -156,7 +159,7 @@
         <article class="tool-card" style="--card-color: #9B7FFF; transition-delay: 60ms;">
           <div class="card-top">
             <div class="tool-icon-wrap"><span class="tool-icon">⇄</span></div>
-            <span class="tool-tag" style="color: var(--card-color); border-color: var(--card-color); background: color-mix(in srgb, var(--card-color) 12%, transparent)">Convert</span>
+            <span class="tool-tag" style="color: color-mix(in srgb, var(--card-color) 55%, var(--text-primary)); border-color: var(--card-color); background: color-mix(in srgb, var(--card-color) 12%, transparent)">Convert</span>
           </div>
           <h3 class="tool-title">Format Conversion</h3>
           <p class="tool-desc">Convert between image formats instantly in the browser. No uploads, no waiting.</p>
@@ -169,7 +172,7 @@
         <article class="tool-card" style="--card-color: #FFAA00; transition-delay: 120ms;">
           <div class="card-top">
             <div class="tool-icon-wrap"><span class="tool-icon">⊕</span></div>
-            <span class="tool-tag" style="color: var(--card-color); border-color: var(--card-color); background: color-mix(in srgb, var(--card-color) 12%, transparent)">PDF</span>
+            <span class="tool-tag" style="color: color-mix(in srgb, var(--card-color) 55%, var(--text-primary)); border-color: var(--card-color); background: color-mix(in srgb, var(--card-color) 12%, transparent)">PDF</span>
           </div>
           <h3 class="tool-title">PDF Merge</h3>
           <p class="tool-desc">Combine multiple PDFs into one. Drag to reorder pages before merging.</p>
@@ -182,7 +185,7 @@
         <article class="tool-card" style="--card-color: #FFAA00; transition-delay: 180ms;">
           <div class="card-top">
             <div class="tool-icon-wrap"><span class="tool-icon">⊗</span></div>
-            <span class="tool-tag" style="color: var(--card-color); border-color: var(--card-color); background: color-mix(in srgb, var(--card-color) 12%, transparent)">PDF</span>
+            <span class="tool-tag" style="color: color-mix(in srgb, var(--card-color) 55%, var(--text-primary)); border-color: var(--card-color); background: color-mix(in srgb, var(--card-color) 12%, transparent)">PDF</span>
           </div>
           <h3 class="tool-title">PDF Split & Extract</h3>
           <p class="tool-desc">Pull specific pages from a PDF or split a large file into individual documents.</p>
@@ -195,7 +198,7 @@
         <article class="tool-card" style="--card-color: #FFAA00; transition-delay: 0ms;">
           <div class="card-top">
             <div class="tool-icon-wrap"><span class="tool-icon">🖼</span></div>
-            <span class="tool-tag" style="color: var(--card-color); border-color: var(--card-color); background: color-mix(in srgb, var(--card-color) 12%, transparent)">PDF</span>
+            <span class="tool-tag" style="color: color-mix(in srgb, var(--card-color) 55%, var(--text-primary)); border-color: var(--card-color); background: color-mix(in srgb, var(--card-color) 12%, transparent)">PDF</span>
           </div>
           <h3 class="tool-title">PDF → Image</h3>
           <p class="tool-desc">Export PDF pages as image files for previews, approvals, social posts, and lighter delivery flows.</p>
@@ -208,7 +211,7 @@
         <article class="tool-card" style="--card-color: #9B7FFF; transition-delay: 0ms;">
           <div class="card-top">
             <div class="tool-icon-wrap"><span class="tool-icon">⬡</span></div>
-            <span class="tool-tag" style="color: var(--card-color); border-color: var(--card-color); background: color-mix(in srgb, var(--card-color) 12%, transparent)">Convert</span>
+            <span class="tool-tag" style="color: color-mix(in srgb, var(--card-color) 55%, var(--text-primary)); border-color: var(--card-color); background: color-mix(in srgb, var(--card-color) 12%, transparent)">Convert</span>
           </div>
           <h3 class="tool-title">DOCX → PDF</h3>
           <p class="tool-desc">Convert Word documents to PDF in seconds. Runs entirely in your browser.</p>
@@ -221,7 +224,7 @@
         <article class="tool-card" style="--card-color: #00E570; transition-delay: 60ms;">
           <div class="card-top">
             <div class="tool-icon-wrap"><span class="tool-icon">⊞</span></div>
-            <span class="tool-tag" style="color: var(--card-color); border-color: var(--card-color); background: color-mix(in srgb, var(--card-color) 12%, transparent)">Archive</span>
+            <span class="tool-tag" style="color: color-mix(in srgb, var(--card-color) 55%, var(--text-primary)); border-color: var(--card-color); background: color-mix(in srgb, var(--card-color) 12%, transparent)">Archive</span>
           </div>
           <h3 class="tool-title">ZIP Bundling</h3>
           <p class="tool-desc">Bundle any set of files into a ZIP archive for clean, single-package delivery.</p>
@@ -234,7 +237,7 @@
         <article class="tool-card" style="--card-color: #FF4466; transition-delay: 120ms;">
           <div class="card-top">
             <div class="tool-icon-wrap"><span class="tool-icon">⟳</span></div>
-            <span class="tool-tag" style="color: var(--card-color); border-color: var(--card-color); background: color-mix(in srgb, var(--card-color) 12%, transparent)">System</span>
+            <span class="tool-tag" style="color: color-mix(in srgb, var(--card-color) 55%, var(--text-primary)); border-color: var(--card-color); background: color-mix(in srgb, var(--card-color) 12%, transparent)">System</span>
           </div>
           <h3 class="tool-title">Smart Tool Chaining</h3>
           <p class="tool-desc">Compress an image, convert it, then share it — all in one continuous flow.</p>
@@ -247,7 +250,7 @@
         <article class="tool-card" style="--card-color: #22D3EE; transition-delay: 180ms;">
           <div class="card-top">
             <div class="tool-icon-wrap"><span class="tool-icon">⟷</span></div>
-            <span class="tool-tag" style="color: var(--card-color); border-color: var(--card-color); background: color-mix(in srgb, var(--card-color) 12%, transparent)">Transfer</span>
+            <span class="tool-tag" style="color: color-mix(in srgb, var(--card-color) 55%, var(--text-primary)); border-color: var(--card-color); background: color-mix(in srgb, var(--card-color) 12%, transparent)">Transfer</span>
           </div>
           <h3 class="tool-title">Direct P2P Transfer · Direct+</h3>
           <p class="tool-desc">Send files browser-to-browser via WebRTC. <strong>Clex Direct+</strong> adds chunk-level verification, ACK/retry, pause/resume, and a verified transfer receipt. No relay, no server storage.</p>
@@ -260,7 +263,7 @@
         <article class="tool-card" style="--card-color: #00E570; transition-delay: 0ms;">
           <div class="card-top">
             <div class="tool-icon-wrap"><span class="tool-icon">⊡</span></div>
-            <span class="tool-tag" style="color: var(--card-color); border-color: var(--card-color); background: color-mix(in srgb, var(--card-color) 12%, transparent)">Transfer</span>
+            <span class="tool-tag" style="color: color-mix(in srgb, var(--card-color) 55%, var(--text-primary)); border-color: var(--card-color); background: color-mix(in srgb, var(--card-color) 12%, transparent)">Transfer</span>
           </div>
           <h3 class="tool-title">Local Network Routing</h3>
           <p class="tool-desc">Detected on the same Wi-Fi? Files route locally for near-instant delivery.</p>
@@ -273,7 +276,7 @@
         <article class="tool-card" style="--card-color: #9B7FFF; transition-delay: 60ms;">
           <div class="card-top">
             <div class="tool-icon-wrap"><span class="tool-icon">↑</span></div>
-            <span class="tool-tag" style="color: var(--card-color); border-color: var(--card-color); background: color-mix(in srgb, var(--card-color) 12%, transparent)">Cloud</span>
+            <span class="tool-tag" style="color: color-mix(in srgb, var(--card-color) 55%, var(--text-primary)); border-color: var(--card-color); background: color-mix(in srgb, var(--card-color) 12%, transparent)">Cloud</span>
           </div>
           <h3 class="tool-title">Google Drive Fallback</h3>
           <p class="tool-desc">When direct transfer isn't possible, upload to your own Drive and share the link.</p>
@@ -286,7 +289,7 @@
         <article class="tool-card" style="--card-color: #FFAA00; transition-delay: 120ms;">
           <div class="card-top">
             <div class="tool-icon-wrap"><span class="tool-icon">⬡</span></div>
-            <span class="tool-tag" style="color: var(--card-color); border-color: var(--card-color); background: color-mix(in srgb, var(--card-color) 12%, transparent)">Share</span>
+            <span class="tool-tag" style="color: color-mix(in srgb, var(--card-color) 55%, var(--text-primary)); border-color: var(--card-color); background: color-mix(in srgb, var(--card-color) 12%, transparent)">Share</span>
           </div>
           <h3 class="tool-title">QR Code Sharing</h3>
           <p class="tool-desc">Generate a QR code from any share link. Point and receive — no typing required.</p>
@@ -299,7 +302,7 @@
         <article class="tool-card" style="--card-color: #00E570; transition-delay: 180ms;">
           <div class="card-top">
             <div class="tool-icon-wrap"><span class="tool-icon">◎</span></div>
-            <span class="tool-tag" style="color: var(--card-color); border-color: var(--card-color); background: color-mix(in srgb, var(--card-color) 12%, transparent)">System</span>
+            <span class="tool-tag" style="color: color-mix(in srgb, var(--card-color) 55%, var(--text-primary)); border-color: var(--card-color); background: color-mix(in srgb, var(--card-color) 12%, transparent)">System</span>
           </div>
           <h3 class="tool-title">Offline Capable</h3>
           <p class="tool-desc">All file operations work offline after the first load. Reliable anywhere.</p>

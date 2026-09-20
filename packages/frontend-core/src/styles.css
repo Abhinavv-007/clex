@@ -11,37 +11,53 @@
 /* ─────────────────────────────────────────────────────────
    NEO-BRUTALIST DESIGN TOKENS — LIGHT MODE
 ───────────────────────────────────────────────────────── */
+/* ─────────────────────────────────────────────────────────
+   These tokens DEFER to the host site's design tokens and fall back to
+   standalone values when the app is mounted on its own.
+
+   The app previously carried a parallel palette — pure-black borders,
+   white/grey surfaces, Space Grotesk — while the site around it used
+   ink/cream/Geist. Mounted inside the site that produced two visibly
+   different design languages on the same screen, and in dark mode the
+   two sets of surface tokens diverged outright.
+
+   Deferring through var() rather than re-declaring keeps this
+   order-independent: it does not matter whether this sheet loads before
+   or after the site's tokens.
+───────────────────────────────────────────────────────── */
 :root {
-  --font-sans: 'Inter', system-ui, sans-serif;
-  --font-display: 'Space Grotesk', system-ui, sans-serif;
-  --font-mono: 'Space Mono', 'JetBrains Mono', monospace;
+  --font-sans:    var(--font-body, 'Inter', system-ui, sans-serif);
+  --font-display: var(--font-display, 'Space Grotesk', system-ui, sans-serif);
+  --font-mono:    var(--font-mono, 'Space Mono', 'JetBrains Mono', monospace);
 
   /* Surfaces */
-  --canvas:         #FAFAFA;
-  --surface:        #FFFFFF;
-  --surface-2:      #F4F4F5;
-  --surface-3:      #E4E4E7;
+  --canvas:         var(--bg-primary, #FAFAFA);
+  --surface:        var(--bg-card, #FFFFFF);
+  --surface-2:      var(--bg-card-soft, #F4F4F5);
+  --surface-3:      var(--bg-secondary, #E4E4E7);
   --raised:         rgba(0,0,0,0.03);
   --overlay:        rgba(250,250,250,0.92);
 
   /* Borders */
-  --border:         rgba(0,0,0,0.10);
-  --border-strong:  rgba(0,0,0,0.20);
-  --border-hard:    #000000;
-  --border-focus:   #C4B5FD;
+  --border:         var(--border-color, rgba(0,0,0,0.10));
+  --border-strong:  var(--border-subtle, rgba(0,0,0,0.20));
+  --border-hard:    var(--border-bold, #000000);
+  --border-focus:   var(--accent, #C4B5FD);
 
-  /* Shadows — neo-brutalist hard offset */
-  --shadow-sm:      3px 3px 0 #000000;
-  --shadow-md:      4px 4px 0 #000000;
-  --shadow-lg:      6px 6px 0 #000000;
-  --shadow-xl:      8px 8px 0 #000000;
-  --shadow-accent:  4px 4px 0 #C4B5FD;
+  /* Shadows — neo-brutalist hard offset, in the site's ink */
+  --shadow-sm:      3px 3px 0 var(--border-bold, #000000);
+  --shadow-md:      4px 4px 0 var(--border-bold, #000000);
+  --shadow-lg:      6px 6px 0 var(--border-bold, #000000);
+  --shadow-xl:      8px 8px 0 var(--border-bold, #000000);
+  --shadow-accent:  4px 4px 0 var(--accent, #C4B5FD);
 
   /* Text */
-  --text-1:   #0A0A0C;
-  --text-2:   #4A4850;
-  --text-3:   #8A8790;
-  --text-inv: #FFFFFF;
+  --text-1:   var(--text-primary, #0A0A0C);
+  --text-2:   var(--text-secondary, #4A4850);
+  /* Standalone fallback: #8A8790 only reached 3.5:1 on white and 3.2:1 on
+     --surface-2, failing WCAG AA for body text. 5.2:1 / 4.7:1 here. */
+  --text-3:   var(--text-tertiary, #6E6B77);
+  --text-inv: var(--text-inverse, #FFFFFF);
 
   /* Accent — pastel brand palette */
   --accent:         #C4B5FD;
@@ -50,12 +66,20 @@
   --accent-text:    #5B3FC0;
   --accent-fg:      #000000;
 
-  /* Status */
+  /* Status — vivid values are INDICATOR colours (dots, bars, borders, fills).
+     As small text on a light surface they fail WCAG AA: green 2.2:1,
+     cyan 1.8:1, amber 2.3:1. Use the -text variants for any text. */
   --green:   #00C851;
   --amber:   #FF8C00;
   --red:     #FF2D55;
   --violet:  #6B4FE0;
   --cyan:    #00D4FF;
+
+  --green-text:  #058739;
+  --amber-text:  #AB6005;
+  --red-text:    #DB284A;
+  --violet-text: #6B4FE0;
+  --cyan-text:   #067B92;
 
   /* Spacing and shape */
   --radius:      10px;
@@ -74,29 +98,39 @@
    DARK MODE TOKENS (DEFAULT)
 ───────────────────────────────────────────────────────── */
 .dark {
-  --canvas:         #09090B;
-  --surface:        #111116;
-  --surface-2:      #18181F;
-  --surface-3:      #1E1E27;
+  --canvas:         var(--bg-primary, #09090B);
+  --surface:        var(--bg-card, #111116);
+  --surface-2:      var(--bg-card-soft, #18181F);
+  --surface-3:      var(--bg-secondary, #1E1E27);
   --raised:         rgba(255,255,255,0.04);
   --overlay:        rgba(9,9,11,0.92);
 
-  --border:         rgba(255,255,255,0.08);
-  --border-strong:  rgba(255,255,255,0.16);
-  --border-hard:    rgba(255,255,255,0.75);
-  --border-focus:   #FFC6A5;
+  --border:         var(--border-color, rgba(255,255,255,0.08));
+  --border-strong:  var(--border-subtle, rgba(255,255,255,0.16));
+  --border-hard:    var(--border-bold, rgba(255,255,255,0.75));
+  --border-focus:   var(--accent, #FFC6A5);
 
-  /* Dark mode hard shadows use white (slightly transparent) */
-  --shadow-sm:      3px 3px 0 rgba(255,255,255,0.65);
-  --shadow-md:      4px 4px 0 rgba(255,255,255,0.65);
-  --shadow-lg:      6px 6px 0 rgba(255,255,255,0.65);
-  --shadow-xl:      8px 8px 0 rgba(255,255,255,0.65);
-  --shadow-accent:  4px 4px 0 #FFC6A5;
+  /* Dark mode hard shadows are cast in the light border colour */
+  --shadow-sm:      3px 3px 0 var(--border-bold, rgba(255,255,255,0.65));
+  --shadow-md:      4px 4px 0 var(--border-bold, rgba(255,255,255,0.65));
+  --shadow-lg:      6px 6px 0 var(--border-bold, rgba(255,255,255,0.65));
+  --shadow-xl:      8px 8px 0 var(--border-bold, rgba(255,255,255,0.65));
+  --shadow-accent:  4px 4px 0 var(--accent, #FFC6A5);
 
-  --text-1:   #F0F0F5;
-  --text-2:   #9898A8;
-  --text-3:   #58586A;
-  --text-inv: #09090B;
+  --text-1:   var(--text-primary, #F0F0F5);
+  --text-2:   var(--text-secondary, #9898A8);
+  /* Standalone fallback: #58586A sat at 2.5-2.7:1 on the dark surfaces — the
+     route labels and status captions were barely legible. 5.2-5.9:1 here. */
+  --text-3:   var(--text-tertiary, #8E8EA3);
+  --text-inv: var(--text-inverse, #09090B);
+
+  /* On the dark surfaces the vivid values already clear AA (8-10:1), so the
+     text variants collapse back to them. Violet is the exception at 3.3:1. */
+  --green-text:  var(--green);
+  --amber-text:  var(--amber);
+  --red-text:    var(--red);
+  --violet-text: #C4B5FD;
+  --cyan-text:   var(--cyan);
 
   --accent:         #FFC6A5;
   --accent-dim:     rgba(255,198,165,0.18);

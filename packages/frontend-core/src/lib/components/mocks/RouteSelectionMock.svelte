@@ -138,6 +138,7 @@
   }
 
   .rsm-path--active .rsm-tag {
-    color: var(--green);
+    /* 9px uppercase text — the indicator green is 2.2:1 on a light card. */
+    color: var(--green-text);
   }
 </style>
