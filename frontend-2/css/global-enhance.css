@@ -680,7 +680,7 @@ pre, code {
 }
 
 /* ============================================
-   ⚡ LANDING-CONSISTENT PAGE HEROES
+   LANDING-CONSISTENT PAGE HEROES
    Auto-injected aurora + decorative markup gets
    placed inside .features-hero / .faq-hero / etc.
    ============================================ */
@@ -1194,7 +1194,7 @@ pre, code {
 [data-theme="dark"] .section--peach .card__text { color: #3a342c !important; }
 
 /* ============================================
-   ⚡ ROUTING PRIMARY CARD — fix contrast
+   ROUTING PRIMARY CARD — fix contrast
    ============================================ */
 .routing__method {
   border: none !important;
@@ -1224,7 +1224,7 @@ pre, code {
 }
 
 /* ============================================
-   ⚡ CHAIN HERO — give it landing-style aurora bg
+   CHAIN HERO — give it landing-style aurora bg
    ============================================ */
 .chain-hero {
   background:
@@ -1274,7 +1274,7 @@ pre, code {
 }
 
 /* ============================================
-   ⚡ ACCORDION arrow centered
+   ACCORDION arrow centered
    ============================================ */
 .accordion__icon {
   font-family: var(--font-mono);
@@ -1282,7 +1282,7 @@ pre, code {
 }
 
 /* ============================================
-   ⚡ NAV ACTIONS workspace btn never bleeds
+   NAV ACTIONS workspace btn never bleeds
    ============================================ */
 .nav__actions .btn--primary,
 .nav__actions .btn--primary::before,
@@ -1294,7 +1294,7 @@ pre, code {
 }
 
 /* ============================================
-   ⚡ SECTION DIVIDER — hide if next section bg
+   SECTION DIVIDER — hide if next section bg
    matches (prevents double horizontal lines)
    ============================================ */
 .section-divider + .section--dark,
@@ -1305,7 +1305,7 @@ pre, code {
 }
 
 /* ============================================
-   ⚡ Buttons: ensure consistent transform reset
+   Buttons: ensure consistent transform reset
    ============================================ */
 .pill-btn,
 .btn,
@@ -1314,7 +1314,7 @@ pre, code {
 }
 
 /* ============================================
-   ⚡ "Smart Routing" pill chips look uniform
+   "Smart Routing" pill chips look uniform
    ============================================ */
 .badge--accent {
   background: var(--accent) !important;
@@ -1324,7 +1324,7 @@ pre, code {
 }
 
 /* ============================================
-   ⚡ Step / Giant-Step responsive padding
+   Step / Giant-Step responsive padding
    ============================================ */
 @media (max-width: 600px) {
   .giant-step, .gs-step {
@@ -1336,7 +1336,7 @@ pre, code {
 }
 
 /* ============================================
-   ⚡ Body root colors fallback for non-themed pages
+   Body root colors fallback for non-themed pages
    ============================================ */
 body:not([class*="section-theme-"])[data-page="features"],
 body:not([class*="section-theme-"])[data-page="faq"],
@@ -1348,7 +1348,7 @@ body:not([class*="section-theme-"])[data-page="developers"] {
 }
 
 /* ============================================
-   ⚡ DARK MODE — full UI override (no partial flip)
+   DARK MODE — full UI override (no partial flip)
    When user toggles dark, every section + bg flips.
    Section-theme classes still apply for nav-color
    morph but bg colors get dark variants.
@@ -1502,7 +1502,7 @@ body:not([class*="section-theme-"])[data-page="developers"] {
 [data-theme="light"] .section--dark { background: #0a0a0a !important; color: #f0f0e8 !important; }
 
 /* ============================================
-   ⚡ Theme transition — disable on color flips to
+   Theme transition — disable on color flips to
    eliminate flicker. Only animate body bg.
    ============================================ */
 /* .nav__inner is deliberately excluded — this `!important` shorthand would
@@ -1523,7 +1523,7 @@ body:not([class*="section-theme-"])[data-page="developers"] {
 }
 
 /* ============================================
-   ⚡ FOUC prevention — disable all transitions
+   FOUC prevention — disable all transitions
    on first paint until JS removes .preload class
    ============================================ */
 body.preload *,

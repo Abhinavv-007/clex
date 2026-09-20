@@ -81,7 +81,7 @@
 }
 
 .tip-card::before {
-  content: '💡';
+  content: '';
   position: absolute;
   top: var(--space-md);
   right: var(--space-md);

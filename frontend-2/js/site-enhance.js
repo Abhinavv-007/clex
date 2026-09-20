@@ -445,9 +445,9 @@ function initTerminalAnimation() {
 
   if (!cmdEl || !outputEl) return;
 
-  const command = 'npx -y clex-cli upload presentation.pdf';
+  const command = 'clex send presentation.pdf';
   const steps = [
-    { text: '⚙ Reading presentation.pdf (3.4 MB)...', color: '#25b6e8', delay: 700 },
+    { text: '› Reading presentation.pdf (3.4 MB)...', color: '#25b6e8', delay: 700 },
     { text: '✔ Signalled peer & connected over LAN', color: '#7edc8b', delay: 900 },
     { text: '[Direct+] Transferred 14/14 chunks (100% verified)', color: '#c46bc2', delay: 800 },
     { text: '✔ Transfer receipt proof generated successfully', color: '#7edc8b', delay: 600 },

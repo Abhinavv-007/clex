@@ -37,8 +37,20 @@
 }
 
 .legal-highlight__icon {
-  font-size: var(--text-3xl);
+  /* Inline SVG in the site's stroke idiom, not emoji: emoji render in each
+     platform's own colour and style, which reads as clip-art next to the
+     rest of the type. */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
   margin-bottom: var(--space-md);
+  border: 2px solid var(--border-bold);
+  border-radius: 12px;
+  background: var(--c-paper, #fff);
+  box-shadow: 3px 3px 0 var(--border-bold);
+  color: var(--c-ink, #0e0e0d);
 }
 
 .legal-highlight__title {

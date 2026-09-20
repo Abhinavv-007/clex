@@ -10,6 +10,17 @@ function mount(Component, target, props = {}) {
   return new Component({ target, props });
 }
 
+/** Reads ?mode=vault so a deep link opens the workspace on the vault. */
+function workspaceModeFromUrl() {
+  try {
+    return new URLSearchParams(window.location.search).get('mode') === 'vault'
+      ? 'vault'
+      : 'transfer';
+  } catch {
+    return 'transfer';
+  }
+}
+
 export async function initIslands() {
   const page = document.body.getAttribute('data-page') || '';
 
@@ -28,6 +39,9 @@ export async function initIslands() {
       receivePathFormat: 'query',
       receiveEntryHref: routes.receive,
       chainApiUrl: import.meta.env.PUBLIC_CHAIN_URL ?? '',
+      vaultSignalingUrl: import.meta.env.PUBLIC_SIGNAL_URL ?? 'wss://signal.clex.in',
+      vaultApiUrl: '/vault/api',
+      initialMode: workspaceModeFromUrl(),
     });
 
     const [
@@ -78,6 +92,9 @@ export async function initIslands() {
       receivePathFormat: 'query',
       receiveEntryHref: routes.receive,
       chainApiUrl: import.meta.env.PUBLIC_CHAIN_URL ?? '',
+      vaultSignalingUrl: import.meta.env.PUBLIC_SIGNAL_URL ?? 'wss://signal.clex.in',
+      vaultApiUrl: '/vault/api',
+      initialMode: workspaceModeFromUrl(),
     });
     return;
   }
@@ -99,11 +116,18 @@ export async function initIslands() {
     return;
   }
 
+  // /vault is retained as a redirect: Vault is a mode of the workspace now,
+  // and existing links and bookmarks have to keep working.
   if (page === 'vault') {
-    const { default: VaultApp } = await import('@clex/frontend-core/apps/VaultApp');
-    mount(VaultApp, document.getElementById('vault-app-island'), {
-      signalingUrl: import.meta.env.PUBLIC_SIGNAL_URL ?? 'wss://signal.clex.in',
+    const { default: WorkspaceApp } = await import('@clex/frontend-core/apps/WorkspaceApp');
+    mount(WorkspaceApp, document.getElementById('vault-app-island'), {
+      receiveBasePath: routes.receive,
+      receivePathFormat: 'query',
+      receiveEntryHref: routes.receive,
+      chainApiUrl: import.meta.env.PUBLIC_CHAIN_URL ?? '',
+      vaultSignalingUrl: import.meta.env.PUBLIC_SIGNAL_URL ?? 'wss://signal.clex.in',
       vaultApiUrl: '/vault/api',
+      initialMode: 'vault',
     });
     return;
   }

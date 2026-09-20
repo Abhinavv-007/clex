@@ -415,7 +415,7 @@
 
         <div class="card card--accent hover-lift">
           <span class="card__number">02</span>
-          <div class="card__icon">⚡</div>
+          <div class="card__icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
           <h3 class="card__title">Prepare</h3>
           <p class="card__text">
             Compress images, merge PDFs, export PDF pages as images, convert DOCX to PDF, bundle into ZIP. Chain tools together, one after another.
@@ -1130,7 +1130,7 @@
 
       <div class="trust__items stagger-group" hidden>
         <div class="trust__item hover-lift">
-          <span class="trust__icon">🔒</span>
+          <span class="trust__icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span>
           No Server Storage
         </div>
       </div>
@@ -1140,6 +1140,103 @@
   <svg class="section-divider section-divider--dark-to-cream" viewBox="0 0 1440 80" preserveAspectRatio="none" aria-hidden="true">
     <path d="M0,40 C240,0 480,80 720,40 C960,0 1200,80 1440,40 L1440,0 L0,0 Z"></path>
   </svg>
+
+  <!-- ═══ Chain ═══
+       Chain lives on the main page now; /chain remains for the full explorer. -->
+  <section class="section section--cream" id="chain" data-section-theme="cream" aria-labelledby="home-chain-title">
+    <div class="container">
+      <div class="section__header text-center reveal">
+        <span class="pill-badge pill-badge--inline">
+          <span class="pill-badge__icon">✦</span>
+          Transfer Chain
+        </span>
+        <h2 class="section__title section__title--mixed" id="home-chain-title">Every transfer leaves<br><em class="italic-accent">a receipt, not a copy.</em></h2>
+        <p class="section__subtitle">
+          Clex records the shape of a transfer — size, route, chunk count, a proof hash — and never the contents. The chain is public so a delivery can be checked without anyone opening the file.
+        </p>
+      </div>
+
+      <div class="home-chain__stage reveal">
+        <div id="home-chain-flow-island"></div>
+      </div>
+
+      <div class="home-chain__facts stagger-group">
+        <div class="home-chain__fact">
+          <span class="home-chain__fact-num">0</span>
+          <span class="home-chain__fact-label">bytes of file content recorded</span>
+        </div>
+        <div class="home-chain__fact">
+          <span class="home-chain__fact-num">SHA-256</span>
+          <span class="home-chain__fact-label">proof hash per completed transfer</span>
+        </div>
+        <div class="home-chain__fact">
+          <span class="home-chain__fact-num">Public</span>
+          <span class="home-chain__fact-label">anyone can verify, no account needed</span>
+        </div>
+      </div>
+
+      <div class="home-chain__cta">
+        <a href="/chain" class="pill-btn pill-btn--ghost">
+          <span class="pill-btn__label">Open the chain explorer</span>
+          <span class="pill-btn__arrow" aria-hidden="true">→</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ Developers ═══
+       The API summary lives on the main page; /developers keeps the full
+       reference and the key generator. -->
+  <section class="section section--cream" id="developers" data-section-theme="cream" aria-labelledby="home-dev-title">
+    <div class="container">
+      <div class="section__header text-center reveal">
+        <span class="pill-badge pill-badge--inline">
+          <span class="pill-badge__icon">✦</span>
+          Developers
+        </span>
+        <h2 class="section__title section__title--mixed" id="home-dev-title">Drive it from<br><em class="italic-accent">the terminal.</em></h2>
+        <p class="section__subtitle">
+          No signup. Generate a key, export it, and send files with one command — or use the same HTTP API from any language.
+        </p>
+      </div>
+
+      <div class="home-dev__grid reveal">
+        <figure class="home-dev__code">
+          <figcaption class="home-dev__code-label">The CLI</figcaption>
+          <pre class="home-dev__pre"><code>npm i -g @clex/cli
+clex login
+
+clex send report.pdf
+<span class="home-dev__out">https://clex.in/share/4A3FSQ</span>
+
+clex ls
+clex get 4A3FSQ -o ./report.pdf</code></pre>
+        </figure>
+
+        <figure class="home-dev__code">
+          <figcaption class="home-dev__code-label">Or plain HTTP</figcaption>
+          <pre class="home-dev__pre"><code>curl -X POST https://clex.in/vault/api/uploads \
+  -H "Authorization: Bearer $CLEX_API_KEY" \
+  -H "X-Filename: report.pdf" \
+  --data-binary @report.pdf</code></pre>
+        </figure>
+      </div>
+
+      <div class="home-dev__facts stagger-group">
+        <div class="home-dev__fact"><strong>No signup</strong><span>keys are minted per device</span></div>
+        <div class="home-dev__fact"><strong>60 req/min</strong><span>100 MB per file</span></div>
+        <div class="home-dev__fact"><strong>Hashed at rest</strong><span>the key is shown once</span></div>
+      </div>
+
+      <div class="home-dev__cta">
+        <a href="/developers" class="pill-btn pill-btn--primary">
+          <span class="pill-btn__label">Get an api key</span>
+          <span class="pill-btn__arrow" aria-hidden="true">→</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
 
   <!-- ═══ Final CTA ═══ -->
   <section class="section cta-final" data-section-theme="cream">

@@ -2486,3 +2486,152 @@ body.section-theme-dark .scroll-progress {
   background: rgba(255, 255, 255, 0.06);
 }
 
+
+/* ============================================
+   Chain + Developers sections
+
+   Chain and the developer API used to be reachable only as their own pages.
+   They are sections of the main page now; /chain and /developers remain for
+   the full explorer and the key generator respectively.
+   ============================================ */
+
+.home-chain__stage {
+  max-width: 980px;
+  margin: clamp(1.5rem, 3vw, 2.5rem) auto 0;
+}
+
+.home-chain__facts,
+.home-dev__facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: clamp(0.75rem, 2vw, 1.25rem);
+  max-width: 980px;
+  margin: clamp(1.75rem, 3vw, 2.5rem) auto 0;
+}
+
+.home-chain__fact {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 1.1rem 1.25rem;
+  background: var(--c-paper);
+  border: 2px solid var(--c-ink);
+  border-radius: 16px;
+  box-shadow: 4px 4px 0 var(--c-ink);
+}
+
+.home-chain__fact-num {
+  font-family: var(--font-display);
+  font-size: clamp(1.35rem, 2.4vw, 1.9rem);
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  color: var(--c-ink);
+}
+
+.home-chain__fact-label {
+  font-size: 0.85rem;
+  line-height: 1.4;
+  color: var(--c-ink-soft);
+}
+
+.home-chain__cta,
+.home-dev__cta {
+  display: flex;
+  justify-content: center;
+  margin-top: clamp(1.5rem, 3vw, 2.25rem);
+}
+
+/* ── Developers ──
+   The terminal blocks stay dark on the cream section: that is what a terminal
+   looks like, and it gives the section its own weight without needing a dark
+   band. Everything around them uses the same ink border + hard offset as the
+   rest of the site. */
+
+.home-dev__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: clamp(1rem, 2.5vw, 1.5rem);
+  max-width: 1040px;
+  margin: clamp(1.5rem, 3vw, 2.5rem) auto 0;
+}
+
+.home-dev__code {
+  margin: 0;
+  border: 2px solid var(--c-ink);
+  border-radius: 18px;
+  background: #15140f;
+  box-shadow: 5px 5px 0 var(--c-ink);
+  overflow: hidden;
+}
+
+.home-dev__code-label {
+  padding: 0.7rem 1.1rem;
+  border-bottom: 2px solid rgba(255, 249, 232, 0.16);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 249, 232, 0.8);
+}
+
+.home-dev__pre {
+  margin: 0;
+  padding: 1.1rem 1.25rem;
+  /* Long commands scroll inside the block rather than widening the page. */
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  line-height: 1.7;
+  color: #f4eee0;
+  white-space: pre;
+}
+
+/* creem-design.css styles every `pre, code` with the cream chip treatment,
+   under a selector that outranks these. Inside a terminal block that paints
+   the surface cream and leaves the output text at 1.2:1. */
+.home-dev__code .home-dev__pre,
+.home-dev__code .home-dev__pre code {
+  display: block;
+  padding: 0;
+  background: none !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  font: inherit;
+  color: inherit;
+  box-shadow: none !important;
+}
+
+.home-dev__code .home-dev__pre {
+  padding: 1.1rem 1.25rem;
+  color: #f4eee0;
+}
+
+.home-dev__out { color: #8fe0a4; }
+
+.home-dev__fact {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 1rem 1.15rem;
+  border: 2px solid var(--c-ink);
+  border-radius: 16px;
+  background: var(--c-paper);
+  box-shadow: 4px 4px 0 var(--c-ink);
+}
+
+.home-dev__fact strong {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--c-ink);
+}
+
+.home-dev__fact span {
+  font-size: 0.84rem;
+  color: var(--c-ink-soft);
+}
+
+@media (max-width: 640px) {
+  .home-dev__pre { font-size: 0.76rem; }
+}
