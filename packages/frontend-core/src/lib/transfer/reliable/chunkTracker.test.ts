@@ -111,3 +111,143 @@ describe('ChunkTracker', () => {
     expect(snap.pending).toBe(3)
   })
 })
+
+// ── Regression guards for the incremental bookkeeping ─────────────────────
+//
+// snapshot(), pickNextSendable(), isComplete() and failedChunkCount() are
+// called once per chunk by the send loop. They used to walk every chunk in
+// the transfer, making a send O(chunks^2) — a 1 GB file is 16,384 chunks at
+// 64 KB, so roughly 5x10^8 record visits on the UI thread. They are now
+// driven by counters maintained in setStatus(). These tests cover the two
+// ways that can go wrong: the counters drifting from reality, and someone
+// reintroducing a full scan.
+
+function makeBigManifest(totalChunks: number, chunkSize = 1024): TransferManifest {
+  return {
+    version: RELIABLE_PROTOCOL_VERSION,
+    transferId: 'big',
+    createdAt: 0,
+    chunkSize,
+    totalSize: totalChunks * chunkSize,
+    totalChunks,
+    perChunkHash: false,
+    files: [{
+      fileId: 'f',
+      fileIndex: 0,
+      name: 'f',
+      mimeType: 'application/octet-stream',
+      size: totalChunks * chunkSize,
+      totalChunks,
+    }],
+  }
+}
+
+describe('ChunkTracker bookkeeping', () => {
+  it('keeps counters consistent with the records through a full lifecycle', () => {
+    const total = 400
+    const tracker = new ChunkTracker(makeBigManifest(total), { maxAttempts: 3 })
+
+    const invariant = (label: string) => {
+      const s = tracker.snapshot()
+      expect(s.pending + s.inFlight + s.acked + s.verified + s.failed, label).toBe(total)
+      expect(s.totalChunks, label).toBe(total)
+      expect(s.bytesAcked, label).toBe((s.acked + s.verified) * 1024)
+      expect(s.failedChunks, label).toBe(tracker.failedChunkCount())
+      // missingChunks() is an independent, non-incremental view.
+      expect(tracker.missingChunks().length, label).toBe(total - s.acked - s.verified)
+      expect(tracker.isComplete(), label).toBe(s.acked + s.verified === total)
+    }
+
+    invariant('seeded')
+
+    // Deterministic mixed workload: send everything, ack most, retry some,
+    // verify some, and let a few exhaust their retry budget.
+    for (let i = 0; i < total; i++) {
+      const rec = tracker.pickNextSendable(0)
+      expect(rec?.chunkIndex).toBe(i)
+      tracker.markSent(0, i, 0)
+    }
+    invariant('all sent')
+
+    for (let i = 0; i < total; i++) {
+      if (i % 7 === 0) {
+        tracker.scheduleRetry(0, i, 0)
+      } else if (i % 3 === 0) {
+        tracker.markAcked(0, i)
+        tracker.markVerified(0, i)
+      } else {
+        tracker.markAcked(0, i)
+      }
+    }
+    invariant('mixed ack/verify/retry')
+
+    // Drain the retried chunks, exhausting the budget on a few.
+    let guard = 0
+    let rec = tracker.pickNextSendable(0)
+    while (rec && guard++ < total * 5) {
+      const { fileIndex, chunkIndex } = rec
+      tracker.markSent(fileIndex, chunkIndex, 0)
+      if (chunkIndex % 14 === 0) {
+        tracker.scheduleRetry(fileIndex, chunkIndex, 0)
+      } else {
+        tracker.markAcked(fileIndex, chunkIndex)
+      }
+      rec = tracker.pickNextSendable(0)
+    }
+    invariant('retries drained')
+    expect(guard).toBeLessThan(total * 5)
+  })
+
+  it('re-counts correctly after resetInFlight requeues a resumed transfer', () => {
+    const total = 50
+    const tracker = new ChunkTracker(makeBigManifest(total))
+    for (let i = 0; i < total; i++) tracker.markSent(0, i, 0)
+    for (let i = 0; i < 20; i++) tracker.markAcked(0, i)
+
+    tracker.resetInFlight()
+    const s = tracker.snapshot()
+    expect(s.inFlight).toBe(0)
+    expect(s.acked).toBe(20)
+    expect(s.pending).toBe(30)
+    expect(s.bytesAcked).toBe(20 * 1024)
+
+    // The requeued chunks must still be reachable in order.
+    expect(tracker.pickNextSendable(0)?.chunkIndex).toBe(20)
+  })
+
+  it('tracks in-flight bytes so the window is independent of chunk size', () => {
+    const tracker = new ChunkTracker(makeBigManifest(10))
+    expect(tracker.inFlightBytes()).toBe(0)
+    tracker.markSent(0, 0, 0)
+    tracker.markSent(0, 1, 0)
+    expect(tracker.inFlightBytes()).toBe(2 * 1024)
+    tracker.markAcked(0, 0)
+    expect(tracker.inFlightBytes()).toBe(1024)
+    tracker.scheduleRetry(0, 1, 0)
+    expect(tracker.inFlightBytes()).toBe(0)
+  })
+
+  it('drives a large transfer without per-chunk full scans', () => {
+    // 60k chunks. Linear bookkeeping is ~6x10^4 operations; the previous
+    // implementation was ~3.6x10^9 and would not finish in any sane time.
+    const total = 60_000
+    const tracker = new ChunkTracker(makeBigManifest(total))
+
+    const started = Date.now()
+    for (let i = 0; i < total; i++) {
+      const rec = tracker.pickNextSendable(0)
+      if (!rec) throw new Error(`ran out of sendable chunks at ${i}`)
+      tracker.markSent(rec.fileIndex, rec.chunkIndex, 0)
+      tracker.markAcked(rec.fileIndex, rec.chunkIndex)
+      tracker.snapshot()
+      tracker.isComplete()
+    }
+    const elapsed = Date.now() - started
+
+    expect(tracker.isComplete()).toBe(true)
+    expect(tracker.snapshot().acked).toBe(total)
+    // Generous ceiling — this is about catching a return to quadratic cost,
+    // not about benchmarking the machine.
+    expect(elapsed).toBeLessThan(4000)
+  })
+})
