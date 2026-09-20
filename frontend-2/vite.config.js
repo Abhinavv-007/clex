@@ -21,6 +21,7 @@ const devSlashlessRouteMap = new Map([
   ['/faq', '/faq/index.html'],
   ['/privacy', '/privacy/index.html'],
   ['/terms', '/terms/index.html'],
+  ['/cookies', '/cookies/index.html'],
   ['/vault', '/vault/index.html'],
   ['/vault/secret', '/vault/secret/index.html'],
   ['/vault/share', '/vault/share/index.html'],
@@ -40,6 +41,7 @@ const previewSlashlessRouteMap = new Map([
   ['/faq', '/faq'],
   ['/privacy', '/privacy'],
   ['/terms', '/terms'],
+  ['/cookies', '/cookies'],
   // Nested routes keep their directory in dist (see flatten-pages-output.mjs),
   // so they must point at the file. Cloudflare Pages resolves the directory
   // index by itself; `vite preview` does not, and an identity mapping makes
@@ -210,6 +212,7 @@ export default defineConfig({
         faq: r('faq/index.html'),
         privacy: r('privacy/index.html'),
         terms: r('terms/index.html'),
+        cookies: r('cookies/index.html'),
         vault: r('vault/index.html'),
         'vault-secret': r('vault/secret/index.html'),
         'vault-share': r('vault/share/index.html'),

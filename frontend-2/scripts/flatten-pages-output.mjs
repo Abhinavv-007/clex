@@ -27,6 +27,7 @@ const flatRoutes = [
   'faq',
   'privacy',
   'terms',
+  'cookies',
   'admin',
 ];
 

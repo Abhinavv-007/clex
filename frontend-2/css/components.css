@@ -731,3 +731,94 @@
 [data-theme="dark"] .routing__method--primary .link {
   color: #5b3fc0;
 }
+
+/* ============================================
+   Browser-storage notice
+
+   A notice, not a consent gate: Clex stores nothing that is optional, so
+   there is nothing to reject. It never covers content — it docks to a
+   corner, is dismissible by button or Escape, and once dismissed does not
+   return. See js/storage-notice.js.
+   ============================================ */
+.storage-notice {
+  position: fixed;
+  z-index: 300;
+  left: clamp(0.75rem, 2vw, 1.5rem);
+  bottom: clamp(0.75rem, 2vw, 1.5rem);
+  width: min(30rem, calc(100vw - 1.5rem));
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1rem;
+  padding: 0.9rem 1.1rem;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border: 2px solid var(--border-bold);
+  border-radius: 16px;
+  box-shadow: 5px 5px 0 var(--border-bold), 0 26px 50px -28px rgba(14, 14, 13, 0.5);
+  /* Start offset and transparent; .storage-notice--in settles it. */
+  opacity: 0;
+  transform: translateY(0.75rem);
+  transition: opacity 260ms var(--ease-out), transform 260ms var(--ease-out);
+}
+
+.storage-notice--in {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.storage-notice__text {
+  flex: 1 1 16rem;
+  margin: 0;
+  font-size: 0.86rem;
+  line-height: 1.45;
+  color: var(--text-secondary);
+}
+
+.storage-notice__text strong { color: var(--text-primary); }
+
+.storage-notice__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-left: auto;
+}
+
+.storage-notice__link {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--accent-text);
+  text-decoration: underline;
+  text-underline-offset: 0.16em;
+  white-space: nowrap;
+}
+
+.storage-notice__btn {
+  padding: 0.44rem 1rem;
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--c-ink);
+  background: var(--c-lavender);
+  border: 2px solid var(--c-ink);
+  border-radius: 999px;
+  box-shadow: 3px 3px 0 var(--c-ink);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: transform 160ms var(--ease-out), box-shadow 160ms var(--ease-out);
+}
+
+.storage-notice__btn:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 var(--c-ink);
+}
+
+.storage-notice__btn:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0 var(--c-ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .storage-notice,
+  .storage-notice__btn { transition: none; }
+}

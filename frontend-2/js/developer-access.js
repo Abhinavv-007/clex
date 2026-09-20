@@ -1,37 +1,43 @@
 /**
- * Developer API-key panel.
+ * Developer API-key panel — no account required.
  *
- * The previous implementation minted keys entirely in the browser:
+ * ─── Why the previous version could never work ────────────────────────────
  *
- *     const random = await randomToken(32)
+ * It minted the key in the browser:
+ *
  *     state.token = `clex_${fingerprint.slice(0, 12)}_${random}`
  *     localStorage.setItem(KEY_STORE, state.token)
  *
- * …and commented that "the server validates the fingerprint binding on use".
- * It does not, and it cannot: the worker authenticates a key by looking up
- * SHA-256(key) in the `api_keys` table, and nothing had ever inserted a row.
- * Every key this panel produced was therefore rejected with 401 on first use,
- * which is why "generating the API key to the working of the API key" was
- * broken — the page's own three-step diagram (sign in with Google → create
- * api key → send bearer key) described a flow the code never performed.
+ * …and claimed "the server validates the fingerprint binding on use". It
+ * cannot. The worker authenticates a key by looking up SHA-256(key) in the
+ * `api_keys` table, and nothing ever inserted a row, so every key this page
+ * produced was rejected 401 on first use.
  *
- * Keys are now created by POST /vault/api/keys, which stores the hash against
- * the signed-in user and returns the plaintext exactly once. See
- * apps/vault-worker/src/apiKeys.ts.
+ * ─── What changed ─────────────────────────────────────────────────────────
+ *
+ * The fingerprint stays, and sign-in is still not required — but the SERVER
+ * mints the key. POST /vault/api/keys/anonymous sends the fingerprint, the
+ * worker combines it with the edge-observed IP to decide how many keys this
+ * apparent device may hold, generates the secret, stores its hash, and
+ * returns the plaintext once.
+ *
+ * The fingerprint is not a credential — it is computed here, so a caller can
+ * send anything. It only meters abuse. The API key is the credential, which
+ * is why revoking a key is done by presenting the key
+ * (DELETE /vault/api/keys/self) rather than by claiming a fingerprint.
  */
 
 const TOKEN_PLACEHOLDER = '<YOUR_API_KEY>';
-/** Where the one-time plaintext is held for this tab only. */
+const FP_KEY = 'clex_dev_fp_v2';
+/** The key itself: kept for this tab only, never localStorage. */
 const SESSION_KEY = 'clex_dev_apikey_session';
 const VAULT_API = '/vault/api';
 
 const state = {
-  /** @type {import('@clex/frontend-core').VaultUser | null} */
-  user: null,
-  /** @type {string} Plaintext key, only known immediately after creation. */
+  fingerprint: '',
   token: '',
-  /** @type {Array<{id: string, name: string, prefix: string, createdAt: number, lastUsedAt: number|null, totalUploads: number}>} */
-  keys: [],
+  /** @type {{ratePerMinute:number,maxFileBytes:number,prefix:string}|null} */
+  meta: null,
   busy: false,
 };
 
@@ -44,20 +50,17 @@ export async function initDeveloperAccess() {
     copy: /** @type {HTMLButtonElement|null} */ (document.getElementById('dev-copy-token')),
     rotate: /** @type {HTMLButtonElement|null} */ (document.getElementById('dev-rotate-token')),
     output: /** @type {HTMLTextAreaElement|null} */ (document.getElementById('dev-token-output')),
+    label: document.getElementById('dev-create-token-label'),
     userLabel: document.getElementById('dev-user-label'),
     status: document.getElementById('dev-token-status'),
     identity: document.getElementById('dev-fp-display'),
   };
 
-  // Restore a key minted earlier in this tab so a reload doesn't lose the one
-  // copy the server will ever hand out. sessionStorage, not localStorage: the
-  // plaintext should not outlive the tab.
+  state.fingerprint = await computeFingerprint();
   try {
     const saved = sessionStorage.getItem(SESSION_KEY);
     if (saved) state.token = saved;
   } catch { /* private mode */ }
-
-  const core = await import('@clex/frontend-core');
 
   const setBusy = (busy, label) => {
     state.busy = busy;
@@ -67,108 +70,53 @@ export async function initDeveloperAccess() {
   };
 
   const render = () => {
-    const signedIn = Boolean(state.user);
     root.classList.toggle('dev-access--has-token', Boolean(state.token));
-    root.classList.toggle('dev-access--signed-in', signedIn);
 
-    if (els.identity) {
-      els.identity.textContent = signedIn ? (state.user.email || state.user.uid) : 'not signed in';
-    }
+    if (els.identity) els.identity.textContent = `${state.fingerprint.slice(0, 24)}…`;
+    if (els.label) els.label.textContent = state.token ? 'Generate another' : 'Generate api key';
 
     if (els.userLabel) {
-      if (!signedIn) {
-        els.userLabel.innerHTML = 'Sign in with Google to create an api key';
-      } else if (state.token) {
-        els.userLabel.innerHTML = `Key ready · copy it now, it is shown <b>once</b>`;
-      } else if (state.keys.length) {
-        const plural = state.keys.length === 1 ? 'key' : 'keys';
-        els.userLabel.innerHTML =
-          `${state.keys.length} active ${plural} · <b>Generate</b> to mint another`;
-      } else {
-        els.userLabel.innerHTML = 'Click <b>Generate api key</b> to mint one';
-      }
-    }
-
-    // Write to the label span, not the button: the button also holds an icon.
-    const createLabel = document.getElementById('dev-create-token-label');
-    if (createLabel) {
-      createLabel.textContent = signedIn ? 'Generate api key' : 'Sign in with Google';
+      els.userLabel.innerHTML = state.token
+        ? 'Key ready · copy it now, it is shown <b>once</b>'
+        : 'Click <b>Generate api key</b> to mint one — no signup';
     }
 
     if (els.output) {
       els.output.value = state.token || '';
-      els.output.placeholder = signedIn
-        ? 'Generate a key — the plaintext is shown once and never stored on the server'
-        : 'Sign in to create a key';
+      els.output.placeholder = 'Click Generate — the key is shown once and stored only as a hash';
+    }
+
+    if (els.status && state.meta) {
+      els.status.textContent =
+        `${formatLimit(state.meta.ratePerMinute)} · ${formatBytes(state.meta.maxFileBytes)} per file`;
     }
 
     updateCommands(state.token || TOKEN_PLACEHOLDER);
   };
 
-  /** Authenticated request against the vault worker. */
-  const api = async (method, path, body) => {
-    const token = await core.getGoogleIdToken();
-    if (!token) throw new Error('Sign-in expired. Sign in again.');
-    const res = await fetch(`${VAULT_API}${path}`, {
-      method,
-      headers: {
-        Authorization: `Bearer ${token}`,
-        ...(body ? { 'Content-Type': 'application/json' } : {}),
-      },
-      body: body ? JSON.stringify(body) : undefined,
-    });
-    if (!res.ok) {
-      let detail = '';
-      try { detail = (await res.json())?.error ?? ''; } catch { /* non-JSON */ }
-      throw new Error(detail || `Request failed (${res.status})`);
-    }
-    return res.status === 204 ? null : res.json();
-  };
-
-  const loadKeys = async () => {
-    if (!state.user) return;
-    try {
-      const data = await api('GET', '/keys');
-      state.keys = data?.keys ?? [];
-    } catch (err) {
-      console.error('[clex] could not list api keys', err);
-      state.keys = [];
-    }
-    render();
-  };
-
-  const signIn = async () => {
-    setBusy(true, 'Opening Google sign-in…');
-    try {
-      await core.signInWithGoogle();
-      // onVaultAuthChanged fires and drives the rest.
-    } catch (err) {
-      if (els.status) els.status.textContent = describeError(err, 'Sign-in failed.');
-    } finally {
-      setBusy(false);
-      render();
-    }
-  };
-
   const generate = async () => {
-    if (!state.user) return signIn();
     setBusy(true, 'Creating key…');
     try {
-      const data = await api('POST', '/keys', {
-        name: `developers-page · ${new Date().toISOString().slice(0, 10)}`,
-        email: state.user.email ?? undefined,
+      const res = await fetch(`${VAULT_API}/keys/anonymous`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fingerprint: state.fingerprint,
+          name: `developers-page · ${new Date().toISOString().slice(0, 10)}`,
+        }),
       });
-      state.token = data?.plaintext ?? '';
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || `Could not create the key (${res.status}).`);
+
+      state.token = data.plaintext || '';
+      state.meta = data.key || null;
       try { sessionStorage.setItem(SESSION_KEY, state.token); } catch { /* private mode */ }
-      if (els.status) {
-        const key = data?.key;
-        els.status.textContent = key
-          ? `Key ready · ${formatLimit(key.ratePerMinute, '/min')} · ${formatBytes(key.maxFileBytes)} per file`
-          : 'Key ready.';
+      if (els.status && state.meta) {
+        els.status.textContent =
+          `Key ready · ${formatLimit(state.meta.ratePerMinute)} · ${formatBytes(state.meta.maxFileBytes)} per file`;
       }
-      await loadKeys();
     } catch (err) {
-      if (els.status) els.status.textContent = describeError(err, 'Could not create the key.');
+      if (els.status) els.status.textContent = err instanceof Error ? err.message : 'Could not create the key.';
     } finally {
       setBusy(false);
       render();
@@ -176,24 +124,20 @@ export async function initDeveloperAccess() {
   };
 
   const rotate = async () => {
-    if (!state.user) return signIn();
-    if (!confirm('Revoke every existing key and mint a new one? Old keys stop working immediately.')) return;
-    setBusy(true, 'Revoking old keys…');
+    if (!state.token) return generate();
+    if (!confirm('Revoke this key and mint a new one? The current key stops working immediately.')) return;
+    setBusy(true, 'Revoking…');
     try {
-      await loadKeys();
-      for (const key of state.keys) {
-        await api('DELETE', `/keys/${encodeURIComponent(key.id)}`);
-      }
-      state.token = '';
-      try { sessionStorage.removeItem(SESSION_KEY); } catch { /* ignore */ }
-      await generate();
-      return;
-    } catch (err) {
-      if (els.status) els.status.textContent = describeError(err, 'Could not rotate keys.');
-    } finally {
-      setBusy(false);
-      render();
-    }
+      await fetch(`${VAULT_API}/keys/self`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${state.token}` },
+      });
+    } catch { /* revoke is best-effort; the new key is what matters */ }
+    state.token = '';
+    state.meta = null;
+    try { sessionStorage.removeItem(SESSION_KEY); } catch { /* ignore */ }
+    setBusy(false);
+    await generate();
   };
 
   els.create?.addEventListener('click', () => { if (!state.busy) void generate(); });
@@ -201,11 +145,7 @@ export async function initDeveloperAccess() {
 
   els.copy?.addEventListener('click', async () => {
     if (!state.token) {
-      if (els.status) {
-        els.status.textContent = state.user
-          ? 'Generate a key first.'
-          : 'Sign in, then generate a key.';
-      }
+      if (els.status) els.status.textContent = 'Generate a key first.';
       return;
     }
     await copyText(state.token);
@@ -214,7 +154,6 @@ export async function initDeveloperAccess() {
     setTimeout(() => els.copy.classList.remove('is-copied'), 1600);
   });
 
-  // Generic [data-copy-command] support — kept for the sample command blocks.
   root.querySelectorAll('[data-copy-command]').forEach((button) => {
     button.addEventListener('click', async () => {
       const targetId = button.getAttribute('data-copy-command');
@@ -225,32 +164,66 @@ export async function initDeveloperAccess() {
     });
   });
 
-  core.onVaultAuthChanged((user) => {
-    state.user = user;
-    if (!user) {
-      state.keys = [];
-      state.token = '';
-      try { sessionStorage.removeItem(SESSION_KEY); } catch { /* ignore */ }
-      render();
-      return;
-    }
-    void loadKeys();
-  });
-
   render();
 }
 
-/** @param {unknown} err @param {string} fallback */
-function describeError(err, fallback) {
-  const msg = err instanceof Error ? err.message : '';
-  if (!msg) return fallback;
-  if (/popup|cancell?ed/i.test(msg)) return 'Sign-in cancelled.';
-  return msg;
+/**
+ * A stable-ish device signature. Cached so the same browser keeps the same
+ * mint allowance across visits.
+ *
+ * This is an abuse-metering signal, not an identity: it is computed here, so
+ * the value is whatever the client chooses to send.
+ */
+async function computeFingerprint() {
+  try {
+    const cached = localStorage.getItem(FP_KEY);
+    if (cached) return cached;
+  } catch { /* private mode */ }
+
+  const parts = [
+    navigator.userAgent || '',
+    navigator.language || '',
+    Intl.DateTimeFormat().resolvedOptions().timeZone || '',
+    `${screen.width}x${screen.height}x${screen.colorDepth}`,
+    String(navigator.hardwareConcurrency || 0),
+  ];
+
+  // Canvas signature — the same shapes rasterise slightly differently per GPU.
+  try {
+    const c = document.createElement('canvas');
+    c.width = 200; c.height = 50;
+    const g = c.getContext('2d');
+    if (g) {
+      g.textBaseline = 'top';
+      g.font = '14px monospace';
+      g.fillStyle = '#f60';
+      g.fillRect(0, 0, 100, 30);
+      g.fillStyle = '#069';
+      g.fillText('clex.fingerprint', 2, 2);
+      parts.push(c.toDataURL().slice(-64));
+    }
+  } catch { /* canvas blocked — the rest still varies */ }
+
+  const hash = await sha256(parts.join('|'));
+  try { localStorage.setItem(FP_KEY, hash); } catch { /* private mode */ }
+  return hash;
 }
 
-/** @param {number} rpm @param {string} suffix */
-function formatLimit(rpm, suffix) {
-  return rpm < 0 ? 'unlimited' : `${rpm}${suffix}`;
+/** @param {string} input */
+async function sha256(input) {
+  if (crypto?.subtle) {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(input));
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+  // Only reachable on an insecure origin, where SubtleCrypto is unavailable.
+  let h = 0;
+  for (const c of input) h = (h * 31 + c.charCodeAt(0)) | 0;
+  return Math.abs(h).toString(16).padStart(16, '0').repeat(2);
+}
+
+/** @param {number} rpm */
+function formatLimit(rpm) {
+  return rpm < 0 ? 'unlimited' : `${rpm} req/min`;
 }
 
 /** @param {number} bytes */
@@ -287,7 +260,7 @@ async function copyText(text) {
     try {
       await navigator.clipboard.writeText(text);
       return;
-    } catch { /* fall through to the legacy path */ }
+    } catch { /* fall through */ }
   }
   const textarea = document.createElement('textarea');
   textarea.value = text;

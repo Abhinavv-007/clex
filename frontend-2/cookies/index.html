@@ -13,8 +13,8 @@
   <script>document.documentElement.classList.add('clex-design-booting');</script>
   <link rel="icon" type="image/png" href="/brand/clex-logo.png">
   <link rel="apple-touch-icon" href="/brand/clex-logo.png">
-  <title>How It Works — Clex | Drop, Prepare, Share</title>
-  <meta name="description" content="Three steps: drop files into your workspace, prepare them with built-in tools, and share through the fastest route. See how Clex connects preparation to delivery.">
+  <title>Cookies &amp; Browser Storage — Clex</title>
+  <meta name="description" content="Exactly what Clex stores in your browser, why, how long it lasts, and how to clear it. Clex sets no cookies and runs no analytics or advertising trackers.">
   <script>
     // Theme bootstrap — must stay inline and render-blocking so the correct
     // palette is committed before first paint. Mirrors readTheme() in js/theme.js.
@@ -42,14 +42,14 @@
   <link rel="stylesheet" href="/css/layout.css">
   <link rel="stylesheet" href="/css/animations.css">
   <link rel="stylesheet" href="/css/pages/home.css">
-  <link rel="stylesheet" href="/css/pages/how-it-works.css">
+  <link rel="stylesheet" href="/css/pages/legal.css">
   <link rel="stylesheet" href="/css/global-enhance.css">
   <link rel="stylesheet" href="/css/creem-design.css">
   <link rel="stylesheet" href="/css/cinematic.css">
 
   <script type="module" src="/js/main.js"></script>
 </head>
-<body data-page="how-it-works">
+<body data-page="cookies">
 
   <!-- ═══ Navigation ═══ -->
   <nav class="nav" id="main-nav">
@@ -91,197 +91,142 @@
   </div>
 
   <!-- ═══ Hero ═══ -->
-  <section class="hiw-hero">
+  <section class="legal-hero">
     <div class="container">
-      <span class="page-hero__label reveal">The Process</span>
-      <h1 class="page-hero__title reveal">Three Steps<br>Zero Friction</h1>
-      <p class="page-hero__subtitle reveal">
-        Clex connects preparation and delivery into a single flow. Here's exactly how it works, from first drop to final delivery.
-      </p>
+      <span class="page-hero__label reveal">Legal</span>
+      <h1 class="page-hero__title reveal">Cookies &amp; <em>browser storage</em></h1>
+      <div class="legal-hero__meta page-hero__meta reveal">Last updated: September 20, 2026</div>
     </div>
   </section>
-
-  <!-- ═══ Giant Step 1: DROP ═══ -->
-  <section class="section">
-    <div class="container">
-      <div class="giant-steps">
-
-        <div class="giant-step">
-          <div class="giant-step__content">
-            <div class="giant-step__number">01</div>
-            <h2 class="giant-step__title">Drop Your Files</h2>
-            <p class="giant-step__text">
-              Open Clex in your browser. Drag files in — images, PDFs, documents, anything. They stay in your browser's memory. Nothing gets uploaded to any server.
-            </p>
-            <div class="giant-step__tags">
-              <span class="badge badge--outline">Drag & Drop</span>
-              <span class="badge badge--outline">Click to Browse</span>
-              <span class="badge badge--outline">Paste from Clipboard</span>
-            </div>
-          </div>
-          <div id="hiw-drop-island"></div>
-        </div>
-
-        <!-- ═══ Giant Step 2: PREPARE ═══ -->
-        <div class="giant-step">
-          <div class="giant-step__content">
-            <div class="giant-step__number">02</div>
-            <h2 class="giant-step__title">Prepare & Transform</h2>
-            <p class="giant-step__text">
-              Use built-in tools to process your files before sharing. Compress images, merge PDFs, convert DOCX to PDF, bundle into ZIP. Chain operations together — one flows into the next.
-            </p>
-            <div class="giant-step__tags">
-              <span class="badge badge--outline">Compress</span>
-              <span class="badge badge--outline">Merge</span>
-              <span class="badge badge--outline">Convert</span>
-              <span class="badge badge--outline">Split</span>
-              <span class="badge badge--outline">ZIP</span>
-              <span class="badge badge--outline">Chain</span>
-            </div>
-          </div>
-          <div id="hiw-tools-island"></div>
-        </div>
-
-        <!-- ═══ Giant Step 3: SHARE ═══ -->
-        <div class="giant-step">
-          <div class="giant-step__content">
-            <div class="giant-step__number">03</div>
-            <h2 class="giant-step__title">Share & Deliver</h2>
-            <p class="giant-step__text">
-              Hit share. Clex scans the network, detects available routes, and picks the fastest path. Direct P2P is always tried first. Local network for same-Wi-Fi speed. Google Drive when direct isn't possible.
-            </p>
-            <div class="giant-step__tags">
-              <span class="badge badge--accent">P2P Default</span>
-              <span class="badge badge--outline">Local Network</span>
-              <span class="badge badge--outline">Drive Fallback</span>
-            </div>
-          </div>
-          <div id="hiw-route-island"></div>
-        </div>
-
-        <!-- ═══ Giant Step 4: VERIFY ═══ -->
-        <div class="giant-step">
-          <div class="giant-step__content">
-            <div class="giant-step__number">04</div>
-            <h2 class="giant-step__title">Verify &amp; Receipt</h2>
-            <p class="giant-step__text">
-              Clex Direct+ slices your files into 256 KB chunks, holds up to 32 in flight at once, and lets the receiver ACK each one. Lost chunks retry on backoff; corrupted ones get re-requested by hash. You can <strong>pause</strong> mid-transfer and pick up from the next pending chunk — no restart from byte zero. When the last chunk lands, both peers compute a content-free <strong>verified receipt</strong>: file count, total size, chunk count, retries, route, and an optional root hash you can copy.
-            </p>
-            <div class="giant-step__tags">
-              <span class="badge badge--accent">Chunk-level integrity</span>
-              <span class="badge badge--outline">Pause &amp; resume</span>
-              <span class="badge badge--outline">Health score</span>
-              <span class="badge badge--outline">Verified receipt</span>
-            </div>
-          </div>
-          <div class="hiw-protocol-card">
-            <div class="hiw-protocol-card__head">
-              <span class="hiw-protocol-card__label">Direct+ wire</span>
-              <span class="hiw-protocol-card__chip">256 KB · 32 in-flight</span>
-            </div>
-            <ol class="hiw-protocol-card__steps">
-              <li><span class="hiw-protocol-card__num">1</span> Capability handshake (legacy peers fall back automatically)</li>
-              <li><span class="hiw-protocol-card__num">2</span> Manifest with file list, sizes, optional per-chunk SHA-256</li>
-              <li><span class="hiw-protocol-card__num">3</span> Chunk frames with sliding window + ACK / NACK</li>
-              <li><span class="hiw-protocol-card__num">4</span> Receiver verifies size, hash; sender retries on demand</li>
-              <li><span class="hiw-protocol-card__num">5</span> Verify success → both sides build a content-free receipt</li>
-            </ol>
-            <a href="/developers#protocol" class="hiw-protocol-card__link">See the full protocol →</a>
-          </div>
-        </div>
-
-      </div>
-    </div>
-  </section>
-
-  <!-- ═══ Banner ═══ -->
-  <div class="banner reveal-scale">
-    <div class="container">
-      <p class="banner__text">Files go from A → B<br>Nothing in between</p>
-    </div>
-  </div>
 
   <section class="section">
     <div class="container">
-      <div class="section__header text-center reveal">
-        <span class="section__label">Vault Flow</span>
-        <h2 class="section__title page-section__title">Private Work Has<br>Its Own Route</h2>
-        <p class="section__subtitle mx-auto">
-          Vault runs alongside the main workspace flow. Notes stay local, secret links carry their own policy, and timed Drive-share sessions clean themselves up.
-        </p>
-      </div>
-
-      <div class="grid grid-3 gap-xl stagger-group">
-        <div class="card hover-lift">
-          <h3 class="card__title">1. Write Locally</h3>
-          <p class="card__text">
-            Vault notes are encrypted in the browser, organized into folders, and available offline after the app loads. The local device remains the primary home for that content.
-          </p>
+      <div class="legal-highlights stagger-group">
+        <div class="legal-highlight">
+          <div class="legal-highlight__icon">🍪</div>
+          <h3 class="legal-highlight__title">No cookies</h3>
+          <p class="legal-highlight__text">Clex sets no HTTP cookies at all. Everything below lives in your browser&rsquo;s own storage and never travels with a request.</p>
         </div>
-        <div class="card hover-lift">
-          <h3 class="card__title">2. Choose Secret Protections</h3>
-          <p class="card__text">
-            Secret Share lets you pick the expiry and decide which protections apply: view once, 60-second viewing window, no select, tab-switch lock, and DevTools guard.
-          </p>
+        <div class="legal-highlight">
+          <div class="legal-highlight__icon">🚫</div>
+          <h3 class="legal-highlight__title">No trackers</h3>
+          <p class="legal-highlight__text">No analytics, no advertising pixels, no fingerprinting, no session replay, no third-party tag manager.</p>
         </div>
-        <div class="card hover-lift">
-          <h3 class="card__title">3. Publish a Timed File Link</h3>
-          <p class="card__text">
-            Cloud Share uses Google Drive sign-in for ownership and quota tracking, accepts files up to 1 GB each, enforces a 10 GB daily budget, and removes the Drive session after 24 hours.
-          </p>
+        <div class="legal-highlight">
+          <div class="legal-highlight__icon">🧹</div>
+          <h3 class="legal-highlight__title">Yours to clear</h3>
+          <p class="legal-highlight__text">All of it is local. Clearing site data in your browser removes every item listed here, permanently.</p>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- ═══ Edge Cases ═══ -->
   <section class="section">
-    <div class="container">
-      <div class="section__header text-center reveal">
-        <span class="section__label">What If...?</span>
-        <h2 class="section__title page-section__title">Clex Handles<br>the Edge Cases</h2>
-      </div>
+    <div class="container legal-body">
+      <div class="legal-sections">
 
-      <div class="grid grid-2 gap-xl stagger-group">
-        <div class="card hover-lift">
-          <h3 class="card__title">What if I'm offline?</h3>
-          <p class="card__text">
-            After Clex loads once, the preparation tools work completely offline. Compress images, merge PDFs, convert documents — all without internet. Share when you reconnect.
+        <div class="legal-section reveal">
+          <div class="legal-section__number">Section 01</div>
+          <h2 class="legal-section__title">The short version</h2>
+          <p class="legal-section__text">
+            Clex does not set cookies. It does use three browser storage mechanisms &mdash; <strong>localStorage</strong>, <strong>sessionStorage</strong> and <strong>IndexedDB</strong> &mdash; because the product is a browser application: your vault, your encryption keys and your in-progress transfers have to live somewhere, and we would rather that were your device than our server.
+          </p>
+          <p class="legal-section__text">
+            Everything in the table below is <strong>strictly necessary</strong> for a feature you chose to use. Under the ePrivacy Directive and UK PECR, strictly necessary storage does not require prior consent, which is why you are not asked to click through a consent wall to read this page. We show a one-time notice instead, so the disclosure is still made.
           </p>
         </div>
-        <div class="card hover-lift">
-          <h3 class="card__title">What about large files?</h3>
-          <p class="card__text">
-            Local network transfer handles large files at LAN speed. For remote transfers, P2P streams chunks progressively. Drive has Google's file limits for the fallback path.
-          </p>
-        </div>
-        <div class="card hover-lift">
-          <h3 class="card__title">What if P2P fails?</h3>
-          <p class="card__text">
-            Clex automatically detects when direct P2P can't establish. It offers local network or Google Drive as alternatives. You choose — Clex never switches without asking.
-          </p>
-        </div>
-        <div class="card hover-lift">
-          <h3 class="card__title">What browsers work?</h3>
-          <p class="card__text">
-            Chrome, Firefox, Safari, Edge — any modern browser with WebRTC support. Mobile browsers work too. Clex adapts the interface to your screen size automatically.
-          </p>
-        </div>
-      </div>
-    </div>
-  </section>
 
-  <!-- ═══ CTA ═══ -->
-  <section class="cta-strip">
-    <div class="container">
-      <h2 class="cta-strip__title reveal">
-        Simple enough?<br><span style="color: var(--accent-text);">Try it now</span>
-      </h2>
-      <p class="cta-strip__text reveal">
-        No download, no install, no signup. Just open and drop.
-      </p>
-      <div class="reveal">
-        <a href="/workspace" class="btn btn--primary btn--large">Open Workspace →</a>
+        <div class="legal-section reveal">
+          <div class="legal-section__number">Section 02</div>
+          <h2 class="legal-section__title">Everything Clex stores</h2>
+          <p class="legal-section__text">This list is exhaustive for clex.in as of the date above.</p>
+
+          <h3 class="legal-subsection__title">Always present</h3>
+          <ul class="legal-section__list">
+            <li><strong><code>clex-theme-v2</code></strong> &mdash; localStorage. Whether you chose light or dark. Kept until you clear site data. Without it the site re-guesses your theme on every page load and flashes.</li>
+            <li><strong><code>clex-storage-notice-v1</code></strong> &mdash; localStorage. Records that you have seen the storage notice, so it is not shown again. Kept until you clear site data.</li>
+          </ul>
+
+          <h3 class="legal-subsection__title">Only if you open the Vault</h3>
+          <ul class="legal-section__list">
+            <li><strong><code>vault-data-v1</code></strong> &mdash; IndexedDB. Your notes and folders, encrypted before they are written. Kept until you delete them or clear site data.</li>
+            <li><strong><code>vault-crypto-v1</code></strong> &mdash; IndexedDB. The encryption keys for the above, generated on your device. <strong>Never transmitted to Clex.</strong> Kept until you clear site data &mdash; clearing it without a backup makes existing notes unrecoverable, by design.</li>
+            <li><strong><code>clex_vault_share_resume</code></strong> &mdash; localStorage. Lets an interrupted vault share pick up where it left off. Cleared when the share finishes.</li>
+          </ul>
+
+          <h3 class="legal-subsection__title">Only if you connect Google Drive</h3>
+          <ul class="legal-section__list">
+            <li><strong><code>clex_drive_auth</code></strong> &mdash; IndexedDB. The OAuth token for the Drive account you connected, so you are not asked to reauthorise on every upload. Removed when you disconnect Drive.</li>
+            <li><strong><code>clex_gdrive_callback_error</code></strong> &mdash; sessionStorage. Carries an authorisation error across the OAuth redirect so the page can explain what went wrong. Gone when the tab closes.</li>
+          </ul>
+
+          <h3 class="legal-subsection__title">Only if you create an API key</h3>
+          <ul class="legal-section__list">
+            <li><strong><code>clex_dev_apikey_session</code></strong> &mdash; sessionStorage. Holds the one-time plaintext of a key you just created so a page reload does not lose the only copy. Deliberately <em>not</em> localStorage: it must not outlive the tab. Gone when the tab closes.</li>
+          </ul>
+
+          <h3 class="legal-subsection__title">Only on the admin console</h3>
+          <ul class="legal-section__list">
+            <li><strong><code>clex_admin_session_id</code></strong> &mdash; sessionStorage. Identifies an authenticated admin session. Gone when the tab closes.</li>
+          </ul>
+        </div>
+
+        <div class="legal-section reveal">
+          <div class="legal-section__number">Section 03</div>
+          <h2 class="legal-section__title">What Clex does not do</h2>
+          <ul class="legal-section__list">
+            <li>No HTTP cookies, first-party or third-party</li>
+            <li>No analytics or product-telemetry SDK</li>
+            <li>No advertising or remarketing pixels, and no data sold or shared for advertising</li>
+            <li>No device fingerprinting or cross-site identifiers</li>
+            <li>No session replay or heatmap recording</li>
+            <li>No tag manager loading further scripts after the page opens</li>
+          </ul>
+        </div>
+
+        <div class="legal-section reveal">
+          <div class="legal-section__number">Section 04</div>
+          <h2 class="legal-section__title">Third parties that can see a request</h2>
+          <p class="legal-section__text">
+            These are the only external services a Clex page contacts. None of them set a cookie through Clex, but a request necessarily discloses your IP address and user agent to the service handling it.
+          </p>
+          <ul class="legal-section__list">
+            <li><strong>Google Fonts</strong> (<code>fonts.googleapis.com</code>, <code>fonts.gstatic.com</code>) &mdash; serves the typefaces. Receives your IP address when fonts are fetched. No cookie is set.</li>
+            <li><strong>Firebase Authentication</strong> (Google) &mdash; only if you sign in. Handles the sign-in itself and issues the identity token Clex verifies.</li>
+            <li><strong>Google Drive API</strong> &mdash; only if you choose the Drive route for a transfer, and only for the files you send that way.</li>
+            <li><strong>Supabase Storage</strong> &mdash; holds files uploaded through the programmatic API until they expire. Not used for direct P2P or local-network transfers.</li>
+            <li><strong>Cloudflare</strong> &mdash; serves the site and runs the API workers.</li>
+          </ul>
+        </div>
+
+        <div class="legal-section reveal">
+          <div class="legal-section__number">Section 05</div>
+          <h2 class="legal-section__title">Clearing what is stored</h2>
+          <p class="legal-section__text">
+            Everything above is under your control and none of it needs our involvement to remove.
+          </p>
+          <ul class="legal-section__list">
+            <li><strong>All of it:</strong> clear site data for clex.in in your browser settings &mdash; in Chrome and Edge under Settings &rarr; Privacy &rarr; Third-party cookies &rarr; See all site data; in Firefox under Settings &rarr; Privacy &amp; Security &rarr; Cookies and Site Data; in Safari under Settings &rarr; Privacy &rarr; Manage Website Data.</li>
+            <li><strong>Session items only:</strong> close the tab.</li>
+            <li><strong>Drive access:</strong> disconnect Drive in the workspace, and revoke Clex at <a class="link" href="https://myaccount.google.com/permissions" target="_blank" rel="noopener noreferrer">myaccount.google.com/permissions</a>.</li>
+            <li><strong>Vault notes:</strong> delete them in the Vault, or clear site data to remove the encrypted store and its keys together.</li>
+          </ul>
+          <p class="legal-section__text">
+            Using Clex in a private or incognito window means nothing persists after you close it. The workspace still works; the Vault will not remember anything between sessions.
+          </p>
+        </div>
+
+        <div class="legal-section reveal">
+          <div class="legal-section__number">Section 06</div>
+          <h2 class="legal-section__title">Changes and contact</h2>
+          <p class="legal-section__text">
+            If Clex ever adds storage that is not strictly necessary &mdash; analytics being the obvious candidate &mdash; this page will say so before it ships, and it will be opt-in rather than assumed. Questions about anything here: <a class="link" href="mailto:hello@clex.in">hello@clex.in</a>.
+          </p>
+          <p class="legal-section__text">
+            See also the <a class="link" href="/privacy">Privacy Policy</a> and the <a class="link" href="/terms">Terms of Service</a>.
+          </p>
+        </div>
+
       </div>
     </div>
   </section>

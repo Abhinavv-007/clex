@@ -414,6 +414,48 @@ export async function handleApiKeyUsage(
   return jsonResponse({ key: record, rate }, 200, cors)
 }
 
+// ── Self-service management for anonymous keys ──────────────────────────────
+//
+// An anonymous key has no account behind it, so it is managed by presenting
+// the key itself: holding the secret is the proof. There is deliberately no
+// "list all keys for this fingerprint" route — the fingerprint is computed in
+// the browser and therefore forgeable, and making it load-bearing would
+// recreate the X-Vault-UID problem in a new place.
+
+/** Reads `Authorization: Bearer clex_…` and resolves it to a stored key. */
+async function keyFromBearer(req: Request, env: Env): Promise<ApiKeyRecord | null> {
+  const header = req.headers.get('Authorization') ?? ''
+  if (!header.toLowerCase().startsWith('bearer ')) return null
+  const token = header.slice(7).trim()
+  if (!token.startsWith(KEY_PREFIX)) return null
+  return findKeyByPlaintext(env, token)
+}
+
+export async function handleApiKeySelf(
+  req: Request,
+  env: Env,
+  cors: Record<string, string>,
+): Promise<Response> {
+  const key = await keyFromBearer(req, env)
+  if (!key) return errorResponse('Invalid or revoked API key', 401, cors)
+  const rate = await peekRate(env, key)
+  // The plaintext is never echoed back — only the visible prefix.
+  return jsonResponse({ key: { ...key, userId: undefined, userEmail: undefined }, rate }, 200, cors)
+}
+
+export async function handleApiKeySelfRevoke(
+  req: Request,
+  env: Env,
+  cors: Record<string, string>,
+): Promise<Response> {
+  const key = await keyFromBearer(req, env)
+  if (!key) return errorResponse('Invalid or revoked API key', 401, cors)
+  await env.DB.prepare(
+    'UPDATE api_keys SET revoked_at = unixepoch() WHERE id = ? AND revoked_at IS NULL'
+  ).bind(key.id).run()
+  return jsonResponse({ ok: true }, 200, cors)
+}
+
 export const apiKeysModule = {
   ABSOLUTE_FILE_SIZE_CEILING,
   FILE_SIZE_LIMITS,

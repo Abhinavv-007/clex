@@ -1,9 +1,12 @@
 import { requireOwner } from './auth'
+import { mintAnonymousKey } from './anonKeys'
 import {
   handleApiKeyCreate,
   handleApiKeyList,
   handleApiKeyRevoke,
   handleApiKeyUpdate,
+  handleApiKeySelf,
+  handleApiKeySelfRevoke,
   handleApiKeyUsage,
 } from './apiKeys'
 import {
@@ -64,6 +67,13 @@ export interface Env {
    */
   CLEX_ADMIN_SECRET?: string
   ADMIN_SECRET?: string
+  /**
+   * Keys the HMAC that turns a (device fingerprint, IP) pair into an
+   * anonymous owner id, so the id cannot be recomputed offline. Optional:
+   * the id confers no access on its own (anonymous keys are managed by
+   * presenting the key), so an unkeyed digest is a safe fallback.
+   */
+  ANON_KEY_SECRET?: string
 }
 
 // ── Boot timestamp (per-instance, resets on cold start) ───────────────────────
@@ -1065,7 +1075,30 @@ export default {
       return err('Method not allowed', 405, cors)
     }
 
-    // ─── API keys (UI-managed, X-Vault-UID auth) ─────────────────────────
+    // ─── API keys ─────────────────────────────────────────────────────────
+    //
+    // Three ways in, deliberately distinct:
+    //   /keys            signed-in management  (Firebase ID token)
+    //   /keys/anonymous  no-account minting    (server-generated, device-scoped)
+    //   /keys/self       manage one key        (the key itself is the proof)
+    //
+    // These routes are matched before the generic /keys/:id pattern below so
+    // "anonymous" and "self" are never read as key ids.
+    if (path === '/vault/api/keys/anonymous') {
+      if (method !== 'POST') return err('Method not allowed', 405, cors)
+      let body: { fingerprint?: unknown; name?: unknown } = {}
+      try { body = await request.json() } catch { /* validated below */ }
+      const result = await mintAnonymousKey(request, env, body)
+      if (!result.ok) return err(result.error, result.status, cors)
+      return json({ key: result.key, plaintext: result.plaintext }, 201, cors)
+    }
+
+    if (path === '/vault/api/keys/self') {
+      if (method === 'GET') return handleApiKeySelf(request, env, cors)
+      if (method === 'DELETE') return handleApiKeySelfRevoke(request, env, cors)
+      return err('Method not allowed', 405, cors)
+    }
+
     if (path === '/vault/api/keys') {
       if (method === 'POST') return handleApiKeyCreate(request, env, cors)
       if (method === 'GET') return handleApiKeyList(request, env, cors)

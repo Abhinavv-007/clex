@@ -14,6 +14,7 @@ import { initHeroEffects } from './hero-effects.js';
 import { initSiteEnhance } from './site-enhance.js';
 import { initImmersive } from './immersive.js';
 import { initCinematic } from './cinematic.js';
+import { initStorageNotice } from './storage-notice.js';
 
 // ── Initialize on DOM ready ──
 document.addEventListener('DOMContentLoaded', async () => {
@@ -31,6 +32,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   normalizeSharedFooter();
   normalizeHeadingPunctuation();
   initSiteEnhance();
+  initStorageNotice();
 
   // Theme toggle button
   const themeToggle = document.getElementById('theme-toggle');
