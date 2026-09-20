@@ -870,16 +870,29 @@ So:
 - Clex has no relay server path in the current code
 - the practical fallback is Google Drive, not TURN
 
-### 11.7 The primary frontend needs more explicit local config documentation
+### 11.7 `PUBLIC_*` variables require an explicit Vite `envPrefix`
 
-The shipped runtime reads:
+`apps/web/.env.example` documents all four variables the runtime reads
+(`PUBLIC_SIGNALING_URL`, `PUBLIC_STUN_SERVERS`, `PUBLIC_API_BASE_URL`,
+`PUBLIC_CHAIN_URL`).
 
-- `PUBLIC_API_BASE_URL`
-- `PUBLIC_CHAIN_URL`
+The subtlety is that Vite exposes a variable to the browser build only if its
+name matches `envPrefix`, and the default is `VITE_` — not `PUBLIC_`. Both
+Vite configs therefore set:
 
-but the checked-in env examples document only `PUBLIC_SIGNALING_URL` and `PUBLIC_STUN_SERVERS`.
+```js
+envPrefix: ['VITE_', 'PUBLIC_'],
+```
 
-This makes local setup less obvious than it should be, especially when `apps/web` runs on `3000` and the workers run on `8787`, `8788`, and `8789`.
+Without that line every `import.meta.env.PUBLIC_*` read evaluates to
+`undefined` and falls back to a hardcoded default. Production is unaffected,
+because the defaults are the production values — which is what makes the
+failure so quiet: setting a variable for a local, preview or self-hosted
+environment simply does nothing. `apps/web/config.test.ts` pins the prefix so
+this cannot regress silently.
+
+Remember that `apps/web` runs on `3000` while the workers run on `8787`,
+`8788`, and `8789`, so local values rarely match the production defaults.
 
 ### 11.8 There are two frontend implementations with overlapping responsibilities
 
