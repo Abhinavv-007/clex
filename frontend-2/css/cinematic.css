@@ -2436,3 +2436,82 @@ body {
   background: linear-gradient(135deg, #7edc8b 0%, #34c759 100%) !important;
   color: #fff !important;
 }
+
+/* =============================================================
+   SUB-PAGE HERO RHYTHM — one definition for all of them
+
+   Every sub-page hero carried its own `padding: 10rem 0 6rem`, with
+   global-enhance.css pushing legal and chain to 11rem. The 10rem top was
+   sized by hand to clear the fixed nav; that clearance is now a token
+   (--nav-clearance, see creem-design.css), so the padding can be derived
+   from it instead of re-guessed per page. Measured across the nine
+   sub-pages, the old values left 88-166px of dead space below the content
+   and made every hero 520-900px tall for two or three lines of text.
+
+   Loaded last, so this is the final word on sub-page hero spacing.
+   ============================================================= */
+.legal-hero,
+.hiw-hero,
+.gs-hero,
+.faq-hero,
+.features-hero,
+.page-hero {
+  padding-top: calc(var(--nav-clearance) + clamp(1.5rem, 3vw, 2.75rem)) !important;
+  padding-bottom: clamp(2rem, 4vw, 3.25rem) !important;
+}
+
+/* These two are two-column grids with real content on the right, so they
+   only need the top clearance normalised. */
+.chain-hero,
+.dev-hero {
+  padding-top: calc(var(--nav-clearance) + clamp(1.5rem, 3vw, 2.5rem)) !important;
+  padding-bottom: clamp(2rem, 4vw, 3rem) !important;
+}
+
+/* Single-column heroes are centred, matching the landing page. Left-aligned
+   they left 440-570px of empty viewport to their right — a third of the
+   screen reading as an accident rather than as space. The body content of
+   each page stays left-aligned for readability; only the hero centres. */
+.legal-hero .container,
+.hiw-hero .container,
+.gs-hero .container,
+.faq-hero .container,
+.features-hero .container {
+  text-align: center;
+}
+
+.legal-hero .container > *,
+.hiw-hero .container > *,
+.gs-hero .container > *,
+.faq-hero .container > *,
+.features-hero .container > * {
+  margin-inline: auto;
+}
+
+/* Keep the measure readable — a centred line longer than ~60 characters is
+   hard to track back to the start of the next one. */
+.legal-hero p,
+.hiw-hero p,
+.gs-hero p,
+.faq-hero p,
+.features-hero p,
+.legal-hero__meta {
+  max-width: 62ch;
+}
+
+@media (max-width: 720px) {
+  .legal-hero .container,
+  .hiw-hero .container,
+  .gs-hero .container,
+  .faq-hero .container,
+  .features-hero .container {
+    text-align: left;
+  }
+  .legal-hero .container > *,
+  .hiw-hero .container > *,
+  .gs-hero .container > *,
+  .faq-hero .container > *,
+  .features-hero .container > * {
+    margin-inline: 0;
+  }
+}
