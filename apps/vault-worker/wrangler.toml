@@ -34,9 +34,18 @@ database_id = "68d8ae50-6b96-46e2-85b2-4edbd4d3c0ba"
 # ── R2 (file bytes) ───────────────────────────────────────────────────────────
 # Replaces Supabase Storage, whose host stopped resolving entirely (CF 1016),
 # which made every upload fail while the rest of the API kept working.
-[[r2_buckets]]
-binding = "FILES"
-bucket_name = "clex-vault-files"
+# Parked until R2 is enabled on the account. Wrangler refuses to deploy a
+# worker whose R2 binding names a bucket that does not exist (code 10085), so
+# leaving this active fails every CI deploy. src/storage.ts already answers
+# 503 when no bucket is bound, so uploads report the truth meanwhile.
+#
+# To turn storage on: enable R2 in the Cloudflare dashboard, then
+#   wrangler r2 bucket create clex-vault-files
+#   (uncomment both blocks below, and in [env.production])
+#   wrangler deploy --env production
+# [[r2_buckets]]
+# binding = "FILES"
+# bucket_name = "clex-vault-files"
 
 [vars]
 ALLOWED_ORIGIN = "*"
@@ -73,9 +82,9 @@ binding = "DB"
 database_name = "clex-vault"
 database_id = "68d8ae50-6b96-46e2-85b2-4edbd4d3c0ba"
 
-[[env.production.r2_buckets]]
-binding = "FILES"
-bucket_name = "clex-vault-files"
+# [[env.production.r2_buckets]]
+# binding = "FILES"
+# bucket_name = "clex-vault-files"
 
 [[env.production.routes]]
 pattern = "clex.in/vault/api/*"

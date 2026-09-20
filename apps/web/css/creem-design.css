@@ -214,38 +214,13 @@
   .hero__visual .data-stream__row {
     min-height: 3rem;
     font-size: clamp(0.68rem, 0.75vw, 0.82rem);
-  }
-
-  .hero__float-tag--a {
-    left: clamp(2rem, 6vw, 7rem) !important;
-    top: 44% !important;
-  }
-
-  .hero__float-tag--b {
-    right: clamp(2rem, 7vw, 6rem) !important;
-    top: 58% !important;
-  }
-
-  .hero__float-tag--c {
-    left: clamp(10rem, 18vw, 20rem) !important;
-    bottom: 13% !important;
-  }
-
-  .hero__sparkle--a,
-  .hero__sparkle--b,
-  .hero__sparkle--c,
-  .hero__sparkle--d {
-    opacity: 0.72 !important;
-    filter: drop-shadow(0 8px 24px rgba(107,77,255,0.22));
-  }
-}
+  }}
 
 @media (max-width: 979px) {
   .hero.hero--cinematic {
     min-height: auto !important;
     padding-top: clamp(7rem, 18vw, 9rem) !important;
-  }
-}
+  }}
 
 .banner:not(.banner--marquee):not(.banner--dark):not(.banner--statement) {
   position: relative;
@@ -348,8 +323,7 @@
   .banner:not(.banner--marquee):not(.banner--dark):not(.banner--statement) {
     min-height: clamp(12rem, 48vw, 18rem);
     padding-inline: 1.5rem;
-  }
-}
+  }}
 
 [data-theme="dark"] {
   --c-cream:        #0e0e0d;
@@ -507,8 +481,7 @@ h1, h2, h3, .hero__title, .hero__title--mega, .page-hero__title,
 @media (max-width: 640px) {
   .hero__title--mega { font-size: clamp(1.8rem, 11vw, 3.8rem) !important; }
   .hero__title-row--accent { gap: 0.3rem !important; flex-wrap: wrap !important; justify-content: center !important; }
-  .hero__title-word--italic { font-size: 0.92em !important; }
-}
+  .hero__title-word--italic { font-size: 0.92em !important; }}
 .section__title { padding-bottom: 0.24em !important; }
 .banner__text { padding-bottom: 0.22em !important; line-height: 1.08 !important; }
 
@@ -1092,8 +1065,7 @@ pre, code, .code-block, .dev-code {
 
 @media (max-width: 720px) {
   .peer-flow { grid-template-columns: 1fr; }
-  .peer-pipe { width: 100%; }
-}
+  .peer-pipe { width: 100%; }}
 
 /* =============================================================
    NEW INFOGRAPHIC: bento spotlight grid
@@ -1170,8 +1142,7 @@ pre, code, .code-block, .dev-code {
 .bento__cell--ink .bento__big-num { color: var(--accent-text); }
 @media (max-width: 880px) {
   .bento { grid-template-columns: repeat(2, 1fr); }
-  .bento__cell { grid-column: span 2 !important; }
-}
+  .bento__cell { grid-column: span 2 !important; }}
 
 /* =============================================================
    NEW: chunk visualizer (Direct+ proof)
@@ -1307,8 +1278,7 @@ pre, code, .code-block, .dev-code {
 .creem-stack__card:last-child .creem-stack__arrow { display: none; }
 @media (max-width: 720px) {
   .creem-stack { grid-template-columns: 1fr; }
-  .creem-stack__arrow { top: auto; bottom: -18px; right: 50%; transform: rotate(135deg); margin-right: -9px; }
-}
+  .creem-stack__arrow { top: auto; bottom: -18px; right: 50%; transform: rotate(135deg); margin-right: -9px; }}
 
 /* =============================================================
    NEW: tilted logo strip (Creem references)
@@ -1340,17 +1310,6 @@ pre, code, .code-block, .dev-code {
 .logo-strip__item:nth-child(4) .logo-strip__icon { background: var(--c-yellow); }
 .logo-strip__item:nth-child(5) .logo-strip__icon { background: var(--c-pink); }
 .logo-strip__item:nth-child(6) .logo-strip__icon { background: var(--c-blue); }
-
-/* =============================================================
-   IMMERSIVE TWEAKS: hero floating tags & feature pills
-   ============================================================= */
-.hero__float-tag {
-  background: var(--bg-card) !important;
-  color: var(--text-primary) !important;
-  border: 2px solid var(--border-bold) !important;
-  box-shadow: 3px 3px 0 var(--border-bold) !important;
-  border-radius: 9999px !important;
-}
 .hero__feature-pill {
   background: var(--bg-card) !important;
   border: 2px solid var(--border-bold) !important;
@@ -1479,14 +1438,12 @@ pre, code, .code-block, .dev-code {
     opacity: 0 !important;
     transform: translateY(28px) !important;
     transition: opacity 700ms cubic-bezier(0.22,1,0.36,1), transform 700ms cubic-bezier(0.22,1,0.36,1);
-  }
-}
+  }}
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0s !important; transition-duration: 0s !important; }
   body::before { display: none; }
-  .creem-ambient-blobs { display: none; }
-}
+  .creem-ambient-blobs { display: none; }}
 
 /* focus rings */
 :focus-visible { outline: 3px solid var(--accent-warm) !important; outline-offset: 2px !important; }
@@ -1594,12 +1551,10 @@ body[class*="section-theme-"] .nav__inner {
   .nav__actions .btn--primary,
   .nav__actions .btn--small { display: none !important; }
   .nav__hamburger { display: grid !important; }
-  .nav__inner { flex-wrap: nowrap !important; }
-}
+  .nav__inner { flex-wrap: nowrap !important; }}
 
 @media (min-width: 900px) {
-  .nav__hamburger { display: none !important; }
-}
+  .nav__hamburger { display: none !important; }}
 
 /* The nav is fixed, so the first section on every page has to clear it. This
    is expressed once, against the bar's real height, instead of being
@@ -1607,8 +1562,7 @@ body[class*="section-theme-"] .nav__inner {
 :root { --nav-clearance: 6.4rem; }
 
 @media (max-width: 899px) {
-  :root { --nav-clearance: 7.2rem; }
-}
+  :root { --nav-clearance: 7.2rem; }}
 
 html body .hero,
 html body .page-hero,
@@ -1790,8 +1744,7 @@ html .nav .nav__link:hover, .nav .nav__link:hover {
 }
 @media (max-width: 880px) {
   .footer__cols { grid-template-columns: 1fr 1fr; gap: 2rem; }
-  .footer__col--meta { grid-column: 1 / -1; }
-}
+  .footer__col--meta { grid-column: 1 / -1; }}
 
 .footer.footer--v2 .footer__col {
   display: flex;
@@ -1976,8 +1929,7 @@ html .nav .nav__link:hover, .nav .nav__link:hover {
 @media (max-width: 720px) {
   .footer__hero { flex-direction: column; align-items: flex-start; gap: 1rem; }
   .footer__tagline { text-align: left; }
-  .footer__glyph { font-size: clamp(1.8rem, 9vw, 3.5rem); }
-}
+  .footer__glyph { font-size: clamp(1.8rem, 9vw, 3.5rem); }}
 
 /* =============================================================
    NEW: speed-bars eq pulse (looks like waveform)
@@ -2166,8 +2118,7 @@ html .nav .nav__link:hover, .nav .nav__link:hover {
   .data-stream__row {
     grid-template-columns: auto 1fr;
   }
-  .data-stream__time { display: none; }
-}
+  .data-stream__time { display: none; }}
 
 /* =============================================================
    NEW: floating stat orbs (replaces dull metric grid feeling)
@@ -2236,11 +2187,9 @@ html {
   font-size: 17.6px;
 }
 @media (max-width: 640px) {
-  html { font-size: 16.9px; }
-}
+  html { font-size: 16.9px; }}
 @media (max-width: 380px) {
-  html { font-size: 16px; }
-}
+  html { font-size: 16px; }}
 
 p, li, .card__text, .section__subtitle, .lead, .page-hero__subtitle {
   font-weight: 500 !important;
@@ -2440,8 +2389,7 @@ p, li, .card__text, .section__subtitle, .lead, .page-hero__subtitle {
   }
   .footer__glyph {
     font-size: clamp(2.15rem, 12vw, 4.2rem) !important;
-  }
-}
+  }}
 
 /* =============================================================
    LIQUID LANGUAGE v2: no flash, handwriting reveals, richer UI
@@ -2653,8 +2601,7 @@ html.clex-design-booting footer:not(.footer--v2) {
   .hero__title-word--italic.clex-write::after {
     transform: scaleX(1);
     animation: none !important;
-  }
-}
+  }}
 
 /* =============================================================
    FEEDBACK PASS: stable accents, static bands, mobile-safe visuals
@@ -2905,8 +2852,7 @@ html.clex-design-booting footer:not(.footer--v2) {
     text-align: center;
     font-size: 0.72rem !important;
     line-height: 1.25;
-  }
-}
+  }}
 
 /* =============================================================
    COLD-LOAD + NAV + LOGO PASS
@@ -3021,8 +2967,7 @@ body[class*="section-theme-"] .nav--scrolled .nav__inner {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .nav__inner { transition: none !important; }
-}
+  .nav__inner { transition: none !important; }}
 
 /* ---- Contents: all theme-token driven, no hardcoded ink/cream ---- */
 
@@ -3189,8 +3134,7 @@ body[class*="section-theme-"] .nav__actions .btn--primary {
   .workspace-shell,
   .vault-shell {
     padding-top: 0;
-  }
-}
+  }}
 
 /* Final CTA color guard: keep old yellow/lime rules from bleeding through. */
 #main-nav .nav__actions .btn.btn--primary.btn--small,
@@ -3419,8 +3363,7 @@ body[class*="section-theme-"] #main-nav .nav__actions .btn.btn--primary.btn--sma
     animation: none !important;
     transform: none !important;
     translate: 0 0 !important;
-  }
-}
+  }}
 
 /* Final visual pass: keep these after older page/theme overrides. */
 .hero.hero--cinematic {
@@ -3526,15 +3469,13 @@ body[class*="section-theme-"] #main-nav .nav__actions .btn.btn--primary.btn--sma
   .hero__visual .data-stream__row {
     min-height: 3rem;
     font-size: clamp(0.68rem, 0.75vw, 0.82rem);
-  }
-}
+  }}
 
 @media (max-width: 979px) {
   .hero.hero--cinematic {
     min-height: auto !important;
     padding-top: clamp(7rem, 18vw, 9rem) !important;
-  }
-}
+  }}
 
 .banner:not(.banner--marquee):not(.banner--dark):not(.banner--statement) {
   position: relative;
@@ -3663,8 +3604,7 @@ html.has-reveal-observer [data-reveal].is-revealed {
   .hero__feature-trio {
     bottom: clamp(0.8rem, 2.6vh, 1.6rem) !important;
     z-index: 8 !important;
-  }
-}
+  }}
 
 /* Final device/theme QA pass. */
 html.clex-theme-switching,
@@ -3858,8 +3798,7 @@ html.clex-theme-switching::view-transition-new(root) {
     text-align: center !important;
     font-size: clamp(2.8rem, 16vw, 5rem) !important;
     padding-bottom: 4.6rem !important;
-  }
-}
+  }}
 
 /* Emergency hero repair: stable, readable composition with no overlapping cards. */
 .hero.hero--cinematic {
@@ -3966,8 +3905,7 @@ body.section-theme-dark .hero__subtitle {
   .hero__visual .data-stream__row {
     min-height: 3rem !important;
     font-size: clamp(0.72rem, 0.78vw, 0.86rem) !important;
-  }
-}
+  }}
 
 @media (max-width: 760px) {
   .hero.hero--cinematic {
@@ -4012,8 +3950,7 @@ body.section-theme-dark .hero__subtitle {
 
   .hero__visual .data-stream {
     max-height: none;
-  }
-}
+  }}
 
 /* Final polish pass: keep the landing page cinematic without the broken overlap. */
 /* [LEGACY-NEUTRALIZED] Final polish handwrite-premium — superseded by mask-sweep at EOF */
@@ -4047,8 +3984,7 @@ body.section-theme-dark .hero__subtitle {
 
   .hero__actions {
     margin-top: 0.65rem !important;
-  }
-}
+  }}
 
 @media (max-width: 760px) {
   .nav__mobile-menu {
@@ -4083,8 +4019,7 @@ body.section-theme-dark .hero__subtitle {
   .section__title .clex-write--done,
   .page-hero__title .clex-write--done {
     clip-path: none !important;
-  }
-}
+  }}
 
 /* =============================================================
    HERO RESET v4: clean Creem-style first screen, no overlaps.
@@ -4308,32 +4243,7 @@ body.section-theme-dark .hero__subtitle {
 
 @media (prefers-reduced-motion: reduce) {
   .home-workspace__frame { transition: none !important; }
-  .home-workspace__frame:hover { transform: none !important; }
-}
-
-.hero__float-tag {
-  z-index: 1 !important;
-}
-
-.hero__float-tag--a {
-  left: clamp(1rem, 4vw, 5rem) !important;
-  top: clamp(6.4rem, 10vh, 8rem) !important;
-}
-
-.hero__float-tag--b {
-  right: clamp(1rem, 4vw, 5rem) !important;
-  top: 42% !important;
-}
-
-.hero__float-tag--c {
-  left: clamp(1rem, 9vw, 8rem) !important;
-  top: 58% !important;
-}
-
-.hero__float-tag--d {
-  right: clamp(1rem, 5vw, 6rem) !important;
-  top: 48% !important;
-}
+  .home-workspace__frame:hover { transform: none !important; }}
 
 /* Cursive reveal repair: no clip-based broken glyphs, still writes left-to-right. */
 .italic-accent,
@@ -4410,13 +4320,7 @@ body.section-theme-dark .hero__subtitle {
 
   .hero__visual .data-stream__time {
     display: none !important;
-  }
-
-  .hero__float-tag,
-  .hero__sparkle {
-    display: none !important;
-  }
-}
+  }}
 
 @media (max-width: 520px) {
   .hero__title-row {
@@ -4425,8 +4329,7 @@ body.section-theme-dark .hero__subtitle {
 
   .hero__title-row--accent {
     gap: 0.2rem !important;
-  }
-}
+  }}
 
 /* =============================================================
    THE SCRIPT FACE — one treatment for every handwritten accent.
@@ -4721,8 +4624,7 @@ html[data-theme="dark"] .legal-hero__title em,
   .creem-stack__card {
     flex: 0 1 310px !important;
     margin: 0 !important;
-  }
-}
+  }}
 
 @media (max-width: 767px) {
   .creem-stack {
@@ -4734,8 +4636,7 @@ html[data-theme="dark"] .legal-hero__title em,
   .creem-flow-pipe {
     transform: rotate(90deg) !important;
     margin: 0.2rem 0 !important;
-  }
-}
+  }}
 
 /* Cinematic Primary Button Shine */
 .btn--primary, .pill-btn--primary {
@@ -4973,68 +4874,7 @@ html[data-theme="dark"] .legal-hero__title em,
   .chain-hero__title-accent.clex-write::after {
     content: none !important;
     display: none !important;
-  }
-}
-
-/* =============================================================
-   HERO TRANSFER PANEL v5: remove the tall vault slab and make the
-   route card the visual centerpiece instead of a grey log table.
-   ============================================================= */
-.hero__float-tag--c {
-  display: none !important;
-}
-
-.hero__float-tag--a,
-.hero__float-tag--b,
-.hero__float-tag--d {
-  display: inline-flex !important;
-  position: absolute !important;
-  z-index: 3 !important;
-  align-items: center !important;
-  gap: 0.45rem !important;
-  min-height: 2.35rem !important;
-  padding: 0.42rem 0.85rem !important;
-  border: 2px solid var(--c-ink) !important;
-  border-radius: 999px !important;
-  background: rgba(255, 255, 255, 0.88) !important;
-  color: var(--c-ink) !important;
-  box-shadow: 4px 4px 0 var(--c-ink), 0 18px 42px rgba(14,14,13,0.12) !important;
-  backdrop-filter: blur(14px) saturate(1.12) !important;
-  -webkit-backdrop-filter: blur(14px) saturate(1.12) !important;
-  font-family: var(--font-mono) !important;
-  font-weight: 900 !important;
-  letter-spacing: 0.06em !important;
-  text-transform: uppercase !important;
-}
-
-/* Anchored in rem from the top of the hero, not in vh/%: the hero now contains
-   the live workspace, so viewport-relative offsets drifted the tags down over
-   the app — and b/d resolved to within 3rem of each other, so they overlapped.
-   These three sit in the headline band and stay clear of the workspace. */
-.hero__float-tag--a {
-  left: clamp(1rem, 6vw, 7rem) !important;
-  top: 7rem !important;
-  rotate: -5deg !important;
-}
-
-.hero__float-tag--b {
-  right: clamp(1rem, 5vw, 7rem) !important;
-  top: 8.5rem !important;
-  rotate: 5deg !important;
-}
-
-.hero__float-tag--d {
-  right: 0.75rem !important;
-  top: 23rem !important;
-  rotate: -4deg !important;
-}
-
-/* Below this they crowd the headline instead of framing it. */
-@media (max-width: 1180px) {
-  .hero__float-tag--a,
-  .hero__float-tag--b,
-  .hero__float-tag--d { display: none !important; }
-}
+  }}
 
 .hero__visual .data-stream {
   --stream-progress: 100%;
@@ -5184,11 +5024,6 @@ body.section-theme-dark .hero__visual .data-stream__row {
 }
 
 @media (max-width: 900px) {
-  .hero__float-tag--a,
-  .hero__float-tag--b,
-  .hero__float-tag--d {
-    display: none !important;
-  }
 
   .hero__visual .data-stream::before {
     height: 3.7rem !important;
@@ -5205,8 +5040,7 @@ body.section-theme-dark .hero__visual .data-stream__row {
     white-space: nowrap !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
-  }
-}
+  }}
 
 /* CLI terminal interactive styles */
 .terminal-cursor {
@@ -5388,5 +5222,4 @@ body.section-theme-dark .hero__visual .data-stream__row {
   .italic-accent.clex-hand::before,
   .italic-accent.clex-hand::after,
   .hero__title-word--italic.clex-hand::before,
-  .hero__title-word--italic.clex-hand::after { display: none !important; }
-}
+  .hero__title-word--italic.clex-hand::after { display: none !important; }}

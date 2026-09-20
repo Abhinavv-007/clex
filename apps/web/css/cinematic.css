@@ -98,36 +98,7 @@ html.has-cine .cine-on [data-cine] {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  [data-cine] { opacity: 1 !important; transform: none !important; filter: none !important; }
-}
-
-/* ─── Hero polish: floating sticker chips ─── */
-.hero__float-tag {
-  /* brutalist-sticker variant — matches v5 ref */
-  border-radius: 999px !important;
-  border: 1.5px solid rgba(14,14,13,0.92) !important;
-  background: rgba(255,255,255,0.92) !important;
-  backdrop-filter: blur(14px) saturate(1.2);
-  -webkit-backdrop-filter: blur(14px) saturate(1.2);
-  box-shadow:
-    0 1px 0 rgba(255,255,255,0.9) inset,
-    0 12px 28px -14px rgba(14,14,13,0.35) !important;
-  font-weight: 700 !important;
-  letter-spacing: 0.02em;
-  font-size: 0.74rem !important;
-  padding: 0.42rem 0.8rem !important;
-  animation: cine-float 6s var(--cine-ease) infinite;
-}
-.hero__float-tag--a { animation-delay: -0.5s; }
-.hero__float-tag--b { animation-delay: -1.7s; }
-.hero__float-tag--c { animation-delay: -3.1s; }
-.hero__float-tag--d { animation-delay: -4.4s; }
-
-html[data-theme="dark"] .hero__float-tag {
-  background: rgba(28,26,40,0.78) !important;
-  border-color: rgba(255,255,255,0.16) !important;
-  color: #f5efdf !important;
-}
+  [data-cine] { opacity: 1 !important; transform: none !important; filter: none !important; }}
 
 @keyframes cine-float {
   0%,100% { transform: translateY(0) rotate(-1.5deg); }
@@ -585,14 +556,6 @@ html[data-theme="dark"] .hero__float-tag {
     font-size: 1.8rem !important;
   }
 
-  /* Hero floats — keep two, simplify */
-  .hero__float-tag--c, .hero__float-tag--d { display: none !important; }
-  .hero__float-tag--a, .hero__float-tag--b {
-    font-size: 0.66rem !important;
-    padding: 0.34rem 0.6rem !important;
-    transform: scale(0.92);
-  }
-
   /* SECTION TITLES */
   .section__title,
   .section__title--mixed {
@@ -686,8 +649,7 @@ html[data-theme="dark"] .hero__float-tag {
   .cine-rail__time { display: none; }
 
   /* Container padding */
-  .container { padding-left: 1rem !important; padding-right: 1rem !important; }
-}
+  .container { padding-left: 1rem !important; padding-right: 1rem !important; }}
 
 /* Small phones */
 @media (max-width: 480px) {
@@ -698,9 +660,7 @@ html[data-theme="dark"] .hero__float-tag {
   }
   .stat-orbs { gap: 0.55rem !important; }
   .stat-orb__num { font-size: 1.55rem !important; }
-  .stat-orb__label { font-size: 0.72rem !important; }
-  .hero__float-tag--a, .hero__float-tag--b { display: none !important; }
-}
+  .stat-orb__label { font-size: 0.72rem !important; }}
 
 /* Mobile sticky CTA ribbon (≤640px) */
 @media (max-width: 640px) {
@@ -739,13 +699,11 @@ html[data-theme="dark"] .hero__float-tag {
     color: #0e0e0d;
     border-color: #c8ff00;
     box-shadow: 4px 4px 0 #0e0e0d;
-  }
-}
+  }}
 
 /* Hide sticky CTA on >640 */
 @media (min-width: 641px) {
-  .cine-mobile-cta { display: none !important; }
-}
+  .cine-mobile-cta { display: none !important; }}
 
 /* ─── Cinematic gradient on hero accent (Move/Keep CONTROL) ─── */
 .hero__title-word--italic {
@@ -977,8 +935,7 @@ a.link:hover::after, .footer__link:hover::after { right: 0; }
   align-items: center;
 }
 @media (max-width: 899px) {
-  .clex-link-section .container { grid-template-columns: 1fr; gap: 2.4rem; }
-}
+  .clex-link-section .container { grid-template-columns: 1fr; gap: 2.4rem; }}
 
 .clex-link__copy { max-width: 540px; }
 .clex-link__eyebrow {
@@ -1362,8 +1319,7 @@ a.link:hover::after, .footer__link:hover::after { right: 0; }
   .clex-phone { width: 200px; height: 410px; }
   .clex-phone--right { right: -4%; bottom: 4%; }
   .clex-phone--left { left: -4%; top: 4%; }
-  .clex-link__beam { left: 16%; right: 16%; }
-}
+  .clex-link__beam { left: 16%; right: 16%; }}
 
 /* ============================================================
    FINAL POLISH PASS
@@ -1491,8 +1447,7 @@ a.link:hover::after, .footer__link:hover::after { right: 0; }
 .clex-phone--right { right: 4% !important; bottom: 6% !important; }
 
 @media (max-width: 1100px) {
-  .clex-link__title { font-size: clamp(1.9rem, 4.4vw, 2.8rem) !important; }
-}
+  .clex-link__title { font-size: clamp(1.9rem, 4.4vw, 2.8rem) !important; }}
 
 /* 6. Developer API endpoints — wrap into cinematic windows */
 .dev-endpoint {
@@ -1950,8 +1905,7 @@ body {
 }
 @media (max-width: 520px) {
   .clex-link__store-row,
-  .clex-link__actions { grid-template-columns: 1fr; max-width: 100%; }
-}
+  .clex-link__actions { grid-template-columns: 1fr; max-width: 100%; }}
 .clex-link__store {
   position: relative;
   display: flex;
@@ -2147,8 +2101,6 @@ body {
     0%,100% { box-shadow: 4px 4px 0 #0e0e0d, 0 0 0 rgba(255,138,31,0); }
     50%     { box-shadow: 4px 4px 0 #0e0e0d, 0 0 24px rgba(255,138,31,0.35); }
   }
-  /* Float-tag drift idle */
-  .hero__float-tag-dot { animation: clex-dot-pulse 2s ease-in-out infinite; }
   @keyframes clex-dot-pulse {
     0%,100% { box-shadow: 0 0 0 rgba(255,138,31,0); transform: scale(1); }
     50%     { box-shadow: 0 0 8px currentColor; transform: scale(1.3); }
@@ -2156,8 +2108,7 @@ body {
   /* Anchor hover slide */
   a:not(.pill-btn):not(.btn):not(.nav__link):not(.footer__link):not(.cine-window__copy):not(.dev-endpoint__copy) {
     transition: color 200ms ease;
-  }
-}
+  }}
 
 /* ============================================================
    PHONE — modern minimal, soft glass shadow, faint glow
@@ -2376,8 +2327,7 @@ body {
   .faq-hero .container > *,
   .features-hero .container > * {
     margin-inline: 0;
-  }
-}
+  }}
 
 /* =============================================================
    BUTTON SCALE — one height per size
@@ -2430,5 +2380,4 @@ body {
   .btn,
   .pill-btn { min-height: 2.75rem; }
   .btn--large,
-  .pill-btn--large { min-height: 3.1rem; }
-}
+  .pill-btn--large { min-height: 3.1rem; }}

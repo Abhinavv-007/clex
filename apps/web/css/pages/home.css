@@ -11,7 +11,6 @@
    ============================================ */
 
 
-
 /* ── Hero (Creem-inspired cinematic redesign) ── */
 .hero {
   min-height: 100vh;
@@ -84,68 +83,9 @@
   33% { transform: translate(40px, -30px) scale(1.08); }
   66% { transform: translate(-30px, 20px) scale(0.95); }
 }
-
-/* Decorative floating tags drifting in space */
-.hero__float-tag {
-  position: absolute;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 0.55rem 0.95rem;
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: #1a1a1a;
-  background: #ffffff;
-  border: 2px solid #0e0e0d;
-  border-radius: 9999px;
-  box-shadow: 4px 4px 0 #0e0e0d;
-  white-space: nowrap;
-  z-index: 1;
-  pointer-events: none;
-  animation: floatBob 8s ease-in-out infinite;
-  will-change: transform;
-}
-.hero__float-tag-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  flex: 0 0 8px;
-  box-shadow: 0 0 0 3px rgba(0,0,0,0.05);
-}
-.hero__float-tag--a {
-  top: 18%;
-  left: 6%;
-  transform: rotate(-6deg);
-  animation-delay: 0s;
-}
-.hero__float-tag--b {
-  top: 24%;
-  right: 7%;
-  transform: rotate(5deg);
-  animation-delay: 1.5s;
-}
-.hero__float-tag--c {
-  top: 56%;
-  left: 4%;
-  transform: rotate(4deg);
-  animation-delay: 3s;
-}
-.hero__float-tag--d {
-  top: 60%;
-  right: 5%;
-  transform: rotate(-7deg);
-  animation-delay: 4.5s;
-}
 @keyframes floatBob {
   0%, 100% { translate: 0 0; }
   50% { translate: 0 -14px; }
-}
-
-@media (max-width: 1100px) {
-  .hero__float-tag { display: none; }
 }
 
 .hero__bg {
@@ -209,18 +149,6 @@
   right: 8%;
   opacity: 0.4;
 }
-
-.hero__sparkle {
-  position: absolute;
-  font-family: var(--font-italic);
-  color: #0e0e0d;
-  opacity: 0.4;
-  animation: float 6s ease-in-out infinite;
-}
-.hero__sparkle--a { top: 18%; left: 12%; font-size: 24px; animation-delay: 0s; }
-.hero__sparkle--b { top: 28%; right: 18%; font-size: 32px; animation-delay: 1.5s; }
-.hero__sparkle--c { bottom: 22%; left: 22%; font-size: 20px; animation-delay: 3s; }
-.hero__sparkle--d { bottom: 30%; right: 14%; font-size: 26px; animation-delay: 4.5s; }
 
 .hero__container {
   position: relative;
@@ -845,8 +773,7 @@
   .footer__signature-link:hover .footer__signature-icon,
   .footer__signature-link:focus-visible .footer__signature-icon {
     transform: none;
-  }
-}
+  }}
 
 .footer__col-title {
   font-family: var(--font-display);
@@ -984,8 +911,7 @@
     flex-direction: column;
     gap: var(--space-md);
     text-align: center;
-  }
-}
+  }}
 
 @media (max-width: 480px) {
   .hero__title {
@@ -998,8 +924,7 @@
   .footer__signature-link {
     width: 100%;
     justify-content: flex-start;
-  }
-}
+  }}
 
 /* ── Routing Engine Mock Diagram ── */
 .routing-diagram {
@@ -1968,8 +1893,7 @@ body.section-theme-dark .italic-accent--cyan { color: #b89dff; }
   transform: none;
 }
 @media (prefers-reduced-motion: reduce) {
-  [data-reveal] { opacity: 1; transform: none; transition: none; }
-}
+  [data-reveal] { opacity: 1; transform: none; transition: none; }}
 
 /* ── Tilt card 3D hover ── */
 .tilt-card {
@@ -1994,16 +1918,13 @@ body.section-theme-dark .italic-accent--cyan { color: #b89dff; }
   .hero__metric-num { font-size: clamp(1.2rem, 5vw, 1.8rem); }
   .hero__metric-label { font-size: 0.62rem; }
   .hero__visual { margin-top: var(--space-lg); }
-  .hero__sparkle { display: none; }
   .section-divider { height: 50px; }
   .cta-card { border-radius: 22px; padding: 2rem 1.25rem; }
-  .cta-card__spine { display: none; }
-}
+  .cta-card__spine { display: none; }}
 
 @media (max-width: 480px) {
   .hero__title { font-size: clamp(2.2rem, 14vw, 3.4rem); }
-  .pill-btn { padding: 0.85rem 1.25rem; font-size: 0.92rem; }
-}
+  .pill-btn { padding: 0.85rem 1.25rem; font-size: 0.92rem; }}
 
 /* ── Section-theme contrast fixes ── */
 .section--cream .section__title--mixed,
@@ -2446,15 +2367,13 @@ body.section-theme-cream {
     flex: 0 0 28px;
   }
   .hero__scroll-indicator { display: none; }
-  .hero__aurora { opacity: 0.35; }
-}
+  .hero__aurora { opacity: 0.35; }}
 
 @media (max-width: 480px) {
   .hero__title--mega {
     font-size: clamp(2.4rem, 16vw, 3.6rem);
   }
-  .hero__feature-pill-copy em { display: none; }
-}
+  .hero__feature-pill-copy em { display: none; }}
 
 /* ============================================
    ⚡ SCROLL PROGRESS STRIP
@@ -2633,8 +2552,7 @@ body.section-theme-dark .scroll-progress {
 }
 
 @media (max-width: 640px) {
-  .home-dev__pre { font-size: 0.76rem; }
-}
+  .home-dev__pre { font-size: 0.76rem; }}
 
 /* @clex/cli is written and tested but not yet published to npm, so the
    section shows what the commands are without telling anyone to install

@@ -17,7 +17,6 @@ export function initCinematic() {
   initMobileCTA();
   initSectionParallax(reduced);
   initHeroWordStagger(reduced);
-  initFloatingTagDrift(reduced);
   initCineWindow();
   initEndpointCopy();
 }
@@ -178,40 +177,6 @@ function initHeroWordStagger(reduced) {
       });
     });
   });
-}
-
-/* ─── Floating tags drift with cursor (desktop only) ─── */
-function initFloatingTagDrift(reduced) {
-  if (reduced) return;
-  if (window.matchMedia('(pointer: coarse)').matches) return;
-  const tags = document.querySelectorAll('.hero__float-tag, [data-float]');
-  if (!tags.length) return;
-  let raf = 0;
-  let target = { x: 0, y: 0 };
-  const cur = { x: 0, y: 0 };
-  const update = () => {
-    raf = 0;
-    cur.x += (target.x - cur.x) * 0.06;
-    cur.y += (target.y - cur.y) * 0.06;
-    tags.forEach((t) => {
-      if (!(t instanceof HTMLElement)) return;
-      const f = parseFloat(t.dataset.float || '0.5') || 0.5;
-      const tx = cur.x * 22 * f;
-      const ty = cur.y * 18 * f;
-      t.style.setProperty('--cine-drift-x', `${tx}px`);
-      t.style.setProperty('--cine-drift-y', `${ty}px`);
-      // additive transform (CSS animation already handles base float)
-      t.style.transform = `translate(${tx}px, ${ty}px)`;
-    });
-    if (Math.abs(target.x - cur.x) > 0.001 || Math.abs(target.y - cur.y) > 0.001) {
-      raf = requestAnimationFrame(update);
-    }
-  };
-  window.addEventListener('pointermove', (e) => {
-    target.x = (e.clientX / window.innerWidth) - 0.5;
-    target.y = (e.clientY / window.innerHeight) - 0.5;
-    if (!raf) raf = requestAnimationFrame(update);
-  }, { passive: true });
 }
 
 /* ─── Cinematic window: tab switching + copy ─── */

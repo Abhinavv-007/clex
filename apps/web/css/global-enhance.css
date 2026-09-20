@@ -641,8 +641,7 @@ pre, code {
   }
   .page-hero__title {
     font-size: clamp(2.4rem, 12vw, 4rem) !important;
-  }
-}
+  }}
 
 /* ---------- Decorative floating sparkles for any page (auto-injected) ---------- */
 .clex-page-sparkle {
@@ -1140,8 +1139,7 @@ pre, code {
   .gs-step {
     grid-template-columns: 1fr !important;
     text-align: left;
-  }
-}
+  }}
 
 /* ---------- Mascot blinking eyes (re-usable for any page) ---------- */
 .clex-page-mascot {
@@ -1332,8 +1330,7 @@ pre, code {
   }
   .giant-step__title, .gs-step__title {
     font-size: clamp(1.5rem, 7vw, 2rem) !important;
-  }
-}
+  }}
 
 /* ============================================
    Body root colors fallback for non-themed pages
@@ -1385,12 +1382,13 @@ body:not([class*="section-theme-"])[data-page="developers"] {
     linear-gradient(rgba(240, 240, 232, 0.04) 1px, transparent 1px),
     linear-gradient(90deg, rgba(240, 240, 232, 0.04) 1px, transparent 1px);
 }
-[data-theme="dark"] .hero__sparkle { color: #f5efdf; opacity: 0.25; }
 
 [data-theme="dark"] .pill-badge--hero,
 [data-theme="dark"] .hero__feature-pill,
 [data-theme="dark"] .hero__agent-pill,
-[data-theme="dark"] .hero__float-tag {
+[data-theme="dark"] .pill-badge--hero,
+[data-theme="dark"] .hero__feature-pill,
+[data-theme="dark"] .hero__agent-pill {
   background: #181818 !important;
   color: #f5efdf !important;
   border-color: #f5efdf !important;
@@ -1398,7 +1396,6 @@ body:not([class*="section-theme-"])[data-page="developers"] {
 }
 [data-theme="dark"] .hero__feature-pill-copy strong { color: #f5efdf !important; }
 [data-theme="dark"] .hero__feature-pill-copy em { color: rgba(240, 240, 232, 0.55) !important; }
-[data-theme="dark"] .hero__float-tag { box-shadow: 4px 4px 0 #f5efdf !important; }
 [data-theme="dark"] .hero__agent-pill-mono { color: rgba(240, 240, 232, 0.55) !important; }
 [data-theme="dark"] .hero__agent-pill-divider { background: rgba(240, 240, 232, 0.15); }
 [data-theme="dark"] .hero__agent-pill-copy { background: #0e0e0d; color: #f5efdf; border-color: rgba(240, 240, 232, 0.2); }
