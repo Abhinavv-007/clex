@@ -1,3 +1,4 @@
+import { requireOwner } from './auth'
 import {
   handleApiKeyCreate,
   handleApiKeyList,
@@ -373,8 +374,9 @@ async function handleSecretStatus(id: string, env: Env, cors: Record<string, str
  *   5. Update quota KV
  */
 async function handleFileUpload(req: Request, env: Env, cors: Record<string, string>): Promise<Response> {
-  const userId = req.headers.get('X-Vault-UID')
-  if (!userId) return err('X-Vault-UID header required', 401, cors)
+  const auth = await requireOwner(req, env)
+  if (!auth.ok) return err(auth.error, auth.status, cors)
+  const userId = auth.owner.uid
 
   const subscriptionId = req.headers.get('X-Subscription-ID') ?? 'default'
   const rawFilename = req.headers.get('X-Filename')
@@ -455,10 +457,14 @@ async function handleFileUpload(req: Request, env: Env, cors: Record<string, str
  */
 async function handleFileDownload(
   fileId: string,
-  userId: string | null,
+  userId: string,
   env: Env,
   cors: Record<string, string>,
 ): Promise<Response> {
+  // `userId` is required. It used to be nullable, and a null took the
+  // unscoped branch below — `WHERE lower(id) = ?` with no ownership check —
+  // so any caller could read any user's attachment by guessing or leaking an
+  // id. Every lookup is now scoped to the authenticated owner.
   const normalizedId = fileId.trim().toLowerCase()
   const exactRow = userId
     ? await env.DB.prepare(
@@ -730,8 +736,9 @@ async function handleAccountDeviceUpsert(
   env: Env,
   cors: Record<string, string>,
 ): Promise<Response> {
-  const uid = req.headers.get('X-Vault-UID')
-  if (!uid) return err('X-Vault-UID required', 401, cors)
+  const auth = await requireOwner(req, env)
+  if (!auth.ok) return err(auth.error, auth.status, cors)
+  const uid = auth.owner.uid
 
   let body: Partial<AccountDeviceRecord>
   try { body = await req.json() } catch { return err('Invalid JSON', 400, cors) }
@@ -772,8 +779,9 @@ async function handleAccountDeviceList(
   env: Env,
   cors: Record<string, string>,
 ): Promise<Response> {
-  const uid = req.headers.get('X-Vault-UID')
-  if (!uid) return err('X-Vault-UID required', 401, cors)
+  const auth = await requireOwner(req, env)
+  if (!auth.ok) return err(auth.error, auth.status, cors)
+  const uid = auth.owner.uid
 
   const devices = await readAccountDevices(env, uid)
   return json({ devices: devices.sort((a, b) => b.lastSeen - a.lastSeen) }, 200, cors)
@@ -785,8 +793,9 @@ async function handleAccountDeviceDelete(
   env: Env,
   cors: Record<string, string>,
 ): Promise<Response> {
-  const uid = req.headers.get('X-Vault-UID')
-  if (!uid) return err('X-Vault-UID required', 401, cors)
+  const auth = await requireOwner(req, env)
+  if (!auth.ok) return err(auth.error, auth.status, cors)
+  const uid = auth.owner.uid
 
   const devices = await readAccountDevices(env, uid)
   const nextDevices = devices.filter((device) => device.id !== deviceId)
@@ -1142,29 +1151,30 @@ export default {
     if (path === '/vault/api/files') {
       if (method === 'POST') return handleFileUpload(request, env, cors)
       if (method === 'GET') {
-        const userId = request.headers.get('X-Vault-UID')
-        if (!userId) return err('X-Vault-UID required', 401, cors)
-        return handleFileList(userId, env, cors)
+        const auth = await requireOwner(request, env)
+        if (!auth.ok) return err(auth.error, auth.status, cors)
+        return handleFileList(auth.owner.uid, env, cors)
       }
     }
 
     const fileMatch = path.match(/^\/vault\/api\/files\/([a-f0-9]+)$/)
     if (fileMatch) {
       const fileId = fileMatch[1]
-      if (method === 'GET') {
-        const userId = request.headers.get('X-Vault-UID')
-        return handleFileDownload(fileId, userId, env, cors)
-      }
-      const userId = request.headers.get('X-Vault-UID')
-      if (!userId) return err('X-Vault-UID required', 401, cors)
+      // Both reads and deletes are owner-scoped. Public sharing goes through
+      // /vault/api/uploads/:shareToken, which is guarded by an unguessable
+      // token — this route is not a sharing mechanism.
+      const auth = await requireOwner(request, env)
+      if (!auth.ok) return err(auth.error, auth.status, cors)
+      const userId = auth.owner.uid
+      if (method === 'GET') return handleFileDownload(fileId, userId, env, cors)
       if (method === 'DELETE') return handleFileDelete(fileId, userId, env, cors)
     }
 
     const subDeleteMatch = path.match(/^\/vault\/api\/subscription\/([^/]+)\/files$/)
     if (subDeleteMatch && method === 'DELETE') {
-      const userId = request.headers.get('X-Vault-UID')
-      if (!userId) return err('X-Vault-UID required', 401, cors)
-      return handleSubscriptionDelete(subDeleteMatch[1], userId, env, cors)
+      const auth = await requireOwner(request, env)
+      if (!auth.ok) return err(auth.error, auth.status, cors)
+      return handleSubscriptionDelete(subDeleteMatch[1], auth.owner.uid, env, cors)
     }
 
     // ── Device Pairing ────────────────────────────────────────────────────────

@@ -9,21 +9,42 @@
  *   GET    /vault/api/keys/:id/usage current rate-limit window for a key
  *
  * Auth model:
- *   Management endpoints verify the user's Firebase ID token. The older
- *   X-Vault-UID header remains accepted for existing browser-only flows.
+ *   Every management endpoint requires a verified Firebase ID token. The
+ *   X-Vault-UID header is no longer accepted as identity on its own — it was
+ *   unauthenticated, so sending someone else's uid was enough to read and
+ *   revoke their keys. It is still cross-checked against the token when
+ *   present. See auth.ts.
  *
  */
 
 import type { Env } from './index'
 import { randomBytes, randomHex } from './crypto'
-import { verifyFirebaseAuthHeader } from './firebase'
+import { requireOwner } from './auth'
 
 const KEY_PREFIX = 'clex_'
 const KEY_PREFIX_VISIBLE_LEN = KEY_PREFIX.length + 8
 
-const FILE_SIZE_LIMITS = [-1] as const
+// Selectable per-key limits. -1 means unlimited.
+//
+// These used to be `[-1]` with clampFileSize/clampRate hardcoded to return -1,
+// so every key was minted unlimited and checkAndConsumeRate short-circuited on
+// the negative value — no rate limit was ever applied, while the developers
+// page advertised "60 req/min · 100MB/day". The defaults below match what is
+// advertised, and the clamps honour a caller's choice within the allowed set.
+const FILE_SIZE_LIMITS = [
+  10 * 1024 * 1024,
+  100 * 1024 * 1024,
+  1024 * 1024 * 1024,
+  -1,
+] as const
 
-const RATE_LIMITS = [-1] as const
+const RATE_LIMITS = [30, 60, 120, 600, -1] as const
+
+const DEFAULT_MAX_FILE_BYTES = 100 * 1024 * 1024
+const DEFAULT_RATE_PER_MINUTE = 60
+
+/** Ceiling for the signed-in browser upload path (no API key involved). */
+const UI_UPLOAD_MAX_BYTES = 100 * 1024 * 1024
 
 const MAX_KEYS_PER_USER = 5
 const MAX_NAME_LENGTH = 64
@@ -91,12 +112,27 @@ async function sha256Hex(input: string): Promise<string> {
   return Array.from(new Uint8Array(hashBuf), b => b.toString(16).padStart(2, '0')).join('')
 }
 
+/**
+ * Resolves a requested per-key file-size limit to an allowed value.
+ * Unrecognised or missing input falls back to the default rather than to
+ * "unlimited", so a malformed request can't widen a key's limits.
+ */
 function clampFileSize(bytes: number | null | undefined): number {
-  return -1
+  if (typeof bytes !== 'number' || !Number.isFinite(bytes)) return DEFAULT_MAX_FILE_BYTES
+  if (bytes < 0) return -1
+  const allowed = FILE_SIZE_LIMITS.filter(v => v > 0) as readonly number[]
+  // Snap up to the smallest allowed tier that satisfies the request.
+  for (const tier of allowed) if (bytes <= tier) return tier
+  return Math.min(Math.floor(bytes), ABSOLUTE_FILE_SIZE_CEILING)
 }
 
+/** As clampFileSize, for the per-minute request rate. */
 function clampRate(rpm: number | null | undefined): number {
-  return -1
+  if (typeof rpm !== 'number' || !Number.isFinite(rpm)) return DEFAULT_RATE_PER_MINUTE
+  if (rpm < 0) return -1
+  const allowed = RATE_LIMITS.filter(v => v > 0) as readonly number[]
+  for (const tier of allowed) if (rpm <= tier) return tier
+  return allowed[allowed.length - 1]
 }
 
 function sanitizeName(raw: unknown): string {
@@ -116,13 +152,18 @@ function errorResponse(msg: string, status: number, cors: Record<string, string>
   return jsonResponse({ error: msg }, status, cors)
 }
 
-async function readFirebaseOwner(req: Request, env: Env): Promise<{ uid: string; email: string | null } | null> {
-  const claims = await verifyFirebaseAuthHeader(env, req)
-  if (claims) return { uid: claims.sub, email: claims.email ?? null }
-
-  const uid = req.headers.get('X-Vault-UID')
-  if (!uid) return null
-  return { uid, email: null }
+/**
+ * Resolves the key owner. Delegates to the shared verifier — the previous
+ * implementation fell back to a bare `X-Vault-UID` header, which let any
+ * caller list, create and revoke another user's API keys by sending that
+ * user's id. See auth.ts.
+ */
+async function readFirebaseOwner(
+  req: Request,
+  env: Env,
+): Promise<{ uid: string; email: string | null } | null> {
+  const result = await requireOwner(req, env)
+  return result.ok ? result.owner : null
 }
 
 // ── Lookup by plaintext (used by the programmatic upload path) ───────────────
@@ -210,7 +251,7 @@ export async function handleApiKeyCreate(
   cors: Record<string, string>,
 ): Promise<Response> {
   const owner = await readFirebaseOwner(req, env)
-  if (!owner) return errorResponse('Firebase token or X-Vault-UID required', 401, cors)
+  if (!owner) return errorResponse('Sign-in required. Send a Firebase ID token as `Authorization: Bearer <token>`.', 401, cors)
 
   let body: {
     name?: string
@@ -275,7 +316,7 @@ export async function handleApiKeyList(
   cors: Record<string, string>,
 ): Promise<Response> {
   const owner = await readFirebaseOwner(req, env)
-  if (!owner) return errorResponse('Firebase token or X-Vault-UID required', 401, cors)
+  if (!owner) return errorResponse('Sign-in required. Send a Firebase ID token as `Authorization: Bearer <token>`.', 401, cors)
 
   const result = await env.DB.prepare(
     `SELECT id, user_id, user_email, name, prefix, hash, max_file_bytes, rate_per_minute,
@@ -296,7 +337,7 @@ export async function handleApiKeyUpdate(
   cors: Record<string, string>,
 ): Promise<Response> {
   const owner = await readFirebaseOwner(req, env)
-  if (!owner) return errorResponse('Firebase token or X-Vault-UID required', 401, cors)
+  if (!owner) return errorResponse('Sign-in required. Send a Firebase ID token as `Authorization: Bearer <token>`.', 401, cors)
 
   let body: { name?: string; maxFileBytes?: number; ratePerMinute?: number } = {}
   try { body = await req.json() } catch { /* allow no body */ }
@@ -341,7 +382,7 @@ export async function handleApiKeyRevoke(
   cors: Record<string, string>,
 ): Promise<Response> {
   const owner = await readFirebaseOwner(req, env)
-  if (!owner) return errorResponse('Firebase token or X-Vault-UID required', 401, cors)
+  if (!owner) return errorResponse('Sign-in required. Send a Firebase ID token as `Authorization: Bearer <token>`.', 401, cors)
 
   const result = await env.DB.prepare(
     `UPDATE api_keys SET revoked_at = unixepoch()
@@ -359,7 +400,7 @@ export async function handleApiKeyUsage(
   cors: Record<string, string>,
 ): Promise<Response> {
   const owner = await readFirebaseOwner(req, env)
-  if (!owner) return errorResponse('Firebase token or X-Vault-UID required', 401, cors)
+  if (!owner) return errorResponse('Sign-in required. Send a Firebase ID token as `Authorization: Bearer <token>`.', 401, cors)
 
   const row = await env.DB.prepare(
     `SELECT id, user_id, user_email, name, prefix, hash, max_file_bytes, rate_per_minute,
@@ -377,4 +418,7 @@ export const apiKeysModule = {
   ABSOLUTE_FILE_SIZE_CEILING,
   FILE_SIZE_LIMITS,
   RATE_LIMITS,
+  DEFAULT_MAX_FILE_BYTES,
+  DEFAULT_RATE_PER_MINUTE,
+  UI_UPLOAD_MAX_BYTES,
 }

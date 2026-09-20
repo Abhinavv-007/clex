@@ -1,73 +1,174 @@
-// Device-fingerprint based API keys — no auth required.
-// Combines a stable device fingerprint (canvas + UA + screen) + persisted
-// localStorage seed so the same browser keeps the same key, while different
-// devices get distinct keys for rate-limit accounting on the server side.
+/**
+ * Developer API-key panel.
+ *
+ * The previous implementation minted keys entirely in the browser:
+ *
+ *     const random = await randomToken(32)
+ *     state.token = `clex_${fingerprint.slice(0, 12)}_${random}`
+ *     localStorage.setItem(KEY_STORE, state.token)
+ *
+ * …and commented that "the server validates the fingerprint binding on use".
+ * It does not, and it cannot: the worker authenticates a key by looking up
+ * SHA-256(key) in the `api_keys` table, and nothing had ever inserted a row.
+ * Every key this panel produced was therefore rejected with 401 on first use,
+ * which is why "generating the API key to the working of the API key" was
+ * broken — the page's own three-step diagram (sign in with Google → create
+ * api key → send bearer key) described a flow the code never performed.
+ *
+ * Keys are now created by POST /vault/api/keys, which stores the hash against
+ * the signed-in user and returns the plaintext exactly once. See
+ * apps/vault-worker/src/apiKeys.ts.
+ */
 
 const TOKEN_PLACEHOLDER = '<YOUR_API_KEY>';
-const FP_KEY = 'clex_dev_fp_v2';
-const KEY_STORE = 'clex_dev_apikey_v2';
+/** Where the one-time plaintext is held for this tab only. */
+const SESSION_KEY = 'clex_dev_apikey_session';
+const VAULT_API = '/vault/api';
 
 const state = {
-  fingerprint: '',
+  /** @type {import('@clex/frontend-core').VaultUser | null} */
+  user: null,
+  /** @type {string} Plaintext key, only known immediately after creation. */
   token: '',
+  /** @type {Array<{id: string, name: string, prefix: string, createdAt: number, lastUsedAt: number|null, totalUploads: number}>} */
+  keys: [],
+  busy: false,
 };
 
 export async function initDeveloperAccess() {
   const root = document.getElementById('developer-access');
   if (!root) return;
 
-  const createButton = /** @type {HTMLButtonElement | null} */ (document.getElementById('dev-create-token'));
-  const copyButton = /** @type {HTMLButtonElement | null} */ (document.getElementById('dev-copy-token'));
-  const rotateButton = /** @type {HTMLButtonElement | null} */ (document.getElementById('dev-rotate-token'));
-  const tokenOutput = /** @type {HTMLTextAreaElement | HTMLInputElement | null} */ (document.getElementById('dev-token-output'));
-  const userLabel = document.getElementById('dev-user-label');
-  const statusLabel = document.getElementById('dev-token-status');
-  const fpDisplay = document.getElementById('dev-fp-display');
+  const els = {
+    create: /** @type {HTMLButtonElement|null} */ (document.getElementById('dev-create-token')),
+    copy: /** @type {HTMLButtonElement|null} */ (document.getElementById('dev-copy-token')),
+    rotate: /** @type {HTMLButtonElement|null} */ (document.getElementById('dev-rotate-token')),
+    output: /** @type {HTMLTextAreaElement|null} */ (document.getElementById('dev-token-output')),
+    userLabel: document.getElementById('dev-user-label'),
+    status: document.getElementById('dev-token-status'),
+    identity: document.getElementById('dev-fp-display'),
+  };
 
-  state.fingerprint = await computeFingerprint();
-  if (fpDisplay) fpDisplay.textContent = state.fingerprint.slice(0, 24) + '…';
-
-  // Restore persisted key.
+  // Restore a key minted earlier in this tab so a reload doesn't lose the one
+  // copy the server will ever hand out. sessionStorage, not localStorage: the
+  // plaintext should not outlive the tab.
   try {
-    const saved = localStorage.getItem(KEY_STORE);
+    const saved = sessionStorage.getItem(SESSION_KEY);
     if (saved) state.token = saved;
-  } catch { /* ignore */ }
+  } catch { /* private mode */ }
 
-  /** @param {boolean} busy @param {string} [label] */
-  const setBusy = (busy, label = '') => {
+  const core = await import('@clex/frontend-core');
+
+  const setBusy = (busy, label) => {
+    state.busy = busy;
     root.classList.toggle('dev-access--busy', busy);
-    if (label && statusLabel) statusLabel.textContent = label;
-    [createButton, copyButton, rotateButton].forEach((b) => { if (b) b.disabled = busy; });
+    if (label && els.status) els.status.textContent = label;
+    [els.create, els.copy, els.rotate].forEach((b) => { if (b) b.disabled = busy; });
   };
 
   const render = () => {
+    const signedIn = Boolean(state.user);
     root.classList.toggle('dev-access--has-token', Boolean(state.token));
-    if (userLabel) {
-      userLabel.innerHTML = state.token
-        ? `Key bound to <b>${state.fingerprint.slice(0, 8)}…</b> · stored on this device only`
-        : 'Click <b>Generate api key</b> to mint one';
+    root.classList.toggle('dev-access--signed-in', signedIn);
+
+    if (els.identity) {
+      els.identity.textContent = signedIn ? (state.user.email || state.user.uid) : 'not signed in';
     }
-    if (tokenOutput) {
-      tokenOutput.value = state.token || '';
-      tokenOutput.placeholder = 'Click Generate to mint a fingerprint-bound key';
+
+    if (els.userLabel) {
+      if (!signedIn) {
+        els.userLabel.innerHTML = 'Sign in with Google to create an api key';
+      } else if (state.token) {
+        els.userLabel.innerHTML = `Key ready · copy it now, it is shown <b>once</b>`;
+      } else if (state.keys.length) {
+        const plural = state.keys.length === 1 ? 'key' : 'keys';
+        els.userLabel.innerHTML =
+          `${state.keys.length} active ${plural} · <b>Generate</b> to mint another`;
+      } else {
+        els.userLabel.innerHTML = 'Click <b>Generate api key</b> to mint one';
+      }
     }
+
+    // Write to the label span, not the button: the button also holds an icon.
+    const createLabel = document.getElementById('dev-create-token-label');
+    if (createLabel) {
+      createLabel.textContent = signedIn ? 'Generate api key' : 'Sign in with Google';
+    }
+
+    if (els.output) {
+      els.output.value = state.token || '';
+      els.output.placeholder = signedIn
+        ? 'Generate a key — the plaintext is shown once and never stored on the server'
+        : 'Sign in to create a key';
+    }
+
     updateCommands(state.token || TOKEN_PLACEHOLDER);
   };
 
-  const generate = async () => {
-    setBusy(true, 'Generating key from device fingerprint…');
+  /** Authenticated request against the vault worker. */
+  const api = async (method, path, body) => {
+    const token = await core.getGoogleIdToken();
+    if (!token) throw new Error('Sign-in expired. Sign in again.');
+    const res = await fetch(`${VAULT_API}${path}`, {
+      method,
+      headers: {
+        Authorization: `Bearer ${token}`,
+        ...(body ? { 'Content-Type': 'application/json' } : {}),
+      },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    if (!res.ok) {
+      let detail = '';
+      try { detail = (await res.json())?.error ?? ''; } catch { /* non-JSON */ }
+      throw new Error(detail || `Request failed (${res.status})`);
+    }
+    return res.status === 204 ? null : res.json();
+  };
+
+  const loadKeys = async () => {
+    if (!state.user) return;
     try {
-      // Mint a key locally — server validates the fingerprint binding on use.
-      // Format: clex_<fp-prefix>_<random>. Random portion is unforgeable;
-      // server hashes the whole thing and rate-limits per fingerprint.
-      const random = await randomToken(32);
-      const fpPrefix = state.fingerprint.slice(0, 12);
-      state.token = `clex_${fpPrefix}_${random}`;
-      try { localStorage.setItem(KEY_STORE, state.token); } catch { /* ignore */ }
-      if (statusLabel) statusLabel.textContent = 'Key ready · device-bound · 60 req/min · 100MB/day';
+      const data = await api('GET', '/keys');
+      state.keys = data?.keys ?? [];
     } catch (err) {
-      console.error(err);
-      if (statusLabel) statusLabel.textContent = 'Could not generate key. Try refreshing.';
+      console.error('[clex] could not list api keys', err);
+      state.keys = [];
+    }
+    render();
+  };
+
+  const signIn = async () => {
+    setBusy(true, 'Opening Google sign-in…');
+    try {
+      await core.signInWithGoogle();
+      // onVaultAuthChanged fires and drives the rest.
+    } catch (err) {
+      if (els.status) els.status.textContent = describeError(err, 'Sign-in failed.');
+    } finally {
+      setBusy(false);
+      render();
+    }
+  };
+
+  const generate = async () => {
+    if (!state.user) return signIn();
+    setBusy(true, 'Creating key…');
+    try {
+      const data = await api('POST', '/keys', {
+        name: `developers-page · ${new Date().toISOString().slice(0, 10)}`,
+        email: state.user.email ?? undefined,
+      });
+      state.token = data?.plaintext ?? '';
+      try { sessionStorage.setItem(SESSION_KEY, state.token); } catch { /* private mode */ }
+      if (els.status) {
+        const key = data?.key;
+        els.status.textContent = key
+          ? `Key ready · ${formatLimit(key.ratePerMinute, '/min')} · ${formatBytes(key.maxFileBytes)} per file`
+          : 'Key ready.';
+      }
+      await loadKeys();
+    } catch (err) {
+      if (els.status) els.status.textContent = describeError(err, 'Could not create the key.');
     } finally {
       setBusy(false);
       render();
@@ -75,96 +176,89 @@ export async function initDeveloperAccess() {
   };
 
   const rotate = async () => {
-    if (state.token && !confirm('Rotate the key? The old key will stop working immediately.')) return;
-    state.token = '';
-    try { localStorage.removeItem(KEY_STORE); } catch { /* ignore */ }
-    await generate();
+    if (!state.user) return signIn();
+    if (!confirm('Revoke every existing key and mint a new one? Old keys stop working immediately.')) return;
+    setBusy(true, 'Revoking old keys…');
+    try {
+      await loadKeys();
+      for (const key of state.keys) {
+        await api('DELETE', `/keys/${encodeURIComponent(key.id)}`);
+      }
+      state.token = '';
+      try { sessionStorage.removeItem(SESSION_KEY); } catch { /* ignore */ }
+      await generate();
+      return;
+    } catch (err) {
+      if (els.status) els.status.textContent = describeError(err, 'Could not rotate keys.');
+    } finally {
+      setBusy(false);
+      render();
+    }
   };
 
-  createButton?.addEventListener('click', generate);
-  rotateButton?.addEventListener('click', rotate);
+  els.create?.addEventListener('click', () => { if (!state.busy) void generate(); });
+  els.rotate?.addEventListener('click', () => { if (!state.busy) void rotate(); });
 
-  copyButton?.addEventListener('click', async () => {
+  els.copy?.addEventListener('click', async () => {
     if (!state.token) {
-      if (statusLabel) statusLabel.textContent = 'Generate a key first.';
-      render();
+      if (els.status) {
+        els.status.textContent = state.user
+          ? 'Generate a key first.'
+          : 'Sign in, then generate a key.';
+      }
       return;
     }
     await copyText(state.token);
-    if (statusLabel) statusLabel.textContent = 'api key copied.';
-    copyButton.classList.add('is-copied');
-    setTimeout(() => copyButton.classList.remove('is-copied'), 1600);
+    if (els.status) els.status.textContent = 'api key copied.';
+    els.copy.classList.add('is-copied');
+    setTimeout(() => els.copy.classList.remove('is-copied'), 1600);
   });
 
-  // Generic [data-copy-command] support — kept for compatibility.
-  root.querySelectorAll('[data-copy-command]').forEach(button => {
+  // Generic [data-copy-command] support — kept for the sample command blocks.
+  root.querySelectorAll('[data-copy-command]').forEach((button) => {
     button.addEventListener('click', async () => {
       const targetId = button.getAttribute('data-copy-command');
       const code = targetId ? document.getElementById(targetId) : null;
       if (!code) return;
       await copyText(code.textContent || '');
-      if (statusLabel) statusLabel.textContent = 'Command copied.';
+      if (els.status) els.status.textContent = 'Command copied.';
     });
+  });
+
+  core.onVaultAuthChanged((user) => {
+    state.user = user;
+    if (!user) {
+      state.keys = [];
+      state.token = '';
+      try { sessionStorage.removeItem(SESSION_KEY); } catch { /* ignore */ }
+      render();
+      return;
+    }
+    void loadKeys();
   });
 
   render();
 }
 
-/** Build a stable device fingerprint hash. */
-async function computeFingerprint() {
-  // Try cached value first.
-  try {
-    const cached = localStorage.getItem(FP_KEY);
-    if (cached) return cached;
-  } catch { /* ignore */ }
-
-  const ua = navigator.userAgent || '';
-  const lang = navigator.language || '';
-  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
-  const screen = `${window.screen.width}x${window.screen.height}x${window.screen.colorDepth}`;
-  const platform = navigator.platform || '';
-  const cores = String(navigator.hardwareConcurrency || 0);
-
-  // Canvas signature — different GPUs render the same shapes slightly differently.
-  let canvasSig = '';
-  try {
-    const c = document.createElement('canvas');
-    c.width = 200; c.height = 50;
-    const g = c.getContext('2d');
-    if (g) {
-      g.textBaseline = 'top';
-      g.font = '14px monospace';
-      g.fillStyle = '#f60';
-      g.fillRect(0, 0, 100, 30);
-      g.fillStyle = '#069';
-      g.fillText('clex.fingerprint 🔒', 2, 2);
-      canvasSig = c.toDataURL().slice(-64);
-    }
-  } catch { /* ignore */ }
-
-  const seed = [ua, lang, tz, screen, platform, cores, canvasSig].join('|');
-  const hash = await sha256(seed);
-  try { localStorage.setItem(FP_KEY, hash); } catch { /* ignore */ }
-  return hash;
+/** @param {unknown} err @param {string} fallback */
+function describeError(err, fallback) {
+  const msg = err instanceof Error ? err.message : '';
+  if (!msg) return fallback;
+  if (/popup|cancell?ed/i.test(msg)) return 'Sign-in cancelled.';
+  return msg;
 }
 
-/** @param {string} input */
-async function sha256(input) {
-  if (crypto?.subtle) {
-    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(input));
-    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
-  }
-  // Fallback (extremely unlikely needed on modern browsers).
-  let h = 0;
-  for (const c of input) h = (h * 31 + c.charCodeAt(0)) | 0;
-  return Math.abs(h).toString(16).padStart(16, '0');
+/** @param {number} rpm @param {string} suffix */
+function formatLimit(rpm, suffix) {
+  return rpm < 0 ? 'unlimited' : `${rpm}${suffix}`;
 }
 
 /** @param {number} bytes */
-async function randomToken(bytes) {
-  const arr = new Uint8Array(bytes);
-  crypto.getRandomValues(arr);
-  return Array.from(arr).map(b => b.toString(16).padStart(2, '0')).join('');
+function formatBytes(bytes) {
+  if (bytes < 0) return 'unlimited';
+  if (bytes >= 1024 ** 3) return `${(bytes / 1024 ** 3).toFixed(0)} GB`;
+  if (bytes >= 1024 ** 2) return `${(bytes / 1024 ** 2).toFixed(0)} MB`;
+  return `${(bytes / 1024).toFixed(0)} KB`;
 }
 
 /** @param {string} token */
@@ -172,7 +266,13 @@ function updateCommands(token) {
   const targets = [
     ['dev-cmd-export', `export CLEX_API_KEY='${token}'`],
     ['dev-cmd-health', `curl https://api.clex.in/api/health`],
-    ['dev-cmd-auth', `curl -X POST https://clex.in/vault/api/uploads \\\n  -H "Authorization: Bearer ${token}" \\\n  -H "X-Filename: report.pdf" \\\n  --data-binary @report.pdf`],
+    [
+      'dev-cmd-auth',
+      `curl -X POST https://clex.in/vault/api/uploads \\\n` +
+      `  -H "Authorization: Bearer ${token}" \\\n` +
+      `  -H "X-Filename: report.pdf" \\\n` +
+      `  --data-binary @report.pdf`,
+    ],
   ];
   targets.forEach(([id, value]) => {
     const el = document.getElementById(id);
@@ -184,8 +284,10 @@ function updateCommands(token) {
 async function copyText(text) {
   if (!text) return;
   if (navigator.clipboard?.writeText) {
-    await navigator.clipboard.writeText(text);
-    return;
+    try {
+      await navigator.clipboard.writeText(text);
+      return;
+    } catch { /* fall through to the legacy path */ }
   }
   const textarea = document.createElement('textarea');
   textarea.value = text;
