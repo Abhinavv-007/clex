@@ -199,7 +199,13 @@
 
   .tr-grid {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    /* auto-fit, not a fixed pair. The two-column layout only collapsed at a
+       viewport media query, but this card lives in a ~248px workspace column
+       on a 1440px screen — the query never fired, both columns squeezed to
+       ~110px, and every value truncated: "SIZE 12 …", "CHUNKS 1.", "ROUTE W…"
+       and a DURATION with nothing beside it. Sizing on the container instead
+       means it drops to one column wherever it is actually narrow. */
+    grid-template-columns: repeat(auto-fit, minmax(148px, 1fr));
     gap: 4px 14px;
     margin: 0;
     min-width: 0;

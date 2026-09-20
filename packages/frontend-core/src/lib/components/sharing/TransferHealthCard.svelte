@@ -4,6 +4,10 @@
   import { formatSpeed } from '$utils/format'
 
   $: health = $transferStore.health
+  // A sender never verifies its own chunks — only the receiver does — so
+  // reading verifiedChunks here left the sender's health panel showing
+  // "0 / 2560" for the whole transfer.
+  $: deliveredChunks = Math.max(health.verifiedChunks, health.ackedChunks)
   $: protocol = $transferStore.protocol
   $: paused = $transferStore.paused
   $: connectionKind = $transferStore.connectionKind
@@ -49,8 +53,8 @@
 
     <div class="th-grid">
       <div class="th-cell">
-        <span class="th-cell-key">Verified</span>
-        <span class="th-cell-val">{health.verifiedChunks}<span class="th-slash">/</span>{health.totalChunks}</span>
+        <span class="th-cell-key">Delivered</span>
+        <span class="th-cell-val">{deliveredChunks}<span class="th-slash">/</span>{health.totalChunks}</span>
       </div>
       <div class="th-cell">
         <span class="th-cell-key">Retries</span>

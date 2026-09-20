@@ -1439,7 +1439,11 @@ export class WebRTCTransfer {
       ...this.pendingReliableCounts,
       totalChunks: snap.totalChunks,
       ackedChunks: snap.acked + snap.verified,
-      verifiedChunks: snap.verified,
+      // Deliberately does NOT set verifiedChunks. Only the receiver verifies,
+      // so the sender's own snapshot is always 0 — and this runs on every
+      // chunk sent, far more often than the peer's `receiver_progress`, so
+      // setting it here overwrote the real number with zero and the sender
+      // sat at "0/2560 verified" for the entire transfer.
       retries: snap.retries,
       failedChunks: snap.failedChunks,
     }

@@ -152,7 +152,7 @@
           <span class="ds-badge-nearby">Local speed</span>
         {/if}
       </div>
-      <TransferProgress />
+      <TransferProgress sending={true} />
       <TransferHealthCard />
       <TransferControls {transfer} />
     </div>

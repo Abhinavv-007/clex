@@ -14,8 +14,14 @@
   $: ackedChunks = $transferStore.ackedChunks
   $: retries = $transferStore.retries
   $: connectionKind = $transferStore.connectionKind
+  /** The arrow should point the way the bytes are going. */
+  export let sending = false
 
-  $: verifiedPct = totalChunks > 0 ? Math.min(100, Math.round((verifiedChunks / totalChunks) * 100)) : 0
+  // A sender never verifies its own chunks; it only learns they were acked.
+  // Showing `verified` on both sides left the sender reading "0/2560" for a
+  // whole transfer, so use whichever count actually represents delivery here.
+  $: deliveredChunks = Math.max(verifiedChunks, ackedChunks)
+  $: verifiedPct = totalChunks > 0 ? Math.min(100, Math.round((deliveredChunks / totalChunks) * 100)) : 0
   $: eta = formatETA(bytesTotal - bytesSent, speed)
   $: networkLabel =
     connectionKind === 'lan' ? 'LAN'
@@ -46,13 +52,13 @@
 
   <div class="tp-stats">
     <span class="tp-stat tp-stat--speed" title="Current speed">
-      <span class="tp-stat__icon" aria-hidden="true">⇣</span>
+      <span class="tp-stat__icon" aria-hidden="true">{sending ? '⇡' : '⇣'}</span>
       <span class="tp-stat__val">{formatSpeed(speed)}</span>
     </span>
     {#if protocol === 'reliable' && totalChunks > 0}
       <span class="tp-stat" title="Verified chunks">
         <span class="tp-stat__icon" aria-hidden="true">✓</span>
-        <span class="tp-stat__val">{verifiedChunks}/{totalChunks}</span>
+        <span class="tp-stat__val">{deliveredChunks}/{totalChunks}</span>
       </span>
       {#if retries > 0}
         <span class="tp-stat tp-stat--retry" title="Retried chunks">
@@ -82,8 +88,8 @@
       {#each Array(totalChunks) as _, idx}
         <span
           class="tp-chunk"
-          class:tp-chunk--verified={idx < verifiedChunks}
-          class:tp-chunk--acked={idx >= verifiedChunks && idx < ackedChunks}
+          class:tp-chunk--verified={idx < deliveredChunks}
+          class:tp-chunk--acked={idx >= deliveredChunks && idx < ackedChunks}
         ></span>
       {/each}
     </div>

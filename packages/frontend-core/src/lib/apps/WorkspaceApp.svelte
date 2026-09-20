@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte'
   import { uiStore } from '$stores/ui'
+  import { transferStore } from '$stores/transfer'
   import { siteRoutes } from '$utils'
   import FileList from '$components/workspace/FileList.svelte'
   import ToolChain from '$components/workspace/ToolChain.svelte'
@@ -8,6 +9,19 @@
   import ReceiveAccessCard from '$components/sharing/ReceiveAccessCard.svelte'
   import TransferQueue from '$components/sharing/TransferQueue.svelte'
   import { initChainInstrumentation, createChainClient } from '$chain/instrument'
+
+  /**
+   * True while bytes are moving, and while the result is still on screen.
+   * The verified receipt is shown after completion and is worth reading, so
+   * the column keeps its width rather than snapping back and squeezing the
+   * receipt's values into ellipses.
+   */
+  $: transferActive =
+    $transferStore.state === 'transferring' ||
+    $transferStore.state === 'connecting' ||
+    $transferStore.state === 'complete' ||
+    $transferStore.state === 'failed' ||
+    $transferStore.paused
 
   export let receiveBasePath = siteRoutes.receive
   export let receivePathFormat: 'segment' | 'query' = 'segment'
@@ -148,7 +162,7 @@
         {/if}
       </div>
     {:else}
-    <div class="ws-grid">
+    <div class="ws-grid" class:ws-grid--live={transferActive}>
       <aside class="ws-col ws-col-files">
         <FileList {receiveEntryHref} />
       </aside>
@@ -465,6 +479,19 @@
         minmax(212px, 248px)
         minmax(196px, 236px);
       gap: 12px;
+    }
+
+    /* While bytes are moving, progress is the thing the person is watching —
+       but it lived in the narrowest track (212-248px) with the flexible one
+       next to it holding an empty tool list. Hand the flexible track to the
+       share column for the duration, so the bar, speed, ETA, chunk map and
+       health readout have room instead of wrapping into a sliver. */
+    .ws-grid--live {
+      grid-template-columns:
+        minmax(200px, 232px)
+        minmax(232px, 288px)
+        minmax(0, 1fr)
+        minmax(196px, 236px);
     }
   }
 
