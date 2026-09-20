@@ -352,3 +352,77 @@ describe('markAckedThrough (cumulative ack)', () => {
     expect(tracker.isComplete()).toBe(true)
   })
 })
+
+describe('reapTimedOut (ACK watchdog)', () => {
+  /**
+   * A chunk lost after `dc.send()` succeeds leaves the sender with nothing
+   * pending and nothing complete, so the send loop sleeps forever and the
+   * transfer sits at 99% with no error. ACK_TIMEOUT_MS was defined and
+   * asserted on from the start, but nothing called it until now.
+   */
+  function manifest(chunks: number): TransferManifest {
+    return {
+      version: RELIABLE_PROTOCOL_VERSION, transferId: 't', createdAt: 0, chunkSize: 1024,
+      totalSize: 1024 * chunks, totalChunks: chunks, perChunkHash: false,
+      files: [{ fileId: 'a', fileIndex: 0, name: 'a', mimeType: 'application/octet-stream',
+                size: 1024 * chunks, totalChunks: chunks }],
+    }
+  }
+
+  it('requeues a chunk that was never acknowledged', () => {
+    const t = new ChunkTracker(manifest(4))
+    for (let i = 0; i < 4; i++) t.markSent(0, i, 1000)
+    expect(t.pickNextSendable(1000)).toBeNull()      // nothing pending: stalled
+    expect(t.reapTimedOut(8000, 1000 + 8001)).toBe(4)
+    expect(t.snapshot().inFlight).toBe(0)
+    expect(t.snapshot().pending).toBe(4)
+  })
+
+  it('leaves chunks that are still within the timeout alone', () => {
+    const t = new ChunkTracker(manifest(4))
+    for (let i = 0; i < 4; i++) t.markSent(0, i, 1000)
+    expect(t.reapTimedOut(8000, 1000 + 7999)).toBe(0)
+    expect(t.snapshot().inFlight).toBe(4)
+  })
+
+  it('does not touch chunks that were already acked', () => {
+    const t = new ChunkTracker(manifest(4))
+    for (let i = 0; i < 4; i++) t.markSent(0, i, 1000)
+    t.markAckedThrough(0, 2)
+    expect(t.reapTimedOut(8000, 1000 + 8001)).toBe(1)
+    expect(t.snapshot().acked).toBe(3)
+  })
+
+  it('lets the send loop pick the requeued chunk back up', () => {
+    const t = new ChunkTracker(manifest(2))
+    for (let i = 0; i < 2; i++) t.markSent(0, i, 1000)
+    t.reapTimedOut(8000, 1000 + 8001)
+    // Retries carry a backoff, so they become eligible a little later.
+    const later = 1000 + 8001 + 60_000
+    const next = t.pickNextSendable(later)
+    expect(next).not.toBeNull()
+    expect(next?.chunkIndex).toBe(0)
+  })
+
+  it('gives up on a chunk once its retry budget is gone', () => {
+    const t = new ChunkTracker(manifest(1), { maxAttempts: 2 })
+    let now = 1000
+    for (let attempt = 0; attempt < 3; attempt++) {
+      t.markSent(0, 0, now)
+      now += 9000
+      t.reapTimedOut(8000, now)
+      now += 60_000
+    }
+    // Rather than retrying forever, it lands in `failed` so the transfer can
+    // report a real error instead of hanging.
+    expect(t.snapshot().failed).toBe(1)
+    expect(t.failedChunkCount()).toBe(1)
+  })
+
+  it('scans only what is outstanding, not the whole transfer', () => {
+    const t = new ChunkTracker(manifest(5000))
+    for (let i = 0; i < 10; i++) t.markSent(0, i, 1000)
+    // 5000 chunks seeded, 10 on the wire — the watchdog should reap those 10.
+    expect(t.reapTimedOut(8000, 1000 + 8001)).toBe(10)
+  })
+})

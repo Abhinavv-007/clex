@@ -20,6 +20,7 @@ import {
 import { SignalingClient } from './signaling'
 import {
   ACK_BATCH_CHUNKS,
+  ACK_TIMEOUT_MS,
   ACK_FLUSH_MS,
   BUFFERED_AMOUNT_HIGH_WATER,
   BUFFERED_AMOUNT_LOW_WATER,
@@ -707,6 +708,16 @@ export class WebRTCTransfer {
       const next = tracker.pickNextSendable()
       if (!next) {
         if (tracker.isComplete()) break
+        // Nothing pending and nothing complete means every outstanding chunk
+        // is sitting in `in_flight` waiting for an ACK. If one was lost after
+        // `dc.send()` returned, that wait never ends — so anything older than
+        // ACK_TIMEOUT_MS goes back on the retry queue instead of stalling the
+        // transfer at 99% with no error. Only the send window is scanned.
+        const reaped = tracker.reapTimedOut(ACK_TIMEOUT_MS)
+        if (reaped > 0) {
+          this.logDiagnostic(`ack_timeout_requeued_${reaped}`)
+          continue
+        }
         // No retransmits ready yet — sleep until the retry timer or a new ACK
         // wakes us. 80 ms ceiling matches the previous fixed poll budget.
         await Promise.race([sender.wake.promise, wait(80)])

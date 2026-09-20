@@ -98,6 +98,12 @@ export class ChunkTracker {
   /** Per-file high-water mark applied by `markAckedThrough`. */
   private readonly cumulativeAcked = new Map<number, number>()
 
+  /**
+   * Chunks currently on the wire. Lets the ACK watchdog scan only what is
+   * outstanding — bounded by the send window — instead of the whole transfer.
+   */
+  private readonly inFlight = new Set<ChunkRecord>()
+
   constructor(manifest: TransferManifest, options: ChunkTrackerOptions = {}) {
     this.maxAttempts = options.maxAttempts ?? RETRY_MAX_ATTEMPTS
     this.initialDelayMs = options.initialDelayMs ?? RETRY_INITIAL_DELAY_MS
@@ -155,6 +161,8 @@ export class ChunkTracker {
 
     rec.status = next
     if (next !== 'pending') this.retryable.delete(rec)
+    if (next === 'in_flight') this.inFlight.add(rec)
+    else this.inFlight.delete(rec)
   }
 
   // ── Sender helpers ──────────────────────────────────────────────────────
@@ -256,6 +264,28 @@ export class ChunkTracker {
     rec.nextEligibleAt = now + delay
     this.retryable.add(rec)
     return true
+  }
+
+  /**
+   * Reschedules every chunk that was sent but never acknowledged within
+   * `timeoutMs`, and returns how many.
+   *
+   * Without this a chunk that is lost after `dc.send()` succeeds simply waits
+   * forever: the send loop has nothing pending to pick, `isComplete()` stays
+   * false, and the transfer sits at 99% with no error. ACK_TIMEOUT_MS existed
+   * and was unit-tested from the beginning, but nothing ever called it.
+   */
+  reapTimedOut(timeoutMs: number, now: number = Date.now()): number {
+    let reaped = 0
+    // Safe to delete from a Set while iterating it; scheduleRetry moves the
+    // record out of `in_flight`, which removes it via setStatus.
+    for (const rec of this.inFlight) {
+      if (rec.lastSentAt === null) continue
+      if (now - rec.lastSentAt < timeoutMs) continue
+      this.scheduleRetry(rec.fileIndex, rec.chunkIndex, now)
+      reaped++
+    }
+    return reaped
   }
 
   forceResend(fileIndex: number, chunkIndex: number): void {
