@@ -97,6 +97,11 @@
 /* ─────────────────────────────────────────────────────────
    DARK MODE TOKENS (DEFAULT)
 ───────────────────────────────────────────────────────── */
+/* Matches the document theme. `data-theme` is the canonical signal — it is
+   set by the render-blocking bootstrap in each page's <head>, so it is
+   correct before first paint — and `.dark` is kept alongside it because
+   Tailwind's darkMode: 'class' reads the class. */
+[data-theme="dark"],
 .dark {
   --canvas:         var(--bg-primary, #09090B);
   --surface:        var(--bg-card, #111116);

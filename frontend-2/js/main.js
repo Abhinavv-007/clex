@@ -4,7 +4,10 @@
    ============================================ */
 
 import '@clex/frontend-core/styles.css';
-import { clearPendingDriveReturnTo, getPendingDriveReturnTo, markDriveAuthCallbackSeen } from '@clex/frontend-core';
+// Deep import, not the package barrel: the barrel re-exports the whole app
+// (qrcode, marked, firebase, the transfer stack, IndexedDB), and importing
+// it here put all of that in the entry chunk of every page.
+import { clearPendingDriveReturnTo, getPendingDriveReturnTo, markDriveAuthCallbackSeen } from '@clex/frontend-core/transfer/gdrive';
 
 import { initTheme, toggleTheme } from './theme.js';
 import { initNav } from './nav.js';

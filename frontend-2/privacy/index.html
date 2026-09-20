@@ -144,7 +144,8 @@
             <li>We do not store Vault note plaintext or secret decryption keys on our servers</li>
             <li>We do not require an account for core browser-side preparation, P2P transfer, or local transfer functionality</li>
             <li>We do not sell or share personal data with third parties for advertising</li>
-            <li>We do not use tracking cookies for behavioral advertising</li>
+            <li>We do not set cookies at all &mdash; first-party or third-party</li>
+            <li>We do not run analytics, telemetry, session replay or advertising trackers</li>
             <li>We do not publish Vault notes, secret-link content, or timed Drive-share file contents to the public Transfer Chain</li>
           </ul>
         </div>
@@ -155,7 +156,7 @@
           <p class="legal-section__text">To operate the service, we may process or store the following limited categories of data:</p>
           <ul class="legal-section__list">
             <li><strong>Signaling and routing data:</strong> Temporary identifiers and network metadata used to establish P2P sessions and route transfers.</li>
-            <li><strong>Basic service analytics:</strong> Aggregated page views, feature usage counts, and error reports used to keep the product stable.</li>
+            <li><strong>Operational logs:</strong> Our host (Cloudflare) records ordinary request logs &mdash; IP address, timestamp, path, status &mdash; to serve the site and mitigate abuse. Clex runs no analytics product, no page-view counter and no telemetry SDK. See <a class="link" href="/cookies">Cookies &amp; Browser Storage</a> for the full list of what is stored on your device.</li>
             <li><strong>Google account data:</strong> When you choose Google Drive fallback or Vault Cloud Share, authentication is handled through Google/Firebase flows. We may receive identifiers such as UID, email address, display name, and avatar URL that are necessary to show account state and apply quotas.</li>
             <li><strong>Temporary Drive-share metadata:</strong> For Vault Cloud Share we store share metadata such as file name, size, MIME type, upload time, delete time, owner identifiers, share codes, and Drive item ids so the timed Drive session can function and clean itself up.</li>
             <li><strong>Secret status metadata:</strong> For Vault Secret Share we store encrypted payloads, expiry timestamps, open-status metadata, and the selected protection policy until the secret expires or is consumed.</li>

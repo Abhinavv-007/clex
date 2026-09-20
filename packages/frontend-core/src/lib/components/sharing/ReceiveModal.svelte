@@ -4,7 +4,6 @@
   import { transferStore } from '$stores/transfer'
   import { getSignalingBaseUrl } from '$transfer/signaling'
   import { WebRTCTransfer } from '$transfer/webrtc'
-  import { zipFiles } from '$tools/zip'
   import { isValidRoomCode } from '$utils/crypto'
   import { detectReceivedFileFacts, formatBytes, saveBlobWithSystemFallback, triggerBlobDownload, truncateName } from '$utils'
   import type { TransferProfile } from '$transfer/types'
@@ -84,6 +83,9 @@
       }
 
       const archiveName = `${code.trim().toUpperCase() || 'clex-transfer'}.zip`
+      // Loaded here rather than at module scope: JSZip is ~100 KB and only a
+      // multi-file save needs it.
+      const { zipFiles } = await import('$tools/zip')
       const zipBlob = await zipFiles(
         receivedFiles.map(file => ({
           blob: file.blob,

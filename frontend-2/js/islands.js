@@ -18,9 +18,12 @@ export async function initIslands() {
   // the marketing sections below load afterwards and never block it.
   if (page === 'home') {
     const workspaceTarget = document.getElementById('workspace-app-island');
-    const core = await import('@clex/frontend-core');
+    const [core, mocks] = await Promise.all([
+      import('@clex/frontend-core/apps/WorkspaceApp'),
+      import('@clex/frontend-core/components/mocks'),
+    ]);
 
-    mount(core.WorkspaceApp, workspaceTarget, {
+    mount(core.default, workspaceTarget, {
       receiveBasePath: routes.receive,
       receivePathFormat: 'query',
       receiveEntryHref: routes.receive,
@@ -37,16 +40,16 @@ export async function initIslands() {
       import('../islands/RouteSelectionWindowIsland.svelte'),
     ]);
 
-    mount(core.RoutingEngineMock, document.getElementById('routing-engine-island'));
+    mount(mocks.RoutingEngineMock, document.getElementById('routing-engine-island'));
     mount(DropZoneWindowIsland, document.getElementById('home-drop-island'));
     mount(ToolChainWindowIsland, document.getElementById('home-tools-island'));
     mount(RouteSelectionWindowIsland, document.getElementById('home-route-island'));
-    mount(core.ChainFlowMock, document.getElementById('home-chain-flow-island'));
+    mount(mocks.ChainFlowMock, document.getElementById('home-chain-flow-island'));
     return;
   }
 
   if (page === 'features') {
-    const [{ ChainFlowMock }] = await Promise.all([import('@clex/frontend-core')]);
+    const { ChainFlowMock } = await import('@clex/frontend-core/components/mocks');
     mount(ChainFlowMock, document.getElementById('chain-flow-island'));
     return;
   }
@@ -69,7 +72,7 @@ export async function initIslands() {
   }
 
   if (page === 'workspace') {
-    const [{ WorkspaceApp }] = await Promise.all([import('@clex/frontend-core')]);
+    const { default: WorkspaceApp } = await import('@clex/frontend-core/apps/WorkspaceApp');
     mount(WorkspaceApp, document.getElementById('workspace-app-island'), {
       receiveBasePath: routes.receive,
       receivePathFormat: 'query',
@@ -80,7 +83,7 @@ export async function initIslands() {
   }
 
   if (page === 'receive') {
-    const [{ ReceiveApp }] = await Promise.all([import('@clex/frontend-core')]);
+    const { default: ReceiveApp } = await import('@clex/frontend-core/apps/ReceiveApp');
     mount(ReceiveApp, document.getElementById('receive-app-island'), {
       homeHref: routes.home,
       backHref: routes.workspace,
@@ -89,7 +92,7 @@ export async function initIslands() {
   }
 
   if (page === 'chain') {
-    const [{ ChainExplorerApp }] = await Promise.all([import('@clex/frontend-core')]);
+    const { default: ChainExplorerApp } = await import('@clex/frontend-core/apps/ChainExplorerApp');
     mount(ChainExplorerApp, document.getElementById('chain-explorer-island'), {
       chainApiUrl: import.meta.env.PUBLIC_CHAIN_URL ?? '',
     });
@@ -97,7 +100,7 @@ export async function initIslands() {
   }
 
   if (page === 'vault') {
-    const [{ VaultApp }] = await Promise.all([import('@clex/frontend-core')]);
+    const { default: VaultApp } = await import('@clex/frontend-core/apps/VaultApp');
     mount(VaultApp, document.getElementById('vault-app-island'), {
       signalingUrl: import.meta.env.PUBLIC_SIGNAL_URL ?? 'wss://signal.clex.in',
       vaultApiUrl: '/vault/api',
@@ -106,7 +109,7 @@ export async function initIslands() {
   }
 
   if (page === 'vault-secret') {
-    const [{ VaultSecretApp }] = await Promise.all([import('@clex/frontend-core')]);
+    const { default: VaultSecretApp } = await import('@clex/frontend-core/apps/VaultSecretApp');
     mount(VaultSecretApp, document.getElementById('vault-secret-app-island'), {
       vaultApiUrl: '/vault/api',
     });
@@ -114,7 +117,7 @@ export async function initIslands() {
   }
 
   if (page === 'vault-share') {
-    const [{ VaultShareApp }] = await Promise.all([import('@clex/frontend-core')]);
+    const { default: VaultShareApp } = await import('@clex/frontend-core/apps/VaultShareApp');
     mount(VaultShareApp, document.getElementById('vault-share-app-island'), {
       vaultApiUrl: '/vault/api',
     });
@@ -122,7 +125,7 @@ export async function initIslands() {
   }
 
   if (page === 'account') {
-    const [{ AccountApp }] = await Promise.all([import('@clex/frontend-core')]);
+    const { default: AccountApp } = await import('@clex/frontend-core/apps/AccountApp');
     const params = new URLSearchParams(window.location.search);
     const nextUrl = params.get('next') || '';
     mount(AccountApp, document.getElementById('account-app-island'), {
