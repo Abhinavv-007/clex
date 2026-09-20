@@ -16,9 +16,9 @@
      serif on some pages and a script face on others. */
   --font-display: 'Geist', 'Hanken Grotesk', 'Inter', system-ui, sans-serif;
   --font-display-mega: 'Geist', 'Hanken Grotesk', 'Inter', system-ui, sans-serif;
-  --font-mono-display: 'Space Mono', 'Courier New', monospace;
+  --font-mono-display: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
   --font-body: 'Geist', 'Hanken Grotesk', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-mono: 'JetBrains Mono', 'Space Mono', 'Courier New', monospace;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
 
   /* ── The script face ──
      One family, one optical treatment, used everywhere a handwritten accent

@@ -28,7 +28,7 @@
 :root {
   --font-sans:    var(--font-body, 'Inter', system-ui, sans-serif);
   --font-display: var(--font-display, 'Space Grotesk', system-ui, sans-serif);
-  --font-mono:    var(--font-mono, 'Space Mono', 'JetBrains Mono', monospace);
+  --font-mono:    var(--font-mono, 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace);
 
   /* Surfaces */
   --canvas:         var(--bg-primary, #FAFAFA);

@@ -89,19 +89,18 @@
   })
 </script>
 
-<div class="ws-page" class:ws-page--vault={mode === 'vault'}>
+<div class="ws-page">
   <div class="ws-inner">
-    <div class="ws-header" class:ws-header--compact={mode === 'vault'}>
-      {#if mode === 'transfer'}
-        <div class="ws-title-block">
+    <div class="ws-header">
+      <div class="ws-title-block">
+        {#if mode === 'vault'}
+          <h1 class="ws-title"><span>Your</span> <em>vault</em></h1>
+          <p class="ws-sub">Encrypted notes, secret links and timed handoffs — kept on this device.</p>
+        {:else}
           <h1 class="ws-title"><span>File</span> <em>workspace</em></h1>
           <p class="ws-sub">Drop, prepare, and send files from one fluid private workspace.</p>
-        </div>
-      {:else}
-        <!-- Vault renders its own heading, and it changes with the active
-             panel, so the workspace title would only duplicate it. -->
-        <div class="ws-title-block ws-title-block--empty" aria-hidden="true"></div>
-      {/if}
+        {/if}
+      </div>
 
       <div class="ws-modes" role="tablist" aria-label="Workspace mode">
         <button
@@ -287,43 +286,102 @@
 
   .ws-vault-slot {
     min-height: 420px;
-    margin-top: -0.5rem;
   }
 
   /* Vault was a standalone page, so it sizes itself to the viewport and
      clears the fixed nav on its own. Embedded here both of those are already
      handled by the workspace around it. */
+  /* ── How the boxes read ───────────────────────────────────────────────
+     Two things were making the panels feel busier than they are, and both
+     are layout decisions, which is why they are settled here rather than in
+     each component.
+
+     1. A card inside a card. Each .ws-col is already a bordered, shadowed
+        surface; .fl-panel drew a second 1.5px frame just inside it, so the
+        Files column read as two nested boxes. The column is the card — the
+        panel inside it only needs to group.
+
+     2. A dashed border meant two different things. It marked the drop zone
+        (where dashed is the convention and says "you can drop here") and it
+        also marked every empty state (where it says nothing, and just looks
+        unfinished). Dashed now means droppable; empty states get a quiet
+        tint instead. */
+  .ws-page :global(.fl-panel) {
+    border: 0;
+    border-radius: 12px;
+    box-shadow: none;
+    background: color-mix(in srgb, var(--surface-2) 60%, transparent);
+    padding: 12px;
+  }
+
+  .ws-page :global(.fl-empty),
+  .ws-page :global(.tc-empty),
+  .ws-page :global(.sp-empty-state) {
+    border: 0;
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--surface-2) 72%, transparent);
+  }
+
+  /* The drop zone keeps its dashed edge — that is the one place it earns
+     its meaning — and now responds when you approach it. */
+  .ws-page :global(.dropzone) {
+    transition:
+      border-color 180ms var(--ease-out),
+      background 180ms var(--ease-out);
+  }
+
+  .ws-page :global(.dropzone:hover) {
+    border-color: var(--border-hard);
+    background: color-mix(in srgb, var(--accent) 8%, transparent);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ws-page :global(.dropzone) { transition: none; }
+  }
+
+  /* Vault was built as a standalone page, so it clears the nav and sizes
+     itself to the viewport. Embedded here the workspace already does both.
+     These carry !important because both sides are Svelte-scoped rules of
+     equal specificity, so without it which one wins depends on the order the
+     bundler happens to emit the two component stylesheets in. */
   .ws-vault-slot :global(.va-page) {
-    min-height: 0;
-    padding: 0;
-    background: transparent;
+    min-height: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
   }
 
   .ws-vault-slot :global(.va-inner) {
-    max-width: none;
+    max-width: none !important;
   }
 
-  /* In vault mode the title block is empty (Vault renders its own heading),
-     so the header collapses to just the mode switch instead of reserving a
-     title's worth of height above it. */
-  .ws-title-block--empty {
-    flex: 1;
-    min-height: 0;
+  /* The workspace header above already names the mode. Vault's own kicker and
+     headline would be a second title in the same view; its panel tabs stay,
+     because they are the navigation. */
+  .ws-vault-slot :global(.va-title-block) {
+    display: none !important;
   }
 
-  .ws-header--compact {
-    margin-bottom: 4px;
+  .ws-vault-slot :global(.va-shell-header) {
+    margin-bottom: 16px !important;
   }
 
-  /* Vault brings its own heading straight away, so it does not need the
-     title-sized run-up that the transfer layout leaves under the nav. */
-  .ws-page--vault {
-    padding-top: calc(var(--nav-clearance, 6.4rem) + 0.5rem) !important;
+  /* With the title hidden the tabs are the whole row, so they take the width
+     rather than sitting at 560px against empty space. */
+  .ws-vault-slot :global(.va-panel-switch) {
+    width: 100% !important;
+    max-width: none !important;
+    flex: 1 1 100% !important;
   }
 
-  .ws-header--compact .ws-modes {
-    margin-left: auto;
+  /* `height: calc(100vh - 152px)` assumed a page sitting directly under the
+     nav. Here it clipped the panels and locked them to the viewport
+     regardless of content. */
+  .ws-vault-slot :global(.va-grid) {
+    height: auto !important;
+    min-height: min(66vh, 660px);
   }
+
+  .ws-modes { margin-left: auto; }
 
   .ws-vault-msg {
     padding: 4rem 1rem;
@@ -397,7 +455,21 @@
   @media (min-width: 1200px) {
     .ws-grid {
       display: grid;
-      grid-template-columns: 280px minmax(360px, 1fr) 248px 236px;
+      /* Every track has a floor it can shrink to.
+         This was `280px minmax(360px, 1fr) 248px 236px`, which needs
+         1160px before gaps. The fixed tracks cannot give, and the flexible
+         one refuses to go below its 360px minimum, so in any container
+         narrower than that the row simply overflowed — on the landing page
+         the frame is 1120px wide, and the last column and its offset shadow
+         were clipped off the right edge.
+         `minmax(0, 1fr)` lets the middle track absorb the difference, and
+         the side tracks have real minima so they compress a little before
+         the layout gives up and falls back to the stacked breakpoint. */
+      grid-template-columns:
+        minmax(232px, 280px)
+        minmax(0, 1fr)
+        minmax(212px, 248px)
+        minmax(196px, 236px);
       gap: 12px;
     }
   }
