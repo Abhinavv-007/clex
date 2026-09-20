@@ -1,4 +1,5 @@
 import { requireOwner } from './auth'
+import { putObject, getObject, deleteObjects, isConfigured } from './storage'
 import { mintAnonymousKey } from './anonKeys'
 import {
   handleApiKeyCreate,
@@ -14,6 +15,7 @@ import {
   handleApiUploadDelete,
   handleApiUploadList,
   handleApiUploadShare,
+  handleApiUploadDownload,
 } from './apiUploads'
 
 /**
@@ -54,9 +56,8 @@ export interface Env {
   // D1
   DB: D1Database
   // Supabase
-  SUPABASE_URL: string
-  SUPABASE_ANON_KEY: string
-  SUPABASE_SERVICE_ROLE_KEY: string
+  /** R2 bucket holding uploaded file bytes. Optional so the worker boots without it. */
+  FILES?: R2Bucket
   // Config
   ALLOWED_ORIGIN: string
   MAX_SECRET_SIZE: string
@@ -139,68 +140,6 @@ function isRoomId(value: string): boolean {
 
 // ── Supabase Storage helpers ──────────────────────────────────────────────────
 
-async function supabaseUpload(
-  env: Env,
-  storagePath: string,
-  body: ReadableStream | ArrayBuffer | Uint8Array,
-  contentType: string,
-): Promise<void> {
-  const res = await fetch(
-    `${env.SUPABASE_URL}/storage/v1/object/${STORAGE_BUCKET}/${storagePath}`,
-    {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
-        'Content-Type': contentType,
-        'x-upsert': 'false',
-      },
-      body,
-    },
-  )
-  if (!res.ok) {
-    const text = await res.text()
-    throw new Error(`Supabase upload failed (${res.status}): ${text}`)
-  }
-}
-
-/** Returns a fully-qualified signed URL valid for expiresIn seconds (default 1 hour). */
-async function supabaseSignedUrl(
-  env: Env,
-  storagePath: string,
-  expiresIn = 3600,
-): Promise<string> {
-  const res = await fetch(
-    `${env.SUPABASE_URL}/storage/v1/object/sign/${STORAGE_BUCKET}/${storagePath}`,
-    {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ expiresIn }),
-    },
-  )
-  if (!res.ok) throw new Error(`Supabase sign URL failed (${res.status})`)
-  const data = await res.json() as { signedURL: string }
-  // signedURL is a path like /storage/v1/object/sign/... — prepend origin
-  return `${env.SUPABASE_URL}${data.signedURL}`
-}
-
-/** Deletes one or more paths from the bucket. Failures are swallowed (best-effort). */
-async function supabaseDelete(env: Env, paths: string[]): Promise<void> {
-  if (paths.length === 0) return
-  await fetch(
-    `${env.SUPABASE_URL}/storage/v1/object/${STORAGE_BUCKET}`,
-    {
-      method: 'DELETE',
-      headers: {
-        Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ prefixes: paths }),
-    },
-  ).catch(() => { /* best-effort */ })
-}
 
 // ── Daily upload quota (KV) ───────────────────────────────────────────────────
 
@@ -415,7 +354,7 @@ async function handleFileUpload(req: Request, env: Env, cors: Record<string, str
   const storagePath = `${userId}/${subscriptionId}/${timestamp}_${filename}`
 
   try {
-    await supabaseUpload(env, storagePath, buffer, contentType)
+    await putObject(env, storagePath, buffer, contentType)
   } catch (e: unknown) {
     // Roll back quota increment on upload failure
     const key = `upload_quota:${userId}:${utcDate()}`
@@ -507,20 +446,28 @@ async function handleFileDownload(
     return err('File has expired', 410, cors)
   }
 
-  try {
-    const signedUrl = await supabaseSignedUrl(env, row.storage_path)
-    return json({
-      downloadUrl: signedUrl,
-      signedUrl,
-      filename: row.filename,
-      sizeBytes: row.size_bytes,
-      mimeType: row.mime_type,
-      expiresAt: row.delete_at * 1000,
-      expiresIn: 3600,
-    }, 200, cors)
-  } catch (e: unknown) {
-    return err(e instanceof Error ? e.message : 'Failed to generate download URL', 502, cors)
+  if (!isConfigured(env)) {
+    return err('Object storage is not configured on this deployment.', 503, cors)
   }
+
+  const object = await getObject(env, row.storage_path)
+  if (!object) return err('Stored file is no longer available', 404, cors)
+
+  // Streamed by this worker rather than via a provider signed URL, so the
+  // ownership check above and the bytes travel the same request and access
+  // cannot outlive a revoke.
+  const safeName = row.filename.replace(/[^\x20-\x7e]/g, '_').replace(/"/g, '')
+  return new Response(object.body, {
+    status: 200,
+    headers: {
+      ...cors,
+      'Content-Type': row.mime_type || 'application/octet-stream',
+      'Content-Length': String(row.size_bytes),
+      'Content-Disposition':
+        `attachment; filename="${safeName}"; filename*=UTF-8''${encodeURIComponent(row.filename)}`,
+      'Cache-Control': 'private, no-store',
+    },
+  })
 }
 
 /**
@@ -535,7 +482,7 @@ async function handleFileDelete(fileId: string, userId: string, env: Env, cors: 
 
   if (!row) return err('File not found or access denied', 404, cors)
 
-  await supabaseDelete(env, [row.storage_path])
+  await deleteObjects(env, [row.storage_path])
   await env.DB.batch([
     env.DB.prepare('DELETE FROM attachments WHERE id = ?').bind(fileId),
     env.DB.prepare('DELETE FROM pending_deletions WHERE id = ?').bind(fileId),
@@ -600,7 +547,7 @@ async function handleSubscriptionDelete(
 
   // Delete all from Supabase in one call
   const paths = rows.map(r => r.storage_path)
-  await supabaseDelete(env, paths)
+  await deleteObjects(env, paths)
 
   // Delete all D1 records in a batch
   const ids = rows.map(r => r.id)
@@ -631,7 +578,7 @@ async function runPendingDeletions(env: Env): Promise<void> {
   if (rows.length === 0) return
 
   const paths = rows.map(r => r.storage_path)
-  await supabaseDelete(env, paths)
+  await deleteObjects(env, paths)
 
   const ids = rows.map(r => r.id)
   const placeholders = ids.map(() => '?').join(', ')
@@ -940,7 +887,8 @@ async function handleVaultAdminSummary(req: Request, env: Env, cors: Record<stri
         kv_upload_quota: typeof env.UPLOAD_QUOTA?.put === 'function',
       },
       config: {
-        supabase_configured: Boolean(env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY),
+        storage_backend: 'r2',
+        storage_configured: isConfigured(env),
         allowed_origin: env.ALLOWED_ORIGIN ?? null,
         max_secret_size: env.MAX_SECRET_SIZE ?? null,
         admin_secret_set: Boolean(env.CLEX_ADMIN_SECRET || env.ADMIN_SECRET),
@@ -977,7 +925,7 @@ async function handleVaultAdminHealth(req: Request, env: Env, cors: Record<strin
         d1: dbReachable,
         kv: typeof env.VAULT_SECRETS?.put === 'function',
       },
-      storage_configured: Boolean(env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY),
+      storage_configured: isConfigured(env),
     },
     200,
     { ...cors, ...VAULT_ADMIN_HEADERS },
@@ -1123,10 +1071,18 @@ export default {
       if (method === 'GET') return handleApiUploadList(request, env, cors)
       return err('Method not allowed', 405, cors)
     }
+    // Bytes, streamed by this worker. Matched before the metadata route so
+    // "<token>/download" is never read as a share token.
+    const apiUploadDownloadMatch = path.match(/^\/vault\/api\/uploads\/([A-Za-z0-9_-]+)\/download$/)
+    if (apiUploadDownloadMatch) {
+      if (method !== 'GET') return err('Method not allowed', 405, cors)
+      return handleApiUploadDownload(apiUploadDownloadMatch[1], env, cors)
+    }
+
     const apiUploadIdMatch = path.match(/^\/vault\/api\/uploads\/([A-Za-z0-9_-]+)$/)
     if (apiUploadIdMatch) {
       const id = apiUploadIdMatch[1]
-      if (method === 'GET') return handleApiUploadShare(id, env, cors)
+      if (method === 'GET') return handleApiUploadShare(id, url.origin, env, cors)
       if (method === 'DELETE') return handleApiUploadDelete(id, request, env, cors)
       return err('Method not allowed', 405, cors)
     }
@@ -1158,7 +1114,7 @@ export default {
         service: 'clex-vault',
         ts: Math.floor(Date.now() / 1000),
         version: 'phase-1-public-face',
-        storageConfigured: Boolean(env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY),
+        storageConfigured: isConfigured(env),
       }, 200, { ...cors, 'cache-control': 'public, max-age=10, s-maxage=30' })
     }
 

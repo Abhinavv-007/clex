@@ -25,6 +25,7 @@
  * they've shipped through each key on the management page.
  */
 
+import { putObject, getObject, deleteObjects, downloadUrlFor, isConfigured } from './storage'
 import {
   checkAndConsumeRate,
   findKeyByPlaintext,
@@ -83,65 +84,6 @@ function randomShareToken(): string {
   return out
 }
 
-async function supabaseUpload(
-  env: Env,
-  storagePath: string,
-  body: ReadableStream | ArrayBuffer | Uint8Array,
-  contentType: string,
-): Promise<void> {
-  const res = await fetch(
-    `${env.SUPABASE_URL}/storage/v1/object/${STORAGE_BUCKET}/${storagePath}`,
-    {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
-        'Content-Type': contentType,
-        'x-upsert': 'false',
-      },
-      body,
-    },
-  )
-  if (!res.ok) {
-    const text = await res.text()
-    throw new Error(`Supabase upload failed (${res.status}): ${text}`)
-  }
-}
-
-async function supabaseSignedUrl(
-  env: Env,
-  storagePath: string,
-  expiresIn = 3600,
-): Promise<string> {
-  const res = await fetch(
-    `${env.SUPABASE_URL}/storage/v1/object/sign/${STORAGE_BUCKET}/${storagePath}`,
-    {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ expiresIn }),
-    },
-  )
-  if (!res.ok) throw new Error(`Supabase sign URL failed (${res.status})`)
-  const data = await res.json() as { signedURL: string }
-  return `${env.SUPABASE_URL}${data.signedURL}`
-}
-
-async function supabaseDelete(env: Env, paths: string[]): Promise<void> {
-  if (paths.length === 0) return
-  await fetch(
-    `${env.SUPABASE_URL}/storage/v1/object/${STORAGE_BUCKET}`,
-    {
-      method: 'DELETE',
-      headers: {
-        Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ prefixes: paths }),
-    },
-  ).catch(() => { /* best effort */ })
-}
 
 function rowToRecord(row: UploadRow): {
   id: string
@@ -262,8 +204,12 @@ export async function handleApiUploadCreate(
   const shareToken = randomShareToken()
   const storagePath = `api-uploads/${uid}/${Date.now()}_${id}/${filename}`
 
+  if (!isConfigured(env)) {
+    return errorResponse('Object storage is not configured on this deployment.', 503, cors)
+  }
+
   try {
-    await supabaseUpload(env, storagePath, buffer, contentType)
+    await putObject(env, storagePath, buffer, contentType)
   } catch (e: unknown) {
     return errorResponse(e instanceof Error ? e.message : 'Upload failed', 502, cors)
   }
@@ -286,14 +232,9 @@ export async function handleApiUploadCreate(
     await recordKeyUsage(env, apiKeyId, fileBytes)
   }
 
-  let downloadUrl = ''
-  try {
-    downloadUrl = await supabaseSignedUrl(env, storagePath, 3600)
-  } catch (e) {
-    // We persisted the upload — the share link still works for download via
-    // the GET /vault/api/uploads/:shareToken endpoint.
-    downloadUrl = `${SHARE_BASE_URL}/${shareToken}`
-  }
+  // The worker serves the bytes itself, so the access check and the download
+  // travel the same path and a revoke takes effect immediately.
+  const downloadUrl = downloadUrlFor(new URL(request.url).origin, shareToken)
 
   const responseHeaders: Record<string, string> = rateState
     ? {
@@ -394,7 +335,7 @@ export async function handleApiUploadDelete(
   ).bind(uploadId, uid).first<UploadRow>()
   if (!row) return errorResponse('Upload not found', 404, cors)
 
-  await supabaseDelete(env, [row.storage_path])
+  await deleteObjects(env, [row.storage_path])
   await env.DB.batch([
     env.DB.prepare('UPDATE api_uploads SET revoked_at = unixepoch() WHERE id = ?').bind(uploadId),
     env.DB.prepare('DELETE FROM pending_deletions WHERE id = ?').bind(uploadId),
@@ -404,6 +345,7 @@ export async function handleApiUploadDelete(
 
 export async function handleApiUploadShare(
   shareToken: string,
+  origin: string,
   env: Env,
   cors: Record<string, string>,
 ): Promise<Response> {
@@ -418,12 +360,7 @@ export async function handleApiUploadShare(
     return errorResponse('Share expired', 410, cors)
   }
 
-  let downloadUrl = ''
-  try {
-    downloadUrl = await supabaseSignedUrl(env, row.storage_path, 3600)
-  } catch {
-    return errorResponse('Could not generate download URL', 502, cors)
-  }
+  const downloadUrl = downloadUrlFor(origin, row.share_token)
 
   // Best-effort download counter — never fails the request.
   await env.DB.prepare(
@@ -441,4 +378,55 @@ export async function handleApiUploadShare(
     200,
     cors,
   )
+}
+
+/**
+ * Streams the stored bytes for a share token.
+ *
+ * Revocation and expiry are checked here, on the request that actually serves
+ * the file. The previous design handed out a one-hour signed URL from the
+ * storage provider, which stayed downloadable for the rest of that hour even
+ * after the owner revoked the share.
+ */
+export async function handleApiUploadDownload(
+  shareToken: string,
+  env: Env,
+  cors: Record<string, string>,
+): Promise<Response> {
+  const row = await env.DB.prepare(
+    `SELECT id, storage_path, filename, size_bytes, mime_type, expires_at, revoked_at
+     FROM api_uploads WHERE share_token = ?`
+  ).bind(shareToken).first<UploadRow>()
+
+  if (!row) return errorResponse('Share not found', 404, cors)
+  if (row.revoked_at) return errorResponse('Share revoked', 410, cors)
+  if (Math.floor(Date.now() / 1000) > row.expires_at) {
+    return errorResponse('Share expired', 410, cors)
+  }
+  if (!isConfigured(env)) {
+    return errorResponse('Object storage is not configured on this deployment.', 503, cors)
+  }
+
+  const object = await getObject(env, row.storage_path)
+  if (!object) return errorResponse('Stored file is no longer available', 404, cors)
+
+  await env.DB.prepare(
+    'UPDATE api_uploads SET download_count = download_count + 1 WHERE id = ?'
+  ).bind(row.id).run().catch(() => undefined)
+
+  // `attachment` with an RFC 5987 filename so non-ASCII names survive.
+  const disposition =
+    `attachment; filename="${row.filename.replace(/[^\x20-\x7e]/g, '_').replace(/"/g, '')}"; ` +
+    `filename*=UTF-8''${encodeURIComponent(row.filename)}`
+
+  return new Response(object.body, {
+    status: 200,
+    headers: {
+      ...cors,
+      'Content-Type': row.mime_type || 'application/octet-stream',
+      'Content-Length': String(row.size_bytes),
+      'Content-Disposition': disposition,
+      'Cache-Control': 'private, no-store',
+    },
+  })
 }
