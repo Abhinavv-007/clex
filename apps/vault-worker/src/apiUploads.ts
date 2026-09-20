@@ -11,14 +11,15 @@
  *              expiresAt, rate: { remaining, limit, resetSeconds } }
  *
  * GET    /vault/api/uploads
- *   Auth:    Firebase ID token
+ *   Auth:    API key (Bearer clex_…) or Firebase ID token
  *   Returns: list of the caller's non-expired uploads
  *
  * GET    /vault/api/uploads/:shareToken
  *   No auth required. Returns a signed Supabase download URL valid 1h.
  *
  * DELETE /vault/api/uploads/:id
- *   Auth: Firebase ID token. Soft-revokes + deletes from Supabase.
+ *   Auth: API key (Bearer clex_…) or Firebase ID token.
+ *   Soft-revokes + deletes from Supabase.
  *
  * Files are billed against `api_keys.total_bytes` so users can see how much
  * they've shipped through each key on the management page.
@@ -322,14 +323,45 @@ export async function handleApiUploadCreate(
   )
 }
 
+/**
+ * Resolves the owner for the list/delete routes.
+ *
+ * Two legitimate callers, and only two:
+ *   · a programmatic client holding an API key (`Authorization: Bearer clex_…`),
+ *     which is a server-side secret we can verify by hash lookup;
+ *   · a signed-in browser holding a Firebase ID token.
+ *
+ * A bare `X-Vault-UID` header is NOT accepted — it is client-controlled, so
+ * it would let anyone enumerate and delete another user's uploads.
+ */
+async function resolveUploadOwner(
+  request: Request,
+  env: Env,
+): Promise<{ ok: true; uid: string } | { ok: false; status: 401 | 403; error: string }> {
+  const authHeader = request.headers.get('Authorization') ?? ''
+  const bearer = authHeader.toLowerCase().startsWith('bearer ')
+    ? authHeader.slice(7).trim()
+    : ''
+
+  if (bearer.startsWith('clex_')) {
+    const key = await findKeyByPlaintext(env, bearer)
+    if (!key) return { ok: false, status: 401, error: 'Invalid or revoked API key' }
+    return { ok: true, uid: key.userId }
+  }
+
+  const auth = await requireOwner(request, env)
+  if (!auth.ok) return { ok: false, status: auth.status, error: auth.error }
+  return { ok: true, uid: auth.owner.uid }
+}
+
 export async function handleApiUploadList(
   request: Request,
   env: Env,
   cors: Record<string, string>,
 ): Promise<Response> {
-  const auth = await requireOwner(request, env)
+  const auth = await resolveUploadOwner(request, env)
   if (!auth.ok) return errorResponse(auth.error, auth.status, cors)
-  const uid = auth.owner.uid
+  const uid = auth.uid
 
   const now = Math.floor(Date.now() / 1000)
   const rows = await env.DB.prepare(
@@ -351,9 +383,9 @@ export async function handleApiUploadDelete(
   env: Env,
   cors: Record<string, string>,
 ): Promise<Response> {
-  const auth = await requireOwner(request, env)
+  const auth = await resolveUploadOwner(request, env)
   if (!auth.ok) return errorResponse(auth.error, auth.status, cors)
-  const uid = auth.owner.uid
+  const uid = auth.uid
 
   const row = await env.DB.prepare(
     `SELECT id, user_id, api_key_id, storage_path, share_token, filename, size_bytes, mime_type,

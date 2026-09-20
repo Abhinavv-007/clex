@@ -1,0 +1,32 @@
+{
+  "name": "@clex/cli",
+  "version": "0.1.0",
+  "description": "Send, fetch and manage Clex file transfers from the terminal.",
+  "type": "module",
+  "license": "MIT",
+  "homepage": "https://clex.in/developers",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Abhinavv-007/clex.git",
+    "directory": "packages/cli"
+  },
+  "bin": {
+    "clex": "./bin/clex.js"
+  },
+  "files": [
+    "bin",
+    "src"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test src/*.test.js"
+  },
+  "keywords": [
+    "clex",
+    "file-transfer",
+    "cli",
+    "share"
+  ]
+}

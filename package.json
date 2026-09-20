@@ -20,7 +20,9 @@
     "build": "pnpm --filter @clex/frontend-core build && pnpm --filter @clex/signaling build && pnpm --filter @clex/api build && pnpm --filter @clex/chain build && pnpm --filter @clex/frontend build",
     "preview": "pnpm --filter @clex/frontend preview",
     "typecheck": "pnpm -r typecheck",
-    "test": "vitest run"
+    "test": "vitest run && pnpm --filter @clex/cli test",
+    "test:web": "vitest run",
+    "test:cli": "pnpm --filter @clex/cli test"
   },
   "engines": {
     "node": ">=20",
