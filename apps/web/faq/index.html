@@ -211,7 +211,7 @@
             </button>
             <div class="accordion__content">
               <div class="accordion__body faq-answer">
-                <p>The first Direct+ build sent 64 KB chunks one at a time and updated the UI on every chunk. On a fast LAN that meant the wire sat idle waiting for ACKs and the React/Svelte tree re-rendered hundreds of times per second. The current build uses 256 KB chunks, a sliding window of up to 32 in flight, fire-and-forget hash verification, and coalesced UI updates — same reliability layer, full LAN speed.</p>
+                <p>The first Direct+ build sent one chunk at a time and updated the UI on every chunk. On a fast LAN that meant the wire sat idle waiting for ACKs and the Svelte tree re-rendered hundreds of times per second. The current build reads chunks ahead of the wire, keeps a sliding window of up to 8 MB in flight, verifies hashes fire-and-forget, and coalesces UI updates — same reliability layer, full LAN speed.</p>
               </div>
             </div>
           </div>

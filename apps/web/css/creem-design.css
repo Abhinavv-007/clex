@@ -1454,7 +1454,17 @@ pre, code, .code-block, .dev-code {
 .routing__method--primary .routing__method-title,
 .routing__method--primary .routing__method-desc,
 .routing__method--primary .routing__method-stat-value { color: var(--c-ink) !important; }
-.routing__method-tag { background: var(--c-ink); color: var(--accent-warm); border-radius: 9999px; padding: 0.15rem 0.5rem; font-size: 0.7rem; }
+/* This chip is an ink pill, so its label must stay warm in every theme.
+   `html[data-theme="light"] .section--dark *` sets `color: inherit` at (0,2,1)
+   and outranked this rule at (0,1,0), so the label inherited the heading's ink
+   and rendered #0e0e0d on #0e0e0d — an invisible "Direct+". */
+.routing__method-tag {
+  background: var(--c-ink);
+  color: var(--accent-warm) !important;
+  border-radius: 9999px;
+  padding: 0.15rem 0.5rem;
+  font-size: 0.7rem;
+}
 
 /* Reveal fallback */
 .reveal, .reveal-right, .reveal-scale, [data-reveal] {
@@ -1967,132 +1977,6 @@ html .nav .nav__link:hover, .nav .nav__link:hover {
   .footer__hero { flex-direction: column; align-items: flex-start; gap: 1rem; }
   .footer__tagline { text-align: left; }
   .footer__glyph { font-size: clamp(1.8rem, 9vw, 3.5rem); }
-}
-
-/* =============================================================
-   ORBIT CONSTELLATION — cinematic
-   Center brand mark + 3 orbiting peer pills + pulse rings
-   ============================================================= */
-.orbit-stage {
-  position: relative;
-  width: clamp(300px, 42vw, 500px);
-  height: clamp(300px, 42vw, 500px);
-  margin: 2.5rem auto 1rem;
-  display: grid;
-  place-items: center;
-}
-.orbit-stage::before,
-.orbit-stage::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  margin: auto;
-  border: 1.5px dashed var(--border-bold);
-  opacity: 0.28;
-  border-radius: 50%;
-  pointer-events: none;
-}
-.orbit-stage::before { width: 64%; height: 64%; animation: orbit-spin 38s linear infinite; }
-.orbit-stage::after  { width: 100%; height: 100%; animation: orbit-spin 64s linear infinite reverse; }
-@keyframes orbit-spin { to { transform: rotate(360deg); } }
-
-.orbit-pulse {
-  position: absolute;
-  inset: 0;
-  margin: auto;
-  width: 36%;
-  height: 36%;
-  border-radius: 50%;
-  border: 2px solid var(--c-lavender);
-  opacity: 0;
-  pointer-events: none;
-  animation: orbit-pulse-ring 4s cubic-bezier(0.22,1,0.36,1) infinite;
-}
-.orbit-pulse--2 { border-color: var(--c-peach); animation-delay: -1.3s; }
-.orbit-pulse--3 { border-color: var(--c-mint); animation-delay: -2.6s; }
-@keyframes orbit-pulse-ring {
-  0%   { transform: scale(0.85); opacity: 0.7; }
-  80%  { transform: scale(1.9); opacity: 0; }
-  100% { transform: scale(1.9); opacity: 0; }
-}
-
-.orbit-core {
-  position: relative;
-  width: 36%;
-  height: 36%;
-  background:
-    radial-gradient(circle at 30% 30%, rgba(255,255,255,0.9), transparent 50%),
-    linear-gradient(135deg, var(--c-lavender) 0%, var(--c-peach) 60%, var(--c-yellow) 100%);
-  border: 2.5px solid var(--c-ink);
-  border-radius: 50%;
-  box-shadow:
-    6px 6px 0 var(--c-ink),
-    inset 0 -8px 16px rgba(14,14,13,0.12);
-  display: grid; place-items: center;
-  z-index: 5;
-  animation: orbit-core-bob 6s ease-in-out infinite;
-}
-.orbit-core__mark {
-  font-family: var(--font-display);
-  font-weight: 900;
-  font-size: clamp(2rem, 4vw, 3rem);
-  letter-spacing: -0.05em;
-  color: var(--c-ink);
-  line-height: 1;
-}
-.orbit-core__dot {
-  position: absolute;
-  bottom: 18%;
-  right: 18%;
-  width: 14%;
-  height: 14%;
-  background: var(--c-ink);
-  border-radius: 50%;
-  box-shadow: 0 0 12px rgba(14,14,13,0.4);
-}
-@keyframes orbit-core-bob {
-  0%,100% { transform: translateY(0) rotate(0deg);}
-  50% { transform: translateY(-6px) rotate(0.5deg);}
-}
-
-.orbit-node {
-  position: absolute;
-  top: 50%; left: 50%;
-  width: 84px; height: 84px;
-  margin: -42px 0 0 -42px;
-  background: var(--bg-card);
-  border: 2.5px solid var(--c-ink);
-  border-radius: 50%;
-  box-shadow: 5px 5px 0 var(--c-ink);
-  display: grid; place-items: center;
-  z-index: 3;
-  --orbit-radius: clamp(120px, 18vw, 200px);
-}
-.orbit-node__label {
-  font-family: var(--font-display);
-  font-weight: 900;
-  font-size: 0.95rem;
-  letter-spacing: -0.02em;
-  color: var(--c-ink);
-}
-.orbit-node--peer1 {
-  background: var(--c-lavender);
-  animation: orbit-node-float 26s linear infinite;
-}
-.orbit-node--peer2 {
-  background: var(--c-peach);
-  animation: orbit-node-float 26s linear infinite -8.66s;
-}
-.orbit-node--peer3 {
-  background: var(--c-mint);
-  animation: orbit-node-float 26s linear infinite -17.33s;
-}
-@keyframes orbit-node-float {
-  from { transform: rotate(0deg) translateX(var(--orbit-radius)) rotate(0deg); }
-  to   { transform: rotate(360deg) translateX(var(--orbit-radius)) rotate(-360deg); }
-}
-[data-theme="dark"] .orbit-node {
-  filter: brightness(0.92) saturate(0.95);
 }
 
 /* =============================================================
@@ -2953,53 +2837,6 @@ html.clex-design-booting footer:not(.footer--v2) {
     0 18px 40px rgba(21,45,92,0.22) !important;
 }
 
-.orbit-stage {
-  width: min(92vw, 580px) !important;
-  height: clamp(360px, 56vw, 520px) !important;
-  border: 3px solid var(--c-ink);
-  border-radius: clamp(28px, 4vw, 42px);
-  background:
-    radial-gradient(circle at 50% 50%, rgba(255,255,255,0.78) 0 12%, transparent 13%),
-    radial-gradient(45% 55% at 18% 22%, rgba(196,181,253,0.36), transparent 60%),
-    radial-gradient(50% 55% at 82% 78%, rgba(255,208,179,0.36), transparent 60%),
-    linear-gradient(135deg, rgba(223,243,255,0.92), rgba(238,232,255,0.92));
-  box-shadow:
-    12px 12px 0 var(--c-ink),
-    inset 0 1px 0 rgba(255,255,255,0.8);
-  overflow: hidden;
-}
-
-.orbit-stage::before,
-.orbit-stage::after {
-  border-width: 2px;
-  border-style: dashed;
-  border-color: rgba(14,14,13,0.28);
-  opacity: 1;
-}
-
-.orbit-stage::before {
-  width: 58% !important;
-  height: 58% !important;
-}
-
-.orbit-stage::after {
-  width: 86% !important;
-  height: 86% !important;
-}
-
-.orbit-core {
-  width: clamp(104px, 22vw, 170px) !important;
-  height: clamp(104px, 22vw, 170px) !important;
-}
-
-.orbit-node {
-  --orbit-node-size: clamp(76px, 14vw, 102px);
-  width: clamp(76px, 14vw, 102px) !important;
-  height: clamp(76px, 14vw, 102px) !important;
-  margin: calc(var(--orbit-node-size) * -0.5) 0 0 calc(var(--orbit-node-size) * -0.5) !important;
-  --orbit-radius: clamp(118px, 23vw, 190px);
-}
-
 .peer-flow {
   overflow: visible !important;
 }
@@ -3038,14 +2875,6 @@ html.clex-design-booting footer:not(.footer--v2) {
   .data-stream__row {
     grid-template-columns: auto minmax(0, 1fr) !important;
     min-height: 4rem;
-  }
-
-  .orbit-stage {
-    height: min(92vw, 420px) !important;
-  }
-
-  .orbit-node {
-    --orbit-radius: clamp(102px, 31vw, 138px);
   }
 
   .peer-flow {
@@ -4014,24 +3843,6 @@ html.clex-theme-switching::view-transition-new(root) {
     overflow-wrap: anywhere;
   }
 
-  .orbit-stage {
-    width: min(90vw, 380px) !important;
-    height: min(90vw, 380px) !important;
-    margin: 1.4rem auto 2rem !important;
-    overflow: visible !important;
-  }
-
-  .orbit-core {
-    width: clamp(94px, 28vw, 126px) !important;
-    height: clamp(94px, 28vw, 126px) !important;
-  }
-
-  .orbit-node {
-    width: clamp(68px, 19vw, 84px) !important;
-    height: clamp(68px, 19vw, 84px) !important;
-    font-size: clamp(0.84rem, 3.2vw, 1rem) !important;
-  }
-
   .bento {
     grid-template-columns: 1fr !important;
     gap: 1rem !important;
@@ -4272,16 +4083,6 @@ body.section-theme-dark .hero__subtitle {
   .section__title .clex-write--done,
   .page-hero__title .clex-write--done {
     clip-path: none !important;
-  }
-
-  .orbit-stage {
-    width: min(82vw, 340px) !important;
-    height: min(82vw, 340px) !important;
-  }
-
-  .orbit-node {
-    width: clamp(62px, 17vw, 76px) !important;
-    height: clamp(62px, 17vw, 76px) !important;
   }
 }
 

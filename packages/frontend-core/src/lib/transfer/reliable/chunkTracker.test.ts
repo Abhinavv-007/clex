@@ -255,3 +255,100 @@ describe('ChunkTracker bookkeeping', () => {
     expect(elapsed).toBeLessThan(30_000)
   })
 })
+
+describe('markAckedThrough (cumulative ack)', () => {
+  /**
+   * One ACK per chunk floods the reverse direction of a busy association.
+   * Measured with raw WebRTC and no Clex code in the path, 5 MB over loopback
+   * took 3s with no ACKs, 6s with a per-chunk ACK, and 3s again once ACKs were
+   * batched — so the receiver now sends one "through index N" per batch.
+   * These cover the accounting that makes that safe.
+   */
+  function bigManifest(chunks: number): TransferManifest {
+    return {
+      version: RELIABLE_PROTOCOL_VERSION,
+      transferId: 't',
+      createdAt: 0,
+      chunkSize: 1024,
+      totalSize: 1024 * chunks,
+      totalChunks: chunks,
+      perChunkHash: false,
+      files: [{ fileId: 'a', fileIndex: 0, name: 'a', mimeType: 'application/octet-stream',
+                size: 1024 * chunks, totalChunks: chunks }],
+    }
+  }
+
+  it('acks every chunk through the given index', () => {
+    const tracker = new ChunkTracker(bigManifest(10))
+    for (let i = 0; i < 10; i++) tracker.markSent(0, i)
+    tracker.markAckedThrough(0, 4)
+    const snap = tracker.snapshot()
+    expect(snap.acked).toBe(5)
+    expect(snap.inFlight).toBe(5)
+  })
+
+  it('completes the transfer when the final index is acked', () => {
+    const tracker = new ChunkTracker(bigManifest(10))
+    for (let i = 0; i < 10; i++) tracker.markSent(0, i)
+    expect(tracker.isComplete()).toBe(false)
+    tracker.markAckedThrough(0, 9)
+    expect(tracker.isComplete()).toBe(true)
+  })
+
+  it('is idempotent — a repeated or stale ack changes nothing', () => {
+    const tracker = new ChunkTracker(bigManifest(10))
+    for (let i = 0; i < 10; i++) tracker.markSent(0, i)
+    tracker.markAckedThrough(0, 6)
+    const after = tracker.snapshot().acked
+    tracker.markAckedThrough(0, 6)
+    tracker.markAckedThrough(0, 3) // stale, arrives late
+    expect(tracker.snapshot().acked).toBe(after)
+  })
+
+  it('advances from where the previous batch stopped', () => {
+    const tracker = new ChunkTracker(bigManifest(10))
+    for (let i = 0; i < 10; i++) tracker.markSent(0, i)
+    tracker.markAckedThrough(0, 2)
+    tracker.markAckedThrough(0, 7)
+    expect(tracker.snapshot().acked).toBe(8)
+  })
+
+  it('never downgrades a chunk that was already verified', () => {
+    const tracker = new ChunkTracker(bigManifest(5))
+    for (let i = 0; i < 5; i++) tracker.markSent(0, i)
+    tracker.markVerified(0, 1)
+    tracker.markAckedThrough(0, 4)
+    const snap = tracker.snapshot()
+    expect(snap.verified).toBe(1)
+    expect(snap.acked).toBe(4)
+    expect(tracker.isComplete()).toBe(true)
+  })
+
+  it('keeps acked bytes consistent with the per-chunk path', () => {
+    const cumulative = new ChunkTracker(bigManifest(8))
+    const perChunk = new ChunkTracker(bigManifest(8))
+    for (let i = 0; i < 8; i++) { cumulative.markSent(0, i); perChunk.markSent(0, i) }
+    cumulative.markAckedThrough(0, 7)
+    for (let i = 0; i < 8; i++) perChunk.markAcked(0, i)
+    expect(cumulative.snapshot().bytesAcked).toBe(perChunk.snapshot().bytesAcked)
+    expect(cumulative.snapshot().acked).toBe(perChunk.snapshot().acked)
+  })
+
+  it('scopes the high-water mark per file', () => {
+    const manifest: TransferManifest = {
+      version: RELIABLE_PROTOCOL_VERSION, transferId: 't', createdAt: 0, chunkSize: 1024,
+      totalSize: 4096, totalChunks: 4, perChunkHash: false,
+      files: [
+        { fileId: 'a', fileIndex: 0, name: 'a', mimeType: 'application/octet-stream', size: 2048, totalChunks: 2 },
+        { fileId: 'b', fileIndex: 1, name: 'b', mimeType: 'application/octet-stream', size: 2048, totalChunks: 2 },
+      ],
+    }
+    const tracker = new ChunkTracker(manifest)
+    for (const f of [0, 1]) for (let i = 0; i < 2; i++) tracker.markSent(f, i)
+    tracker.markAckedThrough(0, 1)
+    expect(tracker.snapshot().acked).toBe(2)
+    expect(tracker.isComplete()).toBe(false)
+    tracker.markAckedThrough(1, 1)
+    expect(tracker.isComplete()).toBe(true)
+  })
+})

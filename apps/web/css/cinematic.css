@@ -143,163 +143,6 @@ html[data-theme="dark"] .hero__float-tag {
   50%     { opacity: 1; transform: translateY(6px); }
 }
 
-/* ─── ORBIT — premium 3-ring animated constellation ─── */
-.orbit-stage {
-  perspective: 1400px;
-  perspective-origin: 50% 60%;
-  transform-style: preserve-3d;
-}
-
-.orbit-core {
-  position: relative;
-  z-index: 5;
-  background:
-    radial-gradient(circle at 32% 28%, #fff 0%, #ffd9b8 22%, #ff9a5c 55%, #b06a3a 100%) !important;
-  box-shadow:
-    inset 0 0 22px rgba(255,255,255,0.5),
-    inset -8px -10px 22px rgba(176,106,58,0.55),
-    0 0 36px rgba(255,138,31,0.55),
-    0 0 80px rgba(139,92,246,0.45) !important;
-}
-.orbit-core::after {
-  content: '';
-  position: absolute;
-  inset: -28%;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(255,180,90,0.35) 0%, transparent 60%);
-  filter: blur(12px);
-  animation: orbit-core-glow 3.8s ease-in-out infinite;
-}
-@keyframes orbit-core-glow {
-  0%,100% { opacity: 0.75; transform: scale(1); }
-  50%     { opacity: 1; transform: scale(1.18); }
-}
-
-.orbit-stage::before,
-.orbit-stage::after {
-  border-style: dashed !important;
-  border-color: rgba(255,255,255,0.18) !important;
-}
-[data-theme="light"] .orbit-stage::before,
-[data-theme="light"] .orbit-stage::after,
-.section--lavender .orbit-stage::before,
-.section--lavender .orbit-stage::after,
-.section--cream .orbit-stage::before,
-.section--cream .orbit-stage::after {
-  border-color: rgba(14,14,13,0.18) !important;
-}
-
-.orbit-pulse {
-  background:
-    radial-gradient(circle, rgba(255,138,31,0.0) 60%, rgba(255,138,31,0.55) 65%, transparent 72%) !important;
-  filter: blur(0.5px);
-}
-
-.orbit-node {
-  border-radius: 999px !important;
-  background: rgba(255,255,255,0.94) !important;
-  border: 1.5px solid rgba(14,14,13,0.9) !important;
-  box-shadow:
-    0 1px 0 rgba(255,255,255,0.9) inset,
-    0 14px 32px -16px rgba(14,14,13,0.5) !important;
-  transition:
-    transform 320ms var(--cine-ease-out),
-    box-shadow 320ms var(--cine-ease-out);
-}
-.orbit-node:hover {
-  transform: scale(1.08) translateY(-4px) !important;
-  box-shadow:
-    0 1px 0 rgba(255,255,255,0.9) inset,
-    0 22px 50px -18px rgba(255,138,31,0.55),
-    0 0 38px rgba(139,92,246,0.45) !important;
-}
-[data-theme="dark"] .orbit-node,
-.section--dark .orbit-node {
-  background: rgba(36,32,52,0.92) !important;
-  border-color: rgba(255,255,255,0.18) !important;
-  color: #f5efdf !important;
-}
-
-/* The label sets its own `color: var(--c-ink)`, so it never inherited the
-   light colour above — the node read as ink-on-deep-violet at 1.22:1. */
-[data-theme="dark"] .orbit-node__label,
-[data-theme="dark"] .orbit-node__meta,
-.section--dark .orbit-node__label,
-.section--dark .orbit-node__meta {
-  color: #f5efdf !important;
-}
-
-.orbit-node__label {
-  font-weight: 800 !important;
-  letter-spacing: 0.04em !important;
-  font-size: 0.78rem !important;
-  text-transform: uppercase !important;
-}
-
-/* Orbit satellite chip — adds a colored dot */
-.orbit-node::before {
-  content: '';
-  display: inline-block;
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  margin-right: 0.5rem;
-  background: var(--orbit-dot, #ff8a1f);
-  box-shadow: 0 0 10px var(--orbit-dot, #ff8a1f);
-  vertical-align: middle;
-}
-.orbit-node--peer1 { --orbit-dot: #34c759; }
-.orbit-node--peer2 { --orbit-dot: #25b6e8; }
-.orbit-node--peer3 { --orbit-dot: #c4b5fd; }
-
-/* Connecting beam from each node to core (pure CSS) */
-.orbit-stage .orbit-beam {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 1px;
-  height: 1px;
-  pointer-events: none;
-  z-index: 2;
-}
-.orbit-stage .orbit-beam span {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: var(--beam-len, 200px);
-  height: 2px;
-  background: linear-gradient(90deg, rgba(255,138,31,0) 0%, rgba(255,138,31,0.85) 50%, rgba(139,92,246,0.85) 100%);
-  border-radius: 2px;
-  transform-origin: 0 50%;
-  transform: translate(0, -50%) rotate(var(--beam-rot, 0deg));
-  filter: blur(0.4px) drop-shadow(0 0 6px rgba(255,138,31,0.55));
-  opacity: 0.55;
-  animation: orbit-beam-shimmer 2.6s ease-in-out infinite;
-}
-.orbit-stage .orbit-beam span::after {
-  content: '';
-  position: absolute;
-  right: 0;
-  top: 50%;
-  transform: translate(50%, -50%);
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: radial-gradient(circle, #fff 0%, #ffd46a 40%, #ff8a1f 70%, transparent 100%);
-  box-shadow: 0 0 14px #ff8a1f;
-  animation: orbit-beam-packet 3.2s linear infinite;
-}
-@keyframes orbit-beam-shimmer {
-  0%,100% { opacity: 0.4; }
-  50%     { opacity: 0.8; }
-}
-@keyframes orbit-beam-packet {
-  0%   { transform: translate(-50%, -50%) scale(0.4); right: 100%; opacity: 0; }
-  10%  { opacity: 1; }
-  90%  { opacity: 1; }
-  100% { transform: translate(50%, -50%) scale(0.6); right: 0%; opacity: 0; }
-}
-
 /* ─── PEER-FLOW upgrade ─── */
 .peer-flow {
   border-radius: 24px !important;
@@ -777,13 +620,6 @@ html[data-theme="dark"] .hero__float-tag {
     gap: 4px !important;
   }
   .chunk-grid__cell { aspect-ratio: 1; }
-
-  /* ROUTING SECTION */
-  .orbit-stage {
-    height: 320px !important;
-    transform: scale(0.85);
-    margin: 1rem 0 0 !important;
-  }
   .peer-flow {
     grid-template-columns: 1fr !important;
     padding: 1.1rem !important;
@@ -2097,14 +1933,24 @@ body {
   gap: 0.9rem;
   margin-top: 1.2rem;
 }
-.clex-link__store-row {
+/* The store cards and the buttons beneath them form one 2x2 grid so all four
+   share the same column edges. The button row used to carry `.hero__actions`,
+   whose `margin: 0.9rem auto 0 !important` centred it while the cards above
+   stayed left-aligned — at 1440px the two rows disagreed by 46px. */
+.clex-link__store-row,
+.clex-link__actions {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0.85rem;
   max-width: 460px;
 }
+.clex-link__actions .pill-btn {
+  width: 100%;
+  justify-content: center;
+}
 @media (max-width: 520px) {
-  .clex-link__store-row { grid-template-columns: 1fr; max-width: 100%; }
+  .clex-link__store-row,
+  .clex-link__actions { grid-template-columns: 1fr; max-width: 100%; }
 }
 .clex-link__store {
   position: relative;
@@ -2147,7 +1993,9 @@ body {
   border-radius: 999px;
   background: linear-gradient(135deg, #c4b5fd 0%, #ff8a1f 100%);
   color: #1a1822;
-  box-shadow: 0 4px 12px -4px rgba(255,138,31,0.55);
+  /* A ring in the page colour notches the card's top border out behind the
+     badge, so it reads as a sticker instead of a smudge across the stroke. */
+  box-shadow: 0 0 0 3px var(--bg-primary), 0 4px 12px -4px rgba(255,138,31,0.55);
   white-space: nowrap;
 }
 .clex-link__store svg {
@@ -2169,7 +2017,8 @@ body {
   font-size: 0.6rem;
   font-style: normal;
   font-weight: 700;
-  opacity: 0.62;
+  color: #f5efdf;
+  opacity: 0.72;
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
@@ -2177,7 +2026,11 @@ body {
   font-size: 1.02rem;
   font-weight: 800;
   letter-spacing: -0.01em;
-  color: #fff;
+  /* Outranks the global `strong { color: var(--text-primary) !important }` in
+     creem-design.css, which otherwise painted this title #0e0e0d on a
+     near-black card — invisible in light mode. The card is dark in both
+     themes, so the title is pinned white in both. */
+  color: #fff !important;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

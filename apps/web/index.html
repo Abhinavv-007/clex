@@ -653,26 +653,6 @@
     </div>
 
     <div class="container--wide" style="max-width: var(--container-wide); margin: 0 auto; padding: 0 var(--container-padding);">
-      <!-- Orbit constellation: Clex core orbited by peers -->
-      <div class="orbit-stage reveal" aria-hidden="true">
-        <span class="orbit-pulse"></span>
-        <span class="orbit-pulse orbit-pulse--2"></span>
-        <span class="orbit-pulse orbit-pulse--3"></span>
-        <div class="orbit-core">
-          <span class="orbit-core__mark">C</span>
-          <span class="orbit-core__dot"></span>
-        </div>
-        <div class="orbit-node orbit-node--peer1">
-          <span class="orbit-node__label">P2P</span>
-        </div>
-        <div class="orbit-node orbit-node--peer2">
-          <span class="orbit-node__label">LAN</span>
-        </div>
-        <div class="orbit-node orbit-node--peer3">
-          <span class="orbit-node__label">Drive</span>
-        </div>
-      </div>
-      <div id="routing-engine-island" hidden></div>
 
       <!-- Live peer-to-peer transfer animation -->
       <div class="peer-flow reveal">
@@ -689,7 +669,7 @@
           <span class="peer-pipe__packet"></span>
           <span class="peer-pipe__label">
             <span class="eq-bars" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></span>
-            &nbsp;WebRTC · 256 KB chunks · ACK / retry
+            &nbsp;WebRTC · 64 KB chunks · ACK / retry
           </span>
         </div>
         <div class="peer-node peer-node--peach">
@@ -840,7 +820,7 @@
               </span>
             </span>
           </div>
-          <div class="hero__actions" style="display:flex; gap:0.6rem; flex-wrap:wrap;">
+          <div class="clex-link__actions">
             <a href="https://github.com/Abhinavv-007/clex-android/releases/latest" target="_blank" rel="noopener noreferrer" class="pill-btn pill-btn--primary magnetic" data-magnetic="0.22">
               <span class="pill-btn__label">Download APK</span>
               <span class="pill-btn__arrow" aria-hidden="true">↓</span>

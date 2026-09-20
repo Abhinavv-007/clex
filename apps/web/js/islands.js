@@ -73,7 +73,6 @@ export async function initIslands() {
       import('../islands/RouteSelectionWindowIsland.svelte'),
     ]);
 
-    mount(mocks.RoutingEngineMock, document.getElementById('routing-engine-island'));
     mount(DropZoneWindowIsland, document.getElementById('home-drop-island'));
     mount(ToolChainWindowIsland, document.getElementById('home-tools-island'));
     mount(RouteSelectionWindowIsland, document.getElementById('home-route-island'));

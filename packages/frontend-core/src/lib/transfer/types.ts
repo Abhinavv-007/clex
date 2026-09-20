@@ -33,8 +33,14 @@ export const DC_LABEL = 'clex-transfer'
 // progress around 2 MB and made the sender look stuck, and the 128 that
 // replaced it only meant "8 MB" for as long as chunks stayed 64 KB. Bytes say
 // what is actually meant and stay correct at any chunk size.
-export const BUFFERED_AMOUNT_HIGH_WATER = 8 * 1024 * 1024 // 8 MB
-export const BUFFERED_AMOUNT_LOW_WATER = 1 * 1024 * 1024 // 1 MB
+// These were 8 MB / 1 MB, which meant no backpressure at all for any file
+// smaller than 8 MB: the send loop wrote the entire file into the DataChannel
+// in one burst. Measured on loopback, a 5 MB burst wedges the SCTP
+// association — bufferedAmount freezes around 2.6 MB and the receiver stops
+// being handed messages. Keeping the queue near 1 MB keeps the wire busy
+// without ever building a burst large enough to collapse the association.
+export const BUFFERED_AMOUNT_HIGH_WATER = 512 * 1024 // 512 KB
+export const BUFFERED_AMOUNT_LOW_WATER = 128 * 1024 // 128 KB
 export const MAX_IN_FLIGHT_BYTES = 8 * 1024 * 1024 // 8 MB
 
 // Derived hard ceiling, so a pathologically small chunk size can't produce an
@@ -65,7 +71,12 @@ export const RELIABLE_PROTOCOL_VERSION = 1
 // healthy WAN connection the round-trip completes well under 200 ms. We use
 // 280 ms here to absorb mobile RTTs without leaving sub-second files idling.
 export const CAPABILITY_GRACE_MS = 280
-export const RECEIVER_PROGRESS_INTERVAL_MS = 250
+// 250 ms of unconditional control messages in the reverse direction is enough
+// to stop a congested association from ever recovering: reproduced with raw
+// WebRTC (no Clex code), 5 MB stalls forever at 250 ms, completes at 1000 ms.
+// The sender already derives progress from its own chunk ACKs, so this is
+// redundant telemetry and is now also suppressed when nothing has changed.
+export const RECEIVER_PROGRESS_INTERVAL_MS = 1000
 
 // Per-chunk hashing is optional and intentionally disabled by default for live
 // transfers. WebRTC DataChannel already provides ordered reliable delivery;
@@ -73,6 +84,14 @@ export const RECEIVER_PROGRESS_INTERVAL_MS = 250
 // that made progress pause during the first few megabytes on real browsers.
 export const MAX_CHUNK_HASH_FILE_SIZE = 32 * 1024 * 1024 // 32 MB
 export const PER_CHUNK_HASH_DEFAULT = false
+
+// How many chunks the receiver lets accumulate before sending one cumulative
+// ACK. The DataChannel is reliable and ordered, so a single "through index N"
+// covers everything before it; the batch simply keeps the reverse direction
+// quiet. Flushed early on the last chunk of a file and by ACK_FLUSH_MS, so the
+// tail of a transfer is never left waiting.
+export const ACK_BATCH_CHUNKS = 16
+export const ACK_FLUSH_MS = 120
 
 export const RETRY_MAX_ATTEMPTS = 4
 export const RETRY_INITIAL_DELAY_MS = 600
@@ -88,6 +107,17 @@ export interface ReliableCapabilities {
   supportsChunkHash: boolean
   supportsTransferReceipt: boolean
   supportsTransferQueue: boolean
+  /**
+   * Peer understands `chunk_ack_upto`, a cumulative acknowledgement covering
+   * every chunk of a file through one index.
+   *
+   * One JSON ACK per chunk puts thousands of small messages into the reverse
+   * direction of a busy association. Measured with raw WebRTC on loopback,
+   * 5 MB takes 3s with no ACKs, 6s with a per-chunk ACK, and 3s again when
+   * ACKs are batched every 16 chunks — the per-chunk chatter, not the
+   * bandwidth, was the cost.
+   */
+  supportsCumulativeAck: boolean
 }
 
 export const DEFAULT_RELIABLE_CAPS: ReliableCapabilities = {
@@ -98,6 +128,7 @@ export const DEFAULT_RELIABLE_CAPS: ReliableCapabilities = {
   supportsChunkHash: false,
   supportsTransferReceipt: true,
   supportsTransferQueue: true,
+  supportsCumulativeAck: true,
 }
 
 // ─── Manifest ─────────────────────────────────────────────────────────────
@@ -217,6 +248,13 @@ export type DCControlMessage =
   | { type: 'manifest'; manifest: TransferManifest }
   | { type: 'manifest_ack'; transferId: string; ok: boolean; error?: string }
   | { type: 'chunk_ack'; transferId: string; fileIndex: number; chunkIndex: number }
+  | {
+      /** Acks every chunk of `fileIndex` from 0 through `throughChunkIndex`. */
+      type: 'chunk_ack_upto'
+      transferId: string
+      fileIndex: number
+      throughChunkIndex: number
+    }
   | {
       type: 'chunk_nack'
       transferId: string

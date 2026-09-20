@@ -19,6 +19,8 @@ import {
 } from './reliable'
 import { SignalingClient } from './signaling'
 import {
+  ACK_BATCH_CHUNKS,
+  ACK_FLUSH_MS,
   BUFFERED_AMOUNT_HIGH_WATER,
   BUFFERED_AMOUNT_LOW_WATER,
   CAPABILITY_GRACE_MS,
@@ -28,6 +30,7 @@ import {
   MAX_IN_FLIGHT_BYTES,
   SEND_READAHEAD_CHUNKS,
   RECEIVER_PROGRESS_INTERVAL_MS,
+  RELIABLE_CHUNK_FLAG_RETRANSMIT,
   UI_UPDATE_INTERVAL_MS,
   getRTCConfig,
   type ConnectionKind,
@@ -95,6 +98,11 @@ interface ReliableReceiverState {
   bytesReceived: number
   paused: boolean
   cancelled: boolean
+  /** Highest contiguous chunk index received per file, awaiting a cumulative ack. */
+  ackCursor: Map<number, number>
+  /** Chunks received since the last cumulative ack was flushed. */
+  chunksSinceAck: number
+  ackFlushTimer: ReturnType<typeof setTimeout> | null
 }
 
 export class WebRTCTransfer {
@@ -858,6 +866,15 @@ export class WebRTCTransfer {
         sender.wake.resolve()
         if (!sender.paused) void this.driveReliableSendLoop()
         return
+      case 'chunk_ack_upto': {
+        if (msg.transferId !== sender.manifest.transferId) return
+        sender.tracker.markAckedThrough(msg.fileIndex, msg.throughChunkIndex)
+        // Same wake-up as the per-chunk path: a batch frees many window slots
+        // at once, so the send loop should not sit on its safety wait.
+        sender.wake.resolve()
+        if (!sender.paused && !sender.cancelled) void this.driveReliableSendLoop()
+        return
+      }
       case 'receiver_progress':
         if (msg.transferId !== sender.manifest.transferId) return
         // Receiver reports its own verifiedChunks as a stable ground truth.
@@ -1005,6 +1022,9 @@ export class WebRTCTransfer {
       bytesReceived: 0,
       paused: false,
       cancelled: false,
+      ackCursor: new Map(),
+      chunksSinceAck: 0,
+      ackFlushTimer: null,
     }
 
     transferStore.setTransferId(manifest.transferId)
@@ -1082,12 +1102,35 @@ export class WebRTCTransfer {
     receiver.tracker.markVerified(frame.fileIndex, frame.chunkIndex)
     receiver.bytesReceived += frame.chunkLength
 
-    this.sendControl({
-      type: 'chunk_ack',
-      transferId: receiver.manifest.transferId,
-      fileIndex: frame.fileIndex,
-      chunkIndex: frame.chunkIndex,
-    })
+    // One ACK per chunk floods the reverse direction of a busy association and
+    // drags throughput down by roughly half (measured with raw WebRTC, no Clex
+    // code in the path). Batch them: the channel is reliable and ordered, so a
+    // single "through index N" acks everything before it.
+    const isRetransmit = (frame.flags & RELIABLE_CHUNK_FLAG_RETRANSMIT) !== 0
+    if (this.negotiatedCaps?.supportsCumulativeAck && !isRetransmit) {
+      const seen = receiver.ackCursor.get(frame.fileIndex) ?? -1
+      if (frame.chunkIndex > seen) receiver.ackCursor.set(frame.fileIndex, frame.chunkIndex)
+      receiver.chunksSinceAck++
+      const isLastOfFile = frame.chunkIndex === file.totalChunks - 1
+      if (receiver.chunksSinceAck >= ACK_BATCH_CHUNKS || isLastOfFile) {
+        this.flushCumulativeAcks(receiver)
+      } else if (!receiver.ackFlushTimer) {
+        // Safety net for a tail shorter than one batch.
+        receiver.ackFlushTimer = setTimeout(() => {
+          receiver.ackFlushTimer = null
+          this.flushCumulativeAcks(receiver)
+        }, ACK_FLUSH_MS)
+      }
+    } else {
+      // Retransmits arrive out of order, and old peers never negotiated the
+      // cumulative form — both take the per-chunk path.
+      this.sendControl({
+        type: 'chunk_ack',
+        transferId: receiver.manifest.transferId,
+        fileIndex: frame.fileIndex,
+        chunkIndex: frame.chunkIndex,
+      })
+    }
 
     this.scheduleReceiverProgressFlush(receiver)
 
@@ -1106,6 +1149,23 @@ export class WebRTCTransfer {
           reason: 'hash_mismatch',
         })
       }).catch(() => { /* digest unavailable — receiver still verifies size + count */ })
+    }
+  }
+
+  /** Sends one cumulative ack per file that has unacknowledged progress. */
+  private flushCumulativeAcks(receiver: ReliableReceiverState): void {
+    if (receiver.ackFlushTimer) {
+      clearTimeout(receiver.ackFlushTimer)
+      receiver.ackFlushTimer = null
+    }
+    receiver.chunksSinceAck = 0
+    for (const [fileIndex, throughChunkIndex] of receiver.ackCursor) {
+      this.sendControl({
+        type: 'chunk_ack_upto',
+        transferId: receiver.manifest.transferId,
+        fileIndex,
+        throughChunkIndex,
+      })
     }
   }
 
@@ -1742,14 +1802,24 @@ export class WebRTCTransfer {
 
   private startReceiverProgressTimer(): void {
     if (this.receiverProgressTimer) return
+    // Only report when the numbers actually moved. The old timer fired
+    // unconditionally, so a transfer that had gone quiet kept pushing
+    // identical control messages into the reverse direction — which is
+    // precisely the state in which the forward path needs to be left alone to
+    // recover. Sending nothing while nothing changes is both cheaper and what
+    // lets a congested association drain.
+    let lastReported = -1
     this.receiverProgressTimer = setInterval(() => {
       const receiver = this.reliableReceiver
       if (!receiver) return
       const snap = receiver.tracker.snapshot()
+      const received = snap.acked + snap.verified
+      if (received === lastReported) return
+      lastReported = received
       this.sendControl({
         type: 'receiver_progress',
         transferId: receiver.manifest.transferId,
-        receivedChunks: snap.acked + snap.verified,
+        receivedChunks: received,
         verifiedChunks: snap.verified,
         bytesReceived: receiver.bytesReceived,
         lastChunkIndex: 0,

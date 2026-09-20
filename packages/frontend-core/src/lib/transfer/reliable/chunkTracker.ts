@@ -95,6 +95,9 @@ export class ChunkTracker {
   /** Chunks that returned to `pending` after having been sent at least once. */
   private readonly retryable = new Set<ChunkRecord>()
 
+  /** Per-file high-water mark applied by `markAckedThrough`. */
+  private readonly cumulativeAcked = new Map<number, number>()
+
   constructor(manifest: TransferManifest, options: ChunkTrackerOptions = {}) {
     this.maxAttempts = options.maxAttempts ?? RETRY_MAX_ATTEMPTS
     this.initialDelayMs = options.initialDelayMs ?? RETRY_INITIAL_DELAY_MS
@@ -211,6 +214,27 @@ export class ChunkTracker {
     if (!rec) return
     if (rec.status === 'verified') return
     this.setStatus(rec, 'acked')
+  }
+
+  /**
+   * Ack every chunk of `fileIndex` from wherever the last cumulative ack
+   * stopped through `throughChunkIndex`. The DataChannel is ordered, so one
+   * index covers everything before it.
+   *
+   * The per-file high-water mark makes this amortised O(1) per chunk: each
+   * chunk is visited once across the whole transfer, however many cumulative
+   * acks arrive.
+   */
+  markAckedThrough(fileIndex: number, throughChunkIndex: number): void {
+    const from = (this.cumulativeAcked.get(fileIndex) ?? -1) + 1
+    if (throughChunkIndex < from) return
+    for (let i = from; i <= throughChunkIndex; i++) {
+      const rec = this.chunks.get(ackKey(fileIndex, i))
+      if (!rec) continue
+      if (rec.status === 'verified') continue
+      this.setStatus(rec, 'acked')
+    }
+    this.cumulativeAcked.set(fileIndex, throughChunkIndex)
   }
 
   markVerified(fileIndex: number, chunkIndex: number): void {

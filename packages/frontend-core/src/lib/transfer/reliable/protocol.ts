@@ -31,6 +31,9 @@ export function negotiateCapabilities(
     supportsChunkHash: local.supportsChunkHash && remote.supportsChunkHash,
     supportsTransferReceipt: local.supportsTransferReceipt && remote.supportsTransferReceipt,
     supportsTransferQueue: local.supportsTransferQueue && remote.supportsTransferQueue,
+    // Older peers never send this field; `&&` on undefined yields false, so
+    // they transparently keep the per-chunk ACK path.
+    supportsCumulativeAck: Boolean(local.supportsCumulativeAck && remote.supportsCumulativeAck),
   }
 }
 
