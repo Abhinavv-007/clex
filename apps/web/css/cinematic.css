@@ -63,8 +63,15 @@ h3, h4 { font-weight: 700 !important; letter-spacing: -0.025em !important; }
   --cine-stroke-dark: rgba(255,255,255,0.18);
 }
 
-/* ─── Cinematic scroll reveal ─── */
-[data-cine] {
+/* ─── Cinematic scroll reveal ───
+   Gated on `html.has-cine`, which cinematic.js sets once its observer is
+   running — the same pattern creem-design.css uses for `.reveal`.
+   Unconditionally, this hid content from anyone without JavaScript: the whole
+   Clex Link section (its copy and its phone mock) rendered at opacity 0 and
+   never came back, because the class that reveals it is only ever added by
+   script. Crawlers, a failed bundle and strict privacy modes all saw a hole
+   in the page. */
+html.has-cine [data-cine] {
   opacity: 0;
   transform: translateY(28px) scale(0.985);
   filter: blur(2px);
@@ -75,13 +82,16 @@ h3, h4 { font-weight: 700 !important; letter-spacing: -0.025em !important; }
     filter 600ms ease-out;
   transition-delay: var(--cine-delay, 0ms);
 }
-[data-cine="left"]    { transform: translate(-32px, 12px) scale(0.985); }
-[data-cine="right"]   { transform: translate(32px, 12px) scale(0.985); }
-[data-cine="zoom"]    { transform: scale(0.92); }
-[data-cine="rise"]    { transform: translateY(48px) scale(0.97); }
+html.has-cine [data-cine="left"]    { transform: translate(-32px, 12px) scale(0.985); }
+html.has-cine [data-cine="right"]   { transform: translate(32px, 12px) scale(0.985); }
+html.has-cine [data-cine="zoom"]    { transform: scale(0.92); }
+html.has-cine [data-cine="rise"]    { transform: translateY(48px) scale(0.97); }
 
-[data-cine].cine-on,
-.cine-on [data-cine] {
+/* Must outrank the gated initial state above — `html.has-cine [data-cine]`
+   is (0,2,1), so a bare `[data-cine].cine-on` at (0,2,0) would lose and the
+   element would stay hidden after its reveal fired. */
+html.has-cine [data-cine].cine-on,
+html.has-cine .cine-on [data-cine] {
   opacity: 1;
   transform: none;
   filter: none;
@@ -116,7 +126,7 @@ h3, h4 { font-weight: 700 !important; letter-spacing: -0.025em !important; }
 html[data-theme="dark"] .hero__float-tag {
   background: rgba(28,26,40,0.78) !important;
   border-color: rgba(255,255,255,0.16) !important;
-  color: #f4eee0 !important;
+  color: #f5efdf !important;
 }
 
 @keyframes cine-float {
@@ -207,7 +217,7 @@ html[data-theme="dark"] .hero__float-tag {
 .section--dark .orbit-node {
   background: rgba(36,32,52,0.92) !important;
   border-color: rgba(255,255,255,0.18) !important;
-  color: #f4eee0 !important;
+  color: #f5efdf !important;
 }
 
 /* The label sets its own `color: var(--c-ink)`, so it never inherited the
@@ -216,7 +226,7 @@ html[data-theme="dark"] .hero__float-tag {
 [data-theme="dark"] .orbit-node__meta,
 .section--dark .orbit-node__label,
 .section--dark .orbit-node__meta {
-  color: #f4eee0 !important;
+  color: #f5efdf !important;
 }
 
 .orbit-node__label {
@@ -411,7 +421,7 @@ html[data-theme="dark"] .hero__float-tag {
 .bento__cell--ink {
   background:
     linear-gradient(155deg, #1a1822 0%, #0e0e0d 100%) !important;
-  color: #f4eee0 !important;
+  color: #f5efdf !important;
 }
 .bento__cell--ink::before {
   content: '';
@@ -494,7 +504,7 @@ html[data-theme="dark"] .hero__float-tag {
   appearance: none;
   border: 1px solid rgba(255,255,255,0.12);
   background: rgba(255,255,255,0.04);
-  color: #f4eee0;
+  color: #f5efdf;
   font: inherit;
   font-size: 0.7rem;
   padding: 0.32rem 0.7rem;
@@ -537,9 +547,9 @@ html[data-theme="dark"] .hero__float-tag {
   white-space: nowrap;
   transition: color 220ms ease, background 220ms ease;
 }
-.cine-window__tab:hover { color: #f4eee0; background: rgba(255,255,255,0.04); }
+.cine-window__tab:hover { color: #f5efdf; background: rgba(255,255,255,0.04); }
 .cine-window__tab.is-active {
-  color: #f4eee0;
+  color: #f5efdf;
   background: rgba(255,138,31,0.12);
 }
 .cine-window__tab.is-active::after {
@@ -612,7 +622,7 @@ html[data-theme="dark"] .hero__float-tag {
 [data-theme="dark"] .cine-chip {
   background: rgba(28,26,40,0.85);
   border-color: rgba(255,255,255,0.18);
-  color: #f4eee0;
+  color: #f5efdf;
 }
 
 /* ─── Telemetry rail (route-section upgrade) ─── */
@@ -632,7 +642,7 @@ html[data-theme="dark"] .hero__float-tag {
   background: rgba(20,18,28,0.92);
   border-color: rgba(255,255,255,0.16);
   box-shadow: 0 1px 0 rgba(255,255,255,0.06) inset, 6px 6px 0 rgba(255,138,31,0.45);
-  color: #f4eee0;
+  color: #f5efdf;
 }
 
 .cine-rail__row {
@@ -990,7 +1000,7 @@ html[data-theme="dark"] .hero__float-tag {
 [data-theme="dark"] .page-hero__label {
   background: rgba(28,26,40,0.85) !important;
   border-color: rgba(255,255,255,0.18) !important;
-  color: #f4eee0 !important;
+  color: #f5efdf !important;
 }
 
 /* App-shell heading typography */
@@ -1040,8 +1050,8 @@ html[data-theme="dark"] .hero__float-tag {
 }
 .banner--marquee::before { left: 0;  background: linear-gradient(90deg, var(--bg-primary), transparent); }
 .banner--marquee::after  { right: 0; background: linear-gradient(270deg, var(--bg-primary), transparent); }
-[data-section-theme="dark"] .banner--marquee::before { background: linear-gradient(90deg, #0a0a0a, transparent); }
-[data-section-theme="dark"] .banner--marquee::after  { background: linear-gradient(270deg, #0a0a0a, transparent); }
+[data-section-theme="dark"] .banner--marquee::before { background: linear-gradient(90deg, #0e0e0d, transparent); }
+[data-section-theme="dark"] .banner--marquee::after  { background: linear-gradient(270deg, #0e0e0d, transparent); }
 
 /* ============================================================
    MICRO-INTERACTIONS + CLEX LINK
@@ -1099,7 +1109,7 @@ a.link:hover::after, .footer__link:hover::after { right: 0; }
 }
 .section-divider--cream-to-dark path,
 .section-divider--lavender-to-dark path,
-.section-divider--peach-to-dark path { fill: #0a0a0a !important; }
+.section-divider--peach-to-dark path { fill: #0e0e0d !important; }
 .section-divider--dark-to-cream path,
 .section-divider--dark-to-lavender path,
 .section-divider--dark-to-peach path { fill: var(--bg-primary) !important; }
@@ -1120,8 +1130,8 @@ a.link:hover::after, .footer__link:hover::after { right: 0; }
   background:
     radial-gradient(60% 50% at 18% 14%, rgba(196,181,253,0.22), transparent 60%),
     radial-gradient(60% 50% at 82% 86%, rgba(255,138,31,0.22), transparent 60%),
-    linear-gradient(180deg, #0a0a0a 0%, #14121d 100%);
-  color: #f4eee0;
+    linear-gradient(180deg, #0e0e0d 0%, #14121d 100%);
+  color: #f5efdf;
 }
 
 .clex-link-section .container {
@@ -1165,7 +1175,7 @@ a.link:hover::after, .footer__link:hover::after { right: 0; }
 [data-section-theme="dark"] .clex-link__eyebrow {
   background: rgba(28,26,40,0.85);
   border-color: rgba(255,255,255,0.18);
-  color: #f4eee0;
+  color: #f5efdf;
 }
 
 .clex-link__title {
@@ -1373,7 +1383,7 @@ a.link:hover::after, .footer__link:hover::after { right: 0; }
   display: flex;
   flex-direction: column;
   padding: 44px 18px 18px;
-  color: #f4eee0;
+  color: #f5efdf;
   font-family: 'Geist', system-ui, sans-serif;
   box-shadow: inset 0 0 0 1px rgba(255,255,255,0.04);
   z-index: 2;
@@ -1529,12 +1539,12 @@ a.link:hover::after, .footer__link:hover::after { right: 0; }
 .bento__cell--ink .bento__title,
 .bento__cell--ink .bento__sub,
 .bento__cell--ink p {
-  color: #f4eee0 !important;
+  color: #f5efdf !important;
 }
 .bento__cell--ink .bento__title { color: #fff !important; }
 .bento__cell--ink .bento__tag {
   background: rgba(255,255,255,0.92) !important;
-  color: #0a0a0a !important;
+  color: #0e0e0d !important;
   border-color: rgba(255,255,255,0.4) !important;
 }
 
@@ -1612,7 +1622,7 @@ a.link:hover::after, .footer__link:hover::after { right: 0; }
 [data-section-theme="dark"] .section__label {
   background: rgba(28,26,40,0.85) !important;
   border-color: rgba(255,255,255,0.18) !important;
-  color: #f4eee0 !important;
+  color: #f5efdf !important;
 }
 
 /* 5. Clex Link section — fix phone overlap with title */
@@ -1689,7 +1699,7 @@ a.link:hover::after, .footer__link:hover::after { right: 0; }
   padding: 0.32rem 0.7rem !important;
   border-radius: 6px !important;
   letter-spacing: 0.06em !important;
-  color: #f4eee0 !important;
+  color: #f5efdf !important;
 }
 .dev-endpoint__method--post { background: linear-gradient(135deg, #ff8a1f 0%, #c46bc2 100%) !important; }
 .dev-endpoint__method--get { background: linear-gradient(135deg, #34c759 0%, #25b6e8 100%) !important; }
@@ -1781,7 +1791,7 @@ a.link:hover::after, .footer__link:hover::after { right: 0; }
 [data-theme="dark"] .section .dev-pill {
   background: rgba(28,26,40,0.85);
   border-color: rgba(255,255,255,0.18);
-  color: #f4eee0;
+  color: #f5efdf;
 }
 
 /* Dev callout */
@@ -1794,7 +1804,7 @@ a.link:hover::after, .footer__link:hover::after { right: 0; }
 }
 [data-theme="dark"] .dev-callout {
   border-color: rgba(255,255,255,0.18);
-  color: #f4eee0;
+  color: #f5efdf;
 }
 .dev-callout__title {
   font-size: 1.1rem;
@@ -1835,7 +1845,7 @@ body {
   -webkit-appearance: none;
   border: 1px solid rgba(255,255,255,0.14) !important;
   background: rgba(255,255,255,0.04) !important;
-  color: #f4eee0 !important;
+  color: #f5efdf !important;
   font: inherit !important;
   font-size: 0.74rem !important;
   font-weight: 700 !important;
@@ -1895,9 +1905,9 @@ body {
   cursor: pointer !important;
   transition: color 220ms ease, background 220ms ease;
 }
-.dce-tab:hover { color: #f4eee0 !important; background: rgba(255,255,255,0.04) !important; }
+.dce-tab:hover { color: #f5efdf !important; background: rgba(255,255,255,0.04) !important; }
 .dce-tab--active {
-  color: #f4eee0 !important;
+  color: #f5efdf !important;
   background: rgba(255,138,31,0.14) !important;
 }
 .dce-copy {
@@ -1905,7 +1915,7 @@ body {
   -webkit-appearance: none;
   border: 1px solid rgba(255,255,255,0.14) !important;
   background: rgba(255,255,255,0.04) !important;
-  color: #f4eee0 !important;
+  color: #f5efdf !important;
   font: inherit !important;
   font-size: 0.74rem !important;
   font-weight: 700 !important;
@@ -1943,7 +1953,7 @@ body {
   background: linear-gradient(180deg, rgba(28,26,40,0.92), rgba(20,18,28,0.88)) !important;
   border-color: rgba(255,255,255,0.16) !important;
   box-shadow: 0 1px 0 rgba(255,255,255,0.06) inset, 8px 8px 0 rgba(255,138,31,0.45) !important;
-  color: #f4eee0;
+  color: #f5efdf;
 }
 
 .dev-access__header {
@@ -2013,7 +2023,7 @@ body {
 #dev-google-signin:hover {
   background: #f7f5ee !important;
   transform: translate(-1px, -1px);
-  box-shadow: 4px 4px 0 #0a0a0a !important;
+  box-shadow: 4px 4px 0 #0e0e0d !important;
 }
 
 #dev-create-token, #dev-copy-token {
@@ -2021,11 +2031,11 @@ body {
   color: #1a1822 !important;
   border: 1.5px solid rgba(14,14,13,0.9) !important;
   font-weight: 700 !important;
-  box-shadow: 4px 4px 0 #0a0a0a !important;
+  box-shadow: 4px 4px 0 #0e0e0d !important;
 }
 #dev-create-token:hover, #dev-copy-token:hover {
   transform: translate(-1px, -1px);
-  box-shadow: 6px 6px 0 #0a0a0a !important;
+  box-shadow: 6px 6px 0 #0e0e0d !important;
 }
 .dev-access:not(.dev-access--signed-in) #dev-create-token,
 .dev-access:not(.dev-access--has-token) #dev-copy-token,
@@ -2106,7 +2116,7 @@ body {
   border-radius: 14px;
   border: 1.5px solid rgba(14,14,13,0.92);
   background: linear-gradient(160deg, #1a1822 0%, #0a0810 100%);
-  color: #f4eee0;
+  color: #f5efdf;
   text-decoration: none;
   cursor: not-allowed;
   overflow: visible;
@@ -2142,7 +2152,7 @@ body {
 }
 .clex-link__store svg {
   flex-shrink: 0;
-  fill: #f4eee0;
+  fill: #f5efdf;
   width: 28px;
   height: 28px;
   filter: drop-shadow(0 0 8px rgba(255,255,255,0.18));
@@ -2281,8 +2291,8 @@ body {
     animation: clex-cta-breathe 4.2s ease-in-out infinite;
   }
   @keyframes clex-cta-breathe {
-    0%,100% { box-shadow: 4px 4px 0 #0a0a0a, 0 0 0 rgba(255,138,31,0); }
-    50%     { box-shadow: 4px 4px 0 #0a0a0a, 0 0 24px rgba(255,138,31,0.35); }
+    0%,100% { box-shadow: 4px 4px 0 #0e0e0d, 0 0 0 rgba(255,138,31,0); }
+    50%     { box-shadow: 4px 4px 0 #0e0e0d, 0 0 24px rgba(255,138,31,0.35); }
   }
   /* Float-tag drift idle */
   .hero__float-tag-dot { animation: clex-dot-pulse 2s ease-in-out infinite; }
@@ -2514,4 +2524,58 @@ body {
   .features-hero .container > * {
     margin-inline: 0;
   }
+}
+
+/* =============================================================
+   BUTTON SCALE — one height per size
+
+   Measured across eight routes: the button classes already agree on radius,
+   font size, padding and shadow. What they did not agree on was height —
+   the same class rendered at 56, 58 and 60px depending on whether its label
+   happened to contain an arrow span, because the height was falling out of
+   the content's line box rather than being set.
+
+   Two buttons of the same class sitting next to each other were therefore
+   1-4px out of alignment. Fixing it in one place, by size, rather than
+   per-component.
+
+   Loaded last, so this settles it.
+   ============================================================= */
+.btn,
+.pill-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45em;
+  /* The label must not stretch the box; the size class decides the height. */
+  line-height: 1;
+  min-height: 3rem;
+  box-sizing: border-box;
+}
+
+.btn--small,
+.pill-btn--small {
+  min-height: 2.35rem;
+}
+
+.btn--large,
+.pill-btn--large {
+  min-height: 3.5rem;
+}
+
+/* The arrow is decoration, not content — it should not add to the line box. */
+.btn__arrow,
+.pill-btn__arrow,
+.btn .dev-btn__icon,
+.pill-btn__label {
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+}
+
+@media (max-width: 640px) {
+  .btn,
+  .pill-btn { min-height: 2.75rem; }
+  .btn--large,
+  .pill-btn--large { min-height: 3.1rem; }
 }

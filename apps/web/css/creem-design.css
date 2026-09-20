@@ -2793,7 +2793,7 @@ html.clex-design-booting footer:not(.footer--v2) {
   background:
     radial-gradient(50% 120% at 15% 50%, rgba(196,181,253,0.16), transparent 56%),
     radial-gradient(50% 120% at 85% 50%, rgba(255,208,179,0.14), transparent 58%),
-    #0d0d0c !important;
+    #0e0e0d !important;
   background-attachment: scroll !important;
   color: #f7f0df !important;
 }
@@ -3292,7 +3292,7 @@ body[class*="section-theme-"] .nav__actions .btn--primary {
   background:
     radial-gradient(70% 120% at 0% 50%, rgba(196,181,253,0.12), transparent 60%),
     radial-gradient(70% 120% at 100% 50%, rgba(255,198,165,0.10), transparent 62%),
-    #0d0d0c !important;
+    #0e0e0d !important;
 }
 
 .banner.banner--marquee::before,
@@ -3532,7 +3532,7 @@ body[class*="section-theme-"] #main-nav .nav__actions .btn.btn--primary.btn--sma
   background:
     radial-gradient(70% 75% at 12% 10%, rgba(196,181,253,0.22), transparent 60%),
     radial-gradient(65% 75% at 88% 12%, rgba(255,198,165,0.14), transparent 62%),
-    linear-gradient(180deg, #121214 0%, #0d0d0c 100%) !important;
+    linear-gradient(180deg, #121214 0%, #0e0e0d 100%) !important;
 }
 
 [data-theme="dark"] .section--cream .section__title,
@@ -5372,14 +5372,14 @@ body.section-theme-dark .hero__visual .data-stream__live-label,
 [data-theme="dark"] .hero__visual .data-stream__time,
 body.section-theme-dark .hero__visual .data-stream__msg,
 body.section-theme-dark .hero__visual .data-stream__time {
-  color: #f8f6ee !important;
+  color: #f5efdf !important;
 }
 
 [data-theme="dark"] .hero__visual .data-stream__row,
 body.section-theme-dark .hero__visual .data-stream__row {
   background: rgba(255,255,255,0.08) !important;
   border-color: rgba(255,255,255,0.15) !important;
-  color: #f8f6ee !important;
+  color: #f5efdf !important;
 }
 
 @media (max-width: 900px) {

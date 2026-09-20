@@ -503,8 +503,8 @@
 
   .cex-chain-id--mine {
     background: var(--accent);
-    color: #0a0a0a;
-    border-color: #0a0a0a;
+    color: #0e0e0d;
+    border-color: #0e0e0d;
     font-weight: var(--weight-bold);
   }
 

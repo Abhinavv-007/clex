@@ -32,9 +32,9 @@
 .faq-category-btn:hover,
 .faq-category-btn--active {
   background: var(--accent);
-  color: #0a0a0a;
-  border-color: #0a0a0a;
-  box-shadow: var(--shadow-sm) #0a0a0a;
+  color: #0e0e0d;
+  border-color: #0e0e0d;
+  box-shadow: var(--shadow-sm) #0e0e0d;
 }
 
 .faq-section {

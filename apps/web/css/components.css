@@ -196,15 +196,15 @@
 
 .btn--primary {
   background: var(--accent);
-  color: #0a0a0a;
-  border-color: #0a0a0a;
-  box-shadow: var(--shadow-md) #0a0a0a;
+  color: #0e0e0d;
+  border-color: #0e0e0d;
+  box-shadow: var(--shadow-md) #0e0e0d;
 }
 
 .btn--primary:hover {
   background: var(--accent-hover);
-  color: #0a0a0a;
-  box-shadow: var(--shadow-lg) #0a0a0a;
+  color: #0e0e0d;
+  box-shadow: var(--shadow-lg) #0e0e0d;
 }
 
 .btn--large {
@@ -282,10 +282,10 @@
   align-items: center;
   justify-content: center;
   background: var(--accent);
-  border: var(--border-medium) solid #0a0a0a;
-  box-shadow: 3px 3px 0px #0a0a0a;
+  border: var(--border-medium) solid #0e0e0d;
+  box-shadow: 3px 3px 0px #0e0e0d;
   margin-bottom: var(--space-lg);
-  color: #0a0a0a;
+  color: #0e0e0d;
 }
 
 .card__label {
@@ -342,8 +342,8 @@
 
 .badge--accent {
   background: var(--accent);
-  color: #0a0a0a;
-  border-color: #0a0a0a;
+  color: #0e0e0d;
+  border-color: #0e0e0d;
 }
 
 .badge--outline {
@@ -386,9 +386,9 @@
 .banner {
   padding: var(--space-4xl) 0;
   background: var(--accent);
-  color: #0a0a0a;
-  border-top: var(--border-heavy) solid #0a0a0a;
-  border-bottom: var(--border-heavy) solid #0a0a0a;
+  color: #0e0e0d;
+  border-top: var(--border-heavy) solid #0e0e0d;
+  border-bottom: var(--border-heavy) solid #0e0e0d;
   overflow: hidden;
 }
 
@@ -399,7 +399,7 @@
   text-transform: uppercase;
   text-align: center;
   line-height: var(--leading-tight);
-  color: #0a0a0a;
+  color: #0e0e0d;
 }
 
 .banner--dark {

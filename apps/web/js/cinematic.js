@@ -53,6 +53,13 @@ function autoTagCinematicElements() {
 function initCinematicReveals(reduced) {
   const targets = document.querySelectorAll('[data-cine]');
   if (!targets.length) return;
+
+  // Only now does the hidden initial state get to apply. The CSS is gated on
+  // this class so that without JavaScript — a crawler, a failed bundle, a
+  // blocked script — the content simply renders, rather than sitting at
+  // opacity 0 waiting for a reveal that will never come.
+  document.documentElement.classList.add('has-cine');
+
   if (reduced || !('IntersectionObserver' in window)) {
     targets.forEach((t) => t.classList.add('cine-on'));
     return;
