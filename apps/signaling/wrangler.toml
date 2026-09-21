@@ -14,11 +14,12 @@ bindings = [
 tag = "v1"
 new_sqlite_classes = ["Room"]
 
-# YjsSignalRoom keeps its topic map in memory only — a dropped connection has
-# to re-subscribe anyway — so it needs no storage backend.
+# YjsSignalRoom keeps its topic map in memory only — a dropped connection
+# re-subscribes anyway — but the free plan requires durable objects to be
+# declared as SQLite classes, so it is registered the same way Room is.
 [[migrations]]
 tag = "v2"
-new_classes = ["YjsSignalRoom"]
+new_sqlite_classes = ["YjsSignalRoom"]
 
 [vars]
 ALLOWED_ORIGIN = "*"
@@ -38,7 +39,7 @@ new_sqlite_classes = ["Room"]
 
 [[env.production.migrations]]
 tag = "v2"
-new_classes = ["YjsSignalRoom"]
+new_sqlite_classes = ["YjsSignalRoom"]
 
 [env.production.vars]
 ALLOWED_ORIGIN = "https://clex.in, https://www.clex.in"
