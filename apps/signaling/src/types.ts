@@ -29,6 +29,8 @@ export type ServerMessage =
 
 export interface Env {
   ROOMS: DurableObjectNamespace
+  /** Holds the y-webrtc topic map that Vault's cross-device sync fans out through. */
+  YJS_ROOMS: DurableObjectNamespace
   ALLOWED_ORIGIN: string
   /**
    * Server-side admin secret consumed by /admin/* and forwarded by the

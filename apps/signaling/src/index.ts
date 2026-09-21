@@ -1,4 +1,5 @@
 export { Room } from './room'
+export { YjsSignalRoom } from './yjsRoom'
 import type { Env } from './types'
 
 const ROOM_CODE_RE = /^\/room\/([A-Z0-9]{6})$/i
@@ -135,6 +136,32 @@ export default {
             details: { runtime: 'cloudflare-workers' },
           },
         ],
+      })
+    }
+
+    // Route: / (and /yjs) — y-webrtc signalling for Vault sync.
+    //
+    // y-webrtc connects to the root of whatever signalling URL it is given and
+    // speaks its own subscribe/publish protocol. This worker only served
+    // /room/:code, so that upgrade 404'd and Vault's cross-device sync never
+    // connected. One DO holds the topic map, which is how the reference
+    // y-webrtc server works too — it is a fan-out router, not per-room state.
+    if (url.pathname === '/' || url.pathname === '/yjs') {
+      if (request.headers.get('Upgrade') !== 'websocket') {
+        return new Response('Expected WebSocket upgrade', {
+          status: 426,
+          headers: corsHeaders(origin, env.ALLOWED_ORIGIN),
+        })
+      }
+      const yid = env.YJS_ROOMS.idFromName('yjs-signalling')
+      const ystub = env.YJS_ROOMS.get(yid)
+      const yresp = await ystub.fetch(request)
+      const yheaders = new Headers(yresp.headers)
+      Object.entries(corsHeaders(origin, env.ALLOWED_ORIGIN)).forEach(([k, v]) => yheaders.set(k, v))
+      return new Response(yresp.body, {
+        status: yresp.status,
+        headers: yheaders,
+        webSocket: (yresp as Response & { webSocket: WebSocket | null }).webSocket,
       })
     }
 
