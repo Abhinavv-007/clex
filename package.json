@@ -8,7 +8,10 @@
       "workerd",
       "sharp",
       "better-sqlite3"
-    ]
+    ],
+    "overrides": {
+      "@xmldom/xmldom": "0.8.15"
+    }
   },
   "scripts": {
     "dev": "pnpm -r --parallel --stream --filter @clex/signaling --filter @clex/api --filter @clex/chain --filter @clex/frontend dev",
