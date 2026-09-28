@@ -6,12 +6,13 @@
   <meta name="description" content="Upload files to Clex from any language with one HTTP call, or from the terminal with the Clex CLI. Mint an API key without signing up.">
   <link rel="stylesheet" href="/css/scenes.css">
   <link rel="stylesheet" href="/css/pages/pages.css">
+  <link rel="stylesheet" href="/css/pages/developers.css">
 </head>
 <body data-page="developers">
   <!-- @nav -->
 
   <main id="main">
-    <header class="page-head stage-head tone-dark">
+    <header class="page-head stage-head">
       <canvas class="stream-canvas" data-stream="soft" aria-hidden="true"></canvas>
       <div class="stream-veil" aria-hidden="true"></div>
       <div class="container page-head__inner">
@@ -20,8 +21,9 @@
         <p class="lede" data-reveal style="--d:700">Mint a key without signing up, upload with one HTTP call from any language, and get a share link back</p>
         <div class="page-head__actions" data-reveal style="--d:850">
           <a href="#api-access" class="btn btn--primary"><span>Get an API key</span><svg class="btn__arrow btn__arrow--down" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M8 3v9M4.5 8.5 8 12l3.5-3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
-          <a href="#cli" class="btn btn--ghost">Use the CLI</a>
+          <a href="#try" class="btn btn--ghost">Try it here</a>
         </div>
+        <p class="api-live" data-api-status data-reveal style="--d:950"><span class="api-live__dot"></span><span data-api-status-text>Checking the API…</span></p>
       </div>
     </header>
 
@@ -66,6 +68,50 @@
           </div>
 
           <p class="keycard__foot"><span>Device</span><code id="dev-fp-display">—</code></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ Try it here ═══ -->
+    <section class="section section--flush-top" id="try" aria-labelledby="try-title">
+      <div class="container">
+        <div class="try" data-api-try>
+          <div class="try__copy">
+            <span class="eyebrow" data-reveal>Try it here</span>
+            <h2 id="try-title" data-split>Upload with your key, <span class="script">right now</span></h2>
+            <p class="lede" data-reveal style="--d:200">This sends a real request to clex.in/vault/api/uploads with the key above and hands back a working share link, the same one the curl example returns</p>
+          </div>
+          <form class="try__form" data-try-form>
+            <label class="try__drop">
+              <input type="file" data-try-file>
+              <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 15V4M7.5 8.5 12 4l4.5 4.5M5 15v3.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <span data-try-name>Choose a file, up to 100 MB</span>
+            </label>
+            <div class="try__row">
+              <label class="try__expiry">
+                <span>Link expires in</span>
+                <select class="input" data-try-expiry>
+                  <option value="300">5 minutes</option>
+                  <option value="3600" selected>1 hour</option>
+                  <option value="86400">24 hours</option>
+                  <option value="604800">7 days</option>
+                </select>
+              </label>
+              <button class="btn btn--jade" type="submit" data-try-send><span>Upload with my key</span></button>
+            </div>
+            <p class="try__note" data-try-note aria-live="polite">Needs a key from the card above. Nothing is sent until you press upload.</p>
+          </form>
+          <div class="try__result" data-try-result hidden>
+            <div class="try__link">
+              <code data-try-link></code>
+              <div class="row">
+                <a class="btn btn--sm btn--primary" data-try-open href="#" target="_blank" rel="noopener noreferrer"><span>Open</span></a>
+                <button class="btn btn--sm btn--ghost" type="button" data-try-copy><span>Copy</span></button>
+                <button class="btn btn--sm btn--quiet" type="button" data-try-revoke><span>Revoke</span></button>
+              </div>
+            </div>
+            <pre class="try__json" data-try-json></pre>
+          </div>
         </div>
       </div>
     </section>

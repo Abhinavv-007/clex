@@ -19,6 +19,7 @@
   import VaultSettings from '$components/vault/VaultSettings.svelte'
   import VaultPairingModal from '$components/vault/VaultPairingModal.svelte'
   import VaultSecretCreate from '$components/vault/VaultSecretCreate.svelte'
+  import VaultWelcome from '$components/vault/VaultWelcome.svelte'
   import Toast from '$components/ui/Toast.svelte'
   import { uiStore } from '$stores/ui'
   import {
@@ -100,7 +101,7 @@
     try {
       if (sessionStorage.getItem(VAULT_SHARE_RESUME_KEY) === '1') {
         sessionStorage.removeItem(VAULT_SHARE_RESUME_KEY)
-        vaultActions.setPanel('share')
+        vaultActions.setPanel('secrets')
       }
     } catch {
       // ignore storage failures
@@ -542,19 +543,15 @@
   $: panel = $ui.activePanel
   $: pairingOpen = $ui.pairingModalOpen
   $: infoPanelCollapsed = $ui.infoPanelCollapsed
-  $: panelSubtitle = panel === 'notes'
-    ? 'Keep notes local first, sync live over shared rooms, and fall back to encrypted room backups without leaving the same workspace shell.'
-    : panel === 'secrets'
-      ? 'Set expiry, choose the protections that actually matter, then hand off the full link or QR code.'
-      : panel === 'share'
-        ? 'Create encrypted secret links with expiry, view-once and reveal codes — the key stays in the URL fragment and never reaches the server.'
-        : 'Pair devices, check storage, manage your relay access, and control the local key lifecycle from one place.'
+  // "share" was a Cloud Share panel that no longer has anything in it;
+  // anything that still asks for it gets secret links.
+  $: if (panel === 'share') vaultActions.setPanel('secrets')
+  $: empty = $notes.length === 0 && !$ui.searchQuery && !$ui.activeFolderId
 
-  const panelTabs: { id: 'notes' | 'secrets' | 'share' | 'settings'; label: string }[] = [
-    { id: 'notes', label: 'Notes' },
-    { id: 'secrets', label: 'Secret Share' },
-    { id: 'share', label: 'Cloud Share' },
-    { id: 'settings', label: 'Settings' },
+  const panelTabs: { id: 'notes' | 'secrets' | 'settings'; label: string; icon: string }[] = [
+    { id: 'notes', label: 'Notes', icon: 'M5 3.5h7l3 3v10H5z M12 3.5v3h3 M7.5 10h5 M7.5 13h5' },
+    { id: 'secrets', label: 'Secret links', icon: 'M8.5 11.5a3.5 3.5 0 0 0 5 0l2.5-2.5a3.5 3.5 0 0 0-5-5l-1 1 M11.5 8.5a3.5 3.5 0 0 0-5 0L4 11a3.5 3.5 0 0 0 5 5l1-1' },
+    { id: 'settings', label: 'Devices & keys', icon: 'M3 5h14M3 10h14M3 15h14 M7 3.5v3 M13 8.5v3 M9 13.5v3' },
   ]
 </script>
 
@@ -583,52 +580,53 @@
 {:else}
   <div class="va-page" in:fade={{ duration: 220 }}>
     <div class="va-inner">
-      <div class="va-shell-header">
-        <div class="va-title-block">
-          <p class="va-kicker">Vault</p>
-          <h1 class="va-title">
-            {#if panel === 'notes'}
-              Encrypted notes <em>stay private</em>
-            {:else if panel === 'secrets'}
-              Private links <em>with control</em>
-            {:else if panel === 'share'}
-              Drive handoffs <em>without the mess</em>
-            {:else}
-              Control the <em>Vault</em>
-            {/if}
-          </h1>
-          <p class="va-sub">{panelSubtitle}</p>
+      <header class="va-bar">
+        <div class="va-lock">
+          <span class="va-lock-emblem" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="18" height="18">
+              <rect x="5" y="10.5" width="14" height="10" rx="2.6" fill="none" stroke="currentColor" stroke-width="1.7" />
+              <path class="va-lock-shackle" d="M8 10.5V7.8a4 4 0 0 1 8 0v2.7" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+              <circle cx="12" cy="15.2" r="1.5" fill="currentColor" />
+            </svg>
+          </span>
+          <div class="va-lock-copy">
+            <b>Locked to this device</b>
+            <span>AES-GCM 256 · key <code>{$masterKeyStore?.fingerprint ?? '········'}</code>{#if $notes.length} · {$notes.length} note{$notes.length === 1 ? '' : 's'}{/if}</span>
+          </div>
         </div>
 
-        <div class="va-panel-switch" role="tablist" aria-label="Vault sections">
+        <nav class="va-nav" role="tablist" aria-label="Vault sections">
           {#each panelTabs as item}
             <button
-              class="va-panel-tab"
-              class:va-panel-tab--active={panel === item.id}
+              class="va-nav-tab"
+              class:va-nav-tab--active={panel === item.id}
+              role="tab"
+              aria-selected={panel === item.id}
+              type="button"
               on:click={() => vaultActions.setPanel(item.id)}
             >
-              {item.label}
+              <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d={item.icon} fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+              <span>{item.label}</span>
             </button>
           {/each}
-        </div>
-      </div>
+        </nav>
+      </header>
 
       {#if panel === 'settings'}
-        <div class="va-settings-wrap">
+        <div class="va-settings-wrap" in:fade={{ duration: 180 }}>
           <VaultSettings storageUsed={$storageUsed} {vaultApiUrl} />
         </div>
 
-      {:else if panel === 'secrets'}
-        <div class="va-secrets-wrap">
+      {:else if panel === 'secrets' || panel === 'share'}
+        <div class="va-secrets-wrap" in:fade={{ duration: 180 }}>
           <VaultSecretCreate {vaultApiUrl} />
         </div>
 
-      {:else if panel === 'share'}
-        <div class="va-share-wrap">
-        </div>
+      {:else if empty}
+        <VaultWelcome />
 
       {:else}
-        <div class="va-grid" class:va-grid--no-info={infoPanelCollapsed}>
+        <div class="va-grid" class:va-grid--no-info={infoPanelCollapsed} in:fade={{ duration: 180 }}>
           <aside class="va-col va-col-sidebar">
             <VaultSidebar />
           </aside>
@@ -644,20 +642,6 @@
             </aside>
           {/if}
         </div>
-
-        {#if infoPanelCollapsed}
-          <button
-            class="va-info-expand btn-icon"
-            on:click={vaultActions.toggleInfoPanel}
-            title="Show info panel"
-            aria-label="Show info panel"
-          >
-            <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
-              <circle cx="7.5" cy="7.5" r="6"/>
-              <path d="M7.5 7v4M7.5 4.5v.2"/>
-            </svg>
-          </button>
-        {/if}
       {/if}
     </div>
   </div>
@@ -673,32 +657,8 @@
   {/if}
 {/if}
 
-{#if !loading}
-  <div class="va-mobile-tabs">
-    <button
-      class="va-mtab"
-      class:va-mtab--active={panel === 'notes'}
-      on:click={() => vaultActions.setPanel('notes')}
-    >Notes</button>
-    <button
-      class="va-mtab"
-      class:va-mtab--active={panel === 'secrets'}
-      on:click={() => vaultActions.setPanel('secrets')}
-    >Secrets</button>
-    <button
-      class="va-mtab"
-      class:va-mtab--active={panel === 'share'}
-      on:click={() => vaultActions.setPanel('share')}
-    >Cloud</button>
-    <button
-      class="va-mtab"
-      class:va-mtab--active={panel === 'settings'}
-      on:click={() => vaultActions.setPanel('settings')}
-    >Settings</button>
-  </div>
-{/if}
-
 <style>
+  /* ── Page (standalone) ── embedded, WorkspaceApp strips the padding. */
   .va-page {
     padding:
       calc(88px + env(safe-area-inset-top, 0px))
@@ -709,189 +669,210 @@
   }
 
   .va-inner {
+    position: relative;
+    display: grid;
+    gap: 14px;
     max-width: 1420px;
     margin: 0 auto;
-    position: relative;
   }
 
-  .va-shell-header {
+  /* ── The bar: what state the vault is in, and where you are in it ── */
+
+  .va-bar {
     display: flex;
-    align-items: flex-start;
+    flex-wrap: wrap;
+    align-items: center;
     justify-content: space-between;
-    gap: 18px;
-    margin-bottom: 24px;
+    gap: 12px 20px;
+    padding: 10px 10px 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    background:
+      linear-gradient(90deg, var(--accent-dim), transparent 45%),
+      var(--surface);
+    box-shadow: var(--shadow-sm);
   }
 
-  .va-title-block {
+  .va-lock {
+    display: flex;
+    align-items: center;
+    gap: 12px;
     min-width: 0;
-    max-width: 760px;
   }
 
-  .va-kicker {
-    margin: 0 0 8px;
+  .va-lock-emblem {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: var(--accent);
+    color: var(--accent-fg);
+    box-shadow: 0 8px 20px -10px var(--accent);
+    flex-shrink: 0;
+  }
+
+  .va-lock-emblem::after {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    border-radius: 15px;
+    border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+    animation: va-breathe 3.2s var(--ease-out) infinite;
+  }
+
+  @keyframes va-breathe {
+    0%, 100% { opacity: 0.2; transform: scale(0.96); }
+    50% { opacity: 1; transform: scale(1); }
+  }
+
+  .va-lock-copy {
+    display: grid;
+    gap: 1px;
+    min-width: 0;
+  }
+
+  .va-lock-copy b {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-1);
+  }
+
+  .va-lock-copy span {
     font-family: var(--font-mono);
     font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
     color: var(--text-3);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
-  .va-title {
-    margin: 0;
-    font-family: var(--font-display);
-    font-size: clamp(2.7rem, 5.4vw, 5.8rem);
-    line-height: 0.95;
-    letter-spacing: -0.055em;
-    font-weight: 900;
-    color: var(--text-1);
-    text-wrap: balance;
+  .va-lock-copy code {
+    color: var(--accent-text);
   }
 
-  .va-title em {
-    display: inline-block;
-    font-family: var(--font-italic);
-    font-style: normal;
-    font-weight: 400;
-    letter-spacing: 0;
-    color: transparent;
-    background: linear-gradient(135deg, var(--violet) 0%, var(--amber) 54%, var(--amber) 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    filter: drop-shadow(0 10px 24px rgba(255,122,61,0.16));
-  }
-
-  .va-sub {
-    margin: 12px 0 0;
-    max-width: 64ch;
-    font-size: clamp(1rem, 1.35vw, 1.22rem);
-    line-height: 1.55;
-    color: var(--text-2);
-  }
-
-  .va-panel-switch {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 6px;
-    width: min(100%, 560px);
-    padding: 6px;
-    border: 1px solid var(--border-strong);
-    background: var(--surface-2);
-    box-shadow: var(--shadow-sm);
+  .va-nav {
+    display: flex;
+    gap: 4px;
+    padding: 4px;
     border-radius: 14px;
-    flex: 0 0 min(100%, 560px);
+    background: var(--surface-2);
+    box-shadow: inset 0 0 0 1px var(--border);
+    overflow-x: auto;
+    scrollbar-width: none;
   }
 
-  .va-panel-tab {
-    min-height: 46px;
-    min-width: 0;
-    padding: 10px 16px;
+  .va-nav-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    height: 36px;
+    padding: 0 14px;
+    border: 0;
     border-radius: 10px;
-    border: 2px solid transparent;
     background: transparent;
-    font-family: var(--font-display);
-    font-size: 14px;
-    font-weight: 700;
-    color: var(--text-2);
+    font-family: var(--font-sans);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-3);
+    white-space: nowrap;
     cursor: pointer;
-    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
-    text-align: center;
+    transition: color 180ms var(--ease-out), background 180ms var(--ease-out), box-shadow 180ms var(--ease-out);
   }
 
-  .va-panel-tab:hover {
+  .va-nav-tab:hover {
     color: var(--text-1);
   }
 
-  .va-panel-tab--active {
+  .va-nav-tab--active {
     background: var(--surface);
     color: var(--text-1);
-    border-color: var(--border-hard);
-    box-shadow: var(--shadow-sm);
+    box-shadow: var(--shadow-sm), 0 0 0 1px var(--border);
   }
+
+  .va-nav-tab--active svg {
+    color: var(--accent-text);
+  }
+
+  /* ── Notes: the desk ── */
 
   .va-grid {
     display: grid;
-    grid-template-columns: 280px minmax(360px, 1fr) 248px;
+    grid-template-columns: 290px minmax(0, 1fr) 250px;
     gap: 12px;
-    align-items: start;
+    align-items: stretch;
     height: calc(100vh - 152px);
   }
 
   .va-grid--no-info {
-    grid-template-columns: 280px minmax(360px, 1fr);
+    grid-template-columns: 290px minmax(0, 1fr);
   }
 
   .va-col {
-    background: var(--surface);
-    border: 1px solid var(--border-strong);
-    box-shadow: var(--shadow-md);
-    border-radius: 16px;
-    padding: 20px;
-    height: 100%;
-    overflow: hidden;
     display: flex;
     flex-direction: column;
+    min-width: 0;
+    height: 100%;
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    background: var(--surface);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
   }
 
   .va-col-sidebar {
-    padding: 16px;
+    padding: 14px;
+    background: color-mix(in srgb, var(--surface-2) 55%, var(--surface));
   }
 
+  /* The editor is the sheet of paper on the desk. */
   .va-col-editor {
-    overflow: hidden;
+    padding: 0;
+    background:
+      linear-gradient(var(--surface), var(--surface)) padding-box;
+    box-shadow: var(--shadow-md);
   }
 
   .va-col-info {
+    padding: 18px;
     overflow-y: auto;
     scrollbar-width: thin;
-  }
-
-  /* Collapsed info panel expand button */
-  .va-info-expand {
-    position: fixed;
-    right: 20px;
-    top: 50%;
-    transform: translateY(-50%);
-    background: var(--surface);
-    border: 1px solid var(--border-strong);
-    box-shadow: var(--shadow-sm);
-    border-radius: 10px;
-    z-index: 10;
-  }
-
-  .va-settings-wrap,
-  .va-secrets-wrap,
-  .va-share-wrap {
-    background: transparent;
-    min-height: calc(100vh - 210px);
+    background: color-mix(in srgb, var(--surface-2) 55%, var(--surface));
   }
 
   .va-settings-wrap {
     display: flex;
     align-items: stretch;
     width: 100%;
-    height: calc(100vh - 210px);
-    min-height: 680px;
+    min-height: 640px;
     padding: 22px;
-    border: 1px solid var(--border-strong);
-    border-radius: 16px;
+    border: 1px solid var(--border);
+    border-radius: 18px;
     background: var(--surface);
-    box-shadow: var(--shadow-md);
+    box-shadow: var(--shadow-sm);
     overflow: hidden;
   }
 
   .va-settings-wrap :global(.vst-root) {
     width: 100%;
+    height: auto;
     flex: 1 1 auto;
     min-height: 0;
   }
 
-  .va-secrets-wrap,
-  .va-share-wrap {
+  /* Settings grow with their content instead of scrolling inside a box. */
+  .va-settings-wrap :global(.vst-body) {
+    flex: none;
     overflow: visible;
   }
 
-  /* Boot screen */
+  .va-secrets-wrap {
+    overflow: visible;
+  }
+
+  /* ── Boot ── */
+
   .va-boot {
     min-height: 100vh;
     display: flex;
@@ -943,55 +924,13 @@
     margin: 0;
   }
 
-  /* Mobile tabs */
-  .va-mobile-tabs {
-    display: none;
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    z-index: 200;
-    background: var(--surface);
-    border-top: 1px solid var(--border-strong);
-    padding: 8px 0 calc(8px + env(safe-area-inset-bottom, 0px));
-    justify-content: space-around;
-    gap: 0;
-  }
-
-  .va-mtab {
-    flex: 1;
-    padding: 8px;
-    border: none;
-    background: none;
-    cursor: pointer;
-    font-family: var(--font-display);
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--text-3);
-    transition: color 150ms;
-    text-align: center;
-  }
-
-  .va-mtab--active { color: var(--text-1); }
-
-  @media (max-width: 1023px) {
-    .va-shell-header {
-      flex-direction: column;
-      align-items: stretch;
-    }
-
-    .va-panel-switch {
-      width: 100%;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      flex-basis: auto;
-    }
-
+  @media (max-width: 1100px) {
     .va-grid {
-      grid-template-columns: 220px minmax(320px, 1fr) 180px;
+      grid-template-columns: 250px minmax(0, 1fr);
     }
 
-    .va-settings-wrap {
-      min-height: 620px;
+    .va-col-info {
+      display: none;
     }
   }
 
@@ -1000,32 +939,46 @@
       padding:
         calc(80px + env(safe-area-inset-top, 0px))
         12px
-        calc(72px + env(safe-area-inset-bottom, 0px));
+        calc(24px + env(safe-area-inset-bottom, 0px));
     }
+
+    .va-bar {
+      padding: 10px;
+    }
+
+    .va-nav {
+      width: 100%;
+    }
+
+    .va-nav-tab {
+      flex: 1;
+      justify-content: center;
+      padding: 0 10px;
+    }
+
     .va-grid {
       display: flex;
       flex-direction: column;
       height: auto;
     }
-    .va-title {
-      font-size: 2rem;
-    }
-    .va-panel-switch {
-      display: none;
-    }
+
     .va-col-sidebar {
-      display: none;
+      max-height: 340px;
     }
-    .va-col-info { display: none; }
-    .va-mobile-tabs { display: flex; }
-    .va-settings-wrap,
-    .va-secrets-wrap,
-    .va-share-wrap {
-      min-height: auto;
-      height: auto;
+
+    .va-col-editor {
+      min-height: 480px;
     }
+
     .va-settings-wrap {
+      min-height: auto;
       padding: 16px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .va-lock-emblem::after {
+      animation: none;
     }
   }
 </style>

@@ -1,57 +1,119 @@
-            <div class="stage tone-dark" data-flow-stage data-step="1" aria-hidden="true">
-              <span class="stage__sheen"></span>
-              <div class="stage__rail">
-                <span class="stage__rail-step" data-s="1">Drop</span>
-                <span class="stage__rail-step" data-s="2">Prepare</span>
-                <span class="stage__rail-step" data-s="3">Share</span>
-                <span class="stage__rail-step" data-s="4">Verify</span>
-              </div>
-
-              <div class="stage__here">
-                <span class="stage__label"><i></i>This browser</span>
-                <div class="stage__tray">
-                  <svg viewBox="0 0 24 24" width="18" height="18"><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5M5 19h14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                  <span>Drop files here</span>
-                </div>
-                <div class="stage__tools">
-                  <span class="stage__tool" style="--t:0">Compress</span>
-                  <span class="stage__tool" style="--t:1">HEIC → WEBP</span>
-                  <span class="stage__tool stage__tool--idle" style="--t:2">Merge</span>
-                  <span class="stage__tool stage__tool--idle" style="--t:3">ZIP</span>
-                </div>
-              </div>
-
-              <div class="stage__there">
-                <span class="stage__notch"></span>
-                <span class="stage__label"><i></i>Maya's phone</span>
-                <div class="stage__inbox">
-                  <svg class="stage__ring" viewBox="0 0 40 40"><circle cx="20" cy="20" r="16" class="stage__ring-track"/><circle cx="20" cy="20" r="16" class="stage__ring-fill"/><path class="stage__ring-check" d="m13.5 20.5 4.5 4.5 8.5-9.5"/></svg>
-                  <span class="stage__pct" data-flow-pct>0%</span>
-                  <span class="stage__got">holiday.webp</span>
-                </div>
-              </div>
-
-              <svg class="stage__route" viewBox="0 0 100 90">
-                <defs><filter id="stage-glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="0.7" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
-                <path id="stage-route-path" class="stage__route-path" d="M 57 45 C 61 31, 66 30, 70 38"/>
-                <g class="stage__packets" filter="url(#stage-glow)">
-                  <circle r="0.9"><animateMotion dur="1.3s" repeatCount="indefinite" begin="0s" rotate="auto"><mpath href="#stage-route-path"/></animateMotion></circle>
-                  <circle r="0.9"><animateMotion dur="1.3s" repeatCount="indefinite" begin="0.43s"><mpath href="#stage-route-path"/></animateMotion></circle>
-                  <circle r="0.9"><animateMotion dur="1.3s" repeatCount="indefinite" begin="0.86s"><mpath href="#stage-route-path"/></animateMotion></circle>
-                </g>
+            <div class="fx" data-flow-stage data-step="1" aria-hidden="true">
+              <svg width="0" height="0" class="fx__defs" focusable="false">
+                <defs>
+                  <linearGradient id="fx-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f3c98b"/><stop offset="0.55" stop-color="#e9a27c"/><stop offset="1" stop-color="#b9788a"/></linearGradient>
+                  <linearGradient id="fx-sea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5f7fa6"/><stop offset="1" stop-color="#2f4a6b"/></linearGradient>
+                  <symbol id="fx-photo" viewBox="0 0 160 120">
+                    <rect width="160" height="120" fill="url(#fx-sky)"/>
+                    <circle cx="112" cy="52" r="15" fill="#fff4dc" opacity="0.95"/>
+                    <path d="M0 78 L28 58 L46 68 L70 44 L96 70 L112 62 L160 84 V120 H0 Z" fill="#7a5a78" opacity="0.85"/>
+                    <path d="M0 88 Q40 80 80 88 T160 88 V120 H0 Z" fill="url(#fx-sea)"/>
+                    <path d="M18 98 h22 M60 104 h30 M104 97 h26" stroke="#dbe6f2" stroke-width="1.6" stroke-linecap="round" opacity="0.6"/>
+                  </symbol>
+                </defs>
               </svg>
 
-              <div class="stage__file">
-                <span class="filetype filetype--img"><span class="stage__ext-a">HEIC</span><span class="stage__ext-b">WEBP</span></span>
-                <span class="stage__file-meta">
-                  <b><span class="stage__name-a">holiday.heic</span><span class="stage__name-b">holiday.webp</span></b>
-                  <em data-flow-size>4.2 MB</em>
-                </span>
-                <span class="stage__file-sweep"></span>
+              <div class="fx__bar">
+                <span class="fx__dots"><i></i><i></i><i></i></span>
+                <ol class="fx__pills">
+                  <li class="fx__pill" data-s="1"><span>01</span>Drop</li>
+                  <li class="fx__pill" data-s="2"><span>02</span>Prepare</li>
+                  <li class="fx__pill" data-s="3"><span>03</span>Share</li>
+                  <li class="fx__pill" data-s="4"><span>04</span>Verify</li>
+                </ol>
               </div>
 
-              <div class="stage__receipt">
-                <span class="stage__seal"><svg viewBox="0 0 16 16" width="13" height="13"><path d="m3.5 8.5 3 3 6-7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-                <span><b>Delivered and verified</b><code>1 file · 612 KB · 10 chunks · 0 retries</code></span>
+              <div class="fx__body">
+                <!-- 1 · Drop: three files fall into the tab and stay there -->
+                <section class="fx__scene fx__scene--drop" data-scene="1">
+                  <div class="fx-drop">
+                    <div class="fx-drop__zone">
+                      <svg viewBox="0 0 24 24" width="22" height="22"><path d="M12 15V4M7.5 8.5 12 4l4.5 4.5M5 15v3.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                      <b>Drop files here</b>
+                      <small>or paste, or pick</small>
+                    </div>
+                    <div class="fx-drop__falling">
+                      <div class="fx-card fx-card--photo" style="--i:0"><svg class="fx-card__thumb" viewBox="0 0 160 120"><use href="#fx-photo"/></svg><span><b>holiday.heic</b><em>4.2 MB</em></span></div>
+                      <div class="fx-card" style="--i:1"><span class="filetype filetype--pdf">PDF</span><span><b>brief.pdf</b><em>1.1 MB</em></span></div>
+                      <div class="fx-card" style="--i:2"><span class="filetype filetype--doc">DOC</span><span><b>notes.docx</b><em>88 KB</em></span></div>
+                    </div>
+                    <svg class="fx-drop__cursor" viewBox="0 0 24 24" width="26" height="26"><path d="M5 3.5 19 11l-6.2 1.6L10 19z" fill="#fbfaf7" stroke="#1c1b18" stroke-width="1.4" stroke-linejoin="round"/></svg>
+                    <div class="fx-drop__meta">
+                      <span><i class="fx-live"></i>In this tab's memory</span>
+                      <span class="mono">0 bytes uploaded</span>
+                    </div>
+                  </div>
+                </section>
+
+                <!-- 2 · Prepare: convert, compress, clean — in the browser -->
+                <section class="fx__scene fx__scene--prep" data-scene="2">
+                  <div class="fx-prep">
+                    <figure class="fx-prep__photo">
+                      <svg viewBox="0 0 160 120" preserveAspectRatio="xMidYMid slice"><use href="#fx-photo"/></svg>
+                      <span class="fx-prep__wipe"></span>
+                      <figcaption>
+                        <span class="fx-prep__fmt"><span class="fx-prep__fmt-a">HEIC</span><span class="fx-prep__fmt-b">WEBP</span></span>
+                        <b><span class="fx-prep__name-a">holiday.heic</span><span class="fx-prep__name-b">holiday.webp</span></b>
+                      </figcaption>
+                    </figure>
+                    <ul class="fx-prep__tools">
+                      <li style="--i:0"><span class="fx-tick"></span><b>Convert to WEBP</b><i><em></em></i></li>
+                      <li style="--i:1"><span class="fx-tick"></span><b>Compress · quality 82</b><i><em></em></i></li>
+                      <li style="--i:2"><span class="fx-tick"></span><b>Remove location data</b><i><em></em></i></li>
+                    </ul>
+                    <div class="fx-prep__size">
+                      <div><span class="mono">Size</span><b data-flow-size>4.2 MB</b></div>
+                      <div class="fx-prep__meter"><span></span></div>
+                      <span class="fx-prep__saved mono">−85%</span>
+                    </div>
+                  </div>
+                </section>
+
+                <!-- 3 · Share: a code, a QR, and the file lands on the other device -->
+                <section class="fx__scene fx__scene--share" data-scene="3">
+                  <div class="fx-share">
+                    <div class="fx-share__code">
+                      <span class="mono fx-share__label">Share code</span>
+                      <div class="fx-share__tiles"><b style="--i:0">K</b><b style="--i:1">9</b><b style="--i:2">M</b><b style="--i:3">3</b><b style="--i:4">J</b><b style="--i:5">X</b></div>
+                      <div class="fx-share__qr" data-flow-qr></div>
+                      <span class="fx-share__link mono">clex.in/receive?code=K9M3JX</span>
+                    </div>
+                    <svg class="fx-share__arc" viewBox="0 0 100 60" preserveAspectRatio="none">
+                      <path id="fx-arc" d="M 2 44 C 30 4, 70 4, 98 44" pathLength="1"/>
+                      <circle r="1.6"><animateMotion dur="1.2s" repeatCount="indefinite" begin="0s"><mpath href="#fx-arc"/></animateMotion></circle>
+                      <circle r="1.6"><animateMotion dur="1.2s" repeatCount="indefinite" begin="0.4s"><mpath href="#fx-arc"/></animateMotion></circle>
+                      <circle r="1.6"><animateMotion dur="1.2s" repeatCount="indefinite" begin="0.8s"><mpath href="#fx-arc"/></animateMotion></circle>
+                    </svg>
+                    <div class="fx-phone">
+                      <span class="fx-phone__cam"></span>
+                      <div class="fx-phone__screen">
+                        <span class="fx-phone__status mono"><span>9:41</span><span>●●● ▮</span></span>
+                        <span class="fx-phone__app">Clex</span>
+                        <span class="fx-phone__from">From your laptop</span>
+                        <div class="fx-phone__file">
+                          <svg class="fx-phone__thumb" viewBox="0 0 160 120" preserveAspectRatio="xMidYMid slice"><use href="#fx-photo"/></svg>
+                          <span><b>holiday.webp</b><em data-flow-pct>0%</em></span>
+                          <svg class="fx-ring" viewBox="0 0 40 40"><circle cx="20" cy="20" r="16" class="fx-ring__track"/><circle cx="20" cy="20" r="16" class="fx-ring__fill" pathLength="1"/><path class="fx-ring__check" d="m13.5 20.5 4.5 4.5 8.5-9.5" pathLength="1"/></svg>
+                        </div>
+                        <span class="fx-phone__done"><i></i>Delivered · verified</span>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                <!-- 4 · Verify: every chunk checked, a receipt with no content -->
+                <section class="fx__scene fx__scene--verify" data-scene="4">
+                  <div class="fx-verify">
+                    <div class="fx-verify__grid">
+                      <span style="--i:0"></span><span style="--i:1"></span><span style="--i:2"></span><span style="--i:3"></span><span style="--i:4"></span>
+                      <span style="--i:5"></span><span style="--i:6"></span><span style="--i:7"></span><span style="--i:8"></span><span style="--i:9"></span>
+                    </div>
+                    <div class="fx-verify__legend mono"><span>10 chunks · 64 KB</span><span>SHA-256 each</span></div>
+                    <div class="fx-verify__receipt">
+                      <span class="fx-verify__seal"><svg viewBox="0 0 16 16" width="14" height="14"><path d="m3.5 8.5 3 3 6-7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                      <span><b>Delivered and verified</b><code>1 file · 612 KB · 0 retries · root 9f2c…e41a</code></span>
+                    </div>
+                  </div>
+                </section>
               </div>
             </div>

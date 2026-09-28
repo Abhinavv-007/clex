@@ -66,6 +66,15 @@
   }
   </script>
   <link rel="stylesheet" href="/css/scenes.css">
+  <link rel="stylesheet" href="/css/scenes/statement.css">
+  <link rel="stylesheet" href="/css/scenes/flow.css">
+  <link rel="stylesheet" href="/css/scenes/flow-prep.css">
+  <link rel="stylesheet" href="/css/scenes/flow-share.css">
+  <link rel="stylesheet" href="/css/scenes/lane.css">
+  <link rel="stylesheet" href="/css/scenes/routes.css">
+  <link rel="stylesheet" href="/css/scenes/phone.css">
+  <link rel="stylesheet" href="/css/scenes/chainline.css">
+  <link rel="stylesheet" href="/css/scenes/receipt.css">
   <link rel="stylesheet" href="/css/pages/home.css">
 </head>
 <body data-page="home">
@@ -73,7 +82,7 @@
 
   <main id="main">
     <!-- ═══ Hero ═══════════════════════════════════════════════════════ -->
-    <section class="hero stage-head tone-dark" aria-labelledby="hero-title">
+    <section class="hero stage-head" aria-labelledby="hero-title">
       <canvas class="stream-canvas" data-stream aria-hidden="true"></canvas>
       <div class="stream-veil" aria-hidden="true"></div>
 
@@ -114,8 +123,6 @@
           <li>Any modern browser</li>
         </ul>
       </div>
-
-      <a class="hero__cue" href="#workspace" data-scroll-workspace aria-label="Scroll to the workspace"><span></span></a>
     </section>
 
     <!-- ═══ The workspace, live, right here ══════════════════════════════ -->
@@ -156,10 +163,53 @@
       </div>
     </section>
 
-    <!-- ═══ Statement, brightening word by word as you scroll ═══════════ -->
-    <section class="statement" aria-label="Why Clex" data-scrub>
+    <!-- ═══ Statement: the file crosses, nothing in between keeps it ═════ -->
+    <section class="statement" aria-labelledby="statement-title" data-statement>
       <div class="statement__sticky">
-        <p class="statement__text" data-scrub-text>Your files go from your device to theirs, and nothing in between keeps a copy <span class="script" data-write="manual" data-scale="1.3">that's the point</span></p>
+        <span class="eyebrow eyebrow--center statement__eyebrow">Nothing in between</span>
+        <p class="statement__text" id="statement-title" data-statement-text>Your files go from your device to theirs, and nothing in between keeps a copy <span class="script" data-write="manual" data-scale="1.3">that's the point</span></p>
+
+        <div class="journey" aria-hidden="true" data-journey>
+          <svg class="journey__art" viewBox="0 0 1000 330" preserveAspectRatio="xMidYMid meet">
+            <path class="journey__path" d="M 262 176 C 420 60, 640 60, 812 176" data-journey-path/>
+            <path class="journey__trail" d="M 262 176 C 420 60, 640 60, 812 176" pathLength="1" data-journey-trail/>
+
+            <g class="journey__cloud">
+              <path d="M 462 128 A 22 22 0 0 1 474 88 A 32 32 0 0 1 530 66 A 34 34 0 0 1 592 86 A 22 22 0 0 1 604 128 Z"/>
+            </g>
+
+            <g class="journey__laptop">
+              <rect class="journey__shell" x="46" y="70" width="216" height="142" rx="13"/>
+              <rect class="journey__glass" x="57" y="81" width="194" height="120" rx="6"/>
+              <rect class="journey__ui" x="73" y="97" width="72" height="8" rx="4"/>
+              <rect class="journey__ui journey__ui--soft" x="73" y="113" width="162" height="34" rx="7"/>
+              <rect class="journey__ui journey__ui--soft" x="73" y="155" width="116" height="8" rx="4"/>
+              <path class="journey__base" d="M 22 220 H 286 L 270 236 H 38 Z"/>
+              <path class="journey__notch" d="M 132 220 h 44 v 3 a 3 3 0 0 1 -3 3 h -38 a 3 3 0 0 1 -3 -3 z"/>
+            </g>
+
+            <g class="journey__phone">
+              <rect class="journey__shell" x="822" y="46" width="118" height="224" rx="24"/>
+              <rect class="journey__glass" x="830" y="54" width="102" height="208" rx="17"/>
+              <circle class="journey__cam" cx="881" cy="66" r="4"/>
+              <rect class="journey__ui" x="842" y="84" width="46" height="7" rx="3.5"/>
+              <rect class="journey__ui journey__ui--soft" x="842" y="100" width="78" height="30" rx="7"/>
+              <g class="journey__got">
+                <rect x="842" y="140" width="78" height="44" rx="9"/>
+                <path d="m 866 162 l 7 7 l 14 -15"/>
+              </g>
+            </g>
+          </svg>
+
+          <div class="journey__file" data-journey-file>
+            <svg viewBox="0 0 40 40" class="journey__thumb"><rect width="40" height="40" rx="8" fill="#e9a27c"/><circle cx="28" cy="13" r="5" fill="#fff4dc"/><path d="M0 28 L12 18 L20 24 L28 16 L40 26 V40 H0Z" fill="#7a5a78"/><path d="M0 31 Q20 27 40 31 V40 H0Z" fill="#3f5f86"/></svg>
+            <span><b>holiday.webp</b><em>612 KB</em></span>
+          </div>
+
+          <div class="journey__label journey__label--you"><b>Your device</b><span>keeps its original</span></div>
+          <div class="journey__label journey__label--mid"><b data-journey-kept>0 copies</b><span>kept in between</span></div>
+          <div class="journey__label journey__label--them"><b>Their device</b><span data-journey-them>waiting</span></div>
+        </div>
       </div>
     </section>
 
@@ -203,12 +253,13 @@
 
     <!-- ═══ Direct+ ═════════════════════════════════════════════════════ -->
     <section class="band tone-dark dplus" id="direct-plus" aria-labelledby="dplus-title">
-      <div class="dplus__aurora" aria-hidden="true"></div>
-      <div class="container dplus__grid">
-        <div class="dplus__copy">
-          <span class="eyebrow" data-reveal>Clex Direct+</span>
-          <h2 id="dplus-title" data-split>Every chunk <span class="script">accounted for</span></h2>
-          <p class="lede" data-reveal style="--d:200">Direct transfers are cut into 64 KB chunks and acknowledged one by one. Lost chunks are resent, damaged ones are re-requested by hash, and a transfer can pause and pick up where it stopped. When the last chunk lands, both sides get a receipt</p>
+      <div class="container dplus__inner">
+        <div class="dplus__head">
+          <div class="dplus__copy">
+            <span class="eyebrow" data-reveal>Clex Direct+</span>
+            <h2 id="dplus-title" data-split>Every chunk <span class="script">accounted for</span></h2>
+            <p class="lede" data-reveal style="--d:200">Direct transfers are cut into 64 KB chunks and acknowledged one by one. Lost chunks are resent, damaged ones are re-requested by hash, and a transfer can pause and pick up where it stopped. When the last chunk lands, both sides get a receipt</p>
+          </div>
           <ul class="dplus__list" role="list" data-stagger="70" data-stagger-base="200">
             <li><b>Chunk manifest</b><span>size and SHA-256 for every chunk</span></li>
             <li><b>ACK and retry</b><span>only missing chunks are resent</span></li>
@@ -219,26 +270,34 @@
           </ul>
         </div>
 
-        <div class="chunkmap" data-chunks="48" data-reveal="scale" style="--d:150">
-          <div class="chunkmap__head">
-            <span class="chunkmap__file"><span class="filetype filetype--pdf">PDF</span><span class="mono">report-final.pdf</span></span>
-            <span class="tag tag--jade">Direct+</span>
+        <figure class="lane" data-lane data-reveal="scale" aria-label="A Direct+ transfer: chunks sent, acknowledged, one lost and resent, one damaged and re-requested, then a verified receipt">
+          <div class="lane__top">
+            <span class="lane__file">
+              <span class="filetype filetype--pdf">PDF</span>
+              <span><b>report-final.pdf</b><em class="mono">3.1 MB · 48 chunks of 64 KB</em></span>
+            </span>
+            <span class="lane__status"><span class="status-dot status-dot--live"></span><span data-lane-status>Streaming</span></span>
+            <dl class="lane__stats">
+              <div><dt>Acked</dt><dd data-lane-acked>0/48</dd></div>
+              <div><dt>In flight</dt><dd data-lane-flight>0</dd></div>
+              <div><dt>Retries</dt><dd data-lane-retries>0</dd></div>
+              <div class="lane__health">
+                <svg viewBox="0 0 44 26" aria-hidden="true"><path class="lane__gauge-track" d="M 4 22 A 18 18 0 0 1 40 22" pathLength="1"/><path class="lane__gauge" d="M 4 22 A 18 18 0 0 1 40 22" pathLength="1" data-lane-gauge/></svg>
+                <dt>Health</dt><dd data-lane-health>—</dd>
+              </div>
+            </dl>
           </div>
-          <div class="chunkmap__stage" aria-hidden="true">
-            <div class="chunkmap__grid" data-chunks-grid></div>
-            <span class="chunkmap__scan"></span>
+          <div class="lane__stage">
+            <canvas class="lane__canvas" data-lane-canvas aria-hidden="true"></canvas>
+            <span class="lane__side lane__side--send">Sender<small>your browser</small></span>
+            <span class="lane__side lane__side--recv">Receiver<small>their browser</small></span>
+            <span class="lane__legend" aria-hidden="true"><i class="is-ok"></i>acked <i class="is-retry"></i>resent <i class="is-bad"></i>lost or damaged</span>
           </div>
-          <div class="chunkmap__bar" aria-hidden="true"><span data-chunks-bar></span></div>
-          <dl class="chunkmap__stats">
-            <div><dt>Chunks</dt><dd data-chunks-done>0/48</dd></div>
-            <div><dt>Retries</dt><dd data-chunks-retries>0</dd></div>
-            <div><dt>Health</dt><dd data-chunks-health>—</dd></div>
-          </dl>
-          <div class="chunkmap__receipt">
-            <span class="chunkmap__seal" aria-hidden="true"><svg viewBox="0 0 16 16" width="14" height="14"><path d="m3.5 8.5 3 3 6-7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-            <span class="chunkmap__receipt-copy"><b>Verified receipt</b><code data-chunks-hash></code></span>
-          </div>
-        </div>
+          <figcaption class="lane__receipt">
+            <span class="lane__seal" aria-hidden="true"><svg viewBox="0 0 16 16" width="15" height="15"><path d="m3.5 8.5 3 3 6-7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            <span class="lane__receipt-copy"><b>Verified receipt</b><span class="mono">48/48 chunks · 2 retries · health 97 · root <code data-lane-hash></code></span></span>
+          </figcaption>
+        </figure>
       </div>
     </section>
 
@@ -251,34 +310,7 @@
           <p class="lede" data-reveal style="--d:200">Whichever you pick, the file goes from one browser straight to the other. There is no relay in the middle holding a copy</p>
         </div>
 
-        <div class="routes" data-stagger="120">
-          <article class="route card card--lit">
-            <div class="route__globe">
-              <canvas data-globe aria-hidden="true"></canvas>
-            </div>
-            <div class="route__body">
-              <div class="row"><h3>Direct</h3><span class="tag tag--jade">Default</span></div>
-              <p class="card__text">Across the internet. A STUN server helps the two browsers learn each other's address. After that, the data channel runs between them alone.</p>
-              <dl class="facts">
-                <div><dt>Transport</dt><dd>WebRTC data channel</dd></div>
-                <div><dt>In transit</dt><dd>DTLS encrypted</dd></div>
-                <div><dt>Best for</dt><dd>Anyone, anywhere</dd></div>
-              </dl>
-            </div>
-          </article>
-          <article class="route card card--lit">
-            <!-- @route-local -->
-            <div class="route__body">
-              <div class="row"><h3>Local</h3><span class="tag">Same Wi-Fi</span></div>
-              <p class="card__text">Inside your network. Only local addresses are offered, and if the connection would leave the network, Clex stops rather than route it out.</p>
-              <dl class="facts">
-                <div><dt>Transport</dt><dd>WebRTC, host only</dd></div>
-                <div><dt>Speed</dt><dd>Your LAN's</dd></div>
-                <div><dt>Best for</dt><dd>Big files, own devices</dd></div>
-              </dl>
-            </div>
-          </article>
-        </div>
+        <!-- @routes -->
         <p class="routes__note" data-reveal>Can't connect either way? Clex tells you instead of quietly uploading. Keep both tabs open until the transfer is done.</p>
       </div>
     </section>
@@ -351,14 +383,56 @@ Spare key is with Maya</p>
             </div>
           </div>
           <div class="mobile__art" aria-hidden="true">
-            <div class="radar"><i></i><i></i><i></i></div>
-            <div class="phone">
-              <div class="phone__screen">
-                <span class="phone__title">Send to nearby</span>
-                <span class="phone__peer" style="--i:0"><span class="phone__avatar">M</span>Maya's phone<em>2 m</em></span>
-                <span class="phone__peer" style="--i:1"><span class="phone__avatar">S</span>Studio Mac<em>5 m</em></span>
-                <span class="phone__peer" style="--i:2"><span class="phone__avatar">P</span>Pixel 8<em>8 m</em></span>
-                <span class="phone__toast"><b>deck-final.pdf</b> sent to Maya, verified</span>
+            <div class="pixel" data-nearby>
+              <span class="pixel__btn pixel__btn--power"></span>
+              <span class="pixel__btn pixel__btn--vol"></span>
+              <div class="pixel__screen">
+                <span class="pixel__glare"></span>
+                <span class="pixel__cam"></span>
+                <div class="pixel__status">
+                  <span>9:41</span>
+                  <span class="pixel__icons">
+                    <svg viewBox="0 0 18 12" width="15" height="10"><path d="M1 11h2V8H1zm4 0h2V6H5zm4 0h2V3H9zm4 0h2V1h-2z" fill="currentColor"/></svg>
+                    <svg viewBox="0 0 16 12" width="14" height="10"><path d="M8 11.2 1 4.1a10 10 0 0 1 14 0z" fill="currentColor"/></svg>
+                    <svg viewBox="0 0 24 12" width="20" height="10"><rect x="0.5" y="0.5" width="20" height="11" rx="3" fill="none" stroke="currentColor" opacity="0.5"/><rect x="2" y="2" width="14" height="8" rx="1.6" fill="currentColor"/><rect x="21.6" y="4" width="1.6" height="4" rx="0.8" fill="currentColor" opacity="0.5"/></svg>
+                  </span>
+                </div>
+
+                <div class="pixel__app">
+                  <div class="pixel__head">
+                    <b>Nearby</b>
+                    <span><i></i>Studio Wi-Fi</span>
+                  </div>
+
+                  <div class="pixel__radar">
+                    <span class="pixel__ring"></span><span class="pixel__ring"></span><span class="pixel__ring"></span>
+                    <span class="pixel__sweep"></span>
+                    <span class="pixel__me">You</span>
+                    <span class="pixel__dot" style="--x:74%;--y:30%" data-peer="0">M</span>
+                    <span class="pixel__dot" style="--x:22%;--y:62%" data-peer="1">S</span>
+                    <span class="pixel__dot" style="--x:70%;--y:80%" data-peer="2">P</span>
+                  </div>
+
+                  <ul class="pixel__peers">
+                    <li data-peer="0"><span class="pixel__avatar" style="--hue:150">M</span><span><b>Maya's phone</b><small>Pixel 9 · 2 m</small></span><span class="pixel__send">Send</span></li>
+                    <li data-peer="1"><span class="pixel__avatar" style="--hue:40">S</span><span><b>Studio Mac</b><small>Browser · 5 m</small></span><span class="pixel__send">Send</span></li>
+                    <li data-peer="2"><span class="pixel__avatar" style="--hue:260">P</span><span><b>Priya's tablet</b><small>Galaxy Tab · 8 m</small></span><span class="pixel__send">Send</span></li>
+                  </ul>
+                </div>
+
+                <div class="pixel__sheet">
+                  <span class="pixel__grab"></span>
+                  <div class="pixel__sheet-file">
+                    <span class="filetype filetype--pdf">PDF</span>
+                    <span><b>deck-final.pdf</b><small>12.4 MB · to Maya's phone</small></span>
+                  </div>
+                  <div class="pixel__bar"><span></span></div>
+                  <div class="pixel__sheet-foot mono"><span data-nearby-state>Waiting for Maya to accept</span><span data-nearby-pct></span></div>
+                </div>
+
+                <div class="pixel__toast"><i></i><span><b>Delivered</b> · verified, 196 chunks</span></div>
+                <span class="pixel__touch"></span>
+                <span class="pixel__gesture"></span>
               </div>
             </div>
           </div>
@@ -366,32 +440,71 @@ Spare key is with Maya</p>
       </div>
     </section>
 
-    <!-- ═══ Chain and developers ═════════════════════════════════════════ -->
-    <section class="section" aria-label="Transfer chain and developer API">
-      <div class="container duo" data-stagger="120">
-        <article class="card duo__card">
-          <span class="eyebrow">Transfer chain</span>
-          <h3 class="duo__title">Receipts, <span class="script">not copies</span></h3>
-          <p class="card__text">Each transfer adds an anonymous record to a public, hash linked ledger: route, sizes, file types and a proof hash. Never names, never contents.</p>
-          <div class="chain-demo" data-chain-demo aria-hidden="true"><div class="chain-demo__track" data-chain-track></div></div>
-          <dl class="duo__stats" data-chain-stats="">
-            <div><dt>Transfers</dt><dd data-stat="sessions">—</dd></div>
-            <div><dt>Completed</dt><dd data-stat="completed">—</dd></div>
-            <div><dt>Browsers</dt><dd data-stat="chains">—</dd></div>
-          </dl>
-          <a class="duo__link" href="/chain">Open the explorer <svg class="btn__arrow" viewBox="0 0 16 16" width="13" height="13" aria-hidden="true"><path d="M3 8h9M8.5 4.5 12 8l-3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
-        </article>
+    <!-- ═══ Receipts and the chain ═══════════════════════════════════════ -->
+    <section class="section" id="receipts" aria-labelledby="receipts-title">
+      <div class="container">
+        <div class="receipts">
+          <div class="receipts__copy">
+            <span class="eyebrow" data-reveal>Transfer chain</span>
+            <h2 id="receipts-title" data-split>Receipts, <span class="script">not copies</span></h2>
+            <p class="lede" data-reveal style="--d:200">Every finished transfer prints a receipt you can keep, save as an image or send on: route, size, chunks, retries and a root hash, nothing about the file itself. The same record joins a public, hash linked chain, so anyone can check that a delivery happened</p>
+            <dl class="duo__stats" data-chain-stats="" data-reveal style="--d:300">
+              <div><dt>Transfers</dt><dd data-stat="sessions">—</dd></div>
+              <div><dt>Completed</dt><dd data-stat="completed">—</dd></div>
+              <div><dt>Browsers</dt><dd data-stat="chains">—</dd></div>
+            </dl>
+            <a class="duo__link" href="/chain" data-reveal style="--d:380">Open the explorer <svg class="btn__arrow" viewBox="0 0 16 16" width="13" height="13" aria-hidden="true"><path d="M3 8h9M8.5 4.5 12 8l-3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+          </div>
 
-        <article class="card duo__card">
-          <span class="eyebrow">Developers</span>
-          <h3 class="duo__title">Send from the <span class="script">terminal</span></h3>
-          <p class="card__text">Mint a key without signing up, then upload with one HTTP call from any language and get a share link back.</p>
+          <div class="receipts__stage" data-receipt-scene aria-hidden="true">
+            <div class="paper-well">
+              <div class="paper" data-paper>
+                <div class="paper__inner">
+                  <p class="paper__brand">CLEX</p>
+                  <p class="paper__title">Transfer receipt</p>
+                  <p class="paper__rule"></p>
+                  <p class="paper__row"><span>No.</span><span data-r="idx">#1027</span></p>
+                  <p class="paper__row"><span>Date</span><span data-r="date">28 Sep 2026 · 20:41</span></p>
+                  <p class="paper__row"><span>Route</span><span>Direct · DTLS</span></p>
+                  <p class="paper__row"><span>Files</span><span data-r="files">1 · pdf</span></p>
+                  <p class="paper__row"><span>Size</span><span data-r="size">2.4 MB</span></p>
+                  <p class="paper__row"><span>Chunks</span><span data-r="chunks">38/38 verified</span></p>
+                  <p class="paper__row"><span>Retries</span><span data-r="retries">0</span></p>
+                  <p class="paper__row"><span>Health</span><span data-r="health">98</span></p>
+                  <p class="paper__rule"></p>
+                  <p class="paper__row paper__row--root"><span>Root</span><code data-r="hash">9f2c71ab…e41a</code></p>
+                  <p class="paper__bars" data-paper-bars></p>
+                  <p class="paper__stamp">Verified · no content kept</p>
+                </div>
+              </div>
+            </div>
+            <div class="printer">
+              <span class="printer__led"></span>
+              <span class="printer__slot"><i></i></span>
+              <span class="printer__name">clex · receipts</span>
+            </div>
+            <div class="chainline" data-chain-line="driven" data-chain-start="1024"><div class="chainline__track" data-chain-track></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ Developers ═════════════════════════════════════════════════════ -->
+    <section class="section section--flush-top" aria-labelledby="dev-title">
+      <div class="container">
+        <div class="devrow card">
+          <div class="devrow__copy">
+            <span class="eyebrow">Developers</span>
+            <h2 class="duo__title" id="dev-title">Send from the <span class="script">terminal</span></h2>
+            <p class="card__text">Mint a key without signing up, then upload with one HTTP call from any language and get a share link back. It runs on clex.in today.</p>
+            <a class="duo__link" href="/developers">Get an API key <svg class="btn__arrow" viewBox="0 0 16 16" width="13" height="13" aria-hidden="true"><path d="M3 8h9M8.5 4.5 12 8l-3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+          </div>
           <div class="term" data-terminal>
             <div class="term__bar" aria-hidden="true"><i></i><i></i><i></i><span>~/project</span></div>
             <div class="term__body" data-terminal-body aria-hidden="true"></div>
             <script type="application/json" data-terminal-script>
               [
-                { "cmd": "curl -X POST clex.in/vault/api/uploads \\" },
+                { "cmd": "curl -X POST https://clex.in/vault/api/uploads \\" },
                 { "cmd": "  -H \"Authorization: Bearer $CLEX_API_KEY\" \\" },
                 { "cmd": "  -H \"X-Filename: report.pdf\" --data-binary @report.pdf" },
                 { "out": "201 Created  2.4 MB  expires in 24 h", "tone": "ok", "wait": 520 },
@@ -399,8 +512,7 @@ Spare key is with Maya</p>
               ]
             </script>
           </div>
-          <a class="duo__link" href="/developers">Get an API key <svg class="btn__arrow" viewBox="0 0 16 16" width="13" height="13" aria-hidden="true"><path d="M3 8h9M8.5 4.5 12 8l-3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
-        </article>
+        </div>
       </div>
     </section>
   </main>

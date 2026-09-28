@@ -269,15 +269,14 @@
     font-family: var(--font-script, var(--font-italic));
     font-style: normal;
     font-weight: 400;
-    font-size: 1.2em;
+    font-size: 1.45em;
     line-height: 0.8;
     letter-spacing: 0;
     padding: 0 0.08em;
-    /* The site's handwriting ink, fixed in both themes. */
-    color: transparent;
-    background: linear-gradient(90deg, #338a64 0%, #4eab80 50%, #cda65e 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
+    /* The site's handwriting ink. Sacramento is a hairline, so a touch of
+       stroke gives it the weight of the drawn words on the page. */
+    color: var(--script-a, var(--accent-text));
+    -webkit-text-stroke: 0.02em currentColor;
   }
 
   .ws-sub {
@@ -301,8 +300,9 @@
   }
 
   .ws-page--embedded .ws-title em {
-    font-size: 1.5em;
+    font-size: 1.9em;
     line-height: 0.6;
+    -webkit-text-stroke: 0.028em currentColor;
   }
 
   .ws-page--embedded .ws-sub {
@@ -430,24 +430,9 @@
     max-width: none !important;
   }
 
-  /* The workspace header above already names the mode. */
-  .ws-vault-slot :global(.va-title-block) {
-    display: none !important;
-  }
-
-  .ws-vault-slot :global(.va-shell-header) {
-    margin-bottom: 16px !important;
-  }
-
-  .ws-vault-slot :global(.va-panel-switch) {
-    width: 100% !important;
-    max-width: none !important;
-    flex: 1 1 100% !important;
-  }
-
   .ws-vault-slot :global(.va-grid) {
-    height: auto !important;
-    min-height: min(66vh, 660px);
+    height: min(72vh, 700px) !important;
+    min-height: 520px;
   }
 
   .ws-vault-msg {

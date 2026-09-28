@@ -1,0 +1,266 @@
+/* ==========================================================================
+   Receipts: a printer prints a transfer receipt line by line, it is torn
+   off at the perforation, and it flies into the chain below, where it
+   becomes the newest block (js/scenes/receipt.js).
+   ========================================================================== */
+
+.receipts {
+  display: grid;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+  gap: clamp(2rem, 1rem + 4vw, 5rem);
+  align-items: center;
+  padding: clamp(1.5rem, 1rem + 2.5vw, 3.25rem);
+  border: 1px solid var(--line);
+  border-radius: var(--r-xl);
+  background:
+    radial-gradient(ellipse 60% 70% at 78% 30%, var(--jade-wash), transparent 70%),
+    var(--surface);
+  box-shadow: var(--shadow-2);
+}
+
+.receipts__copy {
+  display: grid;
+  gap: var(--s-5);
+  align-content: center;
+}
+
+.receipts__stage {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  min-width: 0;
+}
+
+/* ── The paper ── */
+
+.paper-well {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  width: 100%;
+  height: 370px;
+}
+
+.paper {
+  --fed: 0px;
+  position: relative;
+  width: 236px;
+  height: var(--fed);
+  overflow: hidden;
+  filter: drop-shadow(0 12px 18px rgba(40, 32, 18, 0.18));
+  transform-origin: 50% 100%;
+  transition: height 180ms var(--ease-out);
+}
+
+.paper.is-cut {
+  -webkit-mask: conic-gradient(from -45deg at 50% 100%, #0000, #000 1deg 89deg, #0000 90deg) 50% 100% / 10px 100%;
+  mask: conic-gradient(from -45deg at 50% 100%, #0000, #000 1deg 89deg, #0000 90deg) 50% 100% / 10px 100%;
+}
+
+.paper__inner {
+  position: absolute;
+  inset: 0 0 auto;
+  display: grid;
+  gap: 5px;
+  padding: 18px 18px 22px;
+  background:
+    linear-gradient(180deg, rgba(0, 0, 0, 0.035), transparent 12%),
+    repeating-linear-gradient(0deg, transparent 0 3px, rgba(0, 0, 0, 0.012) 3px 4px),
+    #fbfaf5;
+  color: #2a2823;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.35;
+  /* The receipt's own torn top edge. */
+  -webkit-mask: conic-gradient(from 135deg at 50% 0, #0000, #000 1deg 89deg, #0000 90deg) 50% 0 / 10px 100%;
+  mask: conic-gradient(from 135deg at 50% 0, #0000, #000 1deg 89deg, #0000 90deg) 50% 0 / 10px 100%;
+}
+
+.paper__inner p {
+  margin: 0;
+}
+
+.paper__brand {
+  text-align: center;
+  font-family: var(--font-sans);
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 0.32em;
+}
+
+.paper__title {
+  text-align: center;
+  font-size: 9.5px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #6b665c;
+}
+
+.paper__rule {
+  height: 0;
+  margin: 4px 0 !important;
+  border-top: 1.5px dashed #b9b3a8;
+}
+
+.paper__row {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.paper__row span:first-child {
+  color: #6b665c;
+}
+
+.paper__row--root code {
+  font-size: 10.5px;
+  color: #2e6a4f;
+}
+
+.paper__bars {
+  display: flex;
+  align-items: stretch;
+  gap: 1.5px;
+  height: 30px;
+  margin: 6px 4px 2px !important;
+}
+
+.paper__bars i {
+  background: #2a2823;
+}
+
+.paper__stamp {
+  justify-self: center;
+  margin-top: 4px !important;
+  padding: 4px 10px;
+  border: 1.5px solid #2e6a4f;
+  border-radius: 4px;
+  color: #2e6a4f;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transform: rotate(-3deg) scale(1.6);
+  opacity: 0;
+  transition: transform 380ms var(--ease-spring), opacity 200ms var(--ease);
+}
+
+.paper.is-stamped .paper__stamp {
+  transform: rotate(-3deg);
+  opacity: 1;
+}
+
+/* ── The printer ── */
+
+.printer {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 300px;
+  height: 52px;
+  margin-top: -6px;
+  padding: 0 18px;
+  border-radius: 16px 16px 20px 20px;
+  background: linear-gradient(180deg, #2c2b27, #1a1917);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 14px 26px -12px rgba(0, 0, 0, 0.45);
+  color: #8e887d;
+}
+
+.printer__slot {
+  position: absolute;
+  left: 22px;
+  right: 22px;
+  top: 5px;
+  height: 7px;
+  border-radius: 4px;
+  background: #0b0b0a;
+  box-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.8);
+  overflow: hidden;
+}
+
+/* The cutter's flash when the receipt is torn off. */
+.printer__slot i {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(220, 184, 119, 0.9), transparent);
+  transform: translateX(-100%);
+}
+
+.printer.is-cutting .printer__slot i {
+  animation: printer-cut 380ms var(--ease-in-out);
+}
+
+@keyframes printer-cut {
+  to { transform: translateX(100%); }
+}
+
+.printer__led {
+  width: 7px;
+  height: 7px;
+  margin-top: 12px;
+  border-radius: 50%;
+  background: #3d3b36;
+  transition: background var(--t-2) var(--ease), box-shadow var(--t-2) var(--ease);
+}
+
+.printer.is-printing .printer__led {
+  background: #8fd1a9;
+  box-shadow: 0 0 8px #8fd1a9;
+}
+
+.printer__name {
+  margin-top: 12px;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+/* ── The chain beneath ── */
+
+.receipts__stage .chainline {
+  width: 100%;
+  margin-top: 30px;
+}
+
+@media (max-width: 960px) {
+  .receipts {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .paper-well {
+    height: 350px;
+  }
+
+  .printer {
+    width: 270px;
+  }
+}
+
+/* ── Developer row ── */
+
+.devrow {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  gap: clamp(1.5rem, 1rem + 3vw, 4rem);
+  align-items: center;
+  padding: clamp(1.5rem, 1rem + 2vw, 2.75rem);
+}
+
+.devrow__copy {
+  display: grid;
+  gap: var(--s-4);
+}
+
+@media (max-width: 860px) {
+  .devrow {
+    grid-template-columns: 1fr;
+  }
+}

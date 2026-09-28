@@ -1,0 +1,496 @@
+/* ==========================================================================
+   Get started: the minute on a clock, then each step next to what you will
+   actually see.
+   ========================================================================== */
+
+.gs-clock {
+  display: grid;
+  gap: 8px;
+  margin-bottom: var(--s-8);
+}
+
+.gs-clock__bar {
+  display: flex;
+  gap: 4px;
+  height: 44px;
+}
+
+.gs-clock__bar span {
+  display: grid;
+  place-items: center;
+  flex: var(--w) 1 0;
+  min-width: 0;
+  border-radius: 10px;
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--line);
+  font-size: var(--fs-xs);
+  font-weight: 500;
+  color: var(--ink-2);
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.gs-clock__bar span:nth-child(odd) {
+  background: var(--jade-wash);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--jade) 25%, transparent);
+}
+
+.gs-clock__bar .is-last {
+  background: var(--jade);
+  color: var(--on-jade);
+  box-shadow: none;
+}
+
+.gs-clock__scale {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--fs-xs);
+  color: var(--ink-3);
+}
+
+.gs-steps {
+  display: grid;
+  gap: clamp(2.5rem, 1.5rem + 3vw, 4.5rem);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.gs-step {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: clamp(1.5rem, 1rem + 4vw, 5rem);
+  align-items: center;
+}
+
+.gs-step:nth-child(even) .gs-step__copy {
+  order: 2;
+}
+
+.gs-step__copy {
+  display: grid;
+  justify-items: start;
+  gap: 12px;
+}
+
+.gs-step__num {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  color: var(--gold);
+}
+
+.gs-step h3 {
+  font-size: clamp(1.7rem, 1.2rem + 1.6vw, 2.5rem);
+  letter-spacing: -0.04em;
+  line-height: 1.05;
+}
+
+.gs-step p:not(.tip) {
+  max-width: 32em;
+  font-size: var(--fs-lg);
+  line-height: 1.6;
+  color: var(--ink-2);
+}
+
+/* ── The pictures ── */
+
+.gs-art {
+  position: relative;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 14px;
+  min-height: 260px;
+  padding: clamp(20px, 3vw, 36px);
+  border: 1px solid var(--line);
+  border-radius: var(--r-xl);
+  background:
+    radial-gradient(circle at 1px 1px, var(--line-2) 1px, transparent 1.2px) 0 0 / 18px 18px,
+    radial-gradient(ellipse 70% 60% at 50% 50%, var(--jade-wash), transparent 70%),
+    var(--surface-2);
+  overflow: hidden;
+}
+
+.gs-win {
+  width: min(100%, 420px);
+  border: 1px solid var(--line-2);
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: var(--shadow-3);
+  overflow: hidden;
+}
+
+.gs-win__bar {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  height: 32px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-2);
+}
+
+.gs-win__bar i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--line-2);
+}
+
+.gs-win__bar span {
+  margin: 0 auto;
+  padding: 2px 12px;
+  border-radius: 99px;
+  background: var(--surface);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-2);
+}
+
+.gs-win__body {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+}
+
+.gs-toggle {
+  display: flex;
+  justify-self: end;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 99px;
+  background: var(--surface-2);
+  font-size: 11px;
+}
+
+.gs-toggle b,
+.gs-toggle span {
+  padding: 3px 12px;
+  border-radius: 99px;
+  font-weight: 500;
+  color: var(--ink-3);
+}
+
+.gs-toggle b {
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--shadow-1);
+}
+
+.gs-cols {
+  display: grid;
+  grid-template-columns: 1fr 1.6fr 1fr;
+  gap: 8px;
+  height: 110px;
+}
+
+.gs-cols span {
+  border-radius: 10px;
+  background: var(--surface-2);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.gs-cols span:first-child {
+  background: repeating-linear-gradient(-45deg, transparent 0 6px, var(--jade-wash) 6px 12px), var(--surface-2);
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--jade) 40%, transparent);
+}
+
+.gs-zone {
+  display: grid;
+  gap: 8px;
+  width: min(100%, 380px);
+  padding: 16px;
+  border: 2px dashed color-mix(in srgb, var(--jade) 50%, transparent);
+  border-radius: 16px;
+  background: var(--jade-wash);
+}
+
+.gs-file {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px 8px 8px;
+  border: 1px solid var(--line-2);
+  border-radius: 10px;
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
+  font-size: var(--fs-sm);
+}
+
+.gs-file .filetype {
+  font-style: normal;
+  font-size: 0.62rem;
+}
+
+.is-in .gs-file {
+  animation: gs-drop 700ms var(--ease-out) both;
+  animation-delay: calc(200ms + var(--i) * 160ms);
+}
+
+@keyframes gs-drop {
+  from { opacity: 0; transform: translate(20px, -24px) rotate(4deg); }
+}
+
+.gs-tools {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  max-width: 380px;
+}
+
+.gs-tools span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border: 1px solid var(--line-2);
+  border-radius: 99px;
+  background: var(--surface);
+  font-size: var(--fs-sm);
+  color: var(--ink-2);
+}
+
+.gs-tools .is-done {
+  border-color: color-mix(in srgb, var(--jade) 45%, transparent);
+  background: var(--jade-wash);
+  color: var(--ink);
+}
+
+.gs-tools .is-done::before {
+  content: '';
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--jade) url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='m4.5 8.5 2.2 2.2 4.8-5.2' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/></svg>") center / 10px no-repeat;
+}
+
+.gs-size {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 12px;
+  width: min(100%, 380px);
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
+  font-size: var(--fs-xs);
+  color: var(--ink-3);
+}
+
+.gs-size i {
+  height: 8px;
+  border-radius: 8px;
+  background: var(--surface-3);
+  overflow: hidden;
+}
+
+.gs-size em {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--jade), var(--gold));
+  transform-origin: 0 50%;
+  transform: scaleX(0.2);
+}
+
+.is-in .gs-size em {
+  animation: gs-shrink 1600ms var(--ease-in-out) 300ms both;
+}
+
+@keyframes gs-shrink {
+  from { transform: scaleX(1); }
+}
+
+.gs-size__to {
+  color: var(--jade);
+}
+
+.gs-code {
+  display: flex;
+  gap: 6px;
+}
+
+.gs-code b {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 54px;
+  border: 1px solid var(--line-2);
+  border-radius: 10px;
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
+  font-family: var(--font-mono);
+  font-size: 1.4rem;
+  font-weight: 500;
+}
+
+.is-in .gs-art--share .gs-code b {
+  animation: gs-flip 500ms var(--ease-out) both;
+}
+
+.gs-art--share .gs-code b:nth-child(2) { animation-delay: 70ms; }
+.gs-art--share .gs-code b:nth-child(3) { animation-delay: 140ms; }
+.gs-art--share .gs-code b:nth-child(4) { animation-delay: 210ms; }
+.gs-art--share .gs-code b:nth-child(5) { animation-delay: 280ms; }
+.gs-art--share .gs-code b:nth-child(6) { animation-delay: 350ms; }
+
+@keyframes gs-flip {
+  from { opacity: 0; transform: rotateX(-90deg); }
+}
+
+.gs-share-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.gs-qr {
+  width: 56px;
+  height: 56px;
+  border-radius: 8px;
+  background:
+    linear-gradient(90deg, #1c1b18 30%, transparent 30% 70%, #1c1b18 70%) 0 0 / 14px 14px,
+    linear-gradient(#1c1b18 30%, transparent 30% 70%, #1c1b18 70%) 7px 7px / 14px 14px,
+    #fbfaf7;
+  box-shadow: 0 0 0 1px var(--line-2), inset 0 0 0 5px #fbfaf7;
+}
+
+.gs-link {
+  padding: 8px 14px;
+  border-radius: 99px;
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--line-2);
+  font-size: var(--fs-xs);
+  color: var(--ink-2);
+}
+
+.gs-progress {
+  display: grid;
+  gap: 10px;
+  width: min(100%, 400px);
+  padding: 16px;
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: var(--shadow-2);
+}
+
+.gs-progress__top,
+.gs-progress__foot {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--fs-sm);
+}
+
+.gs-progress__top .mono,
+.gs-progress__foot {
+  font-size: var(--fs-xs);
+  color: var(--jade);
+}
+
+.gs-progress__foot {
+  color: var(--ink-3);
+}
+
+.gs-rail {
+  display: grid;
+  grid-template-columns: repeat(16, 1fr);
+  gap: 3px;
+}
+
+.gs-rail i {
+  height: 18px;
+  border-radius: 4px;
+  background: var(--jade);
+}
+
+.gs-rail .is-flight {
+  background: color-mix(in srgb, var(--jade) 45%, var(--surface-3));
+  animation: gs-blink 900ms var(--ease-in-out) infinite alternate;
+}
+
+.gs-rail .is-wait {
+  background: var(--surface-3);
+}
+
+@keyframes gs-blink {
+  to { opacity: 0.4; }
+}
+
+.gs-mini-receipt {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  background: #fbfaf5;
+  color: #2a2823;
+  box-shadow: var(--shadow-2);
+  font-size: var(--fs-sm);
+  -webkit-mask: conic-gradient(from -45deg at 50% 100%, #0000, #000 1deg 89deg, #0000 90deg) 50% 100% / 10px 100%;
+  mask: conic-gradient(from -45deg at 50% 100%, #0000, #000 1deg 89deg, #0000 90deg) 50% 100% / 10px 100%;
+}
+
+.gs-mini-receipt .mono {
+  font-size: var(--fs-xs);
+  color: #2e6a4f;
+}
+
+.gs-receive__label {
+  font-size: var(--fs-xs);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.gs-code--input b:empty {
+  background: var(--surface-2);
+}
+
+.gs-code--input .is-caret {
+  border-color: var(--jade);
+  box-shadow: var(--ring);
+}
+
+.gs-code--input .is-caret::after {
+  content: '';
+  width: 2px;
+  height: 24px;
+  background: var(--jade);
+  animation: gs-caret 1s steps(1) infinite;
+}
+
+@keyframes gs-caret {
+  50% { opacity: 0; }
+}
+
+.gs-receive__btn {
+  padding: 10px 28px;
+  border-radius: 99px;
+  background: var(--ink);
+  color: var(--bg);
+  font-size: var(--fs-sm);
+  font-weight: 500;
+}
+
+@media (max-width: 860px) {
+  .gs-step {
+    grid-template-columns: 1fr;
+  }
+
+  .gs-step:nth-child(even) .gs-step__copy {
+    order: 0;
+  }
+
+  .gs-clock__bar span {
+    font-size: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gs-art * {
+    animation: none !important;
+  }
+}

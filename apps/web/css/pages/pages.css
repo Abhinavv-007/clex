@@ -275,31 +275,6 @@
   font-size: var(--fs-sm);
 }
 
-.proto {
-  display: grid;
-  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
-  gap: clamp(2.5rem, 1rem + 5vw, 6rem);
-  align-items: start;
-}
-
-.proto__head {
-  position: sticky;
-  top: calc(var(--nav-h) + var(--nav-top) + 32px);
-  display: grid;
-  gap: var(--s-5);
-  justify-items: start;
-}
-
-@media (max-width: 899px) {
-  .proto {
-    grid-template-columns: 1fr;
-  }
-
-  .proto__head {
-    position: static;
-  }
-}
-
 /* ── Developers ───────────────────────────────────────────────────────── */
 
 .dev-grid {
@@ -690,20 +665,6 @@
   font-variant-numeric: tabular-nums;
 }
 
-.chain-hero-demo {
-  margin: 0 auto var(--s-7);
-  max-width: 900px;
-  perspective: 800px;
-  padding: 30px 0 20px;
-  overflow: hidden;
-  -webkit-mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent);
-  mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent);
-}
-
-.chain-hero-demo .chain-demo__track {
-  justify-content: center;
-}
-
 .explorer__head {
   display: flex;
   flex-wrap: wrap;
@@ -861,8 +822,27 @@
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: var(--s-4);
-  margin-top: var(--s-6);
+  gap: var(--s-5);
+  margin-top: var(--s-7);
+  padding: clamp(1.5rem, 1rem + 2vw, 2.5rem);
+  border: 1px solid var(--line);
+  border-radius: var(--r-xl);
+  background:
+    radial-gradient(ellipse 60% 90% at 100% 0%, var(--jade-wash), transparent 70%),
+    var(--surface);
+  box-shadow: var(--shadow-2);
+}
+
+.faq-contact__copy {
+  display: grid;
+  gap: 6px;
+  max-width: 30em;
+}
+
+.faq-contact__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .faq-contact__title {

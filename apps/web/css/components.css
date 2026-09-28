@@ -648,24 +648,30 @@ html.theme-switching .nav {
 }
 
 /* ── Stage heads ────────────────────────────────────────────────────────────
-   Every page opens on the same dark stage: inset from the page edges, dark
-   in both themes, with the particle stream (js/stream.js) running behind the
-   title and the title's handwritten word writing itself. The landing hero is
-   the tallest of them. */
+   Every page opens on the same stage: inset from the page edges, with the
+   particle stream (js/stream.js) running behind the title and the title's
+   handwritten word writing itself. It follows the theme: a warm bone panel
+   with inked particles in light mode, charcoal with glowing ones in dark.
+   The landing hero is the tallest of them. */
 
 .stage-head {
   position: relative;
   margin: 8px clamp(8px, 1vw, 12px) 0;
   border-radius: clamp(22px, 3vw, 40px);
   background:
-    radial-gradient(ellipse 60% 45% at 50% 108%, rgba(143, 209, 169, 0.16), transparent 70%),
-    radial-gradient(ellipse 50% 40% at 50% -10%, rgba(220, 184, 119, 0.1), transparent 70%),
-    #0c0c0b;
+    radial-gradient(ellipse 60% 45% at 50% 108%, rgba(46, 106, 79, 0.13), transparent 70%),
+    radial-gradient(ellipse 50% 40% at 50% -10%, rgba(156, 122, 54, 0.12), transparent 70%),
+    linear-gradient(180deg, #f8f5ef, #f0ebe2);
+  box-shadow: inset 0 0 0 1px var(--line);
   overflow: hidden;
   isolation: isolate;
 }
 
 [data-theme='dark'] .stage-head {
+  background:
+    radial-gradient(ellipse 60% 45% at 50% 108%, rgba(143, 209, 169, 0.16), transparent 70%),
+    radial-gradient(ellipse 50% 40% at 50% -10%, rgba(220, 184, 119, 0.1), transparent 70%),
+    #0c0c0b;
   box-shadow: inset 0 0 0 1px rgba(241, 237, 229, 0.07);
 }
 
@@ -683,11 +689,18 @@ html.theme-switching .nav {
   opacity: 1;
 }
 
+/* Keeps the headline clear of the busiest part of the stream. */
 .stream-veil {
   position: absolute;
   inset: 0;
   z-index: -1;
   pointer-events: none;
+  background:
+    radial-gradient(ellipse 34% 30% at 50% 40%, rgba(248, 245, 239, 0.72), transparent 72%),
+    linear-gradient(180deg, rgba(248, 245, 239, 0.4), transparent 22%, transparent 78%, rgba(240, 235, 226, 0.55));
+}
+
+[data-theme='dark'] .stream-veil {
   background:
     radial-gradient(ellipse 34% 30% at 50% 40%, rgba(12, 12, 11, 0.6), transparent 72%),
     linear-gradient(180deg, rgba(12, 12, 11, 0.35), transparent 22%, transparent 78%, rgba(12, 12, 11, 0.5));
@@ -727,19 +740,19 @@ html.theme-switching .nav {
   margin-top: var(--s-2);
 }
 
-.page-head__actions .btn--primary {
+[data-theme='dark'] .page-head__actions .btn--primary {
   --btn-bg: #f1ede5;
   --btn-fg: #0f0f0e;
   --btn-bd: #f1ede5;
 }
 
-.page-head__actions .btn--primary:hover {
+[data-theme='dark'] .page-head__actions .btn--primary:hover {
   --btn-bg: #fff;
   box-shadow: 0 0 40px -6px rgba(143, 209, 169, 0.55);
 }
 
-.page-head__actions .btn--ghost:hover {
-  --btn-bg: rgba(241, 237, 229, 0.08);
+.page-head__actions .btn--primary:hover {
+  box-shadow: 0 10px 34px -10px rgba(46, 106, 79, 0.45);
 }
 
 .page-head__meta {
@@ -749,7 +762,7 @@ html.theme-switching .nav {
   letter-spacing: 0.04em;
 }
 
-.page-head .ink-word {
+[data-theme='dark'] .page-head .ink-word {
   filter: drop-shadow(0 0 22px rgba(95, 170, 130, 0.3));
 }
 
@@ -802,6 +815,9 @@ html.theme-switching .nav {
   --amethyst: #b3a1e3;
   --moon: #a3bfe2;
   --tiger: #e0b05a;
+  --script-a: #7cc49a;
+  --script-b: #9ad4af;
+  --script-c: #dcb877;
   color: var(--ink);
 }
 
@@ -814,7 +830,9 @@ html.theme-switching .nav {
     radial-gradient(ellipse 60% 50% at 80% 0%, rgba(220, 184, 119, 0.08), transparent 70%),
     radial-gradient(ellipse 70% 60% at 10% 100%, rgba(143, 209, 169, 0.08), transparent 70%),
     #0f0f0e;
-  overflow: hidden;
+  /* clip, not hidden: hidden makes the band a scroll container and breaks
+     anything sticky inside it. */
+  overflow: clip;
 }
 
 [data-theme='dark'] .band {

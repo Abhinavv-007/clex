@@ -1,0 +1,402 @@
+/* ==========================================================================
+   Flow stage, continued: the share and verify scenes (see flow.css).
+   ========================================================================== */
+
+/* ── 3 · Share ── */
+
+.fx-share {
+  display: grid;
+  grid-template-columns: 36cqi 16cqi 30cqi;
+  align-items: center;
+  width: 88cqi;
+}
+
+.fx-share__code {
+  display: grid;
+  justify-items: start;
+  gap: 2.4cqi;
+}
+
+.fx-share__label {
+  font-size: max(9.5px, 1.9cqi);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.fx-share__tiles {
+  display: flex;
+  gap: 0.9cqi;
+  perspective: 300px;
+}
+
+.fx-share__tiles b {
+  display: grid;
+  place-items: center;
+  width: 5.2cqi;
+  height: 6.6cqi;
+  border: 1px solid var(--line-2);
+  border-radius: 1.2cqi;
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
+  font-family: var(--font-mono);
+  font-size: max(11px, 3cqi);
+  font-weight: 500;
+  color: var(--ink);
+  transform-origin: 50% 0;
+}
+
+.fx-share__qr {
+  display: grid;
+  grid-template-columns: repeat(21, 1fr);
+  width: 27cqi;
+  aspect-ratio: 1;
+  padding: 1.6cqi;
+  border: 1px solid var(--line-2);
+  border-radius: 2cqi;
+  background: #fbfaf7;
+}
+
+.fx-share__qr i {
+  aspect-ratio: 1;
+  background: #1c1b18;
+  opacity: 0;
+}
+
+.fx-share__qr i.is-off {
+  background: transparent;
+}
+
+.fx-share__link {
+  max-width: 100%;
+  padding: 1cqi 2cqi;
+  border-radius: 99px;
+  background: var(--surface-3);
+  font-size: max(9px, 1.8cqi);
+  color: var(--ink-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fx-share__arc {
+  width: 100%;
+  height: 16cqi;
+  overflow: visible;
+}
+
+.fx-share__arc path {
+  fill: none;
+  stroke: var(--gold-line);
+  stroke-width: 0.8;
+  stroke-dasharray: 0.02 0.025;
+  vector-effect: non-scaling-stroke;
+}
+
+.fx-share__arc circle {
+  fill: var(--jade);
+  opacity: 0;
+}
+
+.fx[data-step='3'] .fx-share__arc circle {
+  animation: fx-show 1ms linear 900ms both;
+}
+
+.fx[data-step='3'] .fx-share__tiles b {
+  animation: fx-tile 500ms var(--ease-out) both;
+  animation-delay: calc(200ms + var(--i) * 70ms);
+}
+
+@keyframes fx-tile {
+  from { opacity: 0; transform: rotateX(-90deg); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes fx-show { to { opacity: 1; } }
+
+/* The receiving phone */
+
+.fx-phone {
+  position: relative;
+  aspect-ratio: 9 / 18.5;
+  padding: 1cqi;
+  border-radius: 5.4cqi;
+  background: linear-gradient(145deg, #3a3833, #151412 40%, #2a2925);
+  box-shadow:
+    inset 0 0 0 0.35cqi #4b4843,
+    0 0 0 1px rgba(0, 0, 0, 0.3),
+    var(--shadow-3);
+}
+
+.fx-phone::before,
+.fx-phone::after {
+  content: '';
+  position: absolute;
+  right: -0.5cqi;
+  width: 0.6cqi;
+  border-radius: 0 1cqi 1cqi 0;
+  background: #2e2c28;
+}
+
+.fx-phone::before { top: 22%; height: 8%; }
+.fx-phone::after { top: 34%; height: 14%; }
+
+.fx-phone__cam {
+  position: absolute;
+  top: 2.6cqi;
+  left: 50%;
+  z-index: 2;
+  width: 2cqi;
+  height: 2cqi;
+  margin-left: -1cqi;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #2c3a4a, #050505 60%);
+}
+
+.fx-phone__screen {
+  position: relative;
+  display: grid;
+  align-content: start;
+  gap: 1.8cqi;
+  height: 100%;
+  padding: 5.4cqi 2.2cqi 2cqi;
+  border-radius: 4.6cqi;
+  background: linear-gradient(180deg, #f8f5ef, #efe9df);
+  color: #1c1b18;
+  font-size: max(8px, 1.7cqi);
+  overflow: hidden;
+}
+
+.fx-phone__status {
+  position: absolute;
+  top: 1.8cqi;
+  left: 3.4cqi;
+  right: 3.4cqi;
+  display: flex;
+  justify-content: space-between;
+  font-size: max(7px, 1.4cqi);
+  color: #4c4840;
+}
+
+.fx-phone__app {
+  font-size: 1.5em;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.fx-phone__from {
+  color: #6b665c;
+}
+
+.fx-phone__file {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 1.4cqi;
+  padding: 1.4cqi;
+  border-radius: 2cqi;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(40, 32, 18, 0.08);
+}
+
+.fx-phone__thumb {
+  width: 5cqi;
+  height: 5cqi;
+  border-radius: 1cqi;
+}
+
+.fx-phone__file span {
+  display: grid;
+  min-width: 0;
+}
+
+.fx-phone__file b {
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fx-phone__file em {
+  font-style: normal;
+  font-family: var(--font-mono);
+  color: #6b665c;
+}
+
+.fx-ring {
+  width: 5.4cqi;
+  height: 5.4cqi;
+  transform: rotate(-90deg);
+}
+
+.fx-ring circle,
+.fx-ring path {
+  fill: none;
+  stroke-width: 3.4;
+}
+
+.fx-ring__track {
+  stroke: #e6e0d5;
+}
+
+.fx-ring__fill {
+  stroke: #2e6a4f;
+  stroke-linecap: round;
+  stroke-dasharray: 1 1;
+  stroke-dashoffset: 1;
+}
+
+.fx-ring__check {
+  stroke: #2e6a4f;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 1 1;
+  stroke-dashoffset: 1;
+  transform: rotate(90deg);
+  transform-origin: 50% 50%;
+}
+
+.fx-phone__done {
+  display: flex;
+  align-items: center;
+  gap: 1cqi;
+  padding: 1.2cqi 1.6cqi;
+  border-radius: 99px;
+  background: #dde8df;
+  color: #2e6a4f;
+  font-weight: 500;
+  opacity: 0;
+  transform: translateY(1.5cqi);
+}
+
+.fx-phone__done i {
+  width: 1.2cqi;
+  height: 1.2cqi;
+  border-radius: 50%;
+  background: #2e6a4f;
+}
+
+.fx[data-step='3'] .fx-ring__fill {
+  animation: fx-ring 1800ms var(--ease-in-out) 900ms both;
+}
+
+.fx[data-step='3'] .fx-ring__check {
+  animation: fx-ring 400ms var(--ease-out) 2750ms both;
+}
+
+.fx[data-step='3'] .fx-phone__done {
+  animation: fx-rise 500ms var(--ease-out) 2900ms both;
+}
+
+@keyframes fx-ring { to { stroke-dashoffset: 0; } }
+
+/* ── 4 · Verify ── */
+
+.fx-verify {
+  display: grid;
+  gap: 3cqi;
+  width: 76cqi;
+}
+
+.fx-verify__grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 2cqi;
+}
+
+.fx-verify__grid span {
+  position: relative;
+  aspect-ratio: 1;
+  border: 1px solid var(--line-2);
+  border-radius: 2.2cqi;
+  background: var(--surface);
+}
+
+.fx-verify__grid span::after {
+  content: '';
+  position: absolute;
+  inset: 32% 28%;
+  border: solid var(--on-jade);
+  border-width: 0 0.6cqi 0.6cqi 0;
+  width: 2cqi;
+  height: 4cqi;
+  margin: auto;
+  transform: rotate(45deg) scale(0);
+}
+
+.fx[data-step='4'] .fx-verify__grid span {
+  animation: fx-chunk-ok 400ms var(--ease-out) both;
+  animation-delay: calc(250ms + var(--i) * 120ms);
+}
+
+.fx[data-step='4'] .fx-verify__grid span::after {
+  animation: fx-tick-mark 300ms var(--ease-spring) both;
+  animation-delay: calc(400ms + var(--i) * 120ms);
+}
+
+@keyframes fx-chunk-ok {
+  from { transform: scale(0.9); }
+  to { transform: none; background: var(--jade); border-color: var(--jade); box-shadow: 0 6px 18px -8px var(--jade); }
+}
+
+.fx-verify__legend {
+  display: flex;
+  justify-content: space-between;
+  font-size: max(9.5px, 2cqi);
+  color: var(--ink-3);
+}
+
+.fx-verify__receipt {
+  display: flex;
+  align-items: center;
+  gap: 2.4cqi;
+  padding: 3cqi;
+  border: 1px solid color-mix(in srgb, var(--jade) 40%, transparent);
+  border-radius: 2.8cqi;
+  background: var(--jade-wash);
+  font-size: max(10.5px, 2.3cqi);
+  opacity: 0;
+}
+
+.fx-verify__receipt > span:last-child {
+  display: grid;
+  gap: 0.6cqi;
+}
+
+.fx-verify__receipt b {
+  font-weight: 500;
+}
+
+.fx-verify__receipt code {
+  font-size: 0.86em;
+  color: var(--ink-3);
+}
+
+.fx-verify__seal {
+  display: grid;
+  place-items: center;
+  width: 7cqi;
+  height: 7cqi;
+  border-radius: 50%;
+  background: var(--jade);
+  color: var(--on-jade);
+}
+
+.fx[data-step='4'] .fx-verify__receipt {
+  animation: fx-rise 600ms var(--ease-out) 1700ms both;
+}
+
+/* ── Reduced motion: every scene arrives finished ── */
+
+@media (prefers-reduced-motion: reduce) {
+  .fx *,
+  .fx *::after {
+    animation-duration: 1ms !important;
+    animation-delay: 0s !important;
+  }
+}
+
+/* The QR fills in cell by cell (delays set by js/scenes/flow.js). */
+.fx[data-step='3'] .fx-share__qr i {
+  animation: fx-show 1ms linear both;
+  animation-delay: calc(500ms + var(--d, 0ms));
+}

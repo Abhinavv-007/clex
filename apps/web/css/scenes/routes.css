@@ -1,0 +1,198 @@
+/* ==========================================================================
+   Routes: two quiet diagrams on sketch paper, annotated by hand.
+   Lines draw themselves when the card comes into view, then the notes are
+   written in, then the packets start (js/scenes/routes.js).
+   ========================================================================== */
+
+.routes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr));
+  gap: var(--s-5);
+}
+
+.route {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  border: 1px solid var(--line);
+  border-radius: var(--r-xl);
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
+  overflow: hidden;
+}
+
+.route__sheet {
+  container-type: inline-size;
+  position: relative;
+  aspect-ratio: 480 / 280;
+  border-bottom: 1px solid var(--line);
+  background:
+    linear-gradient(var(--line) 1px, transparent 1px) 0 0 / 100% 24px,
+    linear-gradient(90deg, var(--line) 1px, transparent 1px) 0 0 / 24px 100%,
+    var(--surface-2);
+  background-position: -1px -1px;
+}
+
+.route__art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.route__art :is(.route__device rect:not(.route__glass), .route__device path, .route__line, .route__house, .route__wifi path, .route__arrow, .route__hello) {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 1 1;
+  stroke-dashoffset: 1;
+  transition: stroke-dashoffset 1100ms var(--ease-in-out);
+}
+
+.route__device rect:not(.route__glass),
+.route__device path {
+  stroke: var(--ink-2);
+  stroke-width: 1.6;
+}
+
+.route__device rect:not(.route__glass) {
+  fill: var(--surface);
+  fill-opacity: 0;
+  transition: stroke-dashoffset 1100ms var(--ease-in-out), fill-opacity 600ms var(--ease) 700ms;
+}
+
+.route__glass {
+  fill: var(--surface-3);
+  opacity: 0;
+  transition: opacity 600ms var(--ease) 800ms;
+}
+
+.route__cam,
+.route__wifi circle {
+  fill: var(--ink-2);
+  opacity: 0;
+  transition: opacity 400ms var(--ease) 900ms;
+}
+
+.route__line {
+  stroke: var(--ink);
+  stroke-width: 1.8;
+  transition-delay: 300ms !important;
+}
+
+.route__house {
+  stroke: var(--line-3);
+  stroke-width: 1.6;
+  fill: var(--jade-wash) !important;
+  fill-opacity: 0;
+}
+
+.route__wifi path {
+  stroke: var(--jade);
+  stroke-width: 2.4;
+  transition-delay: 600ms !important;
+}
+
+.route__hello {
+  stroke: var(--gold);
+  stroke-width: 1.3;
+  transition-delay: 500ms !important;
+}
+
+.route__stun {
+  fill: var(--gold);
+}
+
+.route__stun-ring {
+  fill: none;
+  stroke: var(--gold-line);
+  stroke-width: 1.2;
+}
+
+.route__mono {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  fill: var(--ink-3);
+}
+
+.route__arrow {
+  stroke: var(--script-a);
+  stroke-width: 1.6;
+  transition-delay: 1500ms !important;
+  transition-duration: 700ms !important;
+}
+
+.route__packets circle {
+  fill: var(--jade);
+  opacity: 0;
+  transition: opacity 400ms var(--ease) 1400ms;
+}
+
+.route.is-drawn :is(.route__device rect:not(.route__glass), .route__device path, .route__line, .route__house, .route__wifi path, .route__arrow, .route__hello) {
+  stroke-dashoffset: 0;
+}
+
+.route.is-drawn :is(.route__glass, .route__cam, .route__wifi circle, .route__packets circle) {
+  opacity: 1;
+}
+
+.route.is-drawn :is(.route__device rect:not(.route__glass), .route__house) {
+  fill-opacity: 1;
+}
+
+.route__house {
+  transition: stroke-dashoffset 1100ms var(--ease-in-out), fill-opacity 800ms var(--ease) 900ms !important;
+}
+
+/* The hello to STUN is brief: it fades once the browsers have met. */
+.route.is-drawn .route__hello {
+  animation: route-hello 4.8s var(--ease) 1.6s infinite;
+}
+
+@keyframes route-hello {
+  0%, 30% { opacity: 1; }
+  45%, 85% { opacity: 0.15; }
+  100% { opacity: 1; }
+}
+
+.route__note {
+  position: absolute;
+  font-size: max(10px, 2.75cqi);
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.route__note--hello { left: 6%; top: 10%; }
+.route__note--across { left: 55%; top: 64%; transform: translateX(-50%); }
+.route__note--home { left: 46%; top: 2%; }
+
+.route__body {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  padding: 24px 28px 28px;
+}
+
+.route__body .row {
+  gap: 12px;
+}
+
+.routes__note {
+  max-width: 40em;
+  margin: var(--s-6) auto 0;
+  text-align: center;
+  font-size: var(--fs-sm);
+  color: var(--ink-3);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .route .route__art * {
+    transition: none !important;
+    animation: none !important;
+    stroke-dashoffset: 0 !important;
+    opacity: 1 !important;
+    fill-opacity: 1 !important;
+  }
+}

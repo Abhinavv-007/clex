@@ -1,0 +1,484 @@
+/* ==========================================================================
+   How a transfer stays whole: a sequence diagram between the two browsers
+   that fills in stage by stage as the steps scroll past
+   (js/scenes/protocol.js), and the illustrated edge cases.
+   ========================================================================== */
+
+.proto {
+  display: grid;
+  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+  gap: clamp(2rem, 1rem + 5vw, 6rem);
+  align-items: start;
+}
+
+.proto__copy {
+  display: grid;
+  gap: var(--s-6);
+}
+
+.proto__head {
+  display: grid;
+  gap: var(--s-5);
+}
+
+.proto__steps {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.proto__step {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 16px;
+  min-height: 34vh;
+  padding: 18px 0;
+  border-top: 1px solid var(--line);
+  opacity: 0.35;
+  transition: opacity var(--t-4) var(--ease);
+}
+
+.proto__step.is-active,
+.proto__step.is-done {
+  opacity: 1;
+}
+
+.proto__step.is-done:not(.is-active) {
+  opacity: 0.6;
+}
+
+.proto__num {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--line-2);
+  border-radius: 50%;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  color: var(--ink-3);
+  transition: background var(--t-3) var(--ease), color var(--t-3) var(--ease), border-color var(--t-3) var(--ease);
+}
+
+.proto__step.is-active .proto__num,
+.proto__step.is-done .proto__num {
+  border-color: var(--jade);
+  background: var(--jade);
+  color: var(--on-jade);
+}
+
+.proto__step b {
+  display: block;
+  margin-bottom: 6px;
+  font-size: var(--fs-lg);
+  font-weight: 500;
+}
+
+.proto__step p {
+  max-width: 30em;
+  color: var(--ink-2);
+}
+
+.proto__link {
+  width: fit-content;
+}
+
+.proto__stage {
+  position: sticky;
+  top: calc(var(--nav-h) + var(--nav-top) + 24px);
+}
+
+/* ── The sequence diagram ── */
+
+.seq {
+  margin: 0;
+  padding: clamp(14px, 2vw, 24px);
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-xl);
+  background:
+    radial-gradient(ellipse 60% 50% at 50% 20%, rgba(143, 209, 169, 0.06), transparent 70%),
+    rgba(241, 237, 229, 0.025);
+}
+
+.seq svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: calc(100vh - var(--nav-h) - 110px);
+  overflow: visible;
+  font-family: var(--font-mono);
+}
+
+.seq__actor rect {
+  fill: rgba(241, 237, 229, 0.06);
+  stroke: var(--line-2);
+}
+
+.seq__actor text {
+  fill: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  font-weight: 500;
+  text-anchor: middle;
+}
+
+.seq__life {
+  stroke: var(--line-2);
+  stroke-width: 1.5;
+  stroke-dasharray: 3 6;
+}
+
+.seq__stage {
+  opacity: 0;
+  transition: opacity 500ms var(--ease);
+}
+
+.seq__stage.is-shown {
+  opacity: 1;
+}
+
+.seq__line {
+  fill: none;
+  stroke: var(--ink-2);
+  stroke-width: 1.6;
+  stroke-dasharray: 1 1;
+  stroke-dashoffset: 1;
+  transition: stroke-dashoffset 700ms var(--ease-in-out);
+}
+
+.seq__stage.is-shown .seq__line {
+  stroke-dashoffset: 0;
+}
+
+.seq__msg:nth-child(2) .seq__line { transition-delay: 450ms; }
+.seq__msg:nth-child(3) .seq__line { transition-delay: 900ms; }
+.seq__msg:nth-child(4) .seq__line { transition-delay: 1350ms; }
+.seq__msg:nth-child(5) .seq__line { transition-delay: 1800ms; }
+
+.seq__msg--chunk .seq__line {
+  stroke: var(--jade);
+  stroke-width: 2;
+  opacity: 0.9;
+  transition-delay: calc(var(--k) * 120ms) !important;
+}
+
+.seq__head {
+  fill: none;
+  stroke: var(--ink-2);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.seq__label {
+  fill: var(--ink);
+  font-size: 12.5px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-anchor: middle;
+}
+
+.seq__sub {
+  fill: var(--ink-3);
+  font-size: 11px;
+  text-anchor: middle;
+}
+
+.seq__msg--ok .seq__line,
+.seq__msg--ok .seq__head {
+  stroke: var(--jade);
+}
+
+.seq__msg--nack .seq__line,
+.seq__msg--nack .seq__head {
+  stroke: var(--gold);
+}
+
+.seq__msg--lost .seq__line {
+  stroke: #ef8a73;
+  stroke-dasharray: 1 1;
+}
+
+.seq__x {
+  stroke: #ef8a73;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+}
+
+.seq__sub--bad {
+  fill: #ef8a73;
+}
+
+.seq__msg--bad .seq__line,
+.seq__msg--bad .seq__head {
+  stroke: #ef8a73;
+}
+
+.seq__flag {
+  fill: rgba(239, 138, 115, 0.16);
+  stroke: rgba(239, 138, 115, 0.6);
+}
+
+.seq__flag-text {
+  fill: #ef8a73;
+  font-size: 11px;
+  text-anchor: middle;
+}
+
+.seq__done circle {
+  fill: var(--jade);
+}
+
+.seq__done path {
+  fill: none;
+  stroke: var(--on-jade);
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+@media (max-width: 899px) {
+  .proto {
+    grid-template-columns: 1fr;
+  }
+
+  .proto__stage {
+    position: static;
+    order: 2;
+  }
+
+  .proto__step {
+    min-height: 0;
+    opacity: 1;
+  }
+}
+
+/* ── Edge cases ── */
+
+.edges {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 30rem), 1fr));
+  gap: var(--s-5);
+}
+
+.edge {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  border: 1px solid var(--line);
+  border-radius: var(--r-xl);
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
+  overflow: hidden;
+}
+
+.edge__art {
+  display: block;
+  width: 100%;
+  height: auto;
+  padding: 18px 18px 6px;
+  border-bottom: 1px solid var(--line);
+  background:
+    radial-gradient(circle at 1px 1px, var(--line-2) 1px, transparent 1.2px) 0 0 / 16px 16px,
+    var(--surface-2);
+  font-family: var(--font-mono);
+}
+
+.edge__body {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  padding: 22px 26px 26px;
+}
+
+.edge__device,
+.edge__base,
+.edge__file {
+  fill: var(--surface);
+  stroke: var(--ink-3);
+  stroke-width: 1.5;
+}
+
+.edge__caption,
+.edge__label {
+  fill: var(--ink-3);
+  font-size: 11px;
+}
+
+.edge__nowifi path {
+  fill: none;
+  stroke: var(--ink-3);
+  stroke-width: 2.4;
+  stroke-linecap: round;
+}
+
+.edge__nowifi circle {
+  fill: var(--ink-3);
+}
+
+.edge__nowifi .edge__slash {
+  stroke: var(--danger);
+}
+
+.edge__tools rect {
+  fill: var(--jade-wash);
+  stroke: color-mix(in srgb, var(--jade) 40%, transparent);
+}
+
+.edge__tools text {
+  fill: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 11px;
+}
+
+.edge__tools path {
+  fill: none;
+  stroke: var(--jade);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.edge__tools g {
+  opacity: 0;
+  transform: translateX(-8px);
+  transition: opacity 400ms var(--ease), transform 500ms var(--ease-out);
+  transition-delay: calc(var(--i) * 180ms);
+}
+
+.edge.is-in .edge__tools g {
+  opacity: 1;
+  transform: none;
+}
+
+.edge__cuts path {
+  fill: none;
+  stroke: var(--line-3);
+  stroke-dasharray: 3 3;
+}
+
+.edge__track {
+  stroke: var(--line-2);
+  stroke-dasharray: 2 6;
+}
+
+.edge__stream rect {
+  fill: var(--jade);
+  opacity: 0;
+}
+
+.edge.is-in .edge__stream rect {
+  animation: edge-stream 2.4s linear infinite;
+  animation-delay: calc(var(--i) * 0.6s);
+}
+
+@keyframes edge-stream {
+  0% { transform: translateX(0); opacity: 0; }
+  10%, 85% { opacity: 1; }
+  100% { transform: translateX(246px); opacity: 0; }
+}
+
+.edge__ram rect {
+  fill: var(--surface-3);
+}
+
+.edge__ram .edge__ram-fill {
+  fill: var(--jade);
+}
+
+.edge__wall rect {
+  fill: var(--surface-3);
+  stroke: var(--ink-3);
+  stroke-width: 1.4;
+}
+
+.edge__wall path {
+  fill: none;
+  stroke: var(--ink-4);
+  stroke-width: 1;
+}
+
+.edge__try {
+  fill: none;
+  stroke: var(--ink-2);
+  stroke-width: 1.8;
+  stroke-dasharray: 1 1;
+  stroke-dashoffset: 1;
+  transition: stroke-dashoffset 800ms var(--ease-in-out);
+}
+
+.edge.is-in .edge__try {
+  stroke-dashoffset: 0;
+}
+
+.edge__x {
+  stroke: var(--danger);
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  opacity: 0;
+  transition: opacity 300ms var(--ease) 800ms;
+}
+
+.edge.is-in .edge__x {
+  opacity: 1;
+}
+
+.edge__toast rect {
+  fill: var(--ink);
+}
+
+.edge__toast text {
+  fill: var(--bg);
+  font-family: var(--font-sans);
+  font-size: 11.5px;
+}
+
+.edge__toast {
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 400ms var(--ease) 1100ms, transform 500ms var(--ease-out) 1100ms;
+}
+
+.edge.is-in .edge__toast {
+  opacity: 1;
+  transform: none;
+}
+
+.edge__browsers circle {
+  fill: var(--surface);
+  stroke: var(--line-3);
+  stroke-width: 1.5;
+}
+
+.edge__browsers text {
+  fill: var(--ink-2);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  text-anchor: middle;
+}
+
+.edge__ticks path {
+  fill: none;
+  stroke: var(--jade);
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 30;
+  stroke-dashoffset: 30;
+  transition: stroke-dashoffset 900ms var(--ease-out) 300ms;
+}
+
+.edge.is-in .edge__ticks path {
+  stroke-dashoffset: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .seq__stage { opacity: 1 !important; }
+  .seq__line { stroke-dashoffset: 0 !important; transition: none !important; }
+  .edge * { transition: none !important; animation: none !important; }
+  .edge .edge__tools g,
+  .edge .edge__x,
+  .edge .edge__toast { opacity: 1; transform: none; }
+  .edge .edge__try,
+  .edge .edge__ticks path { stroke-dashoffset: 0; }
+}

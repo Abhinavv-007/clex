@@ -1,0 +1,265 @@
+/* ==========================================================================
+   Direct+ lane (js/scenes/lane.js). Lives on a dark band, so its palette is
+   the band's.
+   ========================================================================== */
+
+.lane {
+  position: relative;
+  margin: 0;
+  border: 1px solid var(--line-2);
+  border-radius: clamp(20px, 2.4vw, 30px);
+  background:
+    radial-gradient(ellipse 50% 80% at 50% 50%, rgba(143, 209, 169, 0.07), transparent 70%),
+    linear-gradient(180deg, rgba(241, 237, 229, 0.035), rgba(241, 237, 229, 0.01));
+  box-shadow: var(--shadow-3), inset 0 1px 0 rgba(241, 237, 229, 0.06);
+  overflow: hidden;
+}
+
+.lane__top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px 28px;
+  padding: 18px clamp(16px, 2.4vw, 28px);
+  border-bottom: 1px solid var(--line);
+}
+
+.lane__file {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.lane__file > span:last-child {
+  display: grid;
+}
+
+.lane__file b {
+  font-weight: 500;
+}
+
+.lane__file em {
+  font-style: normal;
+  font-size: var(--fs-xs);
+  color: var(--ink-3);
+}
+
+.lane__status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 30px;
+  padding: 0 14px;
+  border: 1px solid var(--line-2);
+  border-radius: 99px;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  color: var(--ink-2);
+  transition: color var(--t-2) var(--ease), border-color var(--t-2) var(--ease);
+}
+
+.lane.is-paused .lane__status {
+  color: var(--gold);
+  border-color: var(--gold-line);
+}
+
+.lane.is-paused .lane__status .status-dot {
+  background: var(--gold);
+  box-shadow: none;
+  animation: none;
+}
+
+.lane.is-complete .lane__status {
+  color: var(--jade);
+  border-color: color-mix(in srgb, var(--jade) 45%, transparent);
+}
+
+.lane__stats {
+  display: flex;
+  gap: clamp(16px, 2.6vw, 34px);
+  margin: 0 0 0 auto;
+}
+
+.lane__stats > div {
+  display: grid;
+  gap: 2px;
+}
+
+.lane__stats dt {
+  font-family: var(--font-mono);
+  font-size: var(--fs-2xs);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.lane__stats dd {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.lane__health {
+  grid-template-columns: auto auto;
+  column-gap: 10px;
+  align-items: center;
+}
+
+.lane__health svg {
+  grid-row: span 2;
+  width: 44px;
+  height: 26px;
+}
+
+.lane__health path {
+  fill: none;
+  stroke-width: 4;
+  stroke-linecap: round;
+}
+
+.lane__gauge-track {
+  stroke: var(--line-2);
+}
+
+.lane__gauge {
+  stroke: var(--jade);
+  stroke-dasharray: 0 1;
+  transition: stroke-dasharray 400ms var(--ease);
+}
+
+.lane__stage {
+  position: relative;
+  height: clamp(250px, 26vw, 360px);
+}
+
+.lane__canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.lane__side {
+  position: absolute;
+  top: 14px;
+  display: grid;
+  font-size: var(--fs-xs);
+  font-weight: 500;
+  color: var(--ink-2);
+}
+
+.lane__side small {
+  font-family: var(--font-mono);
+  font-size: var(--fs-2xs);
+  font-weight: 400;
+  color: var(--ink-4);
+}
+
+.lane__side--send { left: clamp(12px, 2vw, 28px); }
+.lane__side--recv { right: clamp(12px, 2vw, 28px); text-align: right; }
+
+.lane__legend {
+  position: absolute;
+  left: 50%;
+  bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: var(--fs-2xs);
+  color: var(--ink-3);
+  white-space: nowrap;
+  transform: translateX(-50%);
+}
+
+.lane__legend i {
+  width: 9px;
+  height: 9px;
+  margin-left: 8px;
+  border-radius: 2px;
+}
+
+.lane__legend .is-ok { background: var(--jade); }
+.lane__legend .is-retry { background: var(--gold); }
+.lane__legend .is-bad { background: #ef8a73; }
+
+.lane__receipt {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px clamp(16px, 2.4vw, 28px);
+  border-top: 1px solid var(--line);
+  background: rgba(241, 237, 229, 0.02);
+  opacity: 0.35;
+  transition: opacity var(--t-4) var(--ease), background var(--t-4) var(--ease);
+}
+
+.lane.is-complete .lane__receipt {
+  opacity: 1;
+  background: var(--jade-wash);
+}
+
+.lane__seal {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--surface-3);
+  color: var(--ink-3);
+  flex-shrink: 0;
+  transition: background var(--t-3) var(--ease), color var(--t-3) var(--ease), transform var(--t-4) var(--ease-spring);
+}
+
+.lane.is-complete .lane__seal {
+  background: var(--jade);
+  color: var(--on-jade);
+  transform: rotate(-8deg) scale(1.08);
+}
+
+.lane__receipt-copy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.lane__receipt-copy b {
+  font-weight: 500;
+}
+
+.lane__receipt-copy .mono {
+  font-size: var(--fs-xs);
+  color: var(--ink-3);
+  overflow-wrap: anywhere;
+}
+
+.lane__receipt code {
+  color: var(--jade);
+}
+
+@media (max-width: 760px) {
+  .lane__stats {
+    width: 100%;
+    margin: 0;
+    justify-content: space-between;
+  }
+
+  .lane__stats dt {
+    white-space: nowrap;
+    letter-spacing: 0.04em;
+  }
+
+  .lane__stats dd {
+    font-size: 1.1rem;
+  }
+
+  .lane__health svg {
+    display: none;
+  }
+
+  .lane__legend {
+    display: none;
+  }
+}

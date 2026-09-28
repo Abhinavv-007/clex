@@ -5,13 +5,14 @@
   <title>Transfer chain — Clex</title>
   <meta name="description" content="The Clex transfer chain: a public, hash-linked ledger of anonymous transfer metadata. No filenames, no contents, no IP addresses — verifiable by anyone.">
   <link rel="stylesheet" href="/css/scenes.css">
+  <link rel="stylesheet" href="/css/scenes/chainline.css">
   <link rel="stylesheet" href="/css/pages/pages.css">
 </head>
 <body data-page="chain">
   <!-- @nav -->
 
   <main id="main">
-    <header class="page-head stage-head tone-dark">
+    <header class="page-head stage-head">
       <canvas class="stream-canvas" data-stream="soft" aria-hidden="true"></canvas>
       <div class="stream-veil" aria-hidden="true"></div>
       <div class="container page-head__inner">
@@ -33,7 +34,14 @@
           <span class="eyebrow" data-reveal>How it works</span>
           <h2 id="chain-how-title" data-split>Four links, <span class="script">one chain</span></h2>
         </div>
-        <div class="chain-hero-demo" data-chain-demo aria-hidden="true" data-reveal="scale"><div class="chain-demo__track" data-chain-track></div></div>
+        <figure class="chainline-hero" data-reveal="scale">
+          <div class="chainline chainline--hero" data-chain-line data-chain-start="2041" aria-hidden="true"><div class="chainline__track" data-chain-track></div></div>
+          <figcaption class="chainline-hero__key">
+            <span><i class="is-prev"></i>prev: the hash of the block before</span>
+            <span><i class="is-hash"></i>hash: this block, including its prev</span>
+            <span>change any block and every hash after it stops matching</span>
+          </figcaption>
+        </figure>
         <div class="grid grid--4" data-stagger="90">
           <article class="card card--lit"><span class="card__num">01</span><h3 class="card__title">A local ID</h3><p class="card__text">Your browser makes a random 32 character ID and keeps it. No fingerprinting, nothing tied to you.</p></article>
           <article class="card card--lit"><span class="card__num">02</span><h3 class="card__title">A session record</h3><p class="card__text">Each transfer logs its route, file types, sizes and SHA-256 hashes. Never names, never contents.</p></article>

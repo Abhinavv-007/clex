@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { activeNote, ui, wordCount, readTimeMins, relativeTime, attachments, formatBytes } from '$stores/vault'
+  import { activeNote, ui, wordCount, readTimeMins, relativeTime, attachments, formatBytes, masterKey, devices, syncState } from '$stores/vault'
   import { fly, fade } from 'svelte/transition'
 
   $: note = $activeNote
@@ -9,6 +9,22 @@
 {#if !$ui.infoPanelCollapsed}
   <div class="vip-root" in:fly={{ x: 12, duration: 180 }}>
     {#if note}
+      <div class="vip-seal">
+        <span class="vip-seal-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="16" height="16"><rect x="5" y="10.5" width="14" height="10" rx="2.6" fill="none" stroke="currentColor" stroke-width="1.8" /><path d="M8 10.5V7.8a4 4 0 0 1 8 0v2.7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
+        </span>
+        <div class="vip-seal-copy">
+          <b>Encrypted on this device</b>
+          <span>AES-GCM 256 · key {$masterKey?.fingerprint ?? '—'}</span>
+        </div>
+        <ul class="vip-seal-list">
+          <li class:vip-on={true}>Stored encrypted in IndexedDB</li>
+          <li class:vip-on={$devices.length > 0}>{$devices.length ? `Syncs with ${$devices.length} paired device${$devices.length === 1 ? '' : 's'}` : 'No paired devices yet'}</li>
+          <li class:vip-on={$syncState.peerCount > 0}>{$syncState.peerCount > 0 ? `${$syncState.peerCount} peer live now` : 'No peers online'}</li>
+          <li class:vip-on={true}>Never written to the chain</li>
+        </ul>
+      </div>
+
       <div class="vip-section">
         <div class="vip-section-title">Info</div>
         <div class="vip-rows">
@@ -81,6 +97,81 @@
 {/if}
 
 <style>
+  .vip-seal {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 10px 10px;
+    margin-bottom: 18px;
+    padding: 14px;
+    border: 1px solid color-mix(in srgb, var(--accent) 28%, transparent);
+    border-radius: 14px;
+    background: var(--accent-dim);
+  }
+
+  .vip-seal-icon {
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: var(--accent);
+    color: var(--accent-fg);
+  }
+
+  .vip-seal-copy {
+    display: grid;
+    align-content: center;
+    gap: 1px;
+    min-width: 0;
+  }
+
+  .vip-seal-copy b {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--text-1);
+  }
+
+  .vip-seal-copy span {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-3);
+  }
+
+  .vip-seal-list {
+    grid-column: 1 / -1;
+    display: grid;
+    gap: 6px;
+    margin: 2px 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .vip-seal-list li {
+    position: relative;
+    padding-left: 16px;
+    font-size: 11.5px;
+    color: var(--text-3);
+  }
+
+  .vip-seal-list li::before {
+    content: '';
+    position: absolute;
+    left: 2px;
+    top: 0.45em;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--border-strong);
+  }
+
+  .vip-seal-list li.vip-on {
+    color: var(--text-2);
+  }
+
+  .vip-seal-list li.vip-on::before {
+    background: var(--accent);
+  }
+
   .vip-root {
     display: flex;
     flex-direction: column;
@@ -163,7 +254,6 @@
   .vip-empty-text {
     font-size: 12px;
     color: var(--text-3);
-    font-style: italic;
     margin: 0;
   }
 

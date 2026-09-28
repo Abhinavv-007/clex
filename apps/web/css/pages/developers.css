@@ -1,0 +1,189 @@
+/* ==========================================================================
+   Developers: the live API status and the "Try it here" upload
+   (js/api-playground.js)
+   ========================================================================== */
+
+.api-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border: 1px solid var(--line-2);
+  border-radius: 99px;
+  background: color-mix(in srgb, var(--surface) 70%, transparent);
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  color: var(--ink-3);
+}
+
+.api-live__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ink-4);
+}
+
+.api-live.is-up {
+  color: var(--jade);
+  border-color: color-mix(in srgb, var(--jade) 40%, transparent);
+}
+
+.api-live.is-up .api-live__dot {
+  background: var(--jade);
+  box-shadow: 0 0 0 4px var(--jade-soft);
+  animation: api-pulse 2.4s var(--ease-out) infinite;
+}
+
+.api-live.is-down {
+  color: var(--warn);
+}
+
+.api-live.is-down .api-live__dot {
+  background: var(--warn);
+}
+
+@keyframes api-pulse {
+  50% { box-shadow: 0 0 0 7px transparent; }
+}
+
+.try {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: clamp(1.5rem, 1rem + 3vw, 4rem);
+  align-items: start;
+  padding: clamp(1.5rem, 1rem + 2.5vw, 3rem);
+  border: 1px solid var(--line);
+  border-radius: var(--r-xl);
+  background:
+    radial-gradient(ellipse 60% 70% at 85% 20%, var(--jade-wash), transparent 70%),
+    var(--surface);
+  box-shadow: var(--shadow-2);
+}
+
+.try__copy {
+  display: grid;
+  gap: var(--s-4);
+}
+
+.try__form {
+  display: grid;
+  gap: 14px;
+}
+
+.try__drop {
+  position: relative;
+  display: grid;
+  place-items: center;
+  gap: 8px;
+  min-height: 150px;
+  padding: 24px;
+  border: 2px dashed var(--line-3);
+  border-radius: var(--r-lg);
+  background: var(--surface-2);
+  color: var(--ink-3);
+  text-align: center;
+  cursor: pointer;
+  transition: border-color var(--t-2) var(--ease), background var(--t-2) var(--ease), color var(--t-2) var(--ease);
+}
+
+.try__drop:hover,
+.try.has-file .try__drop {
+  border-color: var(--jade);
+  background: var(--jade-wash);
+  color: var(--ink);
+}
+
+.try__drop input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.try__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.try__expiry {
+  display: grid;
+  gap: 6px;
+  font-size: var(--fs-sm);
+  color: var(--ink-3);
+}
+
+.try__expiry select {
+  min-width: 180px;
+}
+
+.try.is-busy .try__form {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.try__note {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  color: var(--ink-3);
+}
+
+.try__note[data-tone='ok'] { color: var(--jade); }
+.try__note[data-tone='warn'] { color: var(--warn); }
+.try__note[data-tone='bad'] { color: var(--danger); }
+
+.try__result {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 12px;
+  padding-top: var(--s-5);
+  border-top: 1px solid var(--line);
+  animation: try-in 500ms var(--ease-out);
+}
+
+@keyframes try-in {
+  from { opacity: 0; transform: translateY(8px); }
+}
+
+.try__link {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.try__link code {
+  padding: 10px 14px;
+  border-radius: var(--r-sm);
+  background: var(--jade-soft);
+  color: var(--jade);
+  font-size: var(--fs-sm);
+  overflow-wrap: anywhere;
+}
+
+.try__result.is-revoked .try__link code {
+  background: var(--surface-3);
+  color: var(--ink-3);
+  text-decoration: line-through;
+}
+
+.try__json {
+  margin: 0;
+  padding: 16px 18px;
+  border-radius: var(--r-md);
+  background: #151513;
+  color: #d8d2c7;
+  font-size: 12px;
+  line-height: 1.6;
+  overflow-x: auto;
+}
+
+@media (max-width: 860px) {
+  .try {
+    grid-template-columns: 1fr;
+  }
+}

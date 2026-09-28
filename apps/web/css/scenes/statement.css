@@ -1,0 +1,268 @@
+/* ==========================================================================
+   Statement: the file crosses, nothing in between keeps it
+
+   The section is tall and its content is pinned. Scrolling through it
+   lights the sentence word by word while a file travels from your laptop,
+   through the internet — which visibly keeps nothing — to their phone. When
+   it lands, the last phrase is written by hand (js/scenes/statement.js).
+   ========================================================================== */
+
+.statement {
+  position: relative;
+  height: 290vh;
+}
+
+.statement__sticky {
+  position: sticky;
+  top: 0;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: clamp(18px, 3.2vh, 34px);
+  height: 100vh;
+  height: 100svh;
+  padding: calc(var(--nav-h) + var(--nav-top)) var(--gutter) 2vh;
+  overflow: hidden;
+}
+
+.statement__text {
+  max-width: 19em;
+  font-size: clamp(1.9rem, 1rem + 3.4vw, 4.3rem);
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.045em;
+  text-align: center;
+  text-wrap: balance;
+}
+
+.js .statement__text .sw {
+  opacity: 0.14;
+  transition: opacity 160ms linear;
+}
+
+/* ── The journey ── */
+
+.journey {
+  container-type: inline-size;
+  position: relative;
+  width: min(100%, 980px, calc((100svh - 22rem) * 1000 / 330));
+  min-width: min(100%, 560px);
+  aspect-ratio: 1000 / 330;
+}
+
+.journey__art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.journey__path {
+  fill: none;
+  stroke: var(--gold-line);
+  stroke-width: 2;
+  stroke-dasharray: 3 9;
+  stroke-linecap: round;
+}
+
+.journey__trail {
+  fill: none;
+  stroke: var(--jade);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-dasharray: 0 1;
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--jade) 50%, transparent));
+}
+
+.journey__cloud path {
+  fill: color-mix(in srgb, var(--surface) 80%, transparent);
+  stroke: var(--line-3);
+  stroke-width: 1.5;
+  stroke-dasharray: 5 5;
+  transition: fill 400ms var(--ease), stroke 400ms var(--ease);
+}
+
+.journey.is-passing .journey__cloud path {
+  fill: var(--jade-wash);
+  stroke: var(--jade);
+}
+
+.journey__shell {
+  fill: var(--surface);
+  stroke: var(--line-3);
+  stroke-width: 1.5;
+}
+
+.journey__glass {
+  fill: var(--surface-2);
+  stroke: var(--line);
+}
+
+.journey__base {
+  fill: var(--surface-3);
+  stroke: var(--line-3);
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+}
+
+.journey__notch {
+  fill: var(--line-2);
+}
+
+.journey__cam {
+  fill: var(--ink-3);
+}
+
+.journey__ui {
+  fill: var(--line-2);
+}
+
+.journey__ui--soft {
+  fill: var(--line);
+}
+
+.journey__got rect {
+  fill: var(--jade-soft);
+  stroke: var(--jade);
+  stroke-width: 1.5;
+}
+
+.journey__got path {
+  fill: none;
+  stroke: var(--jade);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.journey__got {
+  opacity: 0;
+  transform: translateY(8px);
+  transform-box: fill-box;
+  transition: opacity 400ms var(--ease), transform 500ms var(--ease-spring);
+}
+
+.journey.is-arrived .journey__got {
+  opacity: 1;
+  transform: none;
+}
+
+/* The file itself, riding the path (positioned by JS). */
+.journey__file {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: max(8px, 1.1cqi);
+  padding: max(6px, 0.8cqi) max(12px, 1.5cqi) max(6px, 0.8cqi) max(6px, 0.8cqi);
+  border: 1px solid var(--line-2);
+  border-radius: max(12px, 1.4cqi);
+  background: var(--surface);
+  box-shadow: var(--shadow-3);
+  font-size: max(11px, 1.35cqi);
+  white-space: nowrap;
+  transform: translate(-50%, -50%);
+  will-change: transform;
+}
+
+.journey__thumb {
+  width: max(28px, 3.6cqi);
+  height: max(28px, 3.6cqi);
+  border-radius: 8px;
+}
+
+.journey__file span {
+  display: grid;
+}
+
+.journey__file b {
+  font-weight: 500;
+}
+
+.journey__file em {
+  font-style: normal;
+  font-family: var(--font-mono);
+  font-size: 0.86em;
+  color: var(--ink-3);
+}
+
+/* A ghost the file leaves inside the cloud, gone at once: nothing kept. */
+.journey__file::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  border: 1px dashed var(--jade);
+  opacity: 0;
+}
+
+.journey.is-passing .journey__file::after {
+  animation: journey-ghost 900ms var(--ease-out);
+}
+
+@keyframes journey-ghost {
+  0% { opacity: 0.9; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.5); }
+}
+
+.journey__label {
+  position: absolute;
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  font-size: max(11px, 1.35cqi);
+  text-align: center;
+  white-space: nowrap;
+  transform: translateX(-50%);
+}
+
+.journey__label b {
+  font-weight: 500;
+}
+
+.journey__label span {
+  font-family: var(--font-mono);
+  font-size: 0.86em;
+  color: var(--ink-3);
+}
+
+.journey__label--you { left: 15.4%; top: 75%; }
+.journey__label--mid { left: 53.3%; top: 42%; }
+.journey__label--them { left: 88.1%; top: 85%; }
+
+.journey__label--mid b {
+  color: var(--jade);
+  font-variant-numeric: tabular-nums;
+}
+
+.journey.is-arrived .journey__label--them span {
+  color: var(--jade);
+}
+
+@media (max-width: 640px) {
+  .statement {
+    height: 240vh;
+  }
+
+  .journey__label span {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .statement {
+    height: auto;
+  }
+
+  .statement__sticky {
+    height: auto;
+    padding-block: var(--section-y);
+  }
+
+  .js .statement__text .sw {
+    opacity: 1;
+  }
+}

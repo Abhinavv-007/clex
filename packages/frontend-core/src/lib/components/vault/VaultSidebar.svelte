@@ -1,12 +1,7 @@
 <script lang="ts">
-  import { ui, vaultActions, generateId } from '$stores/vault'
-  import type { DecryptedNote } from '$stores/vault'
-  import type { StoredNote } from '$lib/vault/db'
-  import { masterKey } from '$stores/vault'
-  import { saveNote } from '$lib/vault/db'
-  import { encryptText } from '$lib/vault/crypto'
-  import { search, updateInIndex } from '$lib/vault/search'
-  import { syncNoteRecord } from '$lib/vault/sync'
+  import { ui, vaultActions } from '$stores/vault'
+  import { search } from '$lib/vault/search'
+  import { createVaultNote } from '$lib/vault/createNote'
   import FolderTree from './FolderTree.svelte'
   import NoteList from './NoteList.svelte'
   import { fly } from 'svelte/transition'
@@ -38,45 +33,7 @@
   }
 
   async function createNote() {
-    const key = $masterKey
-    if (!key) return
-
-    const now = Date.now()
-    const id = generateId()
-    const titleBlob = await encryptText('', key.key)
-    const bodyBlob = await encryptText('', key.key)
-    const nextFolderId = $ui.activeFolderId === '__pinned__' ? null : $ui.activeFolderId
-
-    const newNote: DecryptedNote = {
-      id,
-      title: '',
-      body: '',
-      createdAt: now,
-      updatedAt: now,
-      tags: [],
-      folderId: nextFolderId,
-      isPinned: false,
-      attachmentIds: [],
-    }
-
-    const storedNote: StoredNote = {
-      id,
-      titleBlob,
-      bodyBlob,
-      createdAt: now,
-      updatedAt: now,
-      tags: [],
-      folderId: nextFolderId,
-      isPinned: false,
-      attachmentIds: [],
-    }
-
-    await saveNote(storedNote)
-    syncNoteRecord(storedNote)
-
-    updateInIndex({ id, title: '', body: '', tags: [], updatedAt: now })
-    vaultActions.upsertNote(newNote)
-    vaultActions.selectNote(id)
+    await createVaultNote()
   }
 </script>
 
@@ -85,45 +42,13 @@
     <div class="vs-inner" in:fly={{ x: -8, duration: 180 }}>
       <!-- Header -->
       <div class="vs-header">
-        <div class="vs-title-row">
-          <span class="vs-vault-label">
-            <span class="section-label-dot"></span>
-            Vault
-          </span>
-          <div class="vs-header-actions">
-            <button
-              class="btn-icon"
-              on:click={createNote}
-              title="New note (⌘N)"
-              aria-label="New note"
-            >
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
-                <path d="M8 3v10M3 8h10"/>
-              </svg>
-            </button>
-            <button
-              class="btn-icon"
-              on:click={() => vaultActions.setPanel('settings')}
-              title="Settings"
-              aria-label="Settings"
-            >
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="8" cy="8" r="2.5"/>
-                <path d="M8 1.5v1.2M8 13.3v1.2M1.5 8h1.2M13.3 8h1.2M3.5 3.5l.85.85M11.65 11.65l.85.85M3.5 12.5l.85-.85M11.65 4.35l.85-.85"/>
-              </svg>
-            </button>
-            <button
-              class="btn-icon"
-              on:click={vaultActions.toggleSidebar}
-              title="Collapse sidebar"
-              aria-label="Collapse sidebar"
-            >
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
-                <path d="M10 3L6 8l4 5"/>
-              </svg>
-            </button>
-          </div>
-        </div>
+        <button class="vs-new" type="button" on:click={createNote}>
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+            <path d="M8 3v10M3 8h10"/>
+          </svg>
+          New note
+          <span class="vs-new-lock" aria-hidden="true">encrypted</span>
+        </button>
 
         <!-- Search -->
         <div class="vs-search-wrap">
@@ -183,13 +108,7 @@
     flex-direction: column;
     min-height: 0;
     height: 100%;
-    width: 260px;
-    flex-shrink: 0;
-    transition: width 220ms cubic-bezier(0.16, 1, 0.3, 1);
-  }
-
-  .vs-collapsed {
-    width: 52px;
+    width: 100%;
   }
 
   .vs-inner {
@@ -197,37 +116,47 @@
     flex-direction: column;
     height: 100%;
     min-height: 0;
-    gap: 0;
   }
 
   .vs-header {
+    display: grid;
+    gap: 10px;
     padding: 0 0 12px;
     flex-shrink: 0;
   }
 
-  .vs-title-row {
+  .vs-new {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    margin-bottom: 10px;
+    gap: 8px;
+    height: 40px;
+    padding: 0 14px;
+    border: 0;
+    border-radius: 12px;
+    background: var(--text-1);
+    color: var(--canvas);
+    font-family: var(--font-sans);
+    font-size: 13.5px;
+    font-weight: 500;
+    cursor: pointer;
+    box-shadow: var(--shadow-sm);
+    transition: transform 200ms var(--spring), box-shadow 200ms var(--ease-out);
   }
 
-  .vs-vault-label {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
+  .vs-new:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-lg);
+  }
+
+  .vs-new-lock {
+    margin-left: auto;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--canvas) 16%, transparent);
     font-family: var(--font-mono);
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--text-3);
-  }
-
-  .vs-header-actions {
-    display: flex;
-    align-items: center;
-    gap: 2px;
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    opacity: 0.8;
   }
 
   .vs-search-wrap {
@@ -238,7 +167,7 @@
 
   .vs-search-icon {
     position: absolute;
-    left: 10px;
+    left: 11px;
     color: var(--text-3);
     pointer-events: none;
     display: flex;
@@ -246,12 +175,20 @@
   }
 
   .vs-search {
+    width: 100%;
+    height: 36px;
     padding-left: 32px;
     padding-right: 32px;
-    height: 34px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface);
     font-size: 13px;
-    border-radius: 8px;
-    border-width: 1.5px;
+  }
+
+  .vs-search:focus {
+    border-color: var(--accent);
+    box-shadow: var(--shadow-accent);
+    outline: none;
   }
 
   .vs-search-clear {
@@ -264,13 +201,13 @@
 
   .vs-folders {
     flex-shrink: 0;
-    margin-bottom: 8px;
+    margin-bottom: 4px;
   }
 
   .vs-divider {
     height: 1px;
     background: var(--border);
-    margin: 8px 0;
+    margin: 8px 0 10px;
     flex-shrink: 0;
   }
 

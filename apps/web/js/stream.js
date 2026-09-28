@@ -1,7 +1,8 @@
 /* ==========================================================================
    Clex — the stream
 
-   The hero's backdrop: a river of light made of file chunks. Tens of
+   The hero's backdrop: a river of light made of file chunks (ink on the
+   bone stage in light mode). Tens of
    thousands of points flow left to right along a ribbon that twists in 3D —
    gold dust, a few pale motes, and brighter jade packets riding through
    faster. The ribbon narrows as it passes behind the headline and fans out
@@ -27,6 +28,7 @@ uniform vec2 u_pointer;
 uniform float u_pointerOn;
 uniform float u_center;
 uniform float u_gain;
+uniform float u_light;   // 1 on the bone stage: inked particles, not light
 varying vec4 v_color;
 varying float v_glow;
 
@@ -62,13 +64,13 @@ void main() {
   float size = a_p.w * persp * u_dpr * (1.0 + near * 1.6);
   gl_PointSize = size;
 
-  vec3 gold = vec3(0.86, 0.71, 0.45);
-  vec3 jade = vec3(0.55, 0.82, 0.66);
-  vec3 bone = vec3(0.95, 0.93, 0.89);
-  vec3 c = a_kind < 0.5 ? gold : (a_kind < 1.5 ? jade : (a_kind < 2.5 ? bone : (a_kind < 3.5 ? mix(jade, bone, 0.35) : mix(gold, jade, fract(a_p.x * 7.3)))));
+  vec3 gold = mix(vec3(0.86, 0.71, 0.45), vec3(0.62, 0.47, 0.2), u_light);
+  vec3 jade = mix(vec3(0.55, 0.82, 0.66), vec3(0.16, 0.44, 0.31), u_light);
+  vec3 bone = mix(vec3(0.95, 0.93, 0.89), vec3(0.42, 0.39, 0.34), u_light);
+  vec3 c = a_kind < 0.5 ? gold : (a_kind < 1.5 ? jade : (a_kind < 2.5 ? bone : (a_kind < 3.5 ? mix(jade, bone, 0.35 * (1.0 - u_light)) : mix(gold, jade, fract(a_p.x * 7.3)))));
   float a = a_kind < 0.5 ? 0.85 : (a_kind < 1.5 ? 1.0 : (a_kind < 2.5 ? 0.55 : (a_kind < 3.5 ? 1.0 : 0.07)));
-  a *= mix(0.3, 1.0, depth) * edge * u_gain;
-  v_color = vec4(c + near * 0.35, a * (1.0 + near * 1.4));
+  a *= mix(0.3, 1.0, depth) * edge * u_gain * mix(1.0, 0.72, u_light);
+  v_color = vec4(c + near * mix(0.35, -0.08, u_light), a * (1.0 + near * 1.4));
   v_glow = a_kind > 2.5 && a_kind < 3.5 ? 1.0 : (a_kind > 3.5 ? -1.0 : 0.0);
 }
 `;
@@ -133,10 +135,17 @@ export function initStream() {
     pointerOn: gl.getUniformLocation(program, 'u_pointerOn'),
     center: gl.getUniformLocation(program, 'u_center'),
     gain: gl.getUniformLocation(program, 'u_gain'),
+    light: gl.getUniformLocation(program, 'u_light'),
   };
 
+  // Light adds up on charcoal; on bone the particles are ink and must not.
+  let light = 0;
+  const readTone = () => {
+    light = document.documentElement.dataset.theme === 'dark' ? 0 : 1;
+    gl.blendFunc(gl.SRC_ALPHA, light ? gl.ONE_MINUS_SRC_ALPHA : gl.ONE);
+  };
   gl.enable(gl.BLEND);
-  gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
+  readTone();
   gl.clearColor(0, 0, 0, 0);
 
   let W = 0;
@@ -173,6 +182,7 @@ export function initStream() {
     gl.uniform1f(u.pointerOn, pointer.on);
     gl.uniform1f(u.center, soft ? -0.42 : -0.16);
     gl.uniform1f(u.gain, soft ? 0.8 : 1);
+    gl.uniform1f(u.light, light);
     gl.drawArrays(gl.POINTS, 0, COUNT);
   };
 
@@ -203,6 +213,10 @@ export function initStream() {
     sync();
   }).observe(canvas);
   document.addEventListener('visibilitychange', sync);
+  window.addEventListener('clex:theme', () => {
+    readTone();
+    if (!running) draw(performance.now());
+  });
 
   const host = canvas.closest('section') || canvas;
   if (window.matchMedia('(hover: hover)').matches) {

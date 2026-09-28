@@ -104,8 +104,10 @@
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 6px;
     min-height: 0;
+    margin: 0 -4px;
+    padding: 0 4px 4px;
   }
 
   .nl-empty {
@@ -120,7 +122,7 @@
   }
 
   .nl-empty-icon {
-    font-size: 28px;
+    font-size: 24px;
     color: var(--text-3);
   }
 
@@ -139,65 +141,75 @@
   }
 
   .nl-item {
-    width: 100%;
-    text-align: left;
-    padding: 14px 15px;
-    border-radius: 14px;
-    border: 1.5px solid var(--border);
-    background: color-mix(in srgb, var(--surface-2) 72%, var(--surface));
-    cursor: pointer;
-    transition: background 150ms, border-color 150ms, transform 150ms, box-shadow 150ms;
     position: relative;
     flex-shrink: 0;
-    box-shadow: none;
+    width: 100%;
+    padding: 12px 14px 12px 16px;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    background: transparent;
+    text-align: left;
+    cursor: pointer;
+    transition: background 160ms, border-color 160ms, box-shadow 160ms;
+  }
+
+  .nl-item::before {
+    content: '';
+    position: absolute;
+    left: 6px;
+    top: 14px;
+    bottom: 14px;
+    width: 2.5px;
+    border-radius: 3px;
+    background: var(--accent);
+    transform: scaleY(0);
+    transition: transform 240ms var(--spring);
   }
 
   .nl-item:hover {
-    transform: translateY(-1px);
-    background: var(--raised);
-    border-color: var(--border-hard);
-    box-shadow: var(--shadow-sm);
+    background: var(--surface);
+    border-color: var(--border);
   }
 
   .nl-item--active {
-    background: color-mix(in srgb, var(--accent) 12%, var(--surface));
-    border-color: color-mix(in srgb, var(--accent) 68%, var(--border-hard));
+    background: var(--surface);
+    border-color: var(--border-strong);
     box-shadow: var(--shadow-sm);
+  }
+
+  .nl-item--active::before {
+    transform: scaleY(1);
   }
 
   .nl-pin {
     position: absolute;
-    top: 12px;
-    right: 14px;
+    top: 11px;
+    right: 12px;
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    padding: 3px 7px;
-    border-radius: 999px;
-    background: color-mix(in srgb, var(--accent) 14%, var(--surface));
     color: var(--accent-text);
     font-family: var(--font-mono);
-    font-size: 9px;
-    font-weight: 700;
+    font-size: 9.5px;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    border: 1px solid color-mix(in srgb, var(--accent) 44%, var(--border));
   }
 
   .nl-title {
-    font-family: var(--font-display);
-    font-size: 15px;
-    font-weight: 700;
+    margin-bottom: 4px;
+    padding-right: 64px;
+    font-family: var(--font-sans);
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: -0.015em;
     color: var(--text-1);
-    margin-bottom: 6px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    padding-right: 82px;
-    letter-spacing: -0.02em;
   }
 
-  .nl-title :global(mark) {
+  .nl-title :global(mark),
+  .nl-snippet :global(mark) {
     background: var(--accent-dim);
     color: var(--accent-text);
     border-radius: 2px;
@@ -205,21 +217,14 @@
   }
 
   .nl-snippet {
-    font-size: 13px;
-    color: var(--text-3);
-    line-height: 1.6;
     display: -webkit-box;
+    margin-bottom: 8px;
+    font-size: 12.5px;
+    line-height: 1.5;
+    color: var(--text-3);
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
-    margin-bottom: 10px;
-  }
-
-  .nl-snippet :global(mark) {
-    background: var(--accent-dim);
-    color: var(--accent-text);
-    border-radius: 2px;
-    padding: 0 1px;
   }
 
   .nl-meta {
@@ -233,7 +238,7 @@
     font-family: var(--font-mono);
     font-size: 10px;
     color: var(--text-3);
-    letter-spacing: 0.04em;
+    letter-spacing: 0.03em;
   }
 
   .nl-tags {
@@ -243,10 +248,11 @@
   }
 
   .nl-tag {
+    padding: 1px 6px;
+    border-radius: 999px;
+    background: var(--accent-dim);
     font-family: var(--font-mono);
-    font-size: 10px;
+    font-size: 9.5px;
     color: var(--accent-text);
-    letter-spacing: 0.02em;
-    opacity: 0.8;
   }
 </style>

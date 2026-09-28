@@ -72,13 +72,15 @@ describe('partials', () => {
 })
 
 describe('handwriting', () => {
-  it('turns a script word into letter outlines with accessible text', () => {
+  it('turns a script word into pen strokes with accessible text', () => {
     const out: string = inkify('<h2>One tab, <span class="script">three moves</span></h2>')
     expect(out).toContain('class="ink-word"')
     expect(out).toContain('<span class="visually-hidden">three moves</span>')
     expect(out).toMatch(/<svg class="ink" viewBox="[-\d ]+"/)
-    // One path per visible letter ("threemoves" = 10).
-    expect((out.match(/<path d="/g) || []).length).toBe(10)
+    // Strokes, in writing order, each normalised so it can be drawn on.
+    const strokes = out.match(/<path d="M[^"]+" pathLength="1" data-l="\d+"\/>/g) || []
+    expect(strokes.length).toBeGreaterThan(3)
+    expect(out).toContain('class="ink__pen"')
     expect(out).toContain('data-write')
   })
 
@@ -89,16 +91,22 @@ describe('handwriting', () => {
     expect(out).not.toContain('data-scale')
   })
 
+  it('drops the old swash attribute rather than drawing an underline', () => {
+    const out: string = inkify('<span class="script" data-swash>control</span>')
+    expect(out).not.toContain('data-swash')
+    expect(out).not.toMatch(/ink__(swash|trail|nib)/)
+  })
+
   it('gives every word on a page its own ids', () => {
     const out: string = inkify('<span class="script">a</span><span class="script">b</span>')
     const ids = [...out.matchAll(/id="(ink\d+)i"/g)].map((m) => m[1])
     expect(new Set(ids).size).toBe(2)
   })
 
-  it('uses the same ink in both themes', () => {
-    // The gradient is written into the SVG, not read from theme tokens.
+  it('takes its ink from the theme, so it reads on bone and on charcoal', () => {
     const out: string = inkify('<span class="script">ink</span>')
-    expect(out).toMatch(/stop-color="#[0-9a-f]{6}"/)
-    expect(out).not.toMatch(/var\(--/)
+    expect(out).toContain('class="ink__a"')
+    expect(out).toContain('class="ink__c"')
+    expect(out).not.toMatch(/stop-color="#/)
   })
 })

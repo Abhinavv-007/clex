@@ -43,9 +43,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (page === 'home') {
     import('./hero.js').then((m) => m.initHero());
   }
-  if (document.querySelector('[data-flow], [data-chunks], [data-cipher], [data-chain-demo], [data-terminal], [data-chain-stats], [data-scrub], [data-globe]')) {
-    import('./scenes.js').then((m) => m.initScenes());
-  }
+  import('./scenes/index.js').then((m) => {
+    if (document.querySelector(m.SCENE_SELECTOR)) m.initScenes();
+  });
 
   await initIslands(page);
   await initPage(page);
@@ -55,6 +55,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 async function initPage(name) {
   try {
     if (name === 'developers') {
+      const { initApiStatus, initApiPlayground } = await import('./api-playground.js');
+      void initApiStatus();
+      initApiPlayground();
       const { initDeveloperAccess } = await import('./developer-access.js');
       await initDeveloperAccess();
     } else if (name === 'faq') {

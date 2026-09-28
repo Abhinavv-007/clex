@@ -1,361 +1,362 @@
 <script lang="ts">
+  /**
+   * The receipt at the end of a transfer, as an actual receipt: it prints
+   * out when the transfer completes, and it can be kept — saved as an image,
+   * shared, or copied as text. It holds no file names and no content.
+   */
   import { transferStore } from '$stores/transfer'
-  import { formatBytes, formatDuration } from '$utils/format'
+  import {
+    receiptBars,
+    receiptFileName,
+    receiptLines,
+    receiptPng,
+    receiptText,
+  } from '$utils/receiptExport'
 
   $: receipt = $transferStore.receipt
+  $: lines = receipt ? receiptLines(receipt) : []
+  $: bars = receipt ? receiptBars(receipt) : []
 
-  let copiedField: 'id' | 'hash' | null = null
-  let copyTimer: ReturnType<typeof setTimeout> | null = null
+  let note = ''
+  let noteTimer: ReturnType<typeof setTimeout> | null = null
+  let busy = false
 
-  async function copyValue(value: string, field: 'id' | 'hash') {
-    try {
-      await navigator.clipboard.writeText(value)
-      copiedField = field
-      if (copyTimer) clearTimeout(copyTimer)
-      copyTimer = setTimeout(() => { copiedField = null }, 1400)
-    } catch {
-      // clipboard may be denied — silently no-op rather than alarming the user
-    }
+  function flash(message: string) {
+    note = message
+    if (noteTimer) clearTimeout(noteTimer)
+    noteTimer = setTimeout(() => { note = '' }, 1800)
   }
 
   function midTruncate(value: string, head = 12, tail = 8): string {
     if (value.length <= head + tail + 1) return value
     return `${value.slice(0, head)}…${value.slice(-tail)}`
   }
+
+  async function copy(text: string, done: string) {
+    try {
+      await navigator.clipboard.writeText(text)
+      flash(done)
+    } catch {
+      flash('Copy was blocked by the browser')
+    }
+  }
+
+  async function saveImage() {
+    if (!receipt || busy) return
+    busy = true
+    try {
+      const blob = await receiptPng(receipt)
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = receiptFileName(receipt)
+      document.body.append(a)
+      a.click()
+      a.remove()
+      setTimeout(() => URL.revokeObjectURL(url), 2000)
+      flash('Saved as an image')
+    } catch {
+      flash('Could not make the image')
+    } finally {
+      busy = false
+    }
+  }
+
+  async function share() {
+    if (!receipt || busy) return
+    busy = true
+    const text = receiptText(receipt)
+    try {
+      const blob = await receiptPng(receipt)
+      const file = new File([blob], receiptFileName(receipt), { type: 'image/png' })
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file], title: 'Clex transfer receipt', text })
+        flash('Shared')
+      } else if (navigator.share) {
+        await navigator.share({ title: 'Clex transfer receipt', text })
+        flash('Shared')
+      } else {
+        await copy(text, 'Copied, ready to paste')
+      }
+    } catch (err) {
+      // Closing the share sheet is not an error worth showing.
+      if ((err as DOMException)?.name !== 'AbortError') await copy(text, 'Copied, ready to paste')
+    } finally {
+      busy = false
+    }
+  }
 </script>
 
 {#if receipt}
-  <div class="tr-card">
-    <header class="tr-head">
-      <div class="tr-badge" class:tr-badge--ok={receipt.verified} class:tr-badge--warn={!receipt.verified}>
-        <span class="tr-badge__dot" />
-        {receipt.verified ? 'Verified receipt' : 'Unverified receipt'}
-      </div>
-      <button
-        type="button"
-        class="tr-id"
-        title="Copy transfer ID"
-        on:click={() => copyValue(receipt.transferId, 'id')}
-      >
-        <span class="tr-id__label">ID</span>
-        <span class="tr-id__value">{midTruncate(receipt.transferId, 6, 4)}</span>
-        <span class="tr-id__copy">{copiedField === 'id' ? '✓' : '⧉'}</span>
-      </button>
-    </header>
+  <div class="rc">
+    <div class="rc-slot" aria-hidden="true"></div>
+    <article class="rc-paper" aria-label="Transfer receipt">
+      <header class="rc-head">
+        <b class="rc-brand">CLEX</b>
+        <span class="rc-kind">Transfer receipt</span>
+      </header>
 
-    <dl class="tr-grid">
-      <div class="tr-cell">
-        <dt>Files</dt>
-        <dd>{receipt.fileCount}</dd>
-      </div>
-      <div class="tr-cell">
-        <dt>Size</dt>
-        <dd>{formatBytes(receipt.totalSize)}</dd>
-      </div>
-      <div class="tr-cell">
-        <dt>Chunks</dt>
-        <dd>{receipt.totalChunks} <span class="tr-mute">×</span> {formatBytes(receipt.chunkSize)}</dd>
-      </div>
-      <div class="tr-cell">
-        <dt>Route</dt>
-        <dd class="tr-cap">{receipt.route}</dd>
-      </div>
-      <div class="tr-cell">
-        <dt>Duration</dt>
-        <dd>{formatDuration(receipt.durationMs)}</dd>
-      </div>
-      <div class="tr-cell">
-        <dt>Retries</dt>
-        <dd>{receipt.retryCount}</dd>
-      </div>
-      <div class="tr-cell">
-        <dt>Failed</dt>
-        <dd>{receipt.failedChunkCount}</dd>
-      </div>
-      <div class="tr-cell">
-        <dt>Health</dt>
-        <dd>{receipt.healthScore}<span class="tr-mute">/100</span></dd>
-      </div>
-    </dl>
+      <dl class="rc-lines">
+        {#each lines as line, i}
+          <div style="--i:{i}"><dt>{line.label}</dt><dd>{line.value}</dd></div>
+        {/each}
+      </dl>
 
-    {#if receipt.rootHash}
-      {@const rootHashValue = receipt.rootHash}
-      <div class="tr-hash-block">
-        <span class="tr-hash-key">Proof root</span>
-        <button
-          type="button"
-          class="tr-hash"
-          title={rootHashValue}
-          on:click={() => copyValue(rootHashValue, 'hash')}
-        >
-          <span class="tr-hash__value">{midTruncate(rootHashValue, 14, 10)}</span>
-          <span class="tr-hash__copy">{copiedField === 'hash' ? 'Copied ✓' : 'Copy ⧉'}</span>
+      {#if receipt.rootHash}
+        {@const rootHashValue = receipt.rootHash}
+        <button type="button" class="rc-root" title="Copy the proof root" on:click={() => copy(rootHashValue, 'Proof root copied')}>
+          <span>Proof root</span>
+          <code>{midTruncate(rootHashValue, 10, 6)}</code>
         </button>
+      {/if}
+
+      <div class="rc-bars" aria-hidden="true">
+        {#each bars as b}<i style="flex:{Math.max(1, b)};opacity:{b ? 1 : 0}"></i>{/each}
       </div>
-    {/if}
+
+      <div class="rc-stamp" class:rc-stamp--warn={!receipt.verified}>
+        {receipt.verified ? 'Verified · no content kept' : 'Not verified'}
+      </div>
+      <p class="rc-foot">No file names or contents recorded</p>
+    </article>
+
+    <div class="rc-actions">
+      <button type="button" class="rc-btn rc-btn--primary" on:click={share} disabled={busy}>
+        <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M8 10V2.5M5 5.5 8 2.5l3 3M3.5 8.5v4a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1v-4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+        Share
+      </button>
+      <button type="button" class="rc-btn" on:click={saveImage} disabled={busy}>
+        <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M8 2.5V10M5 7l3 3 3-3M3 13.5h10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+        Image
+      </button>
+      <button type="button" class="rc-btn" on:click={() => receipt && copy(receiptText(receipt), 'Receipt copied as text')}>
+        <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><rect x="5" y="5" width="8.5" height="8.5" rx="1.6" fill="none" stroke="currentColor" stroke-width="1.5" /><path d="M11 5V3.8A1.3 1.3 0 0 0 9.7 2.5H3.8A1.3 1.3 0 0 0 2.5 3.8v5.9A1.3 1.3 0 0 0 3.8 11H5" fill="none" stroke="currentColor" stroke-width="1.5" /></svg>
+        Text
+      </button>
+    </div>
+    <p class="rc-note" aria-live="polite">{note}</p>
   </div>
 {/if}
 
 <style>
-  .tr-card {
+  .rc {
+    position: relative;
+    display: grid;
+    justify-items: center;
+    gap: 10px;
     width: 100%;
-    max-width: 100%;
-    box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    padding: 14px;
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    background: var(--surface-2);
     min-width: 0;
-    overflow: hidden;
   }
 
-  .tr-head {
+  /* The printer's slot the receipt comes out of. */
+  .rc-slot {
+    width: calc(100% - 8px);
+    max-width: 320px;
+    height: 8px;
+    border-radius: 6px;
+    background: linear-gradient(180deg, #151412, #2a2925);
+    box-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.7);
+  }
+
+  .rc-paper {
+    --tooth: 7px;
+    position: relative;
+    display: grid;
+    gap: 10px;
+    width: calc(100% - 24px);
+    max-width: 296px;
+    margin-top: -8px;
+    padding: 20px 16px 18px;
+    background:
+      linear-gradient(180deg, rgba(0, 0, 0, 0.05), transparent 18px),
+      #fbfaf5;
+    color: #2a2823;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    line-height: 1.35;
+    filter: drop-shadow(0 12px 18px rgba(40, 32, 18, 0.16));
+    -webkit-mask:
+      conic-gradient(from -45deg at 50% 100%, #0000, #000 1deg 89deg, #0000 90deg) 50% 100% / calc(var(--tooth) * 2) 51% repeat-x,
+      conic-gradient(from 135deg at 50% 0, #0000, #000 1deg 89deg, #0000 90deg) 50% 0 / calc(var(--tooth) * 2) 51% repeat-x;
+    mask:
+      conic-gradient(from -45deg at 50% 100%, #0000, #000 1deg 89deg, #0000 90deg) 50% 100% / calc(var(--tooth) * 2) 51% repeat-x,
+      conic-gradient(from 135deg at 50% 0, #0000, #000 1deg 89deg, #0000 90deg) 50% 0 / calc(var(--tooth) * 2) 51% repeat-x;
+    transform-origin: 50% 0;
+    animation: rc-print 1100ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+
+  @keyframes rc-print {
+    from { clip-path: inset(0 0 100% 0); transform: translateY(-14px); }
+    to { clip-path: inset(0 0 -40px 0); transform: none; }
+  }
+
+  .rc-head {
+    display: grid;
+    justify-items: center;
+    gap: 2px;
+    padding-bottom: 10px;
+    border-bottom: 1.5px dashed #b9b3a8;
+  }
+
+  .rc-brand {
+    font-family: var(--font-sans);
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 0.34em;
+    padding-left: 0.34em;
+  }
+
+  .rc-kind {
+    font-size: 9px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: #6b665c;
+  }
+
+  .rc-lines {
+    display: grid;
+    gap: 4px;
+    margin: 0;
+    padding-bottom: 10px;
+    border-bottom: 1.5px dashed #b9b3a8;
+  }
+
+  .rc-lines div {
     display: flex;
-    align-items: center;
     justify-content: space-between;
     gap: 10px;
-    flex-wrap: wrap;
-    min-width: 0;
+    animation: rc-line 300ms ease-out both;
+    animation-delay: calc(250ms + var(--i) * 60ms);
   }
 
-  .tr-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 4px 10px;
-    border-radius: 999px;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    flex: 1 1 140px;
-    min-width: 0;
-    white-space: nowrap;
+  @keyframes rc-line {
+    from { opacity: 0; }
   }
 
-  .tr-badge__dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 999px;
-    background: currentColor;
+  .rc-lines dt {
+    color: #6b665c;
   }
 
-  .tr-badge--ok {
-    background: rgba(34, 197, 94, 0.12);
-    color: var(--green);
-    border: 1px solid rgba(34, 197, 94, 0.3);
-  }
-
-  .tr-badge--warn {
-    background: rgba(245, 158, 11, 0.12);
-    color: var(--amber);
-    border: 1px solid rgba(245, 158, 11, 0.3);
-  }
-
-  .tr-id {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 3px 10px;
-    border-radius: 999px;
-    border: 1px solid var(--border);
-    background: rgba(255,255,255,0.03);
-    color: var(--text-2);
-    font-size: 11px;
-    cursor: pointer;
-    transition: background 150ms ease, border-color 150ms ease;
-    min-width: 0;
-    max-width: 100%;
-    flex: 1 1 150px;
-    justify-content: flex-end;
-    overflow: hidden;
-  }
-
-  .tr-id:hover { background: rgba(255,255,255,0.06); border-color: var(--border-hard); color: var(--text-1); }
-
-  .tr-id__label {
-    font-family: var(--font-mono);
-    font-size: 9px;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--text-3);
-  }
-
-  .tr-id__value {
-    font-family: var(--font-mono);
-    color: var(--text-1);
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .tr-id__copy {
-    font-size: 10px;
-    opacity: 0.7;
-  }
-
-  .tr-grid {
-    display: grid;
-    /* auto-fit, not a fixed pair. The two-column layout only collapsed at a
-       viewport media query, but this card lives in a ~248px workspace column
-       on a 1440px screen — the query never fired, both columns squeezed to
-       ~110px, and every value truncated: "SIZE 12 …", "CHUNKS 1.", "ROUTE W…"
-       and a DURATION with nothing beside it. Sizing on the container instead
-       means it drops to one column wherever it is actually narrow. */
-    grid-template-columns: repeat(auto-fit, minmax(148px, 1fr));
-    gap: 4px 14px;
+  .rc-lines dd {
     margin: 0;
-    min-width: 0;
-  }
-
-  .tr-cell {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    padding: 4px 0;
-    border-top: 1px dashed rgba(255, 255, 255, 0.06);
-    min-width: 0;
-  }
-
-  .tr-cell dt {
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--text-3);
-    flex-shrink: 0;
-  }
-
-  .tr-cell dd {
-    margin: 0;
-    font-family: var(--font-mono);
-    font-size: 12px;
-    color: var(--text-1);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
     text-align: right;
-    min-width: 0;
-    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
-  .tr-cap { text-transform: uppercase; letter-spacing: 0.05em; font-size: 11px !important; }
-
-  .tr-mute { color: var(--text-3); margin: 0 2px; }
-
-  .tr-hash-block {
+  .rc-root {
     display: flex;
-    flex-direction: column;
-    gap: 6px;
-    padding: 10px 12px;
-    border-radius: 10px;
-    background: rgba(34, 197, 94, 0.05);
-    border: 1px solid rgba(34, 197, 94, 0.2);
-    min-width: 0;
-  }
-
-  .tr-hash-key {
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--text-3);
-  }
-
-  .tr-hash {
-    display: flex;
-    align-items: center;
     justify-content: space-between;
     gap: 10px;
     padding: 0;
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    color: var(--text-1);
-    min-width: 0;
-    width: 100%;
-    overflow: hidden;
+    border: 0;
+    background: none;
+    font: inherit;
+    color: #6b665c;
+    cursor: copy;
   }
 
-  .tr-hash__value {
-    font-family: var(--font-mono);
-    font-size: 12px;
-    color: var(--text-1);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    min-width: 0;
+  .rc-root code {
+    color: #2e6a4f;
   }
 
-  .tr-hash__copy {
-    font-family: var(--font-mono);
-    font-size: 10px;
+  .rc-bars {
+    display: flex;
+    gap: 1.5px;
+    height: 28px;
+    margin: 2px 4px 0;
+  }
+
+  .rc-bars i {
+    background: #2a2823;
+  }
+
+  .rc-stamp {
+    justify-self: center;
+    padding: 4px 10px;
+    border: 1.5px solid #2e6a4f;
+    border-radius: 4px;
+    color: #2e6a4f;
+    font-size: 9.5px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--green);
-    flex-shrink: 0;
-    padding: 2px 8px;
-    border-radius: 999px;
-    border: 1px solid rgba(34, 197, 94, 0.3);
-    background: rgba(34, 197, 94, 0.08);
-    transition: background 150ms ease;
+    transform: rotate(-3deg);
+    animation: rc-stamp 420ms cubic-bezier(0.34, 1.36, 0.64, 1) 1100ms both;
   }
 
-  .tr-hash:hover .tr-hash__copy {
-    background: rgba(34, 197, 94, 0.18);
+  .rc-stamp--warn {
+    border-color: #93650f;
+    color: #93650f;
   }
 
-  @media (max-width: 640px) {
-    .tr-card {
-      gap: 10px;
-      padding: 12px;
-      border-radius: 12px;
-    }
+  @keyframes rc-stamp {
+    from { opacity: 0; transform: rotate(-3deg) scale(1.8); }
+  }
 
-    .tr-head {
-      gap: 8px;
-    }
+  .rc-foot {
+    margin: 0;
+    text-align: center;
+    font-size: 9px;
+    color: #9a9488;
+  }
 
-    .tr-badge,
-    .tr-id {
-      flex-basis: 100%;
-      justify-content: center;
-    }
+  .rc-actions {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr 1fr;
+    gap: 6px;
+    width: 100%;
+    max-width: 320px;
+  }
 
-    .tr-grid {
-      grid-template-columns: 1fr;
-      gap: 2px;
-    }
+  .rc-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    height: 34px;
+    padding: 0 10px;
+    border: 1px solid var(--border-strong);
+    border-radius: 10px;
+    background: var(--surface);
+    color: var(--text-1);
+    font-family: var(--font-sans);
+    font-size: 12.5px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 150ms, border-color 150ms, transform 200ms var(--spring);
+  }
 
-    .tr-cell {
-      gap: 10px;
-    }
+  .rc-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    border-color: var(--border-focus);
+  }
 
-    .tr-cell dd {
-      white-space: normal;
-      overflow-wrap: anywhere;
-    }
+  .rc-btn:disabled {
+    opacity: 0.6;
+    cursor: progress;
+  }
 
-    .tr-hash {
-      flex-wrap: wrap;
-      justify-content: center;
-      text-align: center;
-    }
+  .rc-btn--primary {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: var(--accent-fg);
+  }
 
-    .tr-hash__value {
-      flex: 1 1 100%;
-      white-space: normal;
-      overflow-wrap: anywhere;
-    }
+  .rc-note {
+    min-height: 1.2em;
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--accent-text);
+  }
 
-    .tr-hash-block {
-      padding: 10px;
-    }
-
-    .tr-hash__copy {
-      padding-inline: 7px;
+  @media (prefers-reduced-motion: reduce) {
+    .rc-paper,
+    .rc-lines div,
+    .rc-stamp {
+      animation: none;
     }
   }
 </style>

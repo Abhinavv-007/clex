@@ -4,19 +4,539 @@
   <!-- @head -->
   <title>FAQ — Clex</title>
   <meta name="description" content="Answers about Clex: how peer-to-peer transfer works, privacy and encryption, Direct+ reliability, Vault, the developer API, file limits and browser support.">
+  <script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "FAQPage",
+ "mainEntity": [
+  {
+   "@type": "Question",
+   "name": "How do I send a file?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Open clex.in, drop the file into the workspace and press share. Clex gives you a six character code, a link and a QR. Send any of them to the other person. When they open it, their browser connects to yours and the file streams across."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "How do I receive a file?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Open clex.in/receive and type the code, open the link you were sent, or scan the QR with your phone camera. The file arrives in your browser, checked chunk by chunk, and you save it from there."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Does the other person need an account or an app?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "No. Both sides only need a modern browser. There is nothing to install and nothing to sign up for."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "How does peer to peer transfer work?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Clex uses WebRTC to connect your browser directly to the other one. A small signaling server helps the two browsers find each other by passing along connection details. Once they are connected, the file streams straight from your browser to theirs. No server stores or relays the file."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "What is the local route?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "When both devices are on the same network, the local route offers only local addresses, so the transfer never leaves your network. If the connection would go out over the internet, Clex stops and tells you instead. It is ideal for big files between your own devices."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Do both browsers need to stay open?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Yes. Both tabs need to stay open until the transfer finishes, and both devices need to be online at the same time. Clex has no server holding the file in between."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "How long does a share code work?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "A code works while your tab is open and waiting. Close the tab and the code stops working, because there is nothing stored anywhere for it to point at."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Can I send several files at once?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Yes. Drop as many as you like and send them together in one transfer. You can also bundle them into a single ZIP first with the ZIP tool."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "What if the two browsers can't connect?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Some strict networks block direct connections. Clex has no relay server, so it tells you plainly rather than quietly uploading your file somewhere. Trying another network, or the local route when you share one, usually works."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Why is my transfer slower than expected?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "A direct transfer runs at the speed of the slower of the two connections, and busy Wi-Fi or a phone on mobile data will set the pace. If both devices are nearby, the local route keeps the transfer on your network and is usually much faster."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Can I send from my phone?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Yes. The workspace works in mobile browsers, and on Android the Clex Link app finds nearby devices on your network without any code."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "What is Clex Direct+?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Direct+ is the reliability layer on direct transfers: a manifest of every chunk, an acknowledgement for each one, retries for anything lost, pause and resume, and a verified receipt at the end."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Can I pause a transfer?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Yes. While a transfer is running there is a pause button. The connection stays open and the receiver keeps what has arrived. Resume picks up from the next pending chunk, not from the start."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "What happens if the connection drops?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Within the same session, each side knows which chunks are verified, so only the missing ones are sent again. If both tabs close before the end, the session is over and you start a new one. Chunk state lives in the browser, not on a server."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "How do I know the file arrived intact?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "The receiver checks every chunk's size against the manifest and, within the hashing budget, its SHA-256. When everything lines up, both sides build a verified receipt: file count, size, chunks, retries, health and an optional root hash. The receipt holds no file content."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "What is in the receipt, and how do I keep it?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "The route, the number of files, the total size, the chunk count and size, the duration, retries, failed chunks, the health score and a proof root. No file names and no contents. When a transfer finishes you can share the receipt, save it as an image or copy it as text."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "What does the health score mean?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "It is a live 0 to 100 reading of the transfer: connection stability, retries, failed chunks and backpressure. Above 90 is clean. The middle range usually means a few retries, which is the safety net working. Low scores mean the network is genuinely struggling."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "What if the other person has an older version?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "The two sides compare what they support before anything is sent. If either one lacks Direct+, they agree on the classic transfer instead, automatically."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Why 64 KB chunks?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Small chunks are cheap to check and cheap to resend. With up to 8 MB in flight at once, the transfer still moves at full speed while every piece stays accounted for."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Are my files stored on Clex servers?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Not for workspace transfers. Direct and local transfers exist only in the two browsers. The signaling server only passes connection details and never sees file data. Files you upload through the developer API are the one exception: they are stored until the expiry you choose, so they can be downloaded by link."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Can Clex see what I send?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "No. A workspace transfer is encrypted from one browser to the other, and no Clex server is in the path of the file. We never see its name, its size on the wire or its contents."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Is the transfer encrypted?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Yes. WebRTC data channels are always encrypted with DTLS, from one browser to the other. There is no server in the path that could decrypt them."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "What does the signaling server see?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Only what two browsers need to find each other: session offers, answers and connection candidates, which include network addresses. It passes them along and steps aside. It never sees file names, file bytes or Vault data."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Do I need an account?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "No. Transfers, tools, Vault and API keys all work without one. Signing in with Google is optional and only adds Vault recovery and higher API limits."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Do you use cookies, analytics or trackers?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "No. There are no HTTP cookies, no analytics or telemetry, no advertising pixels and no device fingerprinting. The storage page lists every item Clex keeps in your browser and why."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "What does Clex keep in my browser?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Your theme choice and whether you have seen the storage notice. If you use Vault, its encrypted notes and your keys, in IndexedDB. If you create an API key, the key for that tab only, in session storage. Clearing site data removes all of it."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Does the public chain record anything about me?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Each transfer adds an anonymous record: a random ID your browser made for itself, the route, file categories, types and sizes, SHA-256 hashes and the status times. Never file names, never contents, never IP addresses, and nothing that names a person."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Who can use my share code or link?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Treat it like a key. Anyone who has it can connect while your tab is waiting. Send it only to the person you mean, and close the tab when you are done."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Are API uploads encrypted?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "They travel over HTTPS and are stored with Cloudflare until they expire. They are not end to end encrypted: anyone with the share link can download the file until it expires or you revoke it. For something sensitive, encrypt it before uploading, or use a direct transfer."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "What happens to an API upload when it expires?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "The link stops working at once and answers that the share has expired. The stored bytes are removed by a cleanup that runs every hour. Revoking an upload yourself works the same way, immediately."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Do you sell or share data?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "No. There is nothing to sell: Clex does not collect personal data for advertising, and it is not shared with anyone for that purpose."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Which third parties are involved?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Cloudflare serves the site and runs the API. Google Fonts serves the typefaces. Firebase Authentication handles Google sign-in, only if you choose to sign in. None of them see the files you transfer."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Is Clex open source?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Yes. The code for the site, the workers and the apps is on GitHub, so anyone can check what it does."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "How do I report a security problem?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Email abhnv@abhnv.in with the details and how to reproduce it. Please give us a chance to fix it before sharing it publicly. Every report gets a reply."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Where are Vault notes stored?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "In your browser, encrypted before they are written to its local database. Your device holds the primary copy. Vault can sync between devices you pair, and notes never appear on the public chain."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Does Vault back up my notes to a server?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Yes, as ciphertext only. Vault keeps an encrypted snapshot on the Clex API so a paired or signed-in device can restore your notes. It is encrypted in your browser with your vault key before it leaves, and the key is never sent. The server can see how many notes and folders there are and when the backup changed, not what they say."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "What happens if I clear my browser data?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "The notes and the keys on that device are deleted together. You can get them back from a paired device, or from the encrypted backup if you signed in with Google or kept an export of your key. Without any of those, the notes cannot be recovered, by design."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "How do I use Vault on another device?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Open Devices and keys in Vault and pair the new device with a short code. Your notes sync between the two, peer to peer. Signing in with Google on both also brings them into the same vault."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "What does the key fingerprint mean?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "It is the first eight characters of a hash of your vault key, shown in the Vault bar. Two devices that show the same fingerprint share the same vault."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Can I export my notes or my key?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Yes. Devices and keys has an export of your key and of your data, so you can keep a copy somewhere safe."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Are secret links always one time?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Only if you switch on view once. Otherwise the recipient can open the link again until it expires."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Does a secret link's key reach the server?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "No. The key sits after the # in the link, and browsers never send that part to any server. The server only ever holds the encrypted secret."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "What do the secret link protections do?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "You choose per link: view once, a 60 second viewing window, no select, a tab switch lock and a DevTools guard. Only the ones you switch on apply. Keeping the secret in memory only is always on."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Do Vault notes appear on the chain?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "No. The public chain records workspace transfer metadata only. Notes and secret links stay out of it entirely."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "What is the transfer chain?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "A public, append only ledger of anonymous transfer records. It lets anyone check that a delivery happened without revealing what was delivered or who delivered it. You can browse it on the Chain page."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Why link records by hash?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Every record carries the hash of the one before it. Change any record and every hash after it stops matching, so tampering is easy to spot."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Can someone find my transfers on the chain?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Only by the random ID your own browser made, which is kept on your device and is not tied to you. Records hold no names, no contents and no IP addresses."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Is the API live?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Yes, at clex.in/vault/api. You can mint a key and upload a file from the Developers page right now, or with one curl command."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Can I use Clex from a script or terminal?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Yes. Mint a key on the Developers page, then upload with one HTTP call from any language, or with the Clex CLI. You get a share link back that anyone can open."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "How is an API upload different from a workspace transfer?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "A workspace transfer is live and browser to browser, with nothing stored. An API upload is stored until its expiry, 24 hours by default and at most 7 days, so the recipient can download it whenever they like. You can revoke it at any time."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "What are the API limits?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "A key made without an account allows 100 MB per file and 60 requests a minute, with up to three keys per device. Signing in on the account page raises those limits."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "I lost my API key?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Clex stores only a hash of each key, so it cannot show it to you again. Mint a new one and revoke the old one if you still have it."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "How do I revoke a key or an upload?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Rotate the key on the Developers page, or send DELETE /vault/api/keys/self with it. To revoke an upload, send DELETE /vault/api/uploads/:id. Both stop working immediately."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Can I choose how long a link lasts?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Yes. Send X-Expires-In in seconds, from 5 minutes to 7 days. Without it, links last 24 hours."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Is there a file size limit?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "For browser to browser transfers the limit is the memory your browser can use, usually several gigabytes. For very large files, the local route between nearby devices works best."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "What can the tools process?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Images (compress and convert between JPEG, PNG, WebP), PDFs (merge, split, export pages as images), Word documents to PDF, and ZIP bundles of anything. You can send any file type, even without a tool for it."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Does Clex change my files?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Only if you run a tool on them, and then you choose which version to send. A transfer delivers exactly the bytes you sent, and Direct+ checks that they match."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Can I use the tools without sharing?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Of course. Drop files, prepare them and download the results. Clex works perfectly well as a private file toolbox."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Which browsers work?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Any modern browser with WebRTC: Chrome, Safari, Firefox and Edge, on desktop and mobile. The workspace adapts to small screens with everything still there."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Does it work offline?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "The preparation tools do, after the first visit. Sending needs a connection, since it has to reach the other device, so prepare offline and share when you are back."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Is there an app?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "On Android, Clex Link is available as an APK from GitHub, with Play Store and App Store releases on the way. On any other device, the browser is the app."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Who makes Clex?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Clex is built by Abhinav Raj. You can see more of his work at abhnv.in."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Is Clex free?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Yes. Transfers, tools, Vault and API keys cost nothing, with no account needed."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "How do I get in touch?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Email abhnv@abhnv.in. A real person reads every message, whether it is a question, a bug or an idea."
+   }
+  }
+ ]
+}
+  </script>
   <link rel="stylesheet" href="/css/pages/pages.css">
 </head>
 <body data-page="faq">
   <!-- @nav -->
 
   <main id="main">
-    <header class="page-head stage-head tone-dark">
+    <header class="page-head stage-head">
       <canvas class="stream-canvas" data-stream="soft" aria-hidden="true"></canvas>
       <div class="stream-veil" aria-hidden="true"></div>
       <div class="container page-head__inner">
         <span class="eyebrow eyebrow--center" data-reveal>FAQ</span>
         <h1 data-split>Questions, <span class="script" data-write="now" data-delay="520">answered</span></h1>
-        <p class="lede" data-reveal style="--d:700">How Clex handles your files, your privacy and your transfers</p>
+        <p class="lede" data-reveal style="--d:700">64 answers on how Clex handles your files, your privacy and your transfers</p>
       </div>
     </header>
 
@@ -35,14 +555,25 @@
             <button type="button" class="faq-topic" data-faq-topic="direct-plus" aria-pressed="false">Direct+</button>
             <button type="button" class="faq-topic" data-faq-topic="privacy" aria-pressed="false">Privacy</button>
             <button type="button" class="faq-topic" data-faq-topic="vault" aria-pressed="false">Vault</button>
+            <button type="button" class="faq-topic" data-faq-topic="chain" aria-pressed="false">Chain</button>
             <button type="button" class="faq-topic" data-faq-topic="developers" aria-pressed="false">Developers</button>
             <button type="button" class="faq-topic" data-faq-topic="files" aria-pressed="false">Files and browsers</button>
+            <button type="button" class="faq-topic" data-faq-topic="about" aria-pressed="false">About</button>
           </div>
           <p class="faq-count mono" data-faq-count aria-live="polite"></p>
         </div>
 
         <div class="faq-group" data-faq-group="transfer" id="transfer">
           <h2 class="faq-group__title">Transfers</h2>
+          <details class="qa"><summary>How do I send a file<span class="qa__icon" aria-hidden="true"></span></summary><div class="qa__body"><div>
+            <p>Open clex.in, drop the file into the workspace and press share. Clex gives you a six character code, a link and a QR. Send any of them to the other person. When they open it, their browser connects to yours and the file streams across.</p>
+          </div></div></details>
+          <details class="qa"><summary>How do I receive a file<span class="qa__icon" aria-hidden="true"></span></summary><div class="qa__body"><div>
+            <p>Open <a class="link" href="/receive">clex.in/receive</a> and type the code, open the link you were sent, or scan the QR with your phone camera. The file arrives in your browser, checked chunk by chunk, and you save it from there.</p>
+          </div></div></details>
+          <details class="qa"><summary>Does the other person need an account or an app<span class="qa__icon" aria-hidden="true"></span></summary><div class="qa__body"><div>
+            <p>No. Both sides only need a modern browser. There is nothing to install and nothing to sign up for.</p>
+          </div></div></details>
           <details class="qa"><summary>How does peer to peer transfer work<span class="qa__icon" aria-hidden="true"></span></summary><div class="qa__body"><div>
             <p>Clex uses WebRTC to connect your browser directly to the other one. A small signaling server helps the two browsers find each other by passing along connection details. Once they are connected, the file streams straight from your browser to theirs. No server stores or relays the file.</p>
           </div></div></details>
@@ -52,13 +583,28 @@
           <details class="qa"><summary>Do both browsers need to stay open<span class="qa__icon" aria-hidden="true"></span></summary><div class="qa__body"><div>
             <p>Yes. Both tabs need to stay open until the transfer finishes, and both devices need to be online at the same time. Clex has no server holding the file in between.</p>
           </div></div></details>
-          <details class="qa"><summary>What if the two browsers can't connect<span class="qa__icon" aria-hidden="true"></span></summary><div class="qa__body"><div>
+          <details class="qa"><summary>How long does a share code work<span class="qa__icon" aria-hidden="true"></span></summary><div class="qa__body"><div>
+            <p>A code works while your tab is open and waiting. Close the tab and the code stops working, because there is nothing stored anywhere for it to point at.</p>
+          </div></div></details>
+          <details class="qa"><summary>Can I send several files at once<span class="qa__icon" aria-hidden="true"></span></summary><div class="qa__body"><div>
+            <p>Yes. Drop as many as you like and send them together in one transfer. You can also bundle them into a single ZIP first with the ZIP tool.</p>
+          </div></div></details>
+          <details class="qa"><summary>What if the two browsers can&#x27;t connect<span class="qa__icon" aria-hidden="true"></span></summary><div class="qa__body"><div>
             <p>Some strict networks block direct connections. Clex has no relay server, so it tells you plainly rather than quietly uploading your file somewhere. Trying another network, or the local route when you share one, usually works.</p>
+          </div></div></details>
+          <details class="qa"><summary>Why is my transfer slower than expected<span class="qa__icon" aria-hidden="true"></span></summary><div class="qa__body"><div>
+            <p>A direct transfer runs at the speed of the slower of the two connections, and busy Wi-Fi or a phone on mobile data will set the pace. If both devices are nearby, the local route keeps the transfer on your network and is usually much faster.</p>
+          </div></div></details>
+          <details class="qa"><summary>Can I send from my phone<span class="qa__icon" aria-hidden="true"></span></summary><div class="qa__body"><div>
+            <p>Yes. The workspace works in mobile browsers, and on Android the Clex Link app finds nearby devices on your network without any code.</p>
           </div></div></details>
         </div>
 
         <div class="faq-group" data-faq-group="direct-plus" id="direct-plus">
           <h2 class="faq-group__title">Direct+</h2>
+          <details class="qa"><summary>What is Clex Direct+<span class="qa__icon" aria-hidden="true"></span></summary><div class="qa__body"><div>
+            <p>Direct+ is the reliability layer on direct transfers: a manifest of every chunk, an acknowledgement for each one, retries for anything lost, pause and resume, and a verified receipt at the end.</p>
+          </div></div></details>
           <details class="qa"><summary>Can I pause a transfer<span class="qa__icon" aria-hidden="true"></span></summary><div class="qa__body"><div>
             <p>Yes. While a transfer is running there is a pause button. The connection stays open and the receiver keeps what has arrived. Resume picks up from the next pending chunk, not from the start.</p>
           </div></div></details>
@@ -68,8 +614,17 @@
           <details class="qa"><summary>How do I know the file arrived intact<span class="qa__icon" aria-hidden="true"></span></summary><div class="qa__body"><div>
             <p>The receiver checks every chunk's size against the manifest and, within the hashing budget, its SHA-256. When everything lines up, both sides build a verified receipt: file count, size, chunks, retries, health and an optional root hash. The receipt holds no file content.</p>
           </div></div></details>
+          <details class="qa"><summary>What is in the receipt, and how do I keep it<span class="qa__icon" aria-hidden="true"></span></summary><div class="qa__body"><div>
+            <p>The route, the number of files, the total size, the chunk count and size, the duration, retries, failed chunks, the health score and a proof root. No file names and no contents. When a transfer finishes you can share the receipt, save it as an image or copy it as text.</p>
+          </div></div></details>
           <details class="qa"><summary>What does the health score mean<span class="qa__icon" aria-hidden="true"></span></summary><div class="qa__body"><div>
             <p>It is a live 0 to 100 reading of the transfer: connection stability, retries, failed chunks and backpressure. Above 90 is clean. The middle range usually means a few retries, which is the safety net working. Low scores mean the network is genuinely struggling.</p>
+          </div></div></details>
+          <details class="qa"><summary>What if the other person has an older version<span class="qa__icon" aria-hidden="true"></span></summary><div class="qa__body"><div>
+            <p>The two sides compare what they support before anything is sent. If either one lacks Direct+, they agree on the classic transfer instead, automatically.</p>
+          </div></div></details>
+          <details class="qa"><summary>Why 64 KB chunks<span class="qa__icon" aria-hidden="true"></span></summary><div class="qa__body"><div>
+            <p>Small chunks are cheap to check and cheap to resend. With up to 8 MB in flight at once, the transfer still moves at full speed while every piece stays accounted for.</p>
           </div></div></details>
         </div>
 
@@ -78,11 +633,47 @@
           <details class="qa"><summary>Are my files stored on Clex servers<span class="qa__icon" aria-hidden="true"></span></summary><div class="qa__body"><div>
             <p>Not for workspace transfers. Direct and local transfers exist only in the two browsers. The signaling server only passes connection details and never sees file data. Files you upload through the developer API are the one exception: they are stored until the expiry you choose, so they can be downloaded by link.</p>
           </div></div></details>
-          <details class="qa"><summary>Do I need an account<span class="qa__icon" aria-hidden="true"></span></summary><div class="qa__body"><div>
-            <p>No. Transfers, tools, Vault and API keys all work without one. Signing in with Google is optional and only adds Vault recovery and higher API limits.</p>
+          <details class="qa"><summary>Can Clex see what I send<span class="qa__icon" aria-hidden="true"></span></summary><div class="qa__body"><div>
+            <p>No. A workspace transfer is encrypted from one browser to the other, and no Clex server is in the path of the file. We never see its name, its size on the wire or its contents.</p>
           </div></div></details>
           <details class="qa"><summary>Is the transfer encrypted<span class="qa__icon" aria-hidden="true"></span></summary><div class="qa__body"><div>
             <p>Yes. WebRTC data channels are always encrypted with DTLS, from one browser to the other. There is no server in the path that could decrypt them.</p>
+          </div></div></details>
+          <details class="qa"><summary>What does the signaling server see<span class="qa__icon" aria-hidden="true"></span></summary><div class="qa__body"><div>
+            <p>Only what two browsers need to find each other: session offers, answers and connection candidates, which include network addresses. It passes them along and steps aside. It never sees file names, file bytes or Vault data.</p>
+          </div></div></details>
+          <details class="qa"><summary>Do I need an account<span class="qa__icon" aria-hidden="true"></span></summary><div class="qa__body"><div>
+            <p>No. Transfers, tools, Vault and API keys all work without one. Signing in with Google is optional and only adds Vault recovery and higher API limits.</p>
+          </div></div></details>
+          <details class="qa"><summary>Do you use cookies, analytics or trackers<span class="qa__icon" aria-hidden="true"></span></summary><div class="qa__body"><div>
+            <p>No. There are no HTTP cookies, no analytics or telemetry, no advertising pixels and no device fingerprinting. The <a class="link" href="/cookies">storage page</a> lists every item Clex keeps in your browser and why.</p>
+          </div></div></details>
+          <details class="qa"><summary>What does Clex keep in my browser<span class="qa__icon" aria-hidden="true"></span></summary><div class="qa__body"><div>
+            <p>Your theme choice and whether you have seen the storage notice. If you use Vault, its encrypted notes and your keys, in IndexedDB. If you create an API key, the key for that tab only, in session storage. Clearing site data removes all of it.</p>
+          </div></div></details>
+          <details class="qa"><summary>Does the public chain record anything about me<span class="qa__icon" aria-hidden="true"></span></summary><div class="qa__body"><div>
+            <p>Each transfer adds an anonymous record: a random ID your browser made for itself, the route, file categories, types and sizes, SHA-256 hashes and the status times. Never file names, never contents, never IP addresses, and nothing that names a person.</p>
+          </div></div></details>
+          <details class="qa"><summary>Who can use my share code or link<span class="qa__icon" aria-hidden="true"></span></summary><div class="qa__body"><div>
+            <p>Treat it like a key. Anyone who has it can connect while your tab is waiting. Send it only to the person you mean, and close the tab when you are done.</p>
+          </div></div></details>
+          <details class="qa"><summary>Are API uploads encrypted<span class="qa__icon" aria-hidden="true"></span></summary><div class="qa__body"><div>
+            <p>They travel over HTTPS and are stored with Cloudflare until they expire. They are not end to end encrypted: anyone with the share link can download the file until it expires or you revoke it. For something sensitive, encrypt it before uploading, or use a direct transfer.</p>
+          </div></div></details>
+          <details class="qa"><summary>What happens to an API upload when it expires<span class="qa__icon" aria-hidden="true"></span></summary><div class="qa__body"><div>
+            <p>The link stops working at once and answers that the share has expired. The stored bytes are removed by a cleanup that runs every hour. Revoking an upload yourself works the same way, immediately.</p>
+          </div></div></details>
+          <details class="qa"><summary>Do you sell or share data<span class="qa__icon" aria-hidden="true"></span></summary><div class="qa__body"><div>
+            <p>No. There is nothing to sell: Clex does not collect personal data for advertising, and it is not shared with anyone for that purpose.</p>
+          </div></div></details>
+          <details class="qa"><summary>Which third parties are involved<span class="qa__icon" aria-hidden="true"></span></summary><div class="qa__body"><div>
+            <p>Cloudflare serves the site and runs the API. Google Fonts serves the typefaces. Firebase Authentication handles Google sign-in, only if you choose to sign in. None of them see the files you transfer.</p>
+          </div></div></details>
+          <details class="qa"><summary>Is Clex open source<span class="qa__icon" aria-hidden="true"></span></summary><div class="qa__body"><div>
+            <p>Yes. The code for the site, the workers and the apps is on <a class="link" href="https://github.com/Abhinavv-007/clex" target="_blank" rel="noopener noreferrer">GitHub</a>, so anyone can check what it does.</p>
+          </div></div></details>
+          <details class="qa"><summary>How do I report a security problem<span class="qa__icon" aria-hidden="true"></span></summary><div class="qa__body"><div>
+            <p>Email <a class="link" href="mailto:abhnv@abhnv.in">abhnv@abhnv.in</a> with the details and how to reproduce it. Please give us a chance to fix it before sharing it publicly. Every report gets a reply.</p>
           </div></div></details>
         </div>
 
@@ -91,8 +682,26 @@
           <details class="qa"><summary>Where are Vault notes stored<span class="qa__icon" aria-hidden="true"></span></summary><div class="qa__body"><div>
             <p>In your browser, encrypted before they are written to its local database. Your device holds the primary copy. Vault can sync between devices you pair, and notes never appear on the public chain.</p>
           </div></div></details>
+          <details class="qa"><summary>Does Vault back up my notes to a server<span class="qa__icon" aria-hidden="true"></span></summary><div class="qa__body"><div>
+            <p>Yes, as ciphertext only. Vault keeps an encrypted snapshot on the Clex API so a paired or signed-in device can restore your notes. It is encrypted in your browser with your vault key before it leaves, and the key is never sent. The server can see how many notes and folders there are and when the backup changed, not what they say.</p>
+          </div></div></details>
+          <details class="qa"><summary>What happens if I clear my browser data<span class="qa__icon" aria-hidden="true"></span></summary><div class="qa__body"><div>
+            <p>The notes and the keys on that device are deleted together. You can get them back from a paired device, or from the encrypted backup if you signed in with Google or kept an export of your key. Without any of those, the notes cannot be recovered, by design.</p>
+          </div></div></details>
+          <details class="qa"><summary>How do I use Vault on another device<span class="qa__icon" aria-hidden="true"></span></summary><div class="qa__body"><div>
+            <p>Open Devices and keys in Vault and pair the new device with a short code. Your notes sync between the two, peer to peer. Signing in with Google on both also brings them into the same vault.</p>
+          </div></div></details>
+          <details class="qa"><summary>What does the key fingerprint mean<span class="qa__icon" aria-hidden="true"></span></summary><div class="qa__body"><div>
+            <p>It is the first eight characters of a hash of your vault key, shown in the Vault bar. Two devices that show the same fingerprint share the same vault.</p>
+          </div></div></details>
+          <details class="qa"><summary>Can I export my notes or my key<span class="qa__icon" aria-hidden="true"></span></summary><div class="qa__body"><div>
+            <p>Yes. Devices and keys has an export of your key and of your data, so you can keep a copy somewhere safe.</p>
+          </div></div></details>
           <details class="qa"><summary>Are secret links always one time<span class="qa__icon" aria-hidden="true"></span></summary><div class="qa__body"><div>
             <p>Only if you switch on view once. Otherwise the recipient can open the link again until it expires.</p>
+          </div></div></details>
+          <details class="qa"><summary>Does a secret link&#x27;s key reach the server<span class="qa__icon" aria-hidden="true"></span></summary><div class="qa__body"><div>
+            <p>No. The key sits after the # in the link, and browsers never send that part to any server. The server only ever holds the encrypted secret.</p>
           </div></div></details>
           <details class="qa"><summary>What do the secret link protections do<span class="qa__icon" aria-hidden="true"></span></summary><div class="qa__body"><div>
             <p>You choose per link: view once, a 60 second viewing window, no select, a tab switch lock and a DevTools guard. Only the ones you switch on apply. Keeping the secret in memory only is always on.</p>
@@ -102,8 +711,24 @@
           </div></div></details>
         </div>
 
+        <div class="faq-group" data-faq-group="chain" id="chain">
+          <h2 class="faq-group__title">Transfer chain</h2>
+          <details class="qa"><summary>What is the transfer chain<span class="qa__icon" aria-hidden="true"></span></summary><div class="qa__body"><div>
+            <p>A public, append only ledger of anonymous transfer records. It lets anyone check that a delivery happened without revealing what was delivered or who delivered it. You can browse it on the <a class="link" href="/chain">Chain page</a>.</p>
+          </div></div></details>
+          <details class="qa"><summary>Why link records by hash<span class="qa__icon" aria-hidden="true"></span></summary><div class="qa__body"><div>
+            <p>Every record carries the hash of the one before it. Change any record and every hash after it stops matching, so tampering is easy to spot.</p>
+          </div></div></details>
+          <details class="qa"><summary>Can someone find my transfers on the chain<span class="qa__icon" aria-hidden="true"></span></summary><div class="qa__body"><div>
+            <p>Only by the random ID your own browser made, which is kept on your device and is not tied to you. Records hold no names, no contents and no IP addresses.</p>
+          </div></div></details>
+        </div>
+
         <div class="faq-group" data-faq-group="developers" id="developers">
           <h2 class="faq-group__title">Developers</h2>
+          <details class="qa"><summary>Is the API live<span class="qa__icon" aria-hidden="true"></span></summary><div class="qa__body"><div>
+            <p>Yes, at clex.in/vault/api. You can mint a key and upload a file from the <a class="link" href="/developers#try">Developers page</a> right now, or with one curl command.</p>
+          </div></div></details>
           <details class="qa"><summary>Can I use Clex from a script or terminal<span class="qa__icon" aria-hidden="true"></span></summary><div class="qa__body"><div>
             <p>Yes. Mint a key on the <a class="link" href="/developers">Developers page</a>, then upload with one HTTP call from any language, or with the Clex CLI. You get a share link back that anyone can open.</p>
           </div></div></details>
@@ -112,6 +737,15 @@
           </div></div></details>
           <details class="qa"><summary>What are the API limits<span class="qa__icon" aria-hidden="true"></span></summary><div class="qa__body"><div>
             <p>A key made without an account allows 100 MB per file and 60 requests a minute, with up to three keys per device. Signing in on the account page raises those limits.</p>
+          </div></div></details>
+          <details class="qa"><summary>I lost my API key<span class="qa__icon" aria-hidden="true"></span></summary><div class="qa__body"><div>
+            <p>Clex stores only a hash of each key, so it cannot show it to you again. Mint a new one and revoke the old one if you still have it.</p>
+          </div></div></details>
+          <details class="qa"><summary>How do I revoke a key or an upload<span class="qa__icon" aria-hidden="true"></span></summary><div class="qa__body"><div>
+            <p>Rotate the key on the Developers page, or send DELETE /vault/api/keys/self with it. To revoke an upload, send DELETE /vault/api/uploads/:id. Both stop working immediately.</p>
+          </div></div></details>
+          <details class="qa"><summary>Can I choose how long a link lasts<span class="qa__icon" aria-hidden="true"></span></summary><div class="qa__body"><div>
+            <p>Yes. Send X-Expires-In in seconds, from 5 minutes to 7 days. Without it, links last 24 hours.</p>
           </div></div></details>
         </div>
 
@@ -123,6 +757,9 @@
           <details class="qa"><summary>What can the tools process<span class="qa__icon" aria-hidden="true"></span></summary><div class="qa__body"><div>
             <p>Images (compress and convert between JPEG, PNG, WebP), PDFs (merge, split, export pages as images), Word documents to PDF, and ZIP bundles of anything. You can send any file type, even without a tool for it.</p>
           </div></div></details>
+          <details class="qa"><summary>Does Clex change my files<span class="qa__icon" aria-hidden="true"></span></summary><div class="qa__body"><div>
+            <p>Only if you run a tool on them, and then you choose which version to send. A transfer delivers exactly the bytes you sent, and Direct+ checks that they match.</p>
+          </div></div></details>
           <details class="qa"><summary>Can I use the tools without sharing<span class="qa__icon" aria-hidden="true"></span></summary><div class="qa__body"><div>
             <p>Of course. Drop files, prepare them and download the results. Clex works perfectly well as a private file toolbox.</p>
           </div></div></details>
@@ -132,18 +769,37 @@
           <details class="qa"><summary>Does it work offline<span class="qa__icon" aria-hidden="true"></span></summary><div class="qa__body"><div>
             <p>The preparation tools do, after the first visit. Sending needs a connection, since it has to reach the other device, so prepare offline and share when you are back.</p>
           </div></div></details>
+          <details class="qa"><summary>Is there an app<span class="qa__icon" aria-hidden="true"></span></summary><div class="qa__body"><div>
+            <p>On Android, Clex Link is available as an APK from GitHub, with Play Store and App Store releases on the way. On any other device, the browser is the app.</p>
+          </div></div></details>
+        </div>
+
+        <div class="faq-group" data-faq-group="about" id="about">
+          <h2 class="faq-group__title">About Clex</h2>
+          <details class="qa"><summary>Who makes Clex<span class="qa__icon" aria-hidden="true"></span></summary><div class="qa__body"><div>
+            <p>Clex is built by Abhinav Raj. You can see more of his work at <a class="link" href="https://abhnv.in" target="_blank" rel="noopener noreferrer">abhnv.in</a>.</p>
+          </div></div></details>
+          <details class="qa"><summary>Is Clex free<span class="qa__icon" aria-hidden="true"></span></summary><div class="qa__body"><div>
+            <p>Yes. Transfers, tools, Vault and API keys cost nothing, with no account needed.</p>
+          </div></div></details>
+          <details class="qa"><summary>How do I get in touch<span class="qa__icon" aria-hidden="true"></span></summary><div class="qa__body"><div>
+            <p>Email <a class="link" href="mailto:abhnv@abhnv.in">abhnv@abhnv.in</a>. A real person reads every message, whether it is a question, a bug or an idea.</p>
+          </div></div></details>
         </div>
 
         <div class="faq-empty" data-faq-empty hidden>
-          <p>Nothing matches that yet. Try a different word, or <a class="link" href="mailto:hello@clex.in">ask us directly</a>.</p>
+          <p>Nothing matches that yet. Try a different word, or <a class="link" href="mailto:abhnv@abhnv.in">ask directly</a>.</p>
         </div>
 
-        <div class="faq-contact card card--lit" data-reveal>
-          <div>
+        <div class="faq-contact" data-reveal>
+          <div class="faq-contact__copy">
             <h2 class="faq-contact__title">Still <span class="script">wondering</span></h2>
-            <p class="card__text">Write to us and a real person will answer.</p>
+            <p class="card__text">Write to the developer and a real person will answer. Questions, bugs, security reports and ideas are all welcome.</p>
           </div>
-          <a href="mailto:hello@clex.in" class="btn btn--primary"><span>Email hello@clex.in</span></a>
+          <div class="faq-contact__actions">
+            <a href="mailto:abhnv@abhnv.in" class="btn btn--primary"><span>Email abhnv@abhnv.in</span></a>
+            <a href="https://abhnv.in" class="btn btn--ghost" target="_blank" rel="noopener noreferrer"><span>Meet the developer</span><svg class="btn__arrow" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M4.5 11.5 11.5 4.5M6 4.5h5.5V10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+          </div>
         </div>
       </div>
     </section>

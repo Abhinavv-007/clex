@@ -6,12 +6,13 @@
   <meta name="description" content="Send your first file with Clex in about a minute: open the workspace, drop a file, share the code, and watch it arrive verified.">
   <link rel="stylesheet" href="/css/scenes.css">
   <link rel="stylesheet" href="/css/pages/pages.css">
+  <link rel="stylesheet" href="/css/pages/start.css">
 </head>
 <body data-page="getting-started">
   <!-- @nav -->
 
   <main id="main">
-    <header class="page-head stage-head tone-dark">
+    <header class="page-head stage-head">
       <canvas class="stream-canvas" data-stream="soft" aria-hidden="true"></canvas>
       <div class="stream-veil" aria-hidden="true"></div>
       <div class="container page-head__inner">
@@ -26,57 +27,105 @@
 
     <!-- ═══ Steps ═══ -->
     <section class="section" aria-labelledby="gs-steps-title">
-      <div class="container container--narrow">
+      <div class="container">
         <div class="section-head">
           <span class="eyebrow" data-reveal>Step by step</span>
           <h2 id="gs-steps-title" data-split>Six steps, <span class="script">start to finish</span></h2>
+          <p class="lede" data-reveal style="--d:200">What you will see at each step, and the small things worth knowing along the way</p>
         </div>
-        <ol class="timeline timeline--steps" role="list" data-timeline>
-          <li class="timeline__item" data-reveal>
-            <span class="timeline__num">1</span>
-            <div>
-              <b>Open the workspace</b>
-              <p>It is the first thing on clex.in. It opens instantly in your browser, with no account.</p>
-              <p class="tip">Tip: bookmark clex.in and it is always one click away.</p>
+
+        <div class="gs-clock" data-reveal aria-label="About sixty seconds from start to finish">
+          <div class="gs-clock__bar">
+            <span style="--w:8">Open</span><span style="--w:14">Drop</span><span style="--w:20">Prepare</span><span style="--w:12">Share</span><span style="--w:30">Arrive</span><span style="--w:16" class="is-last">Done</span>
+          </div>
+          <div class="gs-clock__scale mono"><span>0 s</span><span>about 60 s</span></div>
+        </div>
+
+        <ol class="gs-steps" role="list">
+          <li class="gs-step" data-reveal>
+            <div class="gs-step__copy">
+              <span class="gs-step__num">01</span>
+              <h3>Open the workspace</h3>
+              <p>It is the first thing on clex.in. It opens instantly in your browser, with no account and nothing to install.</p>
+              <p class="tip">Bookmark clex.in and it is always one click away.</p>
+            </div>
+            <div class="gs-art gs-art--open" aria-hidden="true">
+              <div class="gs-win">
+                <div class="gs-win__bar"><i></i><i></i><i></i><span>clex.in</span></div>
+                <div class="gs-win__body">
+                  <div class="gs-toggle"><b>Transfer</b><span>Vault</span></div>
+                  <div class="gs-cols"><span></span><span></span><span></span></div>
+                </div>
+              </div>
             </div>
           </li>
-          <li class="timeline__item" data-reveal>
-            <span class="timeline__num">2</span>
-            <div>
-              <b>Drop your files</b>
+          <li class="gs-step" data-reveal>
+            <div class="gs-step__copy">
+              <span class="gs-step__num">02</span>
+              <h3>Drop your files</h3>
               <p>Drag files in from your desktop, click the drop zone to browse, or paste an image. PDFs, images, documents, archives, anything.</p>
-              <p class="tip">Tip: paste images straight from the clipboard with Ctrl V or Cmd V.</p>
+              <p class="tip">Paste images straight from the clipboard with Ctrl V or Cmd V.</p>
+            </div>
+            <div class="gs-art gs-art--drop" aria-hidden="true">
+              <div class="gs-zone">
+                <span class="gs-file" style="--i:0"><i class="filetype filetype--img">JPG</i>trip-01.jpg</span>
+                <span class="gs-file" style="--i:1"><i class="filetype filetype--pdf">PDF</i>invoice.pdf</span>
+                <span class="gs-file" style="--i:2"><i class="filetype filetype--doc">DOC</i>notes.docx</span>
+              </div>
             </div>
           </li>
-          <li class="timeline__item" data-reveal>
-            <span class="timeline__num">3</span>
-            <div>
-              <b>Prepare, if you like</b>
+          <li class="gs-step" data-reveal>
+            <div class="gs-step__copy">
+              <span class="gs-step__num">03</span>
+              <h3>Prepare, if you like</h3>
               <p>Tools appear for the files you added: compress images, merge PDFs, convert Word to PDF, bundle a ZIP. Everything happens in the browser.</p>
-              <p class="tip">Tip: when a tool finishes, Clex suggests the next one or takes you to sharing.</p>
+              <p class="tip">When a tool finishes, Clex suggests the next one or takes you to sharing.</p>
+            </div>
+            <div class="gs-art gs-art--prep" aria-hidden="true">
+              <div class="gs-tools">
+                <span class="is-done">Compress</span><span class="is-done">Convert to PDF</span><span>Merge</span><span>ZIP</span>
+              </div>
+              <div class="gs-size"><span class="mono">3.8 MB</span><i><em></em></i><span class="mono gs-size__to">740 KB</span></div>
             </div>
           </li>
-          <li class="timeline__item" data-reveal>
-            <span class="timeline__num">4</span>
-            <div>
-              <b>Share</b>
+          <li class="gs-step" data-reveal>
+            <div class="gs-step__copy">
+              <span class="gs-step__num">04</span>
+              <h3>Share</h3>
               <p>Clex shows a six character code, a link and a QR. Send any of them. The other person opens it in their browser and the transfer starts.</p>
-              <p class="tip">Tip: both tabs need to stay open until the transfer is done.</p>
+              <p class="tip">Both tabs need to stay open until the transfer is done.</p>
+            </div>
+            <div class="gs-art gs-art--share" aria-hidden="true">
+              <div class="gs-code"><b>K</b><b>9</b><b>M</b><b>3</b><b>J</b><b>X</b></div>
+              <div class="gs-share-row"><span class="gs-qr"></span><span class="gs-link mono">clex.in/receive?code=K9M3JX</span></div>
             </div>
           </li>
-          <li class="timeline__item" data-reveal>
-            <span class="timeline__num">5</span>
-            <div>
-              <b>Watch it arrive</b>
-              <p>A live progress bar, chunk rail and health score show the transfer. Pause any time and resume from the next chunk. When it lands, both sides get a verified receipt.</p>
-              <p class="tip">Tip: a health score above 90 is a clean run. Lower usually means retries kicked in, which is the safety net working.</p>
+          <li class="gs-step" data-reveal>
+            <div class="gs-step__copy">
+              <span class="gs-step__num">05</span>
+              <h3>Watch it arrive</h3>
+              <p>A live progress bar, chunk rail and health score show the transfer. Pause any time and resume from the next chunk. When it lands, both sides get a receipt you can save or share.</p>
+              <p class="tip">A health score above 90 is a clean run. Lower usually means retries kicked in, which is the safety net working.</p>
+            </div>
+            <div class="gs-art gs-art--arrive" aria-hidden="true">
+              <div class="gs-progress">
+                <div class="gs-progress__top"><b>invoice.pdf</b><span class="mono">health 98</span></div>
+                <div class="gs-rail"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="is-flight"></i><i class="is-flight"></i><i class="is-wait"></i><i class="is-wait"></i></div>
+                <div class="gs-progress__foot mono"><span>12 of 16 chunks</span><span>4.2 MB/s</span></div>
+              </div>
+              <div class="gs-mini-receipt"><b>Receipt</b><span class="mono">16/16 verified · root 9f2c…</span></div>
             </div>
           </li>
-          <li class="timeline__item" data-reveal>
-            <span class="timeline__num">6</span>
-            <div>
-              <b>Receiving instead</b>
+          <li class="gs-step" data-reveal>
+            <div class="gs-step__copy">
+              <span class="gs-step__num">06</span>
+              <h3>Receiving instead</h3>
               <p>Got a code? Open <a class="link" href="/receive">clex.in/receive</a>, type it in, and the file lands in your browser, checked chunk by chunk.</p>
+            </div>
+            <div class="gs-art gs-art--receive" aria-hidden="true">
+              <span class="gs-receive__label mono">Enter the code</span>
+              <div class="gs-code gs-code--input"><b>K</b><b>9</b><b>M</b><b>3</b><b class="is-caret"></b><b></b></div>
+              <span class="gs-receive__btn">Receive</span>
             </div>
           </li>
         </ol>
@@ -110,14 +159,14 @@
           <h2 id="gs-tips-title" data-split>Small things, <span class="script">big help</span></h2>
         </div>
         <div class="grid grid--4" data-stagger="70">
-          <article class="card card--lit"><h3 class="card__title">Batch work</h3><p class="card__text">Select several images and compress them in one go with the same settings.</p></article>
-          <article class="card card--lit"><h3 class="card__title">Offline tools</h3><p class="card__text">After the first visit, preparing files works with no connection at all.</p></article>
-          <article class="card card--lit"><h3 class="card__title">Local speed</h3><p class="card__text">On the same Wi-Fi, the local route keeps big files inside your network.</p></article>
-          <article class="card card--lit"><h3 class="card__title">Nothing kept</h3><p class="card__text">Transferred files live only in the two browsers. Close the tab and they are gone.</p></article>
-          <article class="card card--lit"><h3 class="card__title">Pause and resume</h3><p class="card__text">Stop a transfer mid way and pick up from the next chunk, not from zero.</p></article>
-          <article class="card card--lit"><h3 class="card__title">Receipts</h3><p class="card__text">Every Direct+ transfer ends with a content free receipt you can copy and keep.</p></article>
-          <article class="card card--lit"><h3 class="card__title">From a script</h3><p class="card__text">Upload from a terminal or any language with the <a class="link" href="/developers">API</a>.</p></article>
-          <article class="card card--lit"><h3 class="card__title">Questions</h3><p class="card__text">Privacy, limits and routes are all covered in the <a class="link" href="/faq">FAQ</a>.</p></article>
+          <article class="card card--lit"><span class="card__icon" aria-hidden="true"><svg viewBox="0 0 20 20" width="20" height="20"><path d="M4 6h12M4 10h12M4 14h8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span><h3 class="card__title">Batch work</h3><p class="card__text">Select several images and compress them in one go with the same settings.</p></article>
+          <article class="card card--lit"><span class="card__icon" aria-hidden="true"><svg viewBox="0 0 20 20" width="20" height="20"><path d="M3 8.5a10 10 0 0 1 14 0M6 11.5a6 6 0 0 1 8 0M3 3l14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span><h3 class="card__title">Offline tools</h3><p class="card__text">After the first visit, preparing files works with no connection at all.</p></article>
+          <article class="card card--lit"><span class="card__icon" aria-hidden="true"><svg viewBox="0 0 20 20" width="20" height="20"><path d="M10 3v5l3 2M10 17a7 7 0 1 1 0-14 7 7 0 0 1 0 14Z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span><h3 class="card__title">Local speed</h3><p class="card__text">On the same Wi-Fi, the local route keeps big files inside your network.</p></article>
+          <article class="card card--lit"><span class="card__icon" aria-hidden="true"><svg viewBox="0 0 20 20" width="20" height="20"><path d="M5 6h10l-1 11H6L5 6ZM8 6V4h4v2M3 6h14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span><h3 class="card__title">Nothing kept</h3><p class="card__text">Transferred files live only in the two browsers. Close the tab and they are gone.</p></article>
+          <article class="card card--lit"><span class="card__icon" aria-hidden="true"><svg viewBox="0 0 20 20" width="20" height="20"><path d="M7 5v10M13 5v10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span><h3 class="card__title">Pause and resume</h3><p class="card__text">Stop a transfer mid way and pick up from the next chunk, not from zero.</p></article>
+          <article class="card card--lit"><span class="card__icon" aria-hidden="true"><svg viewBox="0 0 20 20" width="20" height="20"><path d="M5 3h10v14l-2-1.5L11 17l-1-1.5L9 17l-2-1.5L5 17V3ZM8 7h4M8 10h4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span><h3 class="card__title">Receipts</h3><p class="card__text">Every Direct+ transfer ends with a content free receipt you can copy and keep.</p></article>
+          <article class="card card--lit"><span class="card__icon" aria-hidden="true"><svg viewBox="0 0 20 20" width="20" height="20"><path d="M4 6l4 4-4 4M10 14h6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span><h3 class="card__title">From a script</h3><p class="card__text">Upload from a terminal or any language with the <a class="link" href="/developers">API</a>.</p></article>
+          <article class="card card--lit"><span class="card__icon" aria-hidden="true"><svg viewBox="0 0 20 20" width="20" height="20"><path d="M8 7.5a2 2 0 1 1 2.8 1.8c-.5.2-.8.7-.8 1.2V11M10 14v.2M10 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16Z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span><h3 class="card__title">Questions</h3><p class="card__text">Privacy, limits and routes are all covered in the <a class="link" href="/faq">FAQ</a>.</p></article>
         </div>
       </div>
     </section>

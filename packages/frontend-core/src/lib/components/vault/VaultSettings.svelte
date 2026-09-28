@@ -232,14 +232,9 @@
 <div class="vst-root">
   <!-- Header -->
   <div class="vst-header">
-    <button class="btn-icon" on:click={() => vaultActions.setPanel('notes')} aria-label="Back to notes">
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
-        <path d="M10 3L6 8l4 5"/>
-      </svg>
-    </button>
     <div class="vst-header-copy">
-      <h2 class="vst-title">Settings</h2>
-      <p class="vst-subtitle">Devices, relay access, encryption, and local Vault controls.</p>
+      <h2 class="vst-title">Devices and keys</h2>
+      <p class="vst-subtitle">Pair devices, check storage, back up or rotate your key, and manage your account.</p>
     </div>
   </div>
 
@@ -268,7 +263,7 @@
     <div class="vst-summary-card">
       <span class="vst-summary-label">Relay</span>
       <strong class="vst-summary-value">{relaySummary}</strong>
-      <p class="vst-summary-copy">Cloud Share requires Google sign-in</p>
+      <p class="vst-summary-copy">Sign in with Google for recovery</p>
     </div>
     <div class="vst-summary-card">
       <span class="vst-summary-label">Storage</span>
@@ -557,9 +552,9 @@
   }
 
   .vst-title {
-    font-family: var(--font-display);
-    font-size: clamp(1.5rem, 2vw, 1.95rem);
-    font-weight: 700;
+    font-family: var(--font-sans);
+    font-size: clamp(1.3rem, 1.8vw, 1.6rem);
+    font-weight: 600;
     color: var(--text-1);
     letter-spacing: -0.03em;
     margin: 0;
@@ -575,39 +570,40 @@
 
   .vst-tabs {
     display: flex;
-    gap: 10px;
+    gap: 2px;
+    width: fit-content;
+    max-width: 100%;
+    padding: 3px;
+    border-radius: 12px;
+    background: var(--surface-2);
+    box-shadow: inset 0 0 0 1px var(--border);
     overflow-x: auto;
     flex-shrink: 0;
-    padding-bottom: 2px;
   }
 
   .vst-tab {
-    min-height: 42px;
-    padding: 10px 14px;
-    border: 1px solid var(--border-strong);
-    border-radius: 12px;
-    background: var(--surface-2);
-    box-shadow: var(--shadow-sm);
+    height: 32px;
+    padding: 0 14px;
+    border: 0;
+    border-radius: 9px;
+    background: transparent;
     cursor: pointer;
-    font-family: var(--font-display);
+    font-family: var(--font-sans);
     font-size: 13px;
-    font-weight: 700;
+    font-weight: 500;
     color: var(--text-3);
-    transition: color 150ms, border-color 150ms, background 150ms, box-shadow 150ms, transform 150ms;
+    transition: color 150ms, background 150ms, box-shadow 150ms;
     white-space: nowrap;
   }
 
   .vst-tab:hover {
     color: var(--text-1);
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-sm);
   }
 
   .vst-tab--active {
     color: var(--text-1);
-    background: color-mix(in srgb, var(--accent) 14%, var(--surface));
-    border-color: color-mix(in srgb, var(--accent) 68%, var(--border-hard));
-    box-shadow: var(--shadow-sm);
+    background: var(--surface);
+    box-shadow: var(--shadow-sm), 0 0 0 1px var(--border);
   }
 
   .vst-summary-grid {
@@ -619,13 +615,11 @@
   .vst-summary-card {
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    min-height: 124px;
-    padding: 14px;
-    border-radius: 16px;
-    border: 1px solid var(--border-strong);
+    gap: 6px;
+    padding: 14px 16px;
+    border-radius: 14px;
+    border: 1px solid var(--border);
     background: var(--surface-2);
-    box-shadow: var(--shadow-sm);
   }
 
   .vst-summary-label {

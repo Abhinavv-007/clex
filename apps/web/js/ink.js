@@ -1,31 +1,25 @@
 /* ==========================================================================
    Clex — the pen
 
-   Writes every handwritten word on the site in one continuous stroke: the
-   ink flows in from left to right behind a crisp edge, a glowing nib rides
-   that edge up and down along the letters, and a thin trail is drawn under
-   the word as it goes and fades once the word is finished. The hero's word
-   is signed off with a swash instead.
+   Writes every handwritten word on the site. The markup from
+   scripts/handwriting.mjs is the word's pen strokes in writing order; this
+   draws them one after another at an even hand's pace, lifting briefly
+   between strokes, the way the word would actually be written. No cursor,
+   no nib, no underline: only ink.
 
-   Same hand, same pace, same ink on every page and in both themes. The
-   markup comes from scripts/handwriting.mjs; without JS, or with reduced
-   motion, the finished word is simply there.
+   Without JS, or with reduced motion, the finished word is simply there.
    ========================================================================== */
 
 import { reducedMotion } from './motion.js';
 
-/** The soft leading edge of the ink, as a share of the word's width. */
-const EDGE = 0.05;
-/** Screen sizes, in CSS px, whatever size the word is set at. */
-const NIB_CORE_PX = 2.6;
-const NIB_GLOW_PX = 12;
-const TRAIL_PX = 1.5;
+/** Pause between strokes, as a share of the word's total ink. */
+const LIFT = 0.025;
 
 export function initInk(root = document) {
   const words = [...root.querySelectorAll('.ink-word')];
   if (!words.length) return;
 
-  if (reducedMotion()) {
+  if (reducedMotion() || !('IntersectionObserver' in window)) {
     words.forEach((w) => w.querySelector('.ink')?.classList.add('is-written'));
     return;
   }
@@ -36,7 +30,7 @@ export function initInk(root = document) {
       io.unobserve(entry.target);
       schedule(/** @type {HTMLElement} */ (entry.target));
     }
-  }, { threshold: 0.6, rootMargin: '0px 0px -4% 0px' });
+  }, { threshold: 0.5, rootMargin: '0px 0px -6% 0px' });
 
   for (const word of words) {
     const mode = word.getAttribute('data-write');
@@ -51,103 +45,82 @@ function schedule(word) {
   window.setTimeout(() => writeWord(word), delay);
 }
 
-/** Writes the word inside this element now. @param {Element} word */
-export function writeWord(word) {
+/**
+ * Writes the word inside this element now.
+ * @param {Element} word
+ * @param {{ speed?: number }} [opts] speed > 1 writes faster
+ */
+export function writeWord(word, opts = {}) {
   const svg = word.querySelector('svg.ink');
-  if (svg instanceof SVGSVGElement) write(svg);
+  if (svg instanceof SVGSVGElement) write(svg, opts.speed ?? 1);
 }
 
-/** @param {SVGSVGElement} svg */
-function write(svg) {
+/** Clears a written word so it can be written again. @param {Element} word */
+export function unwriteWord(word) {
+  const svg = word.querySelector('svg.ink');
+  if (!(svg instanceof SVGSVGElement)) return;
+  svg.classList.remove('is-writing', 'is-written');
+  svg.querySelectorAll('.ink__pen path').forEach((p) => {
+    if (p instanceof SVGElement) {
+      p.style.opacity = '';
+      p.style.strokeDasharray = '';
+    }
+  });
+}
+
+/** @param {SVGSVGElement} svg @param {number} speed */
+function write(svg, speed) {
   if (svg.classList.contains('is-writing') || svg.classList.contains('is-written')) return;
   if (reducedMotion()) {
     svg.classList.add('is-written');
     return;
   }
 
-  const vb = svg.viewBox.baseVal;
-  const rendered = svg.getBoundingClientRect().width || 1;
-  const upp = vb.width / rendered; // font units per CSS pixel
+  const paths = /** @type {SVGPathElement[]} */ ([...svg.querySelectorAll('.ink__pen path')]);
+  if (!paths.length) {
+    svg.classList.add('is-written');
+    return;
+  }
+  const lens = paths.map((p) => Math.max(1, Number(p.dataset.l) || 1));
+  const ink = lens.reduce((a, b) => a + b, 0);
+  const lift = ink * LIFT;
+  const starts = [];
+  let cursor = 0;
+  lens.forEach((l, i) => {
+    starts.push(cursor);
+    cursor += l + (i < lens.length - 1 ? lift : 0);
+  });
+  const total = cursor;
 
-  const from = Number(svg.dataset.from);
-  const to = Number(svg.dataset.to);
-  const span = Math.max(1, to - from);
-  const feather = span * EDGE;
-  const line = (svg.dataset.line || '').split(' ').map((p) => p.split(',').map(Number));
+  // Pace: an unhurried hand, about the same speed for every word.
+  const letters = (svg.closest('.ink-word')?.querySelector('.visually-hidden')?.textContent || '').replace(/\s/g, '').length || 6;
+  const dur = Math.min(3400, Math.max(900, letters * 125 + 380)) / speed;
 
-  const edge = svg.querySelector('.ink__edge');
-  const nib = svg.querySelector('.ink__nib');
-  nib?.querySelector('.ink__nib-core')?.setAttribute('r', String(NIB_CORE_PX * upp));
-  nib?.querySelector('.ink__nib-glow')?.setAttribute('r', String(NIB_GLOW_PX * upp));
-  svg.style.setProperty('--trail', String(TRAIL_PX * upp));
-
-  const trail = svg.querySelector('.ink__trail');
-  const swash = svg.querySelector('.ink__swash');
-  const prime = (/** @type {Element | null} */ el) => {
-    if (!(el instanceof SVGGeometryElement)) return 0;
-    const len = el.getTotalLength();
-    el.style.strokeDasharray = `${len} ${len}`;
-    el.style.strokeDashoffset = String(len);
-    return len;
-  };
-  const trailLen = prime(trail);
-  const swashLen = prime(swash);
-
-  // Pace: about the speed of a confident hand, the same for every word.
-  const letters = (svg.closest('.ink-word')?.querySelector('.visually-hidden')?.textContent || '').length || 6;
-  const dur = Math.min(2800, Math.max(1000, letters * 95 + 420));
-  const swashDur = swash ? 900 : 0;
-
+  const drawn = new Float32Array(paths.length).fill(-1);
   svg.classList.add('is-writing');
   const t0 = performance.now();
 
   const frame = (now) => {
-    const t = now - t0;
-    const p = Math.min(1, t / dur);
-    const k = easeInOutCubic(p);
-    const x = from - feather + (span + feather * 2) * k;
-
-    edge?.setAttribute('x1', String(x - feather));
-    edge?.setAttribute('x2', String(x));
-
-    if (nib) {
-      const on = p > 0 && p < 1;
-      nib.classList.toggle('is-on', on);
-      if (on) nib.setAttribute('transform', `translate(${x - feather * 0.35} ${yAt(line, x - feather * 0.35)})`);
+    const p = Math.min(1, (now - t0) / dur);
+    const pos = total * ease(p);
+    for (let i = 0; i < paths.length; i += 1) {
+      const f = Math.min(1, Math.max(0, (pos - starts[i]) / lens[i]));
+      if (f === drawn[i]) continue;
+      drawn[i] = f;
+      const el = paths[i];
+      el.style.opacity = f > 0 ? '1' : '0';
+      el.style.strokeDasharray = `${f.toFixed(4)} 2`;
     }
-    if (trail instanceof SVGGeometryElement) {
-      trail.style.strokeDashoffset = String(trailLen * (1 - k));
-    }
-    if (swash instanceof SVGGeometryElement && t > dur * 0.9) {
-      const s = easeOut(Math.min(1, (t - dur * 0.9) / swashDur));
-      swash.style.strokeDashoffset = String(swashLen * (1 - s));
-    }
-
-    if (t < dur * 0.9 + swashDur + 30 || p < 1) {
+    if (p < 1) {
       requestAnimationFrame(frame);
     } else {
       svg.classList.remove('is-writing');
       svg.classList.add('is-written');
-      nib?.classList.remove('is-on');
+      paths.forEach((el) => { el.style.opacity = ''; el.style.strokeDasharray = ''; });
     }
   };
   requestAnimationFrame(frame);
 }
 
-/** Height of the pen's path at x, interpolated. @param {number[][]} line @param {number} x */
-function yAt(line, x) {
-  if (!line.length || !Number.isFinite(line[0][0])) return 0;
-  if (x <= line[0][0]) return line[0][1];
-  for (let i = 1; i < line.length; i += 1) {
-    const [bx, by] = line[i];
-    if (x <= bx) {
-      const [ax, ay] = line[i - 1];
-      const t = (x - ax) / (bx - ax || 1);
-      return ay + (by - ay) * t;
-    }
-  }
-  return line[line.length - 1][1];
-}
-
-const easeInOutCubic = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
-const easeOut = (t) => 1 - Math.pow(1 - t, 3);
+/** Gentle in and out, nearly even speed through the middle. */
+const ease = (t) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2) * 0.35 + t * 0.65;

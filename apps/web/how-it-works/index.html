@@ -5,6 +5,10 @@
   <title>How it works — Clex</title>
   <meta name="description" content="How Clex moves a file: drop it in the browser, prepare it with in-tab tools, share a code, and receive it verified chunk by chunk over a direct WebRTC connection.">
   <link rel="stylesheet" href="/css/scenes.css">
+  <link rel="stylesheet" href="/css/scenes/flow.css">
+  <link rel="stylesheet" href="/css/scenes/flow-prep.css">
+  <link rel="stylesheet" href="/css/scenes/flow-share.css">
+  <link rel="stylesheet" href="/css/scenes/protocol.css">
   <link rel="stylesheet" href="/css/pages/home.css">
   <link rel="stylesheet" href="/css/pages/pages.css">
 </head>
@@ -12,7 +16,7 @@
   <!-- @nav -->
 
   <main id="main">
-    <header class="page-head stage-head tone-dark">
+    <header class="page-head stage-head">
       <canvas class="stream-canvas" data-stream="soft" aria-hidden="true"></canvas>
       <div class="stream-veil" aria-hidden="true"></div>
       <div class="container page-head__inner">
@@ -66,20 +70,37 @@
 
     <!-- ═══ Direct+ protocol ═══ -->
     <section class="band tone-dark" id="protocol" aria-labelledby="protocol-title">
-      <div class="container section proto">
-        <div class="proto__head">
-          <span class="eyebrow" data-reveal>Direct+ on the wire</span>
-          <h2 id="protocol-title" data-split>How a transfer <span class="script">stays whole</span></h2>
-          <p class="lede" data-reveal style="--d:200">Five stages between two browsers. Older Clex peers skip the first and fall back to the plain transfer automatically</p>
-          <a class="link" href="/developers" data-reveal style="--d:300">Read the developer reference</a>
+      <div class="container section proto" data-protocol>
+        <div class="proto__copy">
+          <div class="proto__head">
+            <span class="eyebrow" data-reveal>Direct+ on the wire</span>
+            <h2 id="protocol-title" data-split>How a transfer <span class="script">stays whole</span></h2>
+            <p class="lede" data-reveal style="--d:200">Five stages between two browsers. Older Clex peers skip the first and fall back to the plain transfer automatically</p>
+          </div>
+          <ol class="proto__steps" role="list">
+            <li class="proto__step" data-proto-step="1"><span class="proto__num">1</span><div><b>Capability handshake</b><p>Both sides announce what they support. If either lacks Direct+, they agree on the classic protocol instead.</p></div></li>
+            <li class="proto__step" data-proto-step="2"><span class="proto__num">2</span><div><b>Manifest</b><p>The sender lists every file, its size and, within the hashing budget, a SHA-256 for each chunk.</p></div></li>
+            <li class="proto__step" data-proto-step="3"><span class="proto__num">3</span><div><b>Chunks in a sliding window</b><p>64 KB frames stream with up to 8 MB in flight. The receiver acknowledges each one as it lands.</p></div></li>
+            <li class="proto__step" data-proto-step="4"><span class="proto__num">4</span><div><b>Verify and retry</b><p>Sizes and hashes are checked on arrival. Anything missing or damaged is asked for again, and only that.</p></div></li>
+            <li class="proto__step" data-proto-step="5"><span class="proto__num">5</span><div><b>Receipt</b><p>Both peers build the same content free summary: file count, size, chunks, retries, route and a root hash.</p></div></li>
+          </ol>
+          <a class="link proto__link" href="/developers">Read the developer reference</a>
         </div>
-        <ol class="timeline" role="list" data-timeline>
-          <li class="timeline__item" data-reveal><span class="timeline__num">1</span><div><b>Capability handshake</b><p>Both sides announce what they support. If either lacks Direct+, they agree on the classic protocol instead.</p></div></li>
-          <li class="timeline__item" data-reveal><span class="timeline__num">2</span><div><b>Manifest</b><p>The sender lists every file, its size and, within the hashing budget, a SHA-256 for each chunk.</p></div></li>
-          <li class="timeline__item" data-reveal><span class="timeline__num">3</span><div><b>Chunks in a sliding window</b><p>64 KB frames stream with up to 8 MB in flight. The receiver acknowledges or rejects each one.</p></div></li>
-          <li class="timeline__item" data-reveal><span class="timeline__num">4</span><div><b>Verify and retry</b><p>Sizes and hashes are checked on arrival. Anything missing or damaged is asked for again, and only that.</p></div></li>
-          <li class="timeline__item" data-reveal><span class="timeline__num">5</span><div><b>Receipt</b><p>Both peers build the same content free summary: file count, size, chunks, retries, route and an optional root hash.</p></div></li>
-        </ol>
+        <div class="proto__stage">
+            <figure class="seq" data-protocol-diagram data-step="0" aria-hidden="true">
+              <svg viewBox="0 0 520 730">
+                <g class="seq__actor"><rect x="14" y="14" width="120" height="40" rx="12"/><text x="74" y="39">Sender</text></g>
+                <g class="seq__actor"><rect x="386" y="14" width="120" height="40" rx="12"/><text x="446" y="39">Receiver</text></g>
+                <path class="seq__life" d="M 74 60 V 700 M 446 60 V 700"/>
+                <g class="seq__stage" data-s="1"><g class="seq__msg "><path class="seq__line" d="M 74 96 L 446 96" pathLength="1"/><path class="seq__head" d="M 437 91 L 446 96 L 437 101"/><text class="seq__label" x="260" y="88">HELLO · direct+ v2</text><text class="seq__sub" x="260" y="113">what I can do</text></g><g class="seq__msg "><path class="seq__line" d="M 446 142 L 74 142" pathLength="1"/><path class="seq__head" d="M 83 137 L 74 142 L 83 147"/><text class="seq__label" x="260" y="134">HELLO · direct+ v2</text><text class="seq__sub" x="260" y="159">same here</text></g></g>
+                <g class="seq__stage" data-s="2"><g class="seq__msg "><path class="seq__line" d="M 74 196 L 446 196" pathLength="1"/><path class="seq__head" d="M 437 191 L 446 196 L 437 201"/><text class="seq__label" x="260" y="188">MANIFEST</text><text class="seq__sub" x="260" y="213">1 file · 38 chunks · a SHA-256 for each</text></g></g>
+                <g class="seq__stage" data-s="3"><text class="seq__label" x="260" y="242">CHUNKS 1 to 8 · up to 8 MB in flight</text><g class="seq__msg seq__msg--chunk" style="--k:0"><path class="seq__line" d="M 74 250 L 446 250" pathLength="1"/></g><g class="seq__msg seq__msg--chunk" style="--k:1"><path class="seq__line" d="M 74 259 L 446 259" pathLength="1"/></g><g class="seq__msg seq__msg--chunk" style="--k:2"><path class="seq__line" d="M 74 268 L 446 268" pathLength="1"/></g><g class="seq__msg seq__msg--chunk" style="--k:3"><path class="seq__line" d="M 74 277 L 446 277" pathLength="1"/></g><g class="seq__msg "><path class="seq__line" d="M 446 318 L 74 318" pathLength="1"/><path class="seq__head" d="M 83 313 L 74 318 L 83 323"/><text class="seq__label" x="260" y="310">ACK 1 to 8</text><text class="seq__sub" x="260" y="335">each one, as it lands</text></g></g>
+                <g class="seq__stage" data-s="4"><g class="seq__msg seq__msg--lost"><path class="seq__line" d="M 74 372 L 262 372" pathLength="1"/><path class="seq__x" d="M 256 366 l 12 12 M 268 366 l -12 12"/><text class="seq__label" x="168" y="364">CHUNK 13</text><text class="seq__sub seq__sub--bad" x="330" y="376">lost on the way</text></g><g class="seq__msg seq__msg--nack"><path class="seq__line" d="M 446 414 L 74 414" pathLength="1"/><path class="seq__head" d="M 83 409 L 74 414 L 83 419"/><text class="seq__label" x="260" y="406">NACK 13</text><text class="seq__sub" x="260" y="431">missing, send it again</text></g><g class="seq__msg seq__msg--bad"><path class="seq__line" d="M 74 470 L 446 470" pathLength="1"/><path class="seq__head" d="M 437 465 L 446 470 L 437 475"/><text class="seq__label" x="260" y="462">CHUNK 21</text><rect class="seq__flag" x="386" y="480" width="76" height="20" rx="10"/><text class="seq__flag-text" x="424" y="494">hash ✕</text></g><g class="seq__msg seq__msg--nack"><path class="seq__line" d="M 446 530 L 74 530" pathLength="1"/><path class="seq__head" d="M 83 525 L 74 530 L 83 535"/><text class="seq__label" x="260" y="522">NACK 21</text><text class="seq__sub" x="260" y="547">wrong hash, send it again</text></g><g class="seq__msg seq__msg--ok"><path class="seq__line" d="M 74 578 L 446 578" pathLength="1"/><path class="seq__head" d="M 437 573 L 446 578 L 437 583"/><text class="seq__label" x="260" y="570">CHUNK 13 · CHUNK 21</text><text class="seq__sub" x="260" y="595">only those two, resent</text></g></g>
+                <g class="seq__stage" data-s="5"><g class="seq__msg seq__msg--ok"><path class="seq__line" d="M 446 632 L 74 632" pathLength="1"/><path class="seq__head" d="M 83 627 L 74 632 L 83 637"/><text class="seq__label" x="260" y="624">RECEIPT · root 9f2c…e41a</text><text class="seq__sub" x="260" y="649">no names, no content</text></g><g class="seq__msg seq__msg--ok"><path class="seq__line" d="M 74 678 L 446 678" pathLength="1"/><path class="seq__head" d="M 437 673 L 446 678 L 437 683"/><text class="seq__label" x="260" y="670">RECEIPT · roots match</text><text class="seq__sub" x="260" y="695">both sides keep a copy</text></g></g>
+                <g class="seq__stage seq__done" data-s="5"><circle cx="74" cy="712" r="10"/><circle cx="446" cy="712" r="10"/><path d="m 68.5 712 l 3.5 3.5 l 7 -7.5 M 440.5 712 l 3.5 3.5 l 7 -7.5"/></g>
+              </svg>
+            </figure>
+        </div>
       </div>
     </section>
 
@@ -112,23 +133,86 @@
         <div class="section-head">
           <span class="eyebrow" data-reveal>What if</span>
           <h2 id="edge-title" data-split>The edge cases, <span class="script">handled</span></h2>
+          <p class="lede" data-reveal style="--d:200">The things that go wrong on real networks and real devices, and what Clex does about each one</p>
         </div>
-        <div class="grid grid--2" data-stagger="90">
-          <article class="card">
-            <h3 class="card__title">I'm offline</h3>
-            <p class="card__text">After Clex loads once, the preparation tools work with no connection. Compress, merge and convert, then share when you reconnect.</p>
+        <div class="edges" data-stagger="90">
+          <article class="edge" data-edge>
+            <svg class="edge__art" viewBox="0 0 320 170" aria-hidden="true">
+              <rect class="edge__device" x="30" y="30" width="150" height="100" rx="10"/>
+              <path class="edge__base" d="M 16 138 H 194 L 184 148 H 26 Z"/>
+              <g class="edge__nowifi">
+                <path d="M 226 70 a 30 30 0 0 1 42 0 M 236 80 a 16 16 0 0 1 22 0"/>
+                <circle cx="247" cy="92" r="3"/>
+                <path class="edge__slash" d="M 222 56 L 272 104"/>
+              </g>
+              <g class="edge__tools">
+                <g style="--i:0"><rect x="46" y="46" width="118" height="20" rx="10"/><text x="60" y="60">Compress</text><path d="M 146 56 l 4 4 l 7 -8"/></g>
+                <g style="--i:1"><rect x="46" y="72" width="118" height="20" rx="10"/><text x="60" y="86">Merge PDFs</text><path d="M 146 82 l 4 4 l 7 -8"/></g>
+                <g style="--i:2"><rect x="46" y="98" width="118" height="20" rx="10"/><text x="60" y="112">Convert</text><path d="M 146 108 l 4 4 l 7 -8"/></g>
+              </g>
+              <text class="edge__caption" x="247" y="128" text-anchor="middle">offline</text>
+            </svg>
+            <div class="edge__body">
+              <h3 class="card__title">I'm offline</h3>
+              <p class="card__text">After Clex loads once, the preparation tools keep working with no connection. Compress, merge and convert, then share when you are back.</p>
+            </div>
           </article>
-          <article class="card">
-            <h3 class="card__title">The file is huge</h3>
-            <p class="card__text">Transfers stream chunk by chunk, so the limit is your browser's memory. For very large files between nearby devices, use the local route.</p>
+
+          <article class="edge" data-edge>
+            <svg class="edge__art" viewBox="0 0 320 170" aria-hidden="true">
+              <rect class="edge__file" x="24" y="40" width="272" height="30" rx="8"/>
+              <g class="edge__cuts">
+                <path d="M 58 40 v 30 M 92 40 v 30 M 126 40 v 30 M 160 40 v 30 M 194 40 v 30 M 228 40 v 30 M 262 40 v 30"/>
+              </g>
+              <text class="edge__label" x="32" y="30">one 18 GB file</text>
+              <g class="edge__stream">
+                <rect style="--i:0" x="24" y="96" width="26" height="18" rx="4"/>
+                <rect style="--i:1" x="24" y="96" width="26" height="18" rx="4"/>
+                <rect style="--i:2" x="24" y="96" width="26" height="18" rx="4"/>
+                <rect style="--i:3" x="24" y="96" width="26" height="18" rx="4"/>
+              </g>
+              <path class="edge__track" d="M 24 105 H 296"/>
+              <g class="edge__ram"><rect x="24" y="130" width="120" height="10" rx="5"/><rect class="edge__ram-fill" x="24" y="130" width="22" height="10" rx="5"/></g>
+              <text class="edge__caption" x="154" y="139">memory stays low</text>
+            </svg>
+            <div class="edge__body">
+              <h3 class="card__title">The file is huge</h3>
+              <p class="card__text">Transfers stream chunk by chunk and are never loaded whole, so size is limited by your browser, not by Clex. For very large files between nearby devices, use the local route.</p>
+            </div>
           </article>
-          <article class="card">
-            <h3 class="card__title">The browsers can't connect</h3>
-            <p class="card__text">Some networks block direct connections. Clex tells you plainly rather than falling back to an upload. Try the local route if you share a network.</p>
+
+          <article class="edge" data-edge>
+            <svg class="edge__art" viewBox="0 0 320 170" aria-hidden="true">
+              <rect class="edge__device" x="18" y="40" width="70" height="50" rx="7"/>
+              <rect class="edge__device" x="250" y="28" width="44" height="80" rx="10"/>
+              <g class="edge__wall"><rect x="146" y="24" width="28" height="84" rx="4"/><path d="M 146 45 h 28 M 146 66 h 28 M 146 87 h 28 M 160 24 v 21 M 153 45 v 21 M 167 66 v 21 M 160 87 v 21"/></g>
+              <path class="edge__try" d="M 92 65 H 140" pathLength="1"/>
+              <path class="edge__x" d="M 128 58 l 12 12 M 140 58 l -12 12"/>
+              <g class="edge__toast"><rect x="56" y="124" width="208" height="32" rx="12"/><text x="160" y="144" text-anchor="middle">Can't connect. Try the local route</text></g>
+            </svg>
+            <div class="edge__body">
+              <h3 class="card__title">The browsers can't connect</h3>
+              <p class="card__text">Some strict networks block direct connections. Clex tells you plainly rather than falling back to uploading your file. Try the local route if you share a network.</p>
+            </div>
           </article>
-          <article class="card">
-            <h3 class="card__title">Which browsers work</h3>
-            <p class="card__text">Any modern browser with WebRTC: Chrome, Safari, Firefox and Edge, on desktop and mobile.</p>
+
+          <article class="edge" data-edge>
+            <svg class="edge__art" viewBox="0 0 320 170" aria-hidden="true">
+              <g class="edge__browsers">
+                <g style="--i:0"><circle cx="58" cy="66" r="24"/><text x="58" y="112">Chrome</text></g>
+                <g style="--i:1"><circle cx="126" cy="66" r="24"/><text x="126" y="112">Safari</text></g>
+                <g style="--i:2"><circle cx="194" cy="66" r="24"/><text x="194" y="112">Firefox</text></g>
+                <g style="--i:3"><circle cx="262" cy="66" r="24"/><text x="262" y="112">Edge</text></g>
+              </g>
+              <g class="edge__ticks">
+                <path d="m 49 66 l 6 6 l 12 -13 M 117 66 l 6 6 l 12 -13 M 185 66 l 6 6 l 12 -13 M 253 66 l 6 6 l 12 -13"/>
+              </g>
+              <text class="edge__caption" x="160" y="146" text-anchor="middle">desktop and mobile · WebRTC</text>
+            </svg>
+            <div class="edge__body">
+              <h3 class="card__title">Which browsers work</h3>
+              <p class="card__text">Any modern browser with WebRTC: Chrome, Safari, Firefox and Edge, on desktop and on mobile. Nothing to install on either side.</p>
+            </div>
           </article>
         </div>
       </div>

@@ -24,6 +24,15 @@
     confirmDelete = false
   }
 
+  // A brand new note starts with the cursor in its title.
+  let focusedFor = ''
+  $: if ($activeNote && $activeNote.id !== focusedFor) {
+    focusedFor = $activeNote.id
+    if (!$activeNote.title && !$activeNote.body) {
+      requestAnimationFrame(() => titleInput?.focus())
+    }
+  }
+
   async function handleTitleInput(e: Event) {
     const note = $activeNote
     if (!note) return
@@ -233,7 +242,7 @@
             Error
           {:else}
             <span class="ved-save-dot ved-save-dot--ok"></span>
-            Saved
+            Encrypted and saved
           {/if}
         </span>
       </div>
@@ -244,7 +253,7 @@
       bind:this={titleInput}
       class="ved-title"
       type="text"
-      placeholder="Untitled"
+      placeholder="Untitled note"
       value={note.title}
       on:input={handleTitleInput}
     />
@@ -281,9 +290,15 @@
 {:else}
   <div class="ved-empty" in:fade={{ duration: 200 }}>
     <div class="ved-empty-inner">
-      <div class="ved-empty-icon">⬡</div>
-      <h3 class="ved-empty-title">Vault</h3>
-      <p class="ved-empty-sub">Select a note or create a new one</p>
+      <svg class="ved-empty-art" viewBox="0 0 96 96" aria-hidden="true">
+        <rect x="18" y="12" width="52" height="68" rx="8" />
+        <path d="M28 28h32M28 38h32M28 48h20" />
+        <circle cx="66" cy="66" r="16" />
+        <rect x="59" y="64" width="14" height="10" rx="2.5" />
+        <path d="M62 64v-3a4 4 0 0 1 8 0v3" />
+      </svg>
+      <h3 class="ved-empty-title">Pick a note, or start a new one</h3>
+      <p class="ved-empty-sub">Every note is encrypted before it is written to this device</p>
       <div class="ved-shortcuts">
         <div class="ved-shortcut"><kbd>⌘B</kbd> bold</div>
         <div class="ved-shortcut"><kbd>⌘I</kbd> italic</div>
@@ -300,17 +315,16 @@
     flex-direction: column;
     height: 100%;
     min-height: 0;
+    padding: 14px clamp(16px, 2.4vw, 30px) 20px;
   }
 
   .ved-toolbar {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
+    gap: 10px;
     flex-wrap: wrap;
-    padding-bottom: 12px;
-    border-bottom: 1px solid var(--border);
-    margin-bottom: 12px;
+    margin-bottom: 18px;
     flex-shrink: 0;
   }
 
@@ -319,37 +333,35 @@
     align-items: center;
     gap: 2px;
     padding: 3px;
+    border-radius: 10px;
     background: var(--surface-2);
-    border: 1px solid var(--border-strong);
-    border-radius: 9px;
-    box-shadow: var(--shadow-sm);
+    box-shadow: inset 0 0 0 1px var(--border);
   }
 
   .ved-mode-btn {
-    padding: 4px 14px;
-    border-radius: 7px;
-    border: 1.5px solid transparent;
+    padding: 5px 14px;
+    border: 0;
+    border-radius: 8px;
     background: transparent;
-    font-family: var(--font-display);
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--text-2);
+    font-family: var(--font-sans);
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--text-3);
     cursor: pointer;
-    transition: all 0.15s;
+    transition: color 150ms, background 150ms, box-shadow 150ms;
     white-space: nowrap;
   }
 
   .ved-mode-btn--active {
     background: var(--surface);
-    border-color: var(--border-hard);
     color: var(--text-1);
-    box-shadow: var(--shadow-sm);
+    box-shadow: var(--shadow-sm), 0 0 0 1px var(--border);
   }
 
   .ved-toolbar-actions {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 4px;
     flex-wrap: wrap;
     justify-content: flex-end;
   }
@@ -358,24 +370,23 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    min-height: 34px;
-    padding: 7px 12px;
-    border-radius: 999px;
-    border: 1px solid var(--border-strong);
-    background: var(--surface);
-    color: var(--text-1);
-    box-shadow: var(--shadow-sm);
-    font-family: var(--font-display);
-    font-size: 12px;
-    font-weight: 700;
+    gap: 6px;
+    height: 32px;
+    padding: 0 11px;
+    border: 1px solid transparent;
+    border-radius: 9px;
+    background: transparent;
+    color: var(--text-2);
+    font-family: var(--font-sans);
+    font-size: 12.5px;
+    font-weight: 500;
     cursor: pointer;
-    transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease, color 120ms ease;
+    transition: background 150ms, color 150ms, border-color 150ms;
   }
 
   .ved-action-btn:hover {
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-sm);
+    background: var(--surface-2);
+    color: var(--text-1);
   }
 
   .ved-action-btn span {
@@ -385,20 +396,17 @@
   .ved-delete-confirm {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     flex-wrap: wrap;
-    padding: 6px 8px 6px 10px;
-    border: 1.5px solid rgba(255, 68, 102, 0.4);
-    border-radius: 999px;
-    background: color-mix(in srgb, var(--red) 8%, var(--surface));
+    padding: 4px 4px 4px 12px;
+    border: 1px solid color-mix(in srgb, var(--red) 40%, transparent);
+    border-radius: 11px;
+    background: color-mix(in srgb, var(--red) 7%, var(--surface));
   }
 
   .ved-delete-copy {
-    font-family: var(--font-mono);
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
+    font-size: 12px;
+    font-weight: 500;
     color: var(--red);
   }
 
@@ -406,51 +414,45 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-height: 28px;
-    padding: 4px 10px;
-    border-radius: 999px;
+    height: 28px;
+    padding: 0 10px;
     border: 1px solid var(--border-strong);
+    border-radius: 8px;
     background: var(--surface);
     color: var(--text-1);
-    font-family: var(--font-display);
+    font-family: var(--font-sans);
     font-size: 12px;
-    font-weight: 700;
+    font-weight: 500;
     cursor: pointer;
-  }
-
-  .ved-confirm-btn--danger,
-  .ved-action-btn--danger {
-    color: var(--red);
-  }
-
-  .ved-action-btn--danger {
-    border-color: color-mix(in srgb, var(--red) 72%, var(--border-hard));
-    background: color-mix(in srgb, var(--red) 10%, var(--surface));
   }
 
   .ved-confirm-btn--danger {
     border-color: var(--red);
-    background: color-mix(in srgb, var(--red) 10%, var(--surface));
+    background: var(--red);
+    color: var(--surface);
+  }
+
+  .ved-action-btn--danger:hover {
+    background: color-mix(in srgb, var(--red) 9%, var(--surface));
+    color: var(--red);
   }
 
   .ved-action-btn--active {
-    background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+    background: var(--accent-dim);
     color: var(--accent-text);
-    border-color: color-mix(in srgb, var(--accent) 68%, var(--border-hard));
+    border-color: color-mix(in srgb, var(--accent) 30%, transparent);
   }
 
   .ved-save-state {
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 6px;
+    margin-left: 6px;
+    padding: 0 4px;
     font-family: var(--font-mono);
-    font-size: 11px;
+    font-size: 10.5px;
     color: var(--text-3);
-    letter-spacing: 0.04em;
-    padding: 4px 10px;
-    border-radius: 6px;
-    background: var(--raised);
-    border: 1px solid var(--border);
+    letter-spacing: 0.02em;
   }
 
   .ved-save-state--saving { color: var(--amber); }
@@ -475,22 +477,23 @@
 
   .ved-title {
     width: 100%;
-    background: transparent;
+    padding: 0;
+    margin-bottom: 10px;
     border: none;
     outline: none;
-    font-family: var(--font-display);
-    font-size: 26px;
-    font-weight: 700;
+    background: transparent;
+    font-family: var(--font-sans);
+    font-size: clamp(24px, 2.4vw, 32px);
+    font-weight: 600;
+    line-height: 1.15;
+    letter-spacing: -0.035em;
     color: var(--text-1);
-    letter-spacing: -0.03em;
-    line-height: 1.2;
-    padding: 0;
-    margin-bottom: 8px;
     flex-shrink: 0;
   }
 
   .ved-title::placeholder {
     color: var(--text-3);
+    opacity: 0.55;
   }
 
   .ved-tags-row {
@@ -498,8 +501,10 @@
     align-items: center;
     flex-wrap: wrap;
     gap: 6px;
-    margin-bottom: 12px;
     min-height: 28px;
+    margin-bottom: 14px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--border);
     flex-shrink: 0;
   }
 
@@ -507,41 +512,45 @@
     display: inline-flex;
     align-items: center;
     gap: 4px;
+    padding: 3px 9px;
+    border-radius: 999px;
+    background: var(--accent-dim);
     font-family: var(--font-mono);
     font-size: 11px;
     color: var(--accent-text);
-    background: var(--accent-dim);
-    border: 1px solid var(--accent-border);
-    border-radius: 5px;
-    padding: 2px 8px;
-    letter-spacing: 0.03em;
   }
 
   .ved-tag-remove {
-    background: none;
+    padding: 0 0 0 2px;
     border: none;
-    cursor: pointer;
+    background: none;
     font-size: 9px;
+    line-height: 1;
     color: var(--accent-text);
     opacity: 0.6;
-    padding: 0 0 0 2px;
-    line-height: 1;
+    cursor: pointer;
   }
 
   .ved-tag-remove:hover { opacity: 1; }
 
   .ved-tag-input {
-    background: none;
-    border: none;
+    width: 70px;
+    padding: 3px 8px;
+    border: 1px dashed var(--border-strong);
+    border-radius: 999px;
     outline: none;
+    background: none;
     font-family: var(--font-mono);
     font-size: 11px;
-    color: var(--text-3);
-    width: 60px;
-    padding: 0;
+    color: var(--text-2);
   }
 
-  .ved-tag-input::placeholder { color: var(--text-3); opacity: 0.6; }
+  .ved-tag-input:focus {
+    border-color: var(--accent);
+    border-style: solid;
+  }
+
+  .ved-tag-input::placeholder { color: var(--text-3); }
 
   .ved-body {
     flex: 1 1 0;
@@ -550,67 +559,89 @@
     flex-direction: column;
   }
 
-  /* Empty state */
+  /* Nothing selected */
   .ved-empty {
     display: flex;
     align-items: center;
     justify-content: center;
     height: 100%;
+    padding: 24px;
   }
 
   .ved-empty-inner {
-    text-align: center;
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 10px;
+    max-width: 340px;
+    text-align: center;
   }
 
-  .ved-empty-icon {
-    font-size: 40px;
-    color: var(--text-3);
-    opacity: 0.4;
+  .ved-empty-art {
+    width: 84px;
+    height: 84px;
+    margin-bottom: 6px;
+  }
+
+  .ved-empty-art rect,
+  .ved-empty-art path,
+  .ved-empty-art circle {
+    fill: none;
+    stroke: var(--border-strong);
+    stroke-width: 2.4;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .ved-empty-art circle {
+    fill: var(--accent-dim);
+    stroke: var(--accent);
+  }
+
+  .ved-empty-art circle ~ rect,
+  .ved-empty-art circle ~ path {
+    stroke: var(--accent);
   }
 
   .ved-empty-title {
-    font-family: var(--font-display);
-    font-size: 22px;
-    font-weight: 700;
-    color: var(--text-1);
-    letter-spacing: -0.03em;
     margin: 0;
+    font-family: var(--font-sans);
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: -0.025em;
+    color: var(--text-1);
   }
 
   .ved-empty-sub {
+    margin: 0;
     font-size: 13px;
     color: var(--text-3);
-    margin: 0;
   }
 
   .ved-shortcuts {
     display: flex;
-    gap: 12px;
-    margin-top: 8px;
     flex-wrap: wrap;
     justify-content: center;
+    gap: 12px;
+    margin-top: 10px;
   }
 
   .ved-shortcut {
-    font-size: 12px;
-    color: var(--text-3);
     display: flex;
     align-items: center;
     gap: 5px;
+    font-size: 12px;
+    color: var(--text-3);
   }
 
   kbd {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    background: var(--surface-2);
+    padding: 1px 6px;
     border: 1px solid var(--border-strong);
     border-radius: 5px;
-    padding: 1px 6px;
-    box-shadow: 0 2px 0 var(--border-hard);
+    background: var(--surface-2);
+    box-shadow: 0 1.5px 0 var(--border-strong);
+    font-family: var(--font-mono);
+    font-size: 11px;
     color: var(--text-2);
   }
 </style>

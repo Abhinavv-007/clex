@@ -1,0 +1,91 @@
+        <div class="routes" data-routes>
+          <article class="route">
+            <div class="route__sheet">
+              <svg class="route__art" viewBox="0 0 480 280" aria-hidden="true">
+                <path class="route__hello" d="M 262 40 L 96 148" pathLength="1"/>
+                <path class="route__hello" d="M 262 40 L 402 116" pathLength="1"/>
+                <circle class="route__stun-ring" cx="262" cy="36" r="11"/>
+                <circle class="route__stun" cx="262" cy="36" r="5"/>
+                <text class="route__mono" x="280" y="40">STUN</text>
+
+                <path id="route-direct" class="route__line" d="M 150 182 C 210 84, 320 74, 372 170" pathLength="1"/>
+                <g class="route__packets">
+                  <circle r="3.4"><animateMotion dur="1.6s" repeatCount="indefinite" begin="0s"><mpath href="#route-direct"/></animateMotion></circle>
+                  <circle r="3.4"><animateMotion dur="1.6s" repeatCount="indefinite" begin="0.53s"><mpath href="#route-direct"/></animateMotion></circle>
+                  <circle r="3.4"><animateMotion dur="1.6s" repeatCount="indefinite" begin="1.06s"><mpath href="#route-direct"/></animateMotion></circle>
+                </g>
+
+                <g class="route__device">
+                  <rect x="36" y="150" width="114" height="76" rx="8" pathLength="1"/>
+                  <rect class="route__glass" x="44" y="158" width="98" height="60" rx="3"/>
+                  <path d="M 22 232 H 164 L 155 241 H 31 Z" pathLength="1"/>
+                </g>
+                <g class="route__device">
+                  <rect x="372" y="116" width="64" height="124" rx="13" pathLength="1"/>
+                  <rect class="route__glass" x="377" y="121" width="54" height="114" rx="9"/>
+                  <circle class="route__cam" cx="404" cy="129" r="2.2"/>
+                </g>
+                <text class="route__mono" x="93" y="266" text-anchor="middle">you</text>
+                <text class="route__mono" x="404" y="266" text-anchor="middle">them</text>
+
+                <path class="route__arrow" d="M 196 58 C 214 46, 232 40, 246 38 M 238 32 L 247 38 L 239 44" pathLength="1"/>
+                <path class="route__arrow" d="M 262 176 C 262 150, 263 130, 264 114 M 258 122 L 264 113 L 270 122" pathLength="1"/>
+              </svg>
+              <span class="route__note route__note--hello"><span class="script" data-write="manual" data-scale="2">only says hello</span></span>
+              <span class="route__note route__note--across"><span class="script" data-write="manual" data-scale="2">straight across</span></span>
+            </div>
+            <div class="route__body">
+              <div class="row"><h3>Direct</h3><span class="tag tag--jade">Default</span></div>
+              <p class="card__text">Across the internet. A STUN server helps the two browsers learn each other's address, and that is all it does. After that, the data channel runs between them alone.</p>
+              <dl class="facts">
+                <div><dt>Transport</dt><dd>WebRTC data channel</dd></div>
+                <div><dt>In transit</dt><dd>DTLS encrypted</dd></div>
+                <div><dt>Best for</dt><dd>Anyone, anywhere</dd></div>
+              </dl>
+            </div>
+          </article>
+
+          <article class="route">
+            <div class="route__sheet">
+              <svg class="route__art" viewBox="0 0 480 280" aria-hidden="true">
+                <path class="route__house" d="M 40 120 L 240 34 L 440 120 V 252 Q 440 260 432 260 H 48 Q 40 260 40 252 Z" pathLength="1"/>
+                <g class="route__wifi">
+                  <path d="M 222 104 a 26 26 0 0 1 36 0" pathLength="1"/>
+                  <path d="M 212 94 a 40 40 0 0 1 56 0" pathLength="1"/>
+                  <circle cx="240" cy="114" r="3.2"/>
+                </g>
+
+                <path id="route-local" class="route__line" d="M 184 208 H 300" pathLength="1"/>
+                <g class="route__packets">
+                  <circle r="3.4"><animateMotion dur="0.9s" repeatCount="indefinite" begin="0s"><mpath href="#route-local"/></animateMotion></circle>
+                  <circle r="3.4"><animateMotion dur="0.9s" repeatCount="indefinite" begin="0.3s"><mpath href="#route-local"/></animateMotion></circle>
+                  <circle r="3.4"><animateMotion dur="0.9s" repeatCount="indefinite" begin="0.6s"><mpath href="#route-local"/></animateMotion></circle>
+                </g>
+
+                <g class="route__device">
+                  <rect x="70" y="170" width="114" height="76" rx="8" pathLength="1"/>
+                  <rect class="route__glass" x="78" y="178" width="98" height="60" rx="3"/>
+                </g>
+                <g class="route__device">
+                  <rect x="300" y="160" width="118" height="78" rx="7" pathLength="1"/>
+                  <rect class="route__glass" x="307" y="167" width="104" height="64" rx="3"/>
+                  <path d="M 359 238 V 248 M 343 250 H 375" pathLength="1"/>
+                </g>
+                <text class="route__mono" x="127" y="160" text-anchor="middle">laptop</text>
+                <text class="route__mono" x="359" y="150" text-anchor="middle">desktop</text>
+
+                <path class="route__arrow" d="M 350 44 C 372 50, 386 64, 392 86 M 385 80 L 392 88 L 397 79" pathLength="1"/>
+              </svg>
+              <span class="route__note route__note--home"><span class="script" data-write="manual" data-scale="2">never leaves the house</span></span>
+            </div>
+            <div class="route__body">
+              <div class="row"><h3>Local</h3><span class="tag">Same Wi-Fi</span></div>
+              <p class="card__text">Inside your network. Only local addresses are offered, and if the connection would leave the network, Clex stops rather than route it out.</p>
+              <dl class="facts">
+                <div><dt>Transport</dt><dd>WebRTC, host only</dd></div>
+                <div><dt>Speed</dt><dd>Your LAN's</dd></div>
+                <div><dt>Best for</dt><dd>Big files, own devices</dd></div>
+              </dl>
+            </div>
+          </article>
+        </div>

@@ -263,19 +263,22 @@ p {
   background: var(--gold-line);
 }
 
-/* The handwritten accent. One family, one treatment, everywhere. */
+/* The handwritten accent, where it is set as type rather than drawn as
+   strokes (inside the apps). Sacramento is a hairline monoline, so it gets a
+   touch of stroke to match the weight of the drawn words. */
 .script {
   display: inline-block;
   font-family: var(--font-script);
   font-weight: 400;
   font-style: normal;
-  font-size: 1.22em;
+  font-size: 1.5em;
   line-height: 0.8;
   letter-spacing: 0;
-  color: var(--jade);
+  color: var(--script-a);
+  -webkit-text-stroke: 0.018em currentColor;
   padding: 0 0.08em 0 0.02em;
   margin: -0.1em 0 -0.2em;
-  vertical-align: -0.02em;
+  vertical-align: -0.04em;
 }
 
 .link {

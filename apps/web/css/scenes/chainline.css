@@ -1,0 +1,249 @@
+/* ==========================================================================
+   The chain, straight (js/scenes/chainline.js)
+   ========================================================================== */
+
+.chainline {
+  --block: clamp(150px, 15vw, 188px);
+  position: relative;
+  overflow: hidden;
+  padding: 8px 2px 10px;
+  -webkit-mask: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent);
+  mask: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent);
+}
+
+.chainline__track {
+  display: flex;
+  align-items: stretch;
+  justify-content: flex-end;
+  gap: 26px;
+}
+
+.cblock,
+.cblock-slot {
+  position: relative;
+  flex: 0 0 var(--block);
+  display: grid;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: 14px;
+}
+
+.cblock {
+  border: 1px solid var(--line-2);
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
+  font-size: var(--fs-xs);
+  transition: border-color var(--t-3) var(--ease), box-shadow var(--t-3) var(--ease), opacity 450ms var(--ease), flex-basis 500ms var(--ease-in-out), margin 500ms var(--ease-in-out), padding 500ms var(--ease-in-out);
+}
+
+/* The link to the block before: drawn when the block joins. */
+.cblock + .cblock::before,
+.cblock + .cblock-slot::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: calc(100% + 3px);
+  width: 20px;
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--gold), var(--jade));
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  transition: transform 500ms var(--ease-out) 150ms;
+}
+
+.cblock.is-linked::before {
+  transform: scaleX(1);
+}
+
+.cblock + .cblock-slot::before {
+  background: var(--line-3);
+  transform: scaleX(1);
+  opacity: 0.6;
+}
+
+.cblock.is-new {
+  animation: cblock-in 600ms var(--ease-out) both;
+}
+
+@keyframes cblock-in {
+  from { opacity: 0; transform: translateY(10px) scale(0.96); }
+  to { opacity: 1; transform: none; }
+}
+
+.cblock.is-leaving {
+  flex-basis: 0;
+  margin-left: -26px;
+  padding-inline: 0;
+  opacity: 0;
+  overflow: hidden;
+}
+
+.cblock__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.cblock__idx {
+  font-family: var(--font-mono);
+  color: var(--gold);
+}
+
+.cblock__ok {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--surface-3);
+  transition: background var(--t-3) var(--ease), transform var(--t-4) var(--ease-spring);
+}
+
+.cblock__ok::after {
+  content: '';
+  width: 4px;
+  height: 7px;
+  margin-top: -2px;
+  border: solid var(--on-jade);
+  border-width: 0 1.6px 1.6px 0;
+  transform: rotate(45deg) scale(0);
+  transition: transform 300ms var(--ease-spring) 100ms;
+}
+
+.cblock.is-verified .cblock__ok {
+  background: var(--jade);
+  transform: scale(1.1);
+}
+
+.cblock.is-verified .cblock__ok::after {
+  transform: rotate(45deg) scale(1);
+}
+
+.cblock.is-verified {
+  border-color: color-mix(in srgb, var(--jade) 35%, var(--line-2));
+}
+
+.cblock__rows {
+  display: grid;
+  gap: 3px;
+  margin: 0;
+}
+
+.cblock__rows div {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.cblock__rows dt {
+  color: var(--ink-3);
+}
+
+.cblock__rows dd {
+  margin: 0;
+}
+
+.cblock__rows code {
+  font-size: 0.95em;
+  color: var(--ink);
+}
+
+.cblock__meta {
+  padding-top: 7px;
+  border-top: 1px solid var(--line);
+  color: var(--ink-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cblock-slot {
+  place-items: center;
+  border: 1.5px dashed var(--line-3);
+  color: var(--ink-4);
+  font-family: var(--font-mono);
+  font-size: var(--fs-2xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition: border-color var(--t-3) var(--ease), background var(--t-3) var(--ease);
+}
+
+.cblock-slot.is-target {
+  border-color: var(--jade);
+  background: var(--jade-wash);
+  color: var(--jade);
+}
+
+/* The link made visible: a new block's prev and the previous block's hash. */
+.cblock__rows code {
+  padding: 0 3px;
+  margin: 0 -3px;
+  border-radius: 4px;
+  transition: background 400ms var(--ease), color 400ms var(--ease);
+}
+
+.cblock__rows code.is-matching {
+  background: var(--jade-soft);
+  color: var(--jade);
+}
+
+/* On the Chain page the chain is the picture: bigger blocks, a key below. */
+.chainline-hero {
+  display: grid;
+  gap: 18px;
+  margin: 0 0 var(--s-7);
+  padding: clamp(18px, 2.5vw, 30px);
+  border: 1px solid var(--line);
+  border-radius: var(--r-xl);
+  background:
+    radial-gradient(ellipse 60% 80% at 80% 50%, var(--jade-wash), transparent 70%),
+    var(--surface);
+  box-shadow: var(--shadow-2);
+}
+
+.chainline--hero {
+  --block: clamp(170px, 19vw, 230px);
+}
+
+.chainline--hero .cblock {
+  padding: 16px 18px;
+  font-size: var(--fs-sm);
+}
+
+.chainline--hero .chainline__track {
+  gap: 34px;
+}
+
+.chainline--hero .cblock + .cblock::before,
+.chainline--hero .cblock + .cblock-slot::before {
+  width: 28px;
+}
+
+.chainline-hero__key {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 22px;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  color: var(--ink-3);
+}
+
+.chainline-hero__key span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chainline-hero__key i {
+  width: 18px;
+  height: 8px;
+  border-radius: 3px;
+  background: var(--jade-soft);
+  box-shadow: inset 0 0 0 1px var(--jade);
+}
+
+.chainline-hero__key i.is-hash {
+  background: var(--surface-3);
+  box-shadow: inset 0 0 0 1px var(--line-3);
+}

@@ -422,40 +422,46 @@
   .ve-toolbar {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 10px;
+    gap: 2px;
     flex-wrap: wrap;
-    padding: 10px 12px;
-    border-radius: 14px;
-    border: 1px solid var(--border-strong);
-    background: color-mix(in srgb, var(--surface-2) 82%, var(--surface));
-    box-shadow: var(--shadow-sm);
+    width: fit-content;
+    max-width: 100%;
+    padding: 3px;
+    border-radius: 11px;
+    background: var(--surface-2);
+    box-shadow: inset 0 0 0 1px var(--border);
   }
 
   .ve-toolgroup {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 1px;
     flex-wrap: wrap;
   }
 
+  .ve-toolgroup + .ve-toolgroup {
+    margin-left: 4px;
+    padding-left: 5px;
+    border-left: 1px solid var(--border);
+  }
+
   .ve-tool {
-    min-height: 34px;
-    padding: 7px 12px;
-    border-radius: 999px;
-    border: 1px solid var(--border-strong);
-    background: var(--surface);
-    box-shadow: var(--shadow-sm);
-    font-family: var(--font-display);
+    height: 28px;
+    padding: 0 10px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    font-family: var(--font-sans);
     font-size: 12px;
-    font-weight: 700;
-    color: var(--text-1);
+    font-weight: 500;
+    color: var(--text-2);
     cursor: pointer;
-    transition: transform 120ms ease, box-shadow 120ms ease;
+    transition: background 120ms ease, color 120ms ease;
   }
 
   .ve-tool:hover {
-    transform: translateY(-1px);
+    background: var(--surface);
+    color: var(--text-1);
     box-shadow: var(--shadow-sm);
   }
 
@@ -541,7 +547,7 @@
     border-radius: 4px;
     margin-top: 2px;
   }
-  :global(.ve-task-box--checked) { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 700; }
+  :global(.ve-task-box--checked) { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); font-weight: 700; }
 
   .ve-footer {
     display: flex;

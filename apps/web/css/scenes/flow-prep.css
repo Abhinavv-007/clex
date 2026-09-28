@@ -1,0 +1,221 @@
+/* ==========================================================================
+   Flow stage, continued: the prepare scene (see flow.css).
+   ========================================================================== */
+
+/* ── 2 · Prepare ── */
+
+.fx-prep {
+  display: grid;
+  grid-template-columns: 36cqi 1fr;
+  gap: 4cqi 5cqi;
+  width: 84cqi;
+  align-items: center;
+}
+
+.fx-prep__photo {
+  position: relative;
+  margin: 0;
+  aspect-ratio: 4 / 4.6;
+  border-radius: 3cqi;
+  overflow: hidden;
+  box-shadow: var(--shadow-2), 0 0 0 1px var(--line-2);
+}
+
+.fx-prep__photo > svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.fx-prep__wipe {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 30%, rgba(255, 255, 255, 0.55) 50%, transparent 70%);
+  transform: translateX(-120%);
+}
+
+.fx-prep__photo figcaption {
+  position: absolute;
+  left: 2cqi;
+  right: 2cqi;
+  bottom: 2cqi;
+  display: flex;
+  align-items: center;
+  gap: 1.6cqi;
+  padding: 1.4cqi 1.8cqi;
+  border-radius: 2cqi;
+  background: rgba(20, 19, 17, 0.62);
+  backdrop-filter: blur(6px);
+  color: #f1ede5;
+  font-size: max(10px, 2.1cqi);
+}
+
+.fx-prep__fmt,
+.fx-prep__photo b {
+  display: inline-grid;
+}
+
+.fx-prep__fmt {
+  padding: 0.4cqi 1.2cqi;
+  border-radius: 1cqi;
+  background: rgba(255, 255, 255, 0.14);
+  font-family: var(--font-mono);
+  font-size: 0.86em;
+}
+
+.fx-prep__fmt > span,
+.fx-prep__photo b > span {
+  grid-area: 1 / 1;
+  transition: opacity 300ms var(--ease), transform 400ms var(--ease-out);
+}
+
+.fx-prep__fmt-b,
+.fx-prep__name-b {
+  opacity: 0;
+  transform: translateY(60%);
+}
+
+.fx-prep__photo b {
+  font-weight: 500;
+}
+
+.fx-prep__tools {
+  display: grid;
+  gap: 2.4cqi;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fx-prep__tools li {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 1.4cqi 2cqi;
+  padding: 2.4cqi;
+  border: 1px solid var(--line);
+  border-radius: 2.4cqi;
+  background: var(--surface);
+  font-size: max(10.5px, 2.3cqi);
+}
+
+.fx-prep__tools b {
+  font-weight: 500;
+}
+
+.fx-prep__tools i {
+  grid-column: 1 / -1;
+  display: block;
+  height: 0.8cqi;
+  border-radius: 1cqi;
+  background: var(--surface-3);
+  overflow: hidden;
+}
+
+.fx-prep__tools em {
+  display: block;
+  height: 100%;
+  width: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--jade), var(--gold));
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+}
+
+.fx-prep__size {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 3cqi;
+  padding: 2.4cqi 3cqi;
+  border: 1px solid var(--line);
+  border-radius: 2.4cqi;
+  background: var(--surface-2);
+  font-size: max(10.5px, 2.3cqi);
+}
+
+.fx-prep__size > div:first-child {
+  display: grid;
+  gap: 0.2cqi;
+}
+
+.fx-prep__size .mono {
+  font-size: 0.8em;
+  color: var(--ink-3);
+}
+
+.fx-prep__size b {
+  font-size: 1.35em;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.fx-prep__meter {
+  height: 2cqi;
+  border-radius: 2cqi;
+  background: var(--surface-3);
+  overflow: hidden;
+}
+
+.fx-prep__meter span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--jade), color-mix(in srgb, var(--jade) 60%, var(--gold)));
+  transform-origin: 0 50%;
+}
+
+.fx-prep__saved {
+  padding: 0.6cqi 1.6cqi;
+  border-radius: 99px;
+  background: var(--jade-soft);
+  color: var(--jade) !important;
+  font-weight: 500;
+  opacity: 0;
+}
+
+.fx[data-step='2'] .fx-prep__tools em {
+  animation: fx-bar 700ms var(--ease-in-out) both;
+  animation-delay: calc(350ms + var(--i) * 650ms);
+}
+
+.fx[data-step='2'] .fx-prep__tools .fx-tick {
+  animation: fx-tick 1ms linear both;
+  animation-delay: calc(1050ms + var(--i) * 650ms);
+}
+
+.fx[data-step='2'] .fx-prep__tools .fx-tick::after {
+  animation: fx-tick-mark 300ms var(--ease-spring) both;
+  animation-delay: calc(1050ms + var(--i) * 650ms);
+}
+
+.fx[data-step='2'] .fx-prep__wipe {
+  animation: fx-wipe 900ms var(--ease-in-out) 700ms both;
+}
+
+.fx[data-step='2'] :is(.fx-prep__fmt-a, .fx-prep__name-a) {
+  animation: fx-flip-out 400ms var(--ease) 1000ms both;
+}
+
+.fx[data-step='2'] :is(.fx-prep__fmt-b, .fx-prep__name-b) {
+  animation: fx-flip-in 400ms var(--ease-out) 1050ms both;
+}
+
+.fx[data-step='2'] .fx-prep__meter span {
+  animation: fx-shrink 1400ms var(--ease-in-out) 900ms both;
+}
+
+.fx[data-step='2'] .fx-prep__saved {
+  animation: fx-rise 500ms var(--ease-out) 2300ms both;
+}
+
+@keyframes fx-bar { to { transform: scaleX(1); } }
+@keyframes fx-tick { to { background: var(--jade); border-color: var(--jade); } }
+@keyframes fx-tick-mark { to { transform: rotate(45deg) scale(1); } }
+@keyframes fx-wipe { to { transform: translateX(120%); } }
+@keyframes fx-flip-out { to { opacity: 0; transform: translateY(-60%); } }
+@keyframes fx-flip-in { to { opacity: 1; transform: none; } }
+@keyframes fx-shrink { from { transform: scaleX(1); } to { transform: scaleX(0.15); } }

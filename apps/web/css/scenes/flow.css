@@ -1,0 +1,334 @@
+/* ==========================================================================
+   Flow stage: drop → prepare → share → verify
+
+   One scene per step, never two at once. The stage's data-step (set by
+   js/scenes/flow.js as the steps scroll past) picks the scene; each scene
+   plays its own short animation when it comes in. Sized in container units
+   so the whole picture scales as one.
+   ========================================================================== */
+
+.fx {
+  container-type: inline-size;
+  position: relative;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  aspect-ratio: 10 / 9.4;
+  border: 1px solid var(--line-2);
+  border-radius: 22px;
+  background: var(--surface);
+  box-shadow: var(--shadow-3);
+  overflow: hidden;
+}
+
+.fx__defs {
+  position: absolute;
+}
+
+/* ── Bar: window dots and the four steps ── */
+
+.fx__bar {
+  display: flex;
+  align-items: center;
+  gap: 4cqi;
+  height: 11cqi;
+  padding: 0 3.6cqi;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-2);
+}
+
+.fx__dots {
+  display: flex;
+  gap: 1.2cqi;
+}
+
+.fx__dots i {
+  width: 1.8cqi;
+  height: 1.8cqi;
+  border-radius: 50%;
+  background: var(--line-2);
+}
+
+.fx__pills {
+  display: flex;
+  flex: 1;
+  gap: 1.2cqi;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fx__pill {
+  position: relative;
+  display: inline-flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  gap: 1.2cqi;
+  height: 6.4cqi;
+  border-radius: 99px;
+  font-size: max(11px, 2.3cqi);
+  font-weight: 500;
+  color: var(--ink-4);
+  transition: color var(--t-3) var(--ease), background var(--t-3) var(--ease);
+}
+
+.fx__pill span {
+  font-family: var(--font-mono);
+  font-size: 0.82em;
+  color: var(--gold);
+  opacity: 0.6;
+}
+
+.fx[data-count='3'] .fx__pill[data-s='4'] {
+  display: none;
+}
+
+.fx[data-step='1'] .fx__pill[data-s='1'],
+.fx[data-step='2'] .fx__pill[data-s='2'],
+.fx[data-step='3'] .fx__pill[data-s='3'],
+.fx[data-step='4'] .fx__pill[data-s='4'] {
+  color: var(--ink);
+  background: var(--surface);
+  box-shadow: 0 0 0 1px var(--line-2), var(--shadow-1);
+}
+
+.fx[data-step='1'] .fx__pill[data-s='1'] span,
+.fx[data-step='2'] .fx__pill[data-s='2'] span,
+.fx[data-step='3'] .fx__pill[data-s='3'] span,
+.fx[data-step='4'] .fx__pill[data-s='4'] span {
+  opacity: 1;
+}
+
+/* ── Body: scenes stacked, one shown ── */
+
+.fx__body {
+  position: relative;
+  background:
+    radial-gradient(circle at 1px 1px, var(--line-2) 1px, transparent 1.2px) 0 0 / 4cqi 4cqi,
+    radial-gradient(ellipse 70% 60% at 50% 45%, var(--jade-wash), transparent 70%);
+  overflow: hidden;
+}
+
+.fx__scene {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  opacity: 0;
+  transform: translateY(4cqi) scale(0.97);
+  visibility: hidden;
+  transition:
+    opacity 420ms var(--ease),
+    transform 700ms var(--ease-out),
+    visibility 0s linear 700ms;
+}
+
+.fx[data-step='1'] [data-scene='1'],
+.fx[data-step='2'] [data-scene='2'],
+.fx[data-step='3'] [data-scene='3'],
+.fx[data-step='4'] [data-scene='4'] {
+  opacity: 1;
+  transform: none;
+  visibility: visible;
+  transition-delay: 140ms, 140ms, 0s;
+}
+
+.fx[data-step='2'] [data-scene='1'],
+.fx[data-step='3'] :is([data-scene='1'], [data-scene='2']),
+.fx[data-step='4'] :is([data-scene='1'], [data-scene='2'], [data-scene='3']) {
+  transform: translateY(-4cqi) scale(0.97);
+}
+
+/* Shared bits */
+
+.fx-card {
+  display: flex;
+  align-items: center;
+  gap: 2.6cqi;
+  padding: 2cqi 3cqi 2cqi 2cqi;
+  border: 1px solid var(--line-2);
+  border-radius: 2.6cqi;
+  background: var(--surface);
+  box-shadow: var(--shadow-2);
+  font-size: max(11px, 2.4cqi);
+}
+
+.fx-card .filetype {
+  width: 8cqi;
+  height: 8cqi;
+  border-radius: 1.8cqi;
+  font-size: max(9px, 1.9cqi);
+}
+
+.fx-card__thumb {
+  width: 10cqi;
+  height: 8cqi;
+  border-radius: 1.6cqi;
+}
+
+.fx-card span:last-child {
+  display: grid;
+  gap: 0.3cqi;
+}
+
+.fx-card b {
+  font-weight: 500;
+}
+
+.fx-card em {
+  font-style: normal;
+  font-family: var(--font-mono);
+  font-size: 0.86em;
+  color: var(--ink-3);
+}
+
+.fx-live {
+  display: inline-block;
+  width: 1.4cqi;
+  height: 1.4cqi;
+  margin-right: 1.2cqi;
+  border-radius: 50%;
+  background: var(--jade);
+  box-shadow: 0 0 0 0.8cqi var(--jade-soft);
+}
+
+.fx-tick {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 4.4cqi;
+  height: 4.4cqi;
+  border: 1px solid var(--line-3);
+  border-radius: 50%;
+  flex-shrink: 0;
+  transition: background var(--t-2) var(--ease), border-color var(--t-2) var(--ease);
+}
+
+.fx-tick::after {
+  content: '';
+  width: 1.1cqi;
+  height: 2cqi;
+  margin-top: -0.4cqi;
+  border: solid var(--on-jade);
+  border-width: 0 0.45cqi 0.45cqi 0;
+  transform: rotate(45deg) scale(0);
+  transition: transform 300ms var(--ease-spring);
+}
+
+/* ── 1 · Drop ── */
+
+.fx-drop {
+  position: relative;
+  width: 76cqi;
+  display: grid;
+  gap: 3cqi;
+}
+
+.fx-drop__zone {
+  position: relative;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 1cqi;
+  height: 52cqi;
+  border: 2px dashed var(--line-3);
+  border-radius: 3.4cqi;
+  background: color-mix(in srgb, var(--surface) 70%, transparent);
+  color: var(--ink-3);
+  font-size: max(11px, 2.4cqi);
+  transition: border-color 500ms var(--ease), background 500ms var(--ease);
+}
+
+.fx-drop__zone b {
+  font-weight: 500;
+  color: var(--ink-2);
+}
+
+.fx-drop__zone svg,
+.fx-drop__zone b,
+.fx-drop__zone small {
+  transition: opacity 400ms var(--ease);
+}
+
+.fx-drop__falling {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 52cqi;
+  pointer-events: none;
+}
+
+.fx-drop__falling .fx-card {
+  position: absolute;
+  left: 5cqi;
+  right: 5cqi;
+  top: calc(5.5cqi + var(--i) * 14cqi);
+  opacity: 0;
+}
+
+.fx-drop__cursor {
+  position: absolute;
+  top: 8cqi;
+  left: 60cqi;
+  width: 5cqi;
+  height: 5cqi;
+  opacity: 0;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.25));
+}
+
+.fx-drop__meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: max(10px, 2.1cqi);
+  color: var(--ink-3);
+  opacity: 0;
+}
+
+.fx[data-step='1'] .fx-drop__falling .fx-card {
+  animation: fx-fall 900ms var(--ease-out) both;
+  animation-delay: calc(420ms + var(--i) * 380ms);
+}
+
+.fx[data-step='1'] .fx-drop__cursor {
+  animation: fx-cursor 1500ms var(--ease-in-out) 200ms both;
+}
+
+.fx[data-step='1'] .fx-drop__zone {
+  animation: fx-zone-lit 1ms linear 1000ms both;
+}
+
+.fx[data-step='1'] .fx-drop__zone > * {
+  animation: fx-fade-out 300ms var(--ease) 820ms both;
+}
+
+.fx[data-step='1'] .fx-drop__meta {
+  animation: fx-rise 600ms var(--ease-out) 1800ms both;
+}
+
+@keyframes fx-fall {
+  0% { opacity: 0; transform: translate(14cqi, -30cqi) rotate(7deg) scale(1.05); }
+  30% { opacity: 1; }
+  70% { transform: translate(0, 1cqi) rotate(-0.8deg) scale(1); }
+  100% { opacity: 1; transform: none; }
+}
+
+@keyframes fx-cursor {
+  0% { opacity: 0; transform: translate(14cqi, -10cqi); }
+  25% { opacity: 1; }
+  55% { opacity: 1; transform: translate(-6cqi, 6cqi); }
+  75% { opacity: 1; transform: translate(-6cqi, 6cqi); }
+  100% { opacity: 0; transform: translate(12cqi, 26cqi); }
+}
+
+@keyframes fx-zone-lit {
+  to { border-color: color-mix(in srgb, var(--jade) 55%, transparent); border-style: solid; background: var(--jade-wash); }
+}
+
+@keyframes fx-fade-out {
+  to { opacity: 0; }
+}
+
+@keyframes fx-rise {
+  from { opacity: 0; transform: translateY(2cqi); }
+  to { opacity: 1; transform: none; }
+}
