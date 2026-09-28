@@ -657,7 +657,7 @@
 
   .vsa-card {
     background: var(--surface);
-    border: 2px solid var(--border-hard);
+    border: 1px solid var(--border-strong);
     box-shadow: var(--shadow-md);
     border-radius: 20px;
     padding: 40px 36px;
@@ -681,8 +681,8 @@
   }
 
   .vsa-card--destroyed {
-    border-color: var(--red, #ff4444);
-    box-shadow: 6px 6px 0 var(--red, #ff4444);
+    border-color: var(--red);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--red) 16%, transparent);
   }
 
   .vsa-title {
@@ -705,7 +705,7 @@
   }
 
   .vsa-desc--red {
-    color: var(--red, #ff4444);
+    color: var(--red);
   }
 
   .vsa-entry-stack {
@@ -785,9 +785,9 @@
     margin-bottom: 12px;
     padding: 12px 16px;
     border-radius: 14px;
-    border: 2px solid var(--red, #ff4444);
-    background: color-mix(in srgb, var(--red, #ff4444) 12%, var(--surface));
-    box-shadow: 4px 4px 0 var(--red, #ff4444);
+    border: 2px solid var(--red);
+    background: color-mix(in srgb, var(--red) 12%, var(--surface));
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--red) 16%, transparent);
     font-family: var(--font-display);
     font-size: 15px;
     font-weight: 700;
@@ -807,17 +807,17 @@
 
   .vsa-countdown-bar {
     height: 100%;
-    background: var(--green, #00e570);
+    background: var(--green, var(--green));
     transition: width 1s linear, background 0.5s;
     border-radius: 0 2px 2px 0;
   }
 
   .vsa-countdown-bar--warn {
-    background: var(--amber, #ffaa00);
+    background: var(--amber);
   }
 
   .vsa-countdown-bar--urgent {
-    background: var(--red, #ff4444);
+    background: var(--red);
     animation: urgent-pulse 0.5s ease-in-out infinite alternate;
   }
 
@@ -834,21 +834,21 @@
     gap: 10px;
     padding: 10px 16px;
     background: var(--surface);
-    border: 2px solid var(--border-hard);
+    border: 1px solid var(--border-strong);
     border-radius: 12px;
-    box-shadow: 3px 3px 0 var(--border-hard);
+    box-shadow: var(--shadow-sm);
     width: fit-content;
     transition: border-color 0.4s, box-shadow 0.4s;
   }
 
   .vsa-timer--warn {
-    border-color: var(--amber, #ffaa00);
-    box-shadow: 3px 3px 0 var(--amber, #ffaa00);
+    border-color: var(--amber);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--amber) 16%, transparent);
   }
 
   .vsa-timer--urgent {
-    border-color: var(--red, #ff4444);
-    box-shadow: 3px 3px 0 var(--red, #ff4444);
+    border-color: var(--red);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--red) 16%, transparent);
     animation: shake-timer 0.4s ease-in-out;
   }
 
@@ -875,8 +875,8 @@
 
   .vsa-content-card {
     background: var(--surface);
-    border: 2px solid var(--border-hard);
-    box-shadow: 5px 5px 0 var(--border-hard);
+    border: 1px solid var(--border-strong);
+    box-shadow: var(--shadow-sm);
     border-radius: 16px;
     overflow: hidden;
   }
@@ -932,7 +932,7 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    color: var(--green, #00e570);
+    color: var(--green, var(--green));
     background: rgba(0, 229, 112, 0.08);
     border: 1px solid rgba(0, 229, 112, 0.2);
     border-radius: 999px;

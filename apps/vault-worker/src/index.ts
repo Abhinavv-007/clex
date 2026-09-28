@@ -1,5 +1,5 @@
 import { requireOwner } from './auth'
-import { putObject, getObject, deleteObjects, isConfigured } from './storage'
+import { putObject, getObject, deleteObjects, isConfigured, backendName } from './storage'
 import { mintAnonymousKey } from './anonKeys'
 import {
   handleApiKeyCreate,
@@ -58,6 +58,8 @@ export interface Env {
   // Supabase
   /** R2 bucket holding uploaded file bytes. Optional so the worker boots without it. */
   FILES?: R2Bucket
+  /** KV namespace for chunked file bytes while R2 is not enabled. See storage.ts. */
+  FILE_CHUNKS?: KVNamespace
   // Config
   ALLOWED_ORIGIN: string
   MAX_SECRET_SIZE: string
@@ -354,7 +356,7 @@ async function handleFileUpload(req: Request, env: Env, cors: Record<string, str
   const storagePath = `${userId}/${subscriptionId}/${timestamp}_${filename}`
 
   try {
-    await putObject(env, storagePath, buffer, contentType)
+    await putObject(env, storagePath, buffer, contentType, DELETE_AFTER_MS / 1000)
   } catch (e: unknown) {
     // Roll back quota increment on upload failure
     const key = `upload_quota:${userId}:${utcDate()}`
@@ -1115,6 +1117,7 @@ export default {
         ts: Math.floor(Date.now() / 1000),
         version: 'phase-1-public-face',
         storageConfigured: isConfigured(env),
+        storage: backendName(env),
       }, 200, { ...cors, 'cache-control': 'public, max-age=10, s-maxage=30' })
     }
 

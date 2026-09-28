@@ -320,9 +320,9 @@
     gap: 2px;
     padding: 3px;
     background: var(--surface-2);
-    border: 1.5px solid var(--border-hard);
+    border: 1px solid var(--border-strong);
     border-radius: 9px;
-    box-shadow: 2px 2px 0 var(--border-hard);
+    box-shadow: var(--shadow-sm);
   }
 
   .ved-mode-btn {
@@ -343,7 +343,7 @@
     background: var(--surface);
     border-color: var(--border-hard);
     color: var(--text-1);
-    box-shadow: 2px 2px 0 var(--border-hard);
+    box-shadow: var(--shadow-sm);
   }
 
   .ved-toolbar-actions {
@@ -362,10 +362,10 @@
     min-height: 34px;
     padding: 7px 12px;
     border-radius: 999px;
-    border: 1.5px solid var(--border-hard);
+    border: 1px solid var(--border-strong);
     background: var(--surface);
     color: var(--text-1);
-    box-shadow: 2px 2px 0 var(--border-hard);
+    box-shadow: var(--shadow-sm);
     font-family: var(--font-display);
     font-size: 12px;
     font-weight: 700;
@@ -374,8 +374,8 @@
   }
 
   .ved-action-btn:hover {
-    transform: translate(-1px, -1px);
-    box-shadow: 4px 4px 0 var(--border-hard);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
   }
 
   .ved-action-btn span {
@@ -409,7 +409,7 @@
     min-height: 28px;
     padding: 4px 10px;
     border-radius: 999px;
-    border: 1.5px solid var(--border-hard);
+    border: 1px solid var(--border-strong);
     background: var(--surface);
     color: var(--text-1);
     font-family: var(--font-display);
@@ -607,7 +607,7 @@
     font-family: var(--font-mono);
     font-size: 11px;
     background: var(--surface-2);
-    border: 1.5px solid var(--border-hard);
+    border: 1px solid var(--border-strong);
     border-radius: 5px;
     padding: 1px 6px;
     box-shadow: 0 2px 0 var(--border-hard);

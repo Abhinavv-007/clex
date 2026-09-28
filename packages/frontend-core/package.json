@@ -22,10 +22,6 @@
       "svelte": "./src/lib/utils/siteRoutes.ts",
       "default": "./src/lib/utils/siteRoutes.ts"
     },
-    "./components/mocks": {
-      "svelte": "./src/lib/components/mocks/index.ts",
-      "default": "./src/lib/components/mocks/index.ts"
-    },
     "./apps/WorkspaceApp": {
       "svelte": "./src/lib/apps/WorkspaceApp.svelte",
       "default": "./src/lib/apps/WorkspaceApp.svelte"

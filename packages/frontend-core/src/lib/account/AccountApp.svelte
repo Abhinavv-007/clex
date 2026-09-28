@@ -496,7 +496,7 @@
   .account__title em {
     font-style: italic;
     font-weight: 500;
-    color: color-mix(in srgb, var(--accent-text, var(--accent, #c8ff00)) 90%, var(--text-primary, #111));
+    color: color-mix(in srgb, var(--accent-text, var(--accent, var(--accent))) 90%, var(--text-primary, #111));
   }
 
   .account__sub {
@@ -508,7 +508,7 @@
   .account__sub code {
     font-family: var(--font-mono, monospace);
     font-size: 0.85em;
-    background: color-mix(in srgb, var(--accent, #c8ff00) 14%, transparent);
+    background: color-mix(in srgb, var(--accent, var(--accent)) 14%, transparent);
     padding: 1px 6px;
     border-radius: 4px;
   }
@@ -517,7 +517,7 @@
     display: flex;
     align-items: center;
     gap: 0.6rem;
-    border: 1px solid var(--border-color, #d0c9ba);
+    border: 1px solid var(--border-color, var(--border-strong));
     border-radius: 9999px;
     padding: 0.35rem 0.9rem 0.35rem 0.45rem;
     background: color-mix(in srgb, var(--bg-card, #fff) 92%, transparent);
@@ -560,7 +560,7 @@
 
   .card {
     background: color-mix(in srgb, var(--bg-card, #fff) 96%, transparent);
-    border: 1px solid var(--border-color, #d0c9ba);
+    border: 1px solid var(--border-color, var(--border-strong));
     border-radius: 18px;
     padding: 1.6rem;
     box-shadow: var(--shadow-paper);
@@ -631,7 +631,7 @@
   }
 
   .btn {
-    border: 1px solid var(--border-color, #d0c9ba);
+    border: 1px solid var(--border-color, var(--border-strong));
     border-radius: 9999px;
     padding: 0.5rem 1.05rem;
     font-family: var(--font-mono, monospace);
@@ -663,14 +663,14 @@
     background: color-mix(in srgb, var(--text-primary, #111) 6%, transparent);
   }
   .btn--danger {
-    background: #b53b2b;
+    background: var(--red);
     color: #fff;
-    border-color: #b53b2b;
+    border-color: var(--red);
   }
   .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
   .empty {
-    border: 1px dashed var(--border-color, #d0c9ba);
+    border: 1px dashed var(--border-color, var(--border-strong));
     padding: 2rem;
     border-radius: 18px;
     text-align: center;
@@ -690,7 +690,7 @@
     flex-direction: column;
     gap: 0.85rem;
     padding: 1.1rem 1.2rem;
-    border: 1px solid var(--border-color, #d0c9ba);
+    border: 1px solid var(--border-color, var(--border-strong));
     border-radius: 16px;
     background: color-mix(in srgb, var(--bg-card, #fff) 95%, transparent);
     box-shadow: var(--shadow-paper);
@@ -735,16 +735,16 @@
     font-size: 0.7rem;
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    background: color-mix(in srgb, var(--accent, #c8ff00) 16%, transparent);
+    background: color-mix(in srgb, var(--accent, var(--accent)) 16%, transparent);
     color: color-mix(in srgb, var(--text-primary, #111) 92%, transparent);
     padding: 4px 10px;
     border-radius: 9999px;
-    border: 1px solid color-mix(in srgb, var(--accent, #c8ff00) 30%, var(--border-color, #d0c9ba));
+    border: 1px solid color-mix(in srgb, var(--accent, var(--accent)) 30%, var(--border-color, var(--border-strong)));
   }
   .meta-pill--quiet {
     background: transparent;
     color: var(--text-tertiary, #888);
-    border-color: var(--border-color, #d0c9ba);
+    border-color: var(--border-color, var(--border-strong));
   }
 
   .key-card__actions {
@@ -774,7 +774,7 @@
   }
   .field__input {
     background: color-mix(in srgb, var(--bg-input, #fff) 96%, transparent);
-    border: 1px solid var(--border-color, #d0c9ba);
+    border: 1px solid var(--border-color, var(--border-strong));
     border-radius: 12px;
     padding: 0.65rem 0.8rem;
     font-size: 0.92rem;
@@ -784,8 +784,8 @@
   }
   .field__input:focus {
     outline: none;
-    border-color: var(--accent, #c8ff00);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent, #c8ff00) 20%, transparent);
+    border-color: var(--accent, var(--accent));
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent, var(--accent)) 20%, transparent);
   }
 
   .field-row {
@@ -795,10 +795,10 @@
   }
 
   .plaintext {
-    border: 2px dashed color-mix(in srgb, var(--accent, #c8ff00) 60%, var(--border-color, #d0c9ba));
+    border: 2px dashed color-mix(in srgb, var(--accent, var(--accent)) 60%, var(--border-color, var(--border-strong)));
     border-radius: 16px;
     padding: 1rem 1.2rem;
-    background: color-mix(in srgb, var(--accent, #c8ff00) 10%, transparent);
+    background: color-mix(in srgb, var(--accent, var(--accent)) 10%, transparent);
     display: flex;
     flex-direction: column;
     gap: 0.6rem;
@@ -848,7 +848,7 @@
   .modal__panel {
     position: relative;
     background: var(--bg-card, #fff);
-    border: 1px solid var(--border-color, #d0c9ba);
+    border: 1px solid var(--border-color, var(--border-strong));
     border-radius: 18px;
     padding: 1.5rem;
     width: min(440px, 92vw);
@@ -880,7 +880,7 @@
     border-radius: 50%;
     border: 2px dotted currentColor;
     animation: spin 1.4s linear infinite;
-    color: var(--accent, #c8ff00);
+    color: var(--accent, var(--accent));
   }
 
   .muted { color: var(--text-secondary, #555); font-size: 0.85rem; }

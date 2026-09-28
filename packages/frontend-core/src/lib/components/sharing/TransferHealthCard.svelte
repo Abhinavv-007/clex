@@ -158,7 +158,7 @@
     white-space: nowrap;
   }
 
-  .th-badge--paused { color: #f59e0b; border-color: rgba(245,158,11,0.35); background: rgba(245,158,11,0.08); }
+  .th-badge--paused { color: var(--amber); border-color: rgba(245,158,11,0.35); background: rgba(245,158,11,0.08); }
   .th-badge--legacy { color: var(--text-3); }
 
   .th-grid {

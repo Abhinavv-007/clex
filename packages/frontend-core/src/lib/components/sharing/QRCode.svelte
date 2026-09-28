@@ -19,7 +19,7 @@
         type: 'svg',
         width: size,
         margin: 1.5,
-        color: { dark: '#111111', light: '#FFFFFF' },
+        color: { dark: '#1c1b18', light: '#FFFFFF' },
       })
       svgContent = rawSvg
     } catch (err) {
@@ -45,16 +45,16 @@
     justify-content: center;
     background: #FFFFFF;
     border-radius: 12px;
-    border: 2px solid var(--border-hard, #111111);
-    box-shadow: 4px 4px 0 var(--border-hard, #111111);
+    border: 1px solid var(--border-strong);
+    box-shadow: var(--shadow-sm);
     overflow: hidden;
     padding: 6px;
     transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 
   .qr-container:hover {
-    transform: translate(-2px, -2px);
-    box-shadow: 6px 6px 0 var(--border-hard, #111111);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-lg);
   }
 
   .qr-container :global(svg) {

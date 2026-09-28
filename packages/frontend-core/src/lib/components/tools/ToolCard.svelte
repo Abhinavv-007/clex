@@ -8,17 +8,18 @@
 
   const dispatch = createEventDispatcher<{ select: ToolMeta }>()
 
+  // One gem per kind of file, the same ones the site uses for file types.
   const accentColors: Record<string, string> = {
-    'image-compress': '#22d3ee',
-    'image-convert': '#22d3ee',
-    'pdf-merge': '#f59e0b',
-    'pdf-split': '#f59e0b',
-    'pdf-to-image': '#f59e0b',
-    'word-to-pdf': '#7c3aed',
-    'zip': '#8b5cf6',
+    'image-compress': 'var(--amethyst, var(--violet))',
+    'image-convert': 'var(--amethyst, var(--violet))',
+    'pdf-merge': 'var(--rose, var(--red))',
+    'pdf-split': 'var(--rose, var(--red))',
+    'pdf-to-image': 'var(--rose, var(--red))',
+    'word-to-pdf': 'var(--moon, var(--cyan))',
+    'zip': 'var(--tiger, var(--amber))',
   }
 
-  $: accent = accentColors[tool.id] ?? '#7c3aed'
+  $: accent = accentColors[tool.id] ?? 'var(--accent)'
 </script>
 
 <button
@@ -34,7 +35,7 @@
     <!-- Icon -->
     <span
       class="tool-card__icon flex-shrink-0 text-xl leading-none mt-0.5 w-9 h-9 flex items-center justify-center rounded-lg transition-transform duration-200"
-      style="background: {accent}15; border: 1px solid {accent}25;"
+      style="background: color-mix(in srgb, {accent} 10%, transparent); border: 1px solid color-mix(in srgb, {accent} 22%, transparent); color: {accent};"
     >{tool.icon}</span>
 
     <div class="min-w-0 flex-1">

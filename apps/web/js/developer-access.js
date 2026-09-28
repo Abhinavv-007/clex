@@ -39,6 +39,8 @@ const state = {
   /** @type {{ratePerMinute:number,maxFileBytes:number,prefix:string}|null} */
   meta: null,
   busy: false,
+  /** Set when a key was just minted, so it is revealed with a flourish. */
+  fresh: false,
 };
 
 export async function initDeveloperAccess() {
@@ -73,17 +75,24 @@ export async function initDeveloperAccess() {
     root.classList.toggle('dev-access--has-token', Boolean(state.token));
 
     if (els.identity) els.identity.textContent = `${state.fingerprint.slice(0, 24)}…`;
-    if (els.label) els.label.textContent = state.token ? 'Generate another' : 'Generate api key';
+    if (els.label) els.label.textContent = state.token ? 'Generate another' : 'Generate API key';
 
     if (els.userLabel) {
-      els.userLabel.innerHTML = state.token
-        ? 'Key ready · copy it now, it is shown <b>once</b>'
-        : 'Click <b>Generate api key</b> to mint one — no signup';
+      els.userLabel.textContent = state.token
+        ? 'Key ready. Copy it now, it is shown once'
+        : 'Click Generate to mint a key, no sign-up';
     }
 
+    root.classList.toggle('is-ready', Boolean(state.token));
+
     if (els.output) {
-      els.output.value = state.token || '';
-      els.output.placeholder = 'Click Generate — the key is shown once and stored only as a hash';
+      if (state.token && state.fresh) {
+        state.fresh = false;
+        revealInto(els.output, state.token);
+      } else {
+        els.output.value = state.token || '';
+      }
+      els.output.placeholder = 'Your key appears here, once';
     }
 
     if (els.status && state.meta) {
@@ -110,6 +119,7 @@ export async function initDeveloperAccess() {
 
       state.token = data.plaintext || '';
       state.meta = data.key || null;
+      state.fresh = Boolean(state.token);
       try { sessionStorage.setItem(SESSION_KEY, state.token); } catch { /* private mode */ }
       if (els.status && state.meta) {
         els.status.textContent =
@@ -145,11 +155,11 @@ export async function initDeveloperAccess() {
 
   els.copy?.addEventListener('click', async () => {
     if (!state.token) {
-      if (els.status) els.status.textContent = 'Generate a key first.';
+      if (els.status) els.status.textContent = 'Generate a key first';
       return;
     }
     await copyText(state.token);
-    if (els.status) els.status.textContent = 'api key copied.';
+    if (els.status) els.status.textContent = 'Key copied';
     els.copy.classList.add('is-copied');
     setTimeout(() => els.copy.classList.remove('is-copied'), 1600);
   });
@@ -160,7 +170,7 @@ export async function initDeveloperAccess() {
       const code = targetId ? document.getElementById(targetId) : null;
       if (!code) return;
       await copyText(code.textContent || '');
-      if (els.status) els.status.textContent = 'Command copied.';
+      if (els.status) els.status.textContent = 'Command copied';
     });
   });
 
@@ -236,21 +246,34 @@ function formatBytes(bytes) {
 
 /** @param {string} token */
 function updateCommands(token) {
-  const targets = [
-    ['dev-cmd-export', `export CLEX_API_KEY='${token}'`],
-    ['dev-cmd-health', `curl https://api.clex.in/api/health`],
-    [
-      'dev-cmd-auth',
-      `curl -X POST https://clex.in/vault/api/uploads \\\n` +
-      `  -H "Authorization: Bearer ${token}" \\\n` +
-      `  -H "X-Filename: report.pdf" \\\n` +
-      `  --data-binary @report.pdf`,
-    ],
-  ];
-  targets.forEach(([id, value]) => {
-    const el = document.getElementById(id);
-    if (el) el.textContent = value;
-  });
+  const el = document.getElementById('dev-cmd-export');
+  if (el) el.textContent = `export CLEX_API_KEY='${token}'`;
+}
+
+/**
+ * Types the new key into the field, each character settling out of noise
+ * from left to right.
+ * @param {HTMLTextAreaElement} field @param {string} key
+ */
+function revealInto(field, key) {
+  const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  if (reduce) {
+    field.value = key;
+    return;
+  }
+  const glyphs = 'abcdefghijklmnopqrstuvwxyz0123456789';
+  const start = performance.now();
+  const dur = 900;
+  const tick = (now) => {
+    const t = Math.min(1, (now - start) / dur);
+    const settled = Math.floor(key.length * t);
+    let out = key.slice(0, settled);
+    for (let i = settled; i < key.length; i += 1) out += glyphs[(Math.random() * glyphs.length) | 0];
+    field.value = out;
+    if (t < 1) requestAnimationFrame(tick);
+    else field.value = key;
+  };
+  requestAnimationFrame(tick);
 }
 
 /** @param {string} text */

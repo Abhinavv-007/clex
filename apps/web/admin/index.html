@@ -8,7 +8,7 @@
     // palette is committed before first paint. Mirrors readTheme() in js/theme.js.
     (() => {
       try {
-        const saved = localStorage.getItem('clex-theme-v2');
+        const saved = localStorage.getItem('clex-theme-v3');
         const theme = (saved === 'dark' || saved === 'light')
           ? saved
           : (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
@@ -27,29 +27,15 @@
   <title>Admin · Clex AI control room</title>
   <meta name="robots" content="noindex,nofollow">
   <meta name="description" content="Restricted operator console for Clex.">
-  <script>
-    // Honor the site-wide theme toggle. Default to light to match clex.in.
-    try {
-      const saved = localStorage.getItem('clex-theme');
-      const theme = (saved === 'dark' || saved === 'light') ? saved : 'light';
-      document.documentElement.setAttribute('data-theme', theme);
-      document.documentElement.classList.toggle('dark', theme === 'dark');
-      document.documentElement.style.colorScheme = theme;
-    } catch {
-      document.documentElement.setAttribute('data-theme', 'light');
-      document.documentElement.style.colorScheme = 'light';
-    }
-  </script>
   <!-- Fonts: one request, from <head>, so they download in parallel with the
        stylesheets instead of being chained behind a CSS @import. Geist is the
-       display/body face, Pacifico the script accent, JetBrains Mono + Space
-       Mono the monospace pair. -->
+       interface face, Geist Mono the data, Pinyon Script the accent. -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800;900&family=Hanken+Grotesk:wght@500;600;700;800;900&family=JetBrains+Mono:wght@400;500&family=Pacifico&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&family=Geist+Mono:wght@400;500&family=Pinyon+Script&display=swap">
 
-  <link rel="stylesheet" href="/css/reset.css">
   <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/base.css">
   <link rel="stylesheet" href="/css/pages/admin.css">
 </head>
 <body data-page="admin">

@@ -60,8 +60,14 @@
 
   export let vaultSignalingUrl = 'wss://signal.clex.in'
   export let vaultApiUrl = '/vault/api'
-  /** Start in vault mode — set by /vault, which redirects here. */
+  /** Start in vault mode — set by ?mode=vault (and /vault, which redirects there). */
   export let initialMode: Mode = 'transfer'
+  /**
+   * Mounted inside the landing page rather than as a page of its own: the
+   * page around it supplies the frame and the nav clearance, so the app
+   * drops its own page padding and big title for a compact toolbar.
+   */
+  export let embedded = false
 
   let mode: Mode = initialMode
   let VaultAppComponent: typeof import('./VaultApp.svelte').default | null = null
@@ -94,23 +100,33 @@
 
   onMount(() => {
     if (initialMode === 'vault') void loadVault()
+
+    // Anything on the page can ask the workspace to switch — the landing
+    // page's "Open Vault" buttons do.
+    const onModeRequest = (event: Event) => {
+      const next = (event as CustomEvent<{ mode?: Mode }>).detail?.mode
+      if (next === 'vault' || next === 'transfer') void setMode(next)
+    }
+    window.addEventListener('clex:workspace-mode', onModeRequest)
+    return () => window.removeEventListener('clex:workspace-mode', onModeRequest)
   })
 </script>
 
-<div class="ws-page">
+<div class="ws-page" class:ws-page--embedded={embedded}>
   <div class="ws-inner">
     <div class="ws-header">
       <div class="ws-title-block">
         {#if mode === 'vault'}
           <h1 class="ws-title"><span>Your</span> <em>vault</em></h1>
-          <p class="ws-sub">Encrypted notes, secret links and timed handoffs — kept on this device.</p>
+          <p class="ws-sub">Encrypted notes, secret links and timed hand-offs — kept on this device.</p>
         {:else}
           <h1 class="ws-title"><span>File</span> <em>workspace</em></h1>
-          <p class="ws-sub">Drop, prepare, and send files from one fluid private workspace.</p>
+          <p class="ws-sub">Drop, prepare and send files from one private workspace.</p>
         {/if}
       </div>
 
-      <div class="ws-modes" role="tablist" aria-label="Workspace mode">
+      <div class="ws-modes" class:ws-modes--vault={mode === 'vault'} role="tablist" aria-label="Workspace mode">
+        <span class="ws-modes__pill" aria-hidden="true"></span>
         <button
           class="ws-mode"
           class:ws-mode--active={mode === 'transfer'}
@@ -118,7 +134,10 @@
           aria-selected={mode === 'transfer'}
           type="button"
           on:click={() => setMode('transfer')}
-        >Transfer</button>
+        >
+          <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M2.5 5.5h9M9 3l2.5 2.5L9 8M13.5 10.5h-9M7 8l-2.5 2.5L7 13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Transfer
+        </button>
         <button
           class="ws-mode"
           class:ws-mode--active={mode === 'vault'}
@@ -126,7 +145,10 @@
           aria-selected={mode === 'vault'}
           type="button"
           on:click={() => setMode('vault')}
-        >Vault</button>
+        >
+          <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><rect x="3.5" y="7" width="9" height="6.5" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M5.5 7V5.2a2.5 2.5 0 0 1 5 0V7" fill="none" stroke="currentColor" stroke-width="1.4"/></svg>
+          Vault
+        </button>
       </div>
 
       {#if mode === 'transfer'}
@@ -202,14 +224,19 @@
 <style>
   .ws-page {
     /* Gutter + width track the site container so the app lines up with the
-       nav and the sections around it; at 16px/1420px the grid ran edge to
-       edge and the last column was clipped by the viewport. */
+       nav and the sections around it. */
     padding:
-      calc(88px + env(safe-area-inset-top, 0px))
+      calc(96px + env(safe-area-inset-top, 0px))
       calc(clamp(1rem, 3vw, 2rem) + env(safe-area-inset-right, 0px))
       calc(48px + env(safe-area-inset-bottom, 0px))
       calc(clamp(1rem, 3vw, 2rem) + env(safe-area-inset-left, 0px));
     min-height: 100vh;
+  }
+
+  /* Inside the landing page's frame: the frame is the page. */
+  .ws-page--embedded {
+    min-height: 0;
+    padding: clamp(14px, 2vw, 22px);
   }
 
   .ws-inner {
@@ -228,92 +255,132 @@
 
   .ws-title {
     margin: 0;
-    font-family: var(--font-display);
-    font-size: clamp(2.8rem, 7vw, 6.2rem);
-    line-height: 0.92;
-    font-weight: 900;
+    font-family: var(--font-sans);
+    font-size: clamp(2.6rem, 6vw, 5rem);
+    line-height: 0.95;
+    font-weight: 600;
     color: var(--text-1);
-    letter-spacing: -0.055em;
+    letter-spacing: -0.05em;
     text-wrap: balance;
   }
 
   .ws-title em {
     display: inline-block;
-    font-family: var(--font-italic);
+    font-family: var(--font-script, var(--font-italic));
     font-style: normal;
     font-weight: 400;
+    font-size: 1.2em;
+    line-height: 0.8;
     letter-spacing: 0;
+    padding: 0 0.08em;
+    /* The site's handwriting ink, fixed in both themes. */
     color: transparent;
-    background: linear-gradient(135deg, #6b4dff 0%, #ff7a3d 54%, #ffb800 100%);
+    background: linear-gradient(90deg, #338a64 0%, #4eab80 50%, #cda65e 100%);
     -webkit-background-clip: text;
     background-clip: text;
-    filter: drop-shadow(0 10px 24px rgba(255,122,61,0.16));
   }
 
   .ws-sub {
     max-width: 44rem;
-    font-size: clamp(1rem, 1.7vw, 1.35rem);
+    font-size: clamp(1rem, 1.5vw, 1.2rem);
     color: var(--text-2);
     margin: 10px 0 0;
     line-height: 1.45;
   }
 
+  /* Embedded, the landing page has already said all of that: the header is
+     a toolbar — what mode you're in, and the switch. */
+  .ws-page--embedded .ws-header {
+    margin-bottom: 14px;
+  }
+
+  .ws-page--embedded .ws-title {
+    font-size: 1.05rem;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+  }
+
+  .ws-page--embedded .ws-title em {
+    font-size: 1.5em;
+    line-height: 0.6;
+  }
+
+  .ws-page--embedded .ws-sub {
+    margin-top: 2px;
+    font-size: 13px;
+    color: var(--text-3);
+  }
+
   /* ── Mode switch ──────────────────────────────────────────────────────
-     Transfer and Vault are two modes of one workspace; Vault used to be a
-     separate page at /vault, which now redirects here. */
+     Transfer and Vault are two modes of one workspace. One pill slides
+     between them. */
   .ws-modes {
-    display: inline-flex;
-    gap: 4px;
+    position: relative;
+    display: inline-grid;
+    grid-template-columns: 1fr 1fr;
     padding: 4px;
-    border: 2px solid var(--border-hard);
+    border: 1px solid var(--border);
     border-radius: 999px;
     background: var(--surface-2);
-    box-shadow: 2px 2px 0 var(--border-hard);
+    margin-left: auto;
+    flex-shrink: 0;
+  }
+
+  .ws-modes__pill {
+    position: absolute;
+    top: 4px;
+    bottom: 4px;
+    left: 4px;
+    width: calc(50% - 4px);
+    border-radius: 999px;
+    background: var(--surface);
+    box-shadow: var(--shadow-sm), 0 0 0 1px var(--border);
+    transition: transform 420ms var(--spring);
+  }
+
+  .ws-modes--vault .ws-modes__pill {
+    transform: translateX(100%);
   }
 
   .ws-mode {
-    padding: 6px 18px;
+    position: relative;
+    z-index: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    min-width: 108px;
+    height: 34px;
+    padding: 0 16px;
     border: 0;
     border-radius: 999px;
     background: transparent;
-    font-family: var(--font-display);
+    font-family: var(--font-sans);
     font-size: 13px;
-    font-weight: 700;
-    color: var(--text-2);
+    font-weight: 500;
+    color: var(--text-3);
     cursor: pointer;
-    transition: background 150ms var(--ease-out), color 150ms var(--ease-out);
+    transition: color 200ms var(--ease-out);
   }
 
   .ws-mode:hover { color: var(--text-1); }
 
   .ws-mode--active {
-    background: var(--surface);
     color: var(--text-1);
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+  }
+
+  .ws-mode--active svg {
+    color: var(--accent-text);
   }
 
   .ws-vault-slot {
     min-height: 420px;
+    animation: fadeUp 420ms var(--ease-out) both;
   }
 
-  /* Vault was a standalone page, so it sizes itself to the viewport and
-     clears the fixed nav on its own. Embedded here both of those are already
-     handled by the workspace around it. */
   /* ── How the boxes read ───────────────────────────────────────────────
-     Two things were making the panels feel busier than they are, and both
-     are layout decisions, which is why they are settled here rather than in
-     each component.
-
-     1. A card inside a card. Each .ws-col is already a bordered, shadowed
-        surface; .fl-panel drew a second 1.5px frame just inside it, so the
-        Files column read as two nested boxes. The column is the card — the
-        panel inside it only needs to group.
-
-     2. A dashed border meant two different things. It marked the drop zone
-        (where dashed is the convention and says "you can drop here") and it
-        also marked every empty state (where it says nothing, and just looks
-        unfinished). Dashed now means droppable; empty states get a quiet
-        tint instead. */
+     The column is the card; the panel inside it only groups. Dashed means
+     droppable and nothing else; empty states get a quiet tint. */
   .ws-page :global(.fl-panel) {
     border: 0;
     border-radius: 12px;
@@ -330,21 +397,22 @@
     background: color-mix(in srgb, var(--surface-2) 72%, transparent);
   }
 
-  /* The drop zone keeps its dashed edge — that is the one place it earns
-     its meaning — and now responds when you approach it. */
   .ws-page :global(.dropzone) {
     transition:
-      border-color 180ms var(--ease-out),
-      background 180ms var(--ease-out);
+      border-color 200ms var(--ease-out),
+      background 200ms var(--ease-out),
+      transform 300ms var(--spring);
   }
 
   .ws-page :global(.dropzone:hover) {
-    border-color: var(--border-hard);
-    background: color-mix(in srgb, var(--accent) 8%, transparent);
+    border-color: var(--accent);
+    background: var(--accent-dim);
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .ws-page :global(.dropzone) { transition: none; }
+    .ws-page :global(.dropzone),
+    .ws-modes__pill,
+    .ws-vault-slot { transition: none; animation: none; }
   }
 
   /* Vault was built as a standalone page, so it clears the nav and sizes
@@ -362,9 +430,7 @@
     max-width: none !important;
   }
 
-  /* The workspace header above already names the mode. Vault's own kicker and
-     headline would be a second title in the same view; its panel tabs stay,
-     because they are the navigation. */
+  /* The workspace header above already names the mode. */
   .ws-vault-slot :global(.va-title-block) {
     display: none !important;
   }
@@ -373,23 +439,16 @@
     margin-bottom: 16px !important;
   }
 
-  /* With the title hidden the tabs are the whole row, so they take the width
-     rather than sitting at 560px against empty space. */
   .ws-vault-slot :global(.va-panel-switch) {
     width: 100% !important;
     max-width: none !important;
     flex: 1 1 100% !important;
   }
 
-  /* `height: calc(100vh - 152px)` assumed a page sitting directly under the
-     nav. Here it clipped the panels and locked them to the viewport
-     regardless of content. */
   .ws-vault-slot :global(.va-grid) {
     height: auto !important;
     min-height: min(66vh, 660px);
   }
-
-  .ws-modes { margin-left: auto; }
 
   .ws-vault-msg {
     padding: 4rem 1rem;
@@ -404,16 +463,12 @@
   .ws-vault-retry {
     margin-left: 0.6rem;
     padding: 4px 12px;
-    border: 2px solid var(--border-hard);
+    border: 1px solid var(--border-strong);
     border-radius: 999px;
     background: var(--surface);
     font: inherit;
     color: var(--text-1);
     cursor: pointer;
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .ws-mode { transition: none; }
   }
 
   .ws-mobile-tabs {
@@ -422,9 +477,8 @@
     gap: 4px;
     padding: 4px;
     background: var(--surface-2);
-    border: 2px solid var(--border-hard);
-    box-shadow: 2px 2px 0 var(--border-hard);
-    border-radius: 12px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
   }
 
   @media (min-width: 768px) {
@@ -432,47 +486,37 @@
   }
 
   .wmt-btn {
-    padding: 5px 14px;
-    border-radius: 8px;
-    border: 2px solid transparent;
+    height: 34px;
+    padding: 0 14px;
+    border-radius: 999px;
+    border: 0;
     background: transparent;
-    font-family: var(--font-display);
+    font-family: var(--font-sans);
     font-size: 13px;
-    font-weight: 600;
-    color: var(--text-2);
+    font-weight: 500;
+    color: var(--text-3);
     cursor: pointer;
-    transition: all 0.15s;
+    transition: background 200ms ease, color 200ms ease, box-shadow 200ms ease;
     min-width: 0;
     flex: 1 1 0;
   }
 
   .wmt-active {
     background: var(--surface);
-    border-color: var(--border-hard);
     color: var(--text-1);
-    box-shadow: 2px 2px 0 var(--border-hard);
+    box-shadow: var(--shadow-sm), 0 0 0 1px var(--border);
   }
 
   .ws-grid {
     display: none;
-    /* Stretch, not start: the columns are panels in one surface and should
-       share a bottom edge. The sticky columns opt out individually. */
     align-items: stretch;
   }
 
   @media (min-width: 1200px) {
     .ws-grid {
       display: grid;
-      /* Every track has a floor it can shrink to.
-         This was `280px minmax(360px, 1fr) 248px 236px`, which needs
-         1160px before gaps. The fixed tracks cannot give, and the flexible
-         one refuses to go below its 360px minimum, so in any container
-         narrower than that the row simply overflowed — on the landing page
-         the frame is 1120px wide, and the last column and its offset shadow
-         were clipped off the right edge.
-         `minmax(0, 1fr)` lets the middle track absorb the difference, and
-         the side tracks have real minima so they compress a little before
-         the layout gives up and falls back to the stacked breakpoint. */
+      /* Every track has a floor it can shrink to, and the middle one can
+         give all the way to zero, so the row never overflows its frame. */
       grid-template-columns:
         minmax(232px, 280px)
         minmax(0, 1fr)
@@ -481,11 +525,8 @@
       gap: 12px;
     }
 
-    /* While bytes are moving, progress is the thing the person is watching —
-       but it lived in the narrowest track (212-248px) with the flexible one
-       next to it holding an empty tool list. Hand the flexible track to the
-       share column for the duration, so the bar, speed, ETA, chunk map and
-       health readout have room instead of wrapping into a sliver. */
+    /* While bytes are moving, progress is the thing the person is watching:
+       hand the flexible track to the share column for the duration. */
     .ws-grid--live {
       grid-template-columns:
         minmax(200px, 232px)
@@ -499,7 +540,7 @@
     .ws-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 16px;
+      gap: 12px;
     }
 
     .ws-col-files {
@@ -537,22 +578,27 @@
 
   .ws-col {
     background: var(--surface);
-    border: 2px solid var(--border-hard);
-    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-sm);
     border-radius: 16px;
-    padding: 24px;
-    /* Sized to content, floored for visual balance. This was
-       `calc(100vh - 160px)`, which forced every column to roughly full
-       viewport height — the Prepare column carried hundreds of pixels of
-       empty space, and because the sticky columns overrode it with
-       `min-height: auto` the four columns ended at four different heights. */
+    padding: 22px;
     min-height: 420px;
     min-width: 0;
+    transition: border-color 240ms ease, box-shadow 300ms var(--ease-out);
+  }
+
+  .ws-col:focus-within,
+  .ws-col:hover {
+    border-color: var(--border-strong);
+  }
+
+  .ws-page--embedded .ws-col {
+    background: color-mix(in srgb, var(--surface-2) 45%, var(--surface));
   }
 
   .ws-col-sticky {
     position: sticky;
-    top: 80px;
+    top: 84px;
     min-height: auto;
     max-height: calc(100vh - 100px);
   }
@@ -563,7 +609,7 @@
 
   .ws-col-files {
     position: sticky;
-    top: 80px;
+    top: 84px;
     min-height: auto;
     max-height: calc(100vh - 100px);
     overflow: hidden;
@@ -573,13 +619,13 @@
 
   .ws-qr-slot {
     position: sticky;
-    top: 80px;
+    top: 84px;
     align-self: start;
     min-width: 0;
   }
 
   .ws-queue-row {
-    margin-top: 16px;
+    margin-top: 12px;
   }
 
   .ws-mobile-panel { display: block; }
@@ -591,15 +637,38 @@
   @media (max-width: 767px) {
     .ws-page {
       padding:
-        calc(82px + env(safe-area-inset-top, 0px))
+        calc(84px + env(safe-area-inset-top, 0px))
         calc(12px + env(safe-area-inset-right, 0px))
         calc(32px + env(safe-area-inset-bottom, 0px))
         calc(12px + env(safe-area-inset-left, 0px));
     }
 
+    .ws-page--embedded {
+      padding: 12px;
+    }
+
     .ws-header {
       flex-direction: column;
       align-items: stretch;
+    }
+
+    .ws-page--embedded .ws-header {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    .ws-page--embedded .ws-sub {
+      display: none;
+    }
+
+    .ws-modes {
+      width: 100%;
+      margin-left: 0;
+    }
+
+    .ws-mode {
+      min-width: 0;
     }
 
     .ws-mobile-tabs {

@@ -15,11 +15,12 @@
  *   Returns: list of the caller's non-expired uploads
  *
  * GET    /vault/api/uploads/:shareToken
- *   No auth required. Returns a signed Supabase download URL valid 1h.
+ *   No auth required. Returns the file's name, size, type, expiry and the
+ *   worker URL that streams it (…/:shareToken/download).
  *
  * DELETE /vault/api/uploads/:id
  *   Auth: API key (Bearer clex_…) or Firebase ID token.
- *   Soft-revokes + deletes from Supabase.
+ *   Soft-revokes and deletes the stored bytes.
  *
  * Files are billed against `api_keys.total_bytes` so users can see how much
  * they've shipped through each key on the management page.
@@ -209,7 +210,7 @@ export async function handleApiUploadCreate(
   }
 
   try {
-    await putObject(env, storagePath, buffer, contentType)
+    await putObject(env, storagePath, buffer, contentType, expiresIn)
   } catch (e: unknown) {
     return errorResponse(e instanceof Error ? e.message : 'Upload failed', 502, cors)
   }
@@ -362,11 +363,9 @@ export async function handleApiUploadShare(
 
   const downloadUrl = downloadUrlFor(origin, row.share_token)
 
-  // Best-effort download counter — never fails the request.
-  await env.DB.prepare(
-    'UPDATE api_uploads SET download_count = download_count + 1 WHERE id = ?'
-  ).bind(row.id).run().catch(() => undefined)
-
+  // Looking a share up is not a download: the share page and the CLI both
+  // read this before fetching the bytes. The count is taken in
+  // handleApiUploadDownload, where the file is actually served.
   return jsonResponse(
     {
       filename: row.filename,

@@ -229,7 +229,7 @@
     gap: 7px;
     font-size: 12px;
     font-weight: 500;
-    color: #22c55e;
+    color: var(--green);
     padding: 5px 0;
   }
 
@@ -237,7 +237,7 @@
     width: 6px;
     height: 6px;
     border-radius: 50%;
-    background: #22c55e;
+    background: var(--green);
     flex-shrink: 0;
     animation: pulseDot 2s ease-in-out infinite;
   }
@@ -423,7 +423,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #22c55e;
+    color: var(--green);
     margin-bottom: 4px;
   }
 
@@ -464,7 +464,7 @@
     border-radius: 100px;
     background: rgba(59,130,246,0.1);
     border: 1px solid rgba(59,130,246,0.2);
-    color: #3b82f6;
+    color: var(--cyan);
     font-weight: 500;
   }
 
@@ -475,7 +475,7 @@
     gap: 7px;
     font-size: 13px;
     font-weight: 600;
-    color: #ef4444;
+    color: var(--red);
   }
 
   .error-msg {

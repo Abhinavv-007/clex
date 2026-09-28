@@ -499,7 +499,7 @@
   .vsc-main,
   .vsc-side {
     background: var(--surface);
-    border: 2px solid var(--border-hard);
+    border: 1px solid var(--border-strong);
     box-shadow: var(--shadow-md);
     border-radius: 16px;
     padding: 22px;
@@ -557,10 +557,10 @@
   .vsc-result-copy {
     margin-top: 18px;
     padding: 18px;
-    border: 2px solid var(--border-hard);
+    border: 1px solid var(--border-strong);
     background: var(--surface-2);
     border-radius: 16px;
-    box-shadow: 4px 4px 0 var(--border-hard);
+    box-shadow: var(--shadow-sm);
   }
 
   .vsc-section {
@@ -614,9 +614,9 @@
     min-height: 42px;
     padding: 8px 14px;
     border-radius: 12px;
-    border: 2px solid var(--border-hard);
+    border: 1px solid var(--border-strong);
     background: var(--surface);
-    box-shadow: 3px 3px 0 var(--border-hard);
+    box-shadow: var(--shadow-sm);
     font-family: var(--font-display);
     font-size: 14px;
     font-weight: 700;
@@ -629,8 +629,8 @@
   .vsc-protection-btn:hover,
   .vsc-primary-btn:hover,
   .vsc-secondary-btn:hover {
-    transform: translate(-1px, -1px);
-    box-shadow: 5px 5px 0 var(--border-hard);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
   }
 
   .vsc-ttl-btn--active,
@@ -638,7 +638,7 @@
     background: color-mix(in srgb, var(--accent) 14%, var(--surface));
     border-color: color-mix(in srgb, var(--accent) 68%, var(--border-hard));
     color: var(--text-1);
-    box-shadow: 4px 4px 0 var(--accent);
+    box-shadow: var(--shadow-accent);
   }
 
   .vsc-custom-wrap {
@@ -674,9 +674,9 @@
     min-height: 118px;
     padding: 15px 16px;
     border-radius: 14px;
-    border: 2px solid var(--border-hard);
+    border: 1px solid var(--border-strong);
     background: var(--surface);
-    box-shadow: 3px 3px 0 var(--border-hard);
+    box-shadow: var(--shadow-sm);
     text-align: left;
     cursor: pointer;
     transition: transform 120ms ease, box-shadow 120ms ease, border-color 120ms ease;
@@ -726,7 +726,7 @@
     background: var(--accent);
     color: var(--accent-fg);
     border-color: #111;
-    box-shadow: 2px 2px 0 #111;
+    box-shadow: var(--shadow-sm);
   }
 
   .vsc-protection-btn--active .vsc-protection-copy {
@@ -739,7 +739,7 @@
     gap: 14px;
     padding: 14px;
     border-radius: 14px;
-    border: 1.5px solid var(--border-hard);
+    border: 1px solid var(--border-strong);
     background: color-mix(in srgb, var(--accent) 10%, var(--surface));
   }
 
@@ -770,7 +770,7 @@
   .vsc-link-box,
   .vsc-code-box {
     padding: 12px;
-    border: 1.5px solid var(--border-hard);
+    border: 1px solid var(--border-strong);
     background: var(--surface);
     border-radius: 12px;
     font-family: var(--font-mono);
@@ -830,7 +830,7 @@
     flex-direction: column;
     gap: 8px;
     padding: 12px;
-    border: 1.5px solid var(--border-hard);
+    border: 1px solid var(--border-strong);
     background: var(--surface);
     border-radius: 12px;
   }
@@ -858,12 +858,12 @@
     min-height: 46px;
     padding: 10px 16px;
     border-radius: 12px;
-    border: 2px solid var(--border-hard);
+    border: 1px solid var(--border-strong);
     font-family: var(--font-display);
     font-size: 14px;
     font-weight: 700;
     cursor: pointer;
-    box-shadow: 3px 3px 0 var(--border-hard);
+    box-shadow: var(--shadow-sm);
     transition: transform 120ms ease, box-shadow 120ms ease;
   }
 
@@ -881,12 +881,12 @@
     opacity: 0.55;
     cursor: not-allowed;
     transform: none;
-    box-shadow: 3px 3px 0 var(--border-hard);
+    box-shadow: var(--shadow-sm);
   }
 
   .vsc-error {
     margin: 0;
-    color: #b42318;
+    color: var(--red-text);
     font-size: 13px;
   }
 

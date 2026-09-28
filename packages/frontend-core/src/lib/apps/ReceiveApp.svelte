@@ -164,17 +164,17 @@
       <div
         class="receive-head-icon"
         style={state === 'complete'
-          ? 'background: rgba(34,197,94,0.12); border-color: rgba(34,197,94,0.3); color: #22c55e;'
-          : 'background: rgba(124,58,237,0.12); border-color: rgba(124,58,237,0.25);'}
+          ? 'background: var(--accent-dim); border-color: var(--accent-border); color: var(--green-text);'
+          : 'background: var(--accent-dim); border-color: var(--accent-border); color: var(--accent-text);'}
       >
         {#if state === 'complete'}
-          ✓
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
         {:else}
-          📥
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5M5 19h14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
         {/if}
       </div>
 
-      <h1 class="receive-title">Receive Files</h1>
+      <h1 class="receive-title">Receive files</h1>
       <p class="receive-sub">
         {#if normalizedCode}
           Room <span class="font-mono receive-code-inline">{normalizedCode}</span>
@@ -273,7 +273,7 @@
       {:else if state === 'transferring'}
         <div class="receive-state">
           <div class="receive-transfer-head">
-            <span class="receive-transfer-icon">📥</span>
+            <span class="receive-transfer-icon"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5M5 19h14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
             <div>
               <p class="receive-state-title">Receiving files…</p>
               <p class="receive-state-sub">We'll try to save automatically when complete, and manual save controls will stay available</p>
@@ -440,10 +440,10 @@
     width: 100%;
     display: block;
     padding: 16px 18px;
-    border: 2px solid var(--border-hard);
+    border: 1px solid var(--border-strong);
     border-radius: 16px;
     background: var(--surface-2);
-    box-shadow: 3px 3px 0 var(--border-hard);
+    box-shadow: var(--shadow-sm);
     color: var(--text-1);
     font-size: 1.875rem;
     letter-spacing: 0.4em;
@@ -451,7 +451,7 @@
 
   .receive-error {
     font-size: 12px;
-    color: #ef4444;
+    color: var(--red);
     margin-top: 8px;
     text-align: center;
   }
@@ -463,8 +463,8 @@
     padding: 4px;
     border-radius: 12px;
     background: var(--surface-2);
-    border: 2px solid var(--border-hard);
-    box-shadow: 2px 2px 0 var(--border-hard);
+    border: 1px solid var(--border-strong);
+    box-shadow: var(--shadow-sm);
   }
 
   .receive-mode-btn {
@@ -482,7 +482,7 @@
     background: var(--surface);
     border-color: var(--border-hard);
     color: var(--text-1);
-    box-shadow: 2px 2px 0 var(--border-hard);
+    box-shadow: var(--shadow-sm);
   }
 
   .receive-secondary {
@@ -567,7 +567,7 @@
     justify-content: center;
     background: rgba(34, 197, 94, 0.12);
     border: 1px solid rgba(34, 197, 94, 0.2);
-    color: #22c55e;
+    color: var(--green);
     font-size: 36px;
     font-weight: 700;
   }
@@ -575,7 +575,7 @@
   .receive-complete-title {
     font-size: 22px;
     font-weight: 700;
-    color: #22c55e;
+    color: var(--green);
   }
 
   .receive-actions {
@@ -663,7 +663,7 @@
 
     .receive-card {
       padding: 18px;
-      box-shadow: 3px 3px 0 var(--border-hard);
+      box-shadow: var(--shadow-sm);
     }
 
     .receive-head-icon {

@@ -24,8 +24,8 @@
     flex-direction: column;
     gap: 12px;
     padding: 14px;
-    border: 2px solid var(--border-hard);
-    box-shadow: 3px 3px 0 var(--border-hard);
+    border: 1px solid var(--border-strong);
+    box-shadow: var(--shadow-sm);
     border-radius: 14px;
     background: color-mix(in srgb, var(--accent) 10%, var(--surface));
     min-width: 0;

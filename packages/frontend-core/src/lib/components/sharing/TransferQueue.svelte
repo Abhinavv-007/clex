@@ -210,7 +210,7 @@
 
   .tq-error {
     font-size: 11px;
-    color: #ef4444;
+    color: var(--red);
   }
 
   .tq-actions {
@@ -236,7 +236,7 @@
     color: var(--text-1);
   }
 
-  .tq-action--danger { color: #ef4444; border-color: rgba(239,68,68,0.4); }
+  .tq-action--danger { color: var(--red); border-color: rgba(239,68,68,0.4); }
   .tq-action--ghost  { color: var(--text-3); }
 
   @media (max-width: 480px) {

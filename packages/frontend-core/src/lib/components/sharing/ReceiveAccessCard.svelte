@@ -71,9 +71,9 @@
     gap: 14px;
     padding: 16px;
     background: color-mix(in srgb, var(--accent) 10%, var(--surface));
-    border: 2px solid var(--border-hard);
+    border: 1px solid var(--border-strong);
     border-radius: 14px;
-    box-shadow: 3px 3px 0 var(--border-hard);
+    box-shadow: var(--shadow-sm);
     min-width: 0;
   }
 

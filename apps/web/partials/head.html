@@ -1,0 +1,34 @@
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <!-- One font request, from <head>, so it downloads alongside the CSS rather
+       than behind it. Geist carries the interface, Geist Mono the data, and
+       Pinyon Script is the one handwritten accent. -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&family=Geist+Mono:wght@400;500&family=Pinyon+Script&display=swap">
+  <link rel="icon" type="image/png" href="/brand/clex-logo.png">
+  <link rel="apple-touch-icon" href="/brand/clex-logo.png">
+  <script>
+    // Theme bootstrap — inline and render-blocking so the right palette is
+    // committed before first paint. Mirrors readTheme() in js/theme.js.
+    (() => {
+      const root = document.documentElement;
+      let theme = 'light';
+      try {
+        const saved = localStorage.getItem('clex-theme-v3');
+        theme = saved === 'dark' || saved === 'light'
+          ? saved
+          : (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+      } catch { /* storage blocked: light */ }
+      root.dataset.theme = theme;
+      root.classList.toggle('dark', theme === 'dark');
+      root.style.colorScheme = theme;
+      root.classList.add('js');
+    })();
+  </script>
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/motion.css">
+  <script type="module" src="/js/main.js"></script>

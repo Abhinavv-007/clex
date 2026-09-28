@@ -1,140 +1,161 @@
-import { routes } from './routes.js';
+/* ==========================================================================
+   Clex — navigation
 
-/* ============================================
-   CLEX — Navigation Component
-   Injects nav into all pages
-   ============================================ */
+   · frosts once the page scrolls under it (with hysteresis, so it never
+     flickers when a scroll comes to rest right on the threshold)
+   · a single pill glides to whichever link the pointer is over
+   · on small screens, a sheet with the links staggered in
+   · every "Start sharing" link scrolls to the workspace when it is on this
+     page, instead of reloading it
+   ========================================================================== */
 
-export function initNav(activePage = '') {
-  const nav = document.getElementById('main-nav');
+export function initNav() {
+  const nav = document.getElementById('site-nav');
   if (!nav) return;
 
-  // Scroll behaviour: the bar sits expanded at the top of the page and
-  // collapses to a compact pill once you scroll away from it.
-  //
-  // Separate enter/exit thresholds give us hysteresis — with a single
-  // threshold the bar visibly flickers when the scroll position rests
-  // right on it (trackpad inertia, rubber-banding, anchor jumps).
-  const SHRINK_AT = 72;
-  const EXPAND_AT = 24;
-  const progressBar = document.querySelector('#scroll-progress .scroll-progress__bar');
+  initScrollState(nav);
+  initGlider(nav);
+  initSheet(nav);
+}
 
+/** @param {HTMLElement} nav */
+function initScrollState(nav) {
+  const ENTER = 40;
+  const LEAVE = 12;
   let scrolled = false;
   let frame = 0;
 
-  const applyScrollState = () => {
+  const darks = [...document.querySelectorAll('.tone-dark')];
+  const bar = nav.querySelector('.nav__bar');
+
+  const update = () => {
     frame = 0;
     const y = window.scrollY;
-
-    if (!scrolled && y > SHRINK_AT) {
+    if (!scrolled && y > ENTER) {
       scrolled = true;
       nav.classList.add('nav--scrolled');
-    } else if (scrolled && y < EXPAND_AT) {
+    } else if (scrolled && y < LEAVE) {
       scrolled = false;
       nav.classList.remove('nav--scrolled');
     }
 
-    if (progressBar instanceof HTMLElement) {
-      const doc = document.documentElement;
-      const max = (doc.scrollHeight - doc.clientHeight) || 1;
-      const pct = Math.min(100, Math.max(0, (y / max) * 100));
-      progressBar.style.width = `${pct}%`;
-    }
-  };
-
-  // One rAF-coalesced read+write per frame instead of per scroll event.
-  const onScroll = () => {
-    if (!frame) frame = requestAnimationFrame(applyScrollState);
-  };
-
-  window.addEventListener('scroll', onScroll, { passive: true });
-  window.addEventListener('resize', onScroll, { passive: true });
-  // Restored scroll position (reload mid-page, back navigation) must not
-  // paint an expanded bar over content.
-  applyScrollState();
-
-  // Mobile menu
-  const hamburger = document.getElementById('nav-hamburger');
-  const mobileMenu = document.getElementById('nav-mobile-menu');
-
-  if (hamburger && mobileMenu) {
-    hamburger.setAttribute('aria-expanded', 'false');
-    hamburger.addEventListener('click', () => {
-      const isOpen = hamburger.classList.toggle('nav__hamburger--open');
-      mobileMenu.classList.toggle('nav__mobile-menu--open', isOpen);
-      hamburger.setAttribute('aria-expanded', String(isOpen));
-      document.body.style.overflow = isOpen ? 'hidden' : '';
-    });
-
-    // Close on link click
-    mobileMenu.querySelectorAll('.nav__mobile-link').forEach(link => {
-      link.addEventListener('click', () => {
-        hamburger.classList.remove('nav__hamburger--open');
-        mobileMenu.classList.remove('nav__mobile-menu--open');
-        hamburger.setAttribute('aria-expanded', 'false');
-        document.body.style.overflow = '';
+    // Take the dark tone while a dark section sits under the bar.
+    if (darks.length && bar) {
+      const b = bar.getBoundingClientRect();
+      const mid = b.top + b.height / 2;
+      const over = darks.some((el) => {
+        const r = el.getBoundingClientRect();
+        return r.top <= mid && r.bottom >= mid && r.left <= b.left + 40 && r.right >= b.right - 40;
       });
-    });
-
-    window.addEventListener('keydown', (event) => {
-      if (event.key !== 'Escape') return;
-      hamburger.classList.remove('nav__hamburger--open');
-      mobileMenu.classList.remove('nav__mobile-menu--open');
-      hamburger.setAttribute('aria-expanded', 'false');
-      document.body.style.overflow = '';
-    });
-  }
-
-  // Mark active page
-  nav.querySelectorAll('.nav__link').forEach(link => {
-    if (link.getAttribute('data-page') === activePage) {
-      link.classList.add('nav__link--active');
+      nav.classList.toggle('nav--on-dark', over);
     }
+  };
+
+  const request = () => {
+    if (!frame) frame = requestAnimationFrame(update);
+  };
+  window.addEventListener('scroll', request, { passive: true });
+  window.addEventListener('resize', request, { passive: true });
+  update();
+}
+
+/** @param {HTMLElement} nav */
+function initGlider(nav) {
+  const links = nav.querySelector('.nav__links');
+  if (!(links instanceof HTMLElement)) return;
+
+  /** @param {HTMLElement} link */
+  const moveTo = (link) => {
+    const box = link.getBoundingClientRect();
+    const parent = links.getBoundingClientRect();
+    links.style.setProperty('--glider-x', `${box.left - parent.left}px`);
+    links.style.setProperty('--glider-w', `${box.width}px`);
+  };
+
+  links.querySelectorAll('.nav__link').forEach((link) => {
+    link.addEventListener('pointerenter', () => {
+      moveTo(/** @type {HTMLElement} */ (link));
+      // Arrive at the first link without sliding in from the left edge.
+      if (!links.classList.contains('is-gliding')) {
+        const glider = links.querySelector('.nav__glider');
+        if (glider instanceof HTMLElement) {
+          glider.style.transition = 'opacity 200ms';
+          requestAnimationFrame(() => { glider.style.transition = ''; });
+        }
+      }
+      links.classList.add('is-gliding');
+    });
+  });
+  links.addEventListener('pointerleave', () => links.classList.remove('is-gliding'));
+}
+
+/** @param {HTMLElement} nav */
+function initSheet(nav) {
+  const burger = nav.querySelector('.nav__burger');
+  const sheet = document.getElementById('nav-sheet');
+  if (!(burger instanceof HTMLElement) || !sheet) return;
+
+  sheet.querySelectorAll('.nav__sheet-link').forEach((link, i) => {
+    /** @type {HTMLElement} */ (link).style.setProperty('--i', String(i));
+  });
+
+  let open = false;
+
+  const setOpen = (/** @type {boolean} */ next) => {
+    if (next === open) return;
+    open = next;
+    burger.setAttribute('aria-expanded', String(open));
+    burger.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+    nav.classList.toggle('nav--open', open);
+
+    if (open) {
+      sheet.hidden = false;
+      sheet.classList.remove('is-closing');
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+      sheet.classList.add('is-closing');
+      const done = () => {
+        if (!open) sheet.hidden = true;
+        sheet.classList.remove('is-closing');
+      };
+      sheet.addEventListener('animationend', done, { once: true });
+      setTimeout(done, 320);
+    }
+  };
+
+  burger.addEventListener('click', () => setOpen(!open));
+  sheet.addEventListener('click', (event) => {
+    if (event.target instanceof Element && event.target.closest('a')) setOpen(false);
+  });
+  window.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') setOpen(false);
+  });
+  window.matchMedia('(min-width: 1021px)').addEventListener('change', (event) => {
+    if (event.matches) setOpen(false);
   });
 }
 
-export function getNavHTML(activePage = '') {
-  return `
-  <nav class="nav" id="main-nav">
-    <div class="nav__inner">
-      <a href="${routes.home}" class="nav__logo" aria-label="Clex home">
-        <img src="/brand/clex-logo.png" alt="" class="nav__logo-image">
-        <span class="nav__logo-wordmark">Clex</span>
-      </a>
+/**
+ * Links to the workspace scroll to it when it is on the current page, and
+ * links to Vault switch the workspace into Vault mode first.
+ */
+export function initWorkspaceLinks() {
+  const target = document.getElementById('workspace');
 
-      <div class="nav__links">
-        <a href="${routes.features}" class="nav__link" data-page="features">Features</a>
-        <a href="${routes.vault}" class="nav__link" data-page="vault">Vault</a>
-        <a href="${routes.howItWorks}" class="nav__link" data-page="how-it-works">How It Works</a>
-        <a href="${routes.chain}" class="nav__link" data-page="chain">Chain</a>
-        <a href="${routes.developers}" class="nav__link" data-page="developers">Developers</a>
-        <a href="${routes.gettingStarted}" class="nav__link" data-page="getting-started">Get Started</a>
-        <a href="${routes.faq}" class="nav__link" data-page="faq">FAQ</a>
-      </div>
+  document.querySelectorAll('[data-scroll-workspace], [data-open-vault]').forEach((link) => {
+    link.addEventListener('click', (event) => {
+      if (!target) return; // not on the landing page: follow the link
+      event.preventDefault();
+      if (link.hasAttribute('data-open-vault')) {
+        window.dispatchEvent(new CustomEvent('clex:workspace-mode', { detail: { mode: 'vault' } }));
+      }
+      target.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'start' });
+      history.replaceState(null, '', `${location.pathname}${location.search}#workspace`);
+    });
+  });
+}
 
-      <div class="nav__actions">
-        <button class="nav__theme-toggle" id="theme-toggle" aria-label="Toggle theme">☀</button>
-        <a href="${routes.workspace}" class="btn btn--primary btn--small">Open Workspace →</a>
-      </div>
-
-      <button class="nav__hamburger" id="nav-hamburger" aria-label="Toggle menu">
-        <span class="nav__hamburger-line"></span>
-        <span class="nav__hamburger-line"></span>
-        <span class="nav__hamburger-line"></span>
-      </button>
-    </div>
-  </nav>
-
-  <div class="nav__mobile-menu" id="nav-mobile-menu">
-    <a href="${routes.home}" class="nav__mobile-link">Home</a>
-    <a href="${routes.features}" class="nav__mobile-link">Features</a>
-    <a href="${routes.vault}" class="nav__mobile-link">Vault</a>
-    <a href="${routes.howItWorks}" class="nav__mobile-link">How It Works</a>
-    <a href="${routes.chain}" class="nav__mobile-link">Chain</a>
-    <a href="${routes.developers}" class="nav__mobile-link">Developers</a>
-    <a href="${routes.gettingStarted}" class="nav__mobile-link">Get Started</a>
-    <a href="${routes.faq}" class="nav__mobile-link">FAQ</a>
-    <a href="${routes.workspace}" class="nav__mobile-link" style="color: var(--accent-text);">Open Workspace →</a>
-  </div>
-  `;
+function prefersReducedMotion() {
+  return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
 }

@@ -105,9 +105,9 @@
     cursor: default;
     padding: 7px 12px;
     border-radius: 999px;
-    border: 1.5px solid var(--border-hard);
+    border: 1px solid var(--border-strong);
     background: var(--surface-2);
-    box-shadow: 2px 2px 0 var(--border-hard);
+    box-shadow: var(--shadow-sm);
   }
 
   .vh-dot {
@@ -160,9 +160,9 @@
     min-height: 38px;
     padding: 8px 14px;
     border-radius: 999px;
-    border: 1.5px solid var(--border-hard);
+    border: 1px solid var(--border-strong);
     background: var(--surface-2);
-    box-shadow: 2px 2px 0 var(--border-hard);
+    box-shadow: var(--shadow-sm);
     font-family: var(--font-display);
     font-size: 13px;
     font-weight: 700;
@@ -175,8 +175,8 @@
   }
 
   .vh-sync-btn:hover {
-    transform: translate(-1px, -1px);
-    box-shadow: 4px 4px 0 var(--border-hard);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
   }
 
   .vh-peer-pill {

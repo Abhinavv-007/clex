@@ -343,7 +343,7 @@
 
   /* ── Status palette (injected as CSS vars for easy overrides) ── */
   .cex-root {
-    --status-completed:    #22c55e;
+    --status-completed:    var(--green);
     --status-transferring: var(--accent);
     --status-connecting:   var(--accent-tertiary);
     --status-waiting:      var(--text-secondary);
@@ -354,7 +354,7 @@
   .cex-identity {
     background: var(--bg-card);
     border: var(--border-thick) solid var(--border-bold);
-    box-shadow: var(--shadow-md) var(--shadow-color);
+    box-shadow: var(--shadow-sm);
     padding: var(--space-2xl);
   }
 
@@ -395,7 +395,7 @@
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     border: var(--border-thick) solid var(--border-bold);
-    box-shadow: var(--shadow-md) var(--shadow-color);
+    box-shadow: var(--shadow-sm);
   }
 
   .cex-stat {
@@ -429,7 +429,7 @@
   .cex-table-wrap {
     background: var(--bg-card);
     border: var(--border-thick) solid var(--border-bold);
-    box-shadow: var(--shadow-md) var(--shadow-color);
+    box-shadow: var(--shadow-sm);
     overflow: auto;
   }
 
@@ -501,9 +501,9 @@
   }
 
   .cex-chain-id--mine {
-    background: var(--accent);
-    color: #0e0e0d;
-    border-color: #0e0e0d;
+    background: var(--accent-dim);
+    color: var(--accent-text);
+    border-color: var(--accent-border);
     font-weight: var(--weight-bold);
   }
 
@@ -537,24 +537,24 @@
     white-space: nowrap;
   }
 
-  .cex-file-badge--image        { border-color: #3b82f6; color: #3b82f6; }
-  .cex-file-badge--pdf          { border-color: #ef4444; color: #ef4444; }
-  .cex-file-badge--document     { border-color: #8b5cf6; color: #8b5cf6; }
-  .cex-file-badge--spreadsheet  { border-color: #10b981; color: #10b981; }
-  .cex-file-badge--presentation { border-color: #eab308; color: #eab308; }
-  .cex-file-badge--video        { border-color: #f59e0b; color: #f59e0b; }
-  .cex-file-badge--audio        { border-color: #06b6d4; color: #06b6d4; }
-  .cex-file-badge--archive      { border-color: #f97316; color: #f97316; }
-  .cex-file-badge--code         { border-color: #22d3ee; color: #22d3ee; }
-  .cex-file-badge--text         { border-color: #94a3b8; color: #94a3b8; }
-  .cex-file-badge--data         { border-color: #84cc16; color: #84cc16; }
-  .cex-file-badge--font         { border-color: #c084fc; color: #c084fc; }
-  .cex-file-badge--ebook        { border-color: #a855f7; color: #a855f7; }
-  .cex-file-badge--apk          { border-color: #34d399; color: #34d399; }
-  .cex-file-badge--ios          { border-color: #60a5fa; color: #60a5fa; }
-  .cex-file-badge--executable   { border-color: #f43f5e; color: #f43f5e; }
-  .cex-file-badge--design       { border-color: #ec4899; color: #ec4899; }
-  .cex-file-badge--model        { border-color: #facc15; color: #facc15; }
+  .cex-file-badge--image        { border-color: var(--cyan); color: var(--cyan); }
+  .cex-file-badge--pdf          { border-color: var(--red); color: var(--red); }
+  .cex-file-badge--document     { border-color: var(--violet); color: var(--violet); }
+  .cex-file-badge--spreadsheet  { border-color: var(--green); color: var(--green); }
+  .cex-file-badge--presentation { border-color: var(--amber); color: var(--amber); }
+  .cex-file-badge--video        { border-color: var(--amber); color: var(--amber); }
+  .cex-file-badge--audio        { border-color: var(--cyan); color: var(--cyan); }
+  .cex-file-badge--archive      { border-color: var(--amber); color: var(--amber); }
+  .cex-file-badge--code         { border-color: var(--cyan); color: var(--cyan); }
+  .cex-file-badge--text         { border-color: var(--text-3); color: var(--text-3); }
+  .cex-file-badge--data         { border-color: var(--green); color: var(--green); }
+  .cex-file-badge--font         { border-color: var(--violet); color: var(--violet); }
+  .cex-file-badge--ebook        { border-color: var(--violet); color: var(--violet); }
+  .cex-file-badge--apk          { border-color: var(--green); color: var(--green); }
+  .cex-file-badge--ios          { border-color: var(--cyan); color: var(--cyan); }
+  .cex-file-badge--executable   { border-color: var(--red); color: var(--red); }
+  .cex-file-badge--design       { border-color: var(--red); color: var(--red); }
+  .cex-file-badge--model        { border-color: var(--amber); color: var(--amber); }
   .cex-file-badge--other        { border-color: var(--border-color); }
 
   /* ── Status ───────────────────────────────────────────────────────────────── */
@@ -698,8 +698,8 @@
   }
 
   .cex-page-btn:hover:not(:disabled) {
-    transform: translate(-2px, -2px);
-    box-shadow: var(--shadow-md) var(--shadow-color);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
   }
 
   .cex-page-btn:disabled {

@@ -139,7 +139,7 @@
 
   .fl-clear-btn:hover {
     background: var(--raised);
-    color: #ef4444;
+    color: var(--red);
   }
 
   .fl-files-body {
@@ -196,9 +196,9 @@
     color: var(--text-3);
     font-size: 12px;
     background: var(--surface-2);
-    border: 2px dashed var(--border-hard);
+    border: 1.5px dashed var(--border-strong);
     border-radius: 12px;
-    box-shadow: 3px 3px 0 var(--border-hard);
+    box-shadow: var(--shadow-sm);
     border-radius: 12px;
     text-align: center;
   }

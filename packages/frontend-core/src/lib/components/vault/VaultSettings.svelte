@@ -584,10 +584,10 @@
   .vst-tab {
     min-height: 42px;
     padding: 10px 14px;
-    border: 1.5px solid var(--border-hard);
+    border: 1px solid var(--border-strong);
     border-radius: 12px;
     background: var(--surface-2);
-    box-shadow: 2px 2px 0 var(--border-hard);
+    box-shadow: var(--shadow-sm);
     cursor: pointer;
     font-family: var(--font-display);
     font-size: 13px;
@@ -599,15 +599,15 @@
 
   .vst-tab:hover {
     color: var(--text-1);
-    transform: translate(-1px, -1px);
-    box-shadow: 4px 4px 0 var(--border-hard);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
   }
 
   .vst-tab--active {
     color: var(--text-1);
     background: color-mix(in srgb, var(--accent) 14%, var(--surface));
     border-color: color-mix(in srgb, var(--accent) 68%, var(--border-hard));
-    box-shadow: 4px 4px 0 var(--border-hard);
+    box-shadow: var(--shadow-sm);
   }
 
   .vst-summary-grid {
@@ -623,9 +623,9 @@
     min-height: 124px;
     padding: 14px;
     border-radius: 16px;
-    border: 1.5px solid var(--border-hard);
+    border: 1px solid var(--border-strong);
     background: var(--surface-2);
-    box-shadow: 3px 3px 0 var(--border-hard);
+    box-shadow: var(--shadow-sm);
   }
 
   .vst-summary-label {
@@ -666,9 +666,9 @@
     min-height: 100%;
     padding: 18px;
     border-radius: 18px;
-    border: 1.5px solid var(--border-hard);
+    border: 1px solid var(--border-strong);
     background: color-mix(in srgb, var(--surface-2) 88%, var(--surface));
-    box-shadow: 3px 3px 0 var(--border-hard);
+    box-shadow: var(--shadow-sm);
   }
 
   .vst-section-label {
@@ -730,9 +730,9 @@
     gap: 16px;
     padding: 16px;
     border-radius: 16px;
-    border: 1.5px solid var(--border-hard);
+    border: 1px solid var(--border-strong);
     background: color-mix(in srgb, var(--accent) 10%, var(--surface));
-    box-shadow: 3px 3px 0 var(--border-hard);
+    box-shadow: var(--shadow-sm);
   }
 
   .vst-device-count {
@@ -750,9 +750,9 @@
     gap: 12px;
     padding: 12px 14px;
     background: var(--surface-2);
-    border: 1.5px solid var(--border-hard);
+    border: 1px solid var(--border-strong);
     border-radius: 14px;
-    box-shadow: 3px 3px 0 var(--border-hard);
+    box-shadow: var(--shadow-sm);
   }
 
   .vst-device-row--self {
@@ -794,7 +794,7 @@
     min-height: 24px;
     padding: 4px 10px;
     border-radius: 999px;
-    border: 1.5px solid var(--border-hard);
+    border: 1px solid var(--border-strong);
     background: var(--surface);
     font-family: var(--font-mono);
     font-size: 10px;
@@ -867,10 +867,10 @@
     color: var(--text-1);
     letter-spacing: 0.2em;
     background: var(--surface-2);
-    border: 1.5px solid var(--border-hard);
+    border: 1px solid var(--border-strong);
     border-radius: 8px;
     padding: 8px 16px;
-    box-shadow: 2px 2px 0 var(--border-hard);
+    box-shadow: var(--shadow-sm);
   }
 
   .vst-copy-btn {
@@ -892,12 +892,12 @@
   .vst-danger-btn {
     color: var(--red);
     border-color: var(--red);
-    box-shadow: 2px 2px 0 var(--red);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--red) 16%, transparent);
   }
 
   .vst-danger-btn:hover {
     background: rgba(255, 68, 102, 0.08);
-    box-shadow: 4px 4px 0 var(--red);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--red) 16%, transparent);
   }
 
   .vst-confirm-row {

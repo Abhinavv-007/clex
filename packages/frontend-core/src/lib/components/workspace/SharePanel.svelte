@@ -91,9 +91,9 @@
     gap: 12px;
     padding: 14px;
     background: var(--surface-2);
-    border: 2px dashed var(--border-hard);
+    border: 1.5px dashed var(--border-strong);
     border-radius: 12px;
-    box-shadow: 3px 3px 0 var(--border-hard);
+    box-shadow: var(--shadow-sm);
   }
 
   .sp-empty-state p {
@@ -115,8 +115,8 @@
     gap: 4px;
     padding: 4px;
     background: var(--surface-2);
-    border: 2px solid var(--border-hard);
-    box-shadow: 2px 2px 0 var(--border-hard);
+    border: 1px solid var(--border-strong);
+    box-shadow: var(--shadow-sm);
     border-radius: 12px;
     min-width: 0;
   }
@@ -141,7 +141,7 @@
   .sp-tab-active {
     background: var(--surface);
     border-color: var(--border-hard);
-    box-shadow: 2px 2px 0 var(--border-hard);
+    box-shadow: var(--shadow-sm);
   }
 
   .sp-tab-label {

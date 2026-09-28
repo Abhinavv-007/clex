@@ -15,7 +15,7 @@
 
 <div class="fc-root" class:fc-selected={selected}>
   <!-- File type icon / preview -->
-  <div class="fc-icon" style="background: {color}12; border-color: {color}22;">
+  <div class="fc-icon" style="background: color-mix(in srgb, {color} 9%, transparent); border-color: color-mix(in srgb, {color} 20%, transparent);">
     {#if entry.previewUrl && category === 'image'}
       <img
         src={entry.previewUrl}
@@ -66,8 +66,8 @@
     gap: 10px;
     padding: 8px 10px;
     border-radius: 9px;
-    border: 2px solid var(--border-hard);
-    box-shadow: 2px 2px 0 var(--border-hard);
+    border: 1px solid var(--border-strong);
+    box-shadow: var(--shadow-sm);
     background: var(--surface);
     cursor: default;
     transition: transform 0.15s, box-shadow 0.15s;
@@ -75,8 +75,8 @@
   }
 
   .fc-root:hover {
-    transform: translate(-1px, -1px);
-    box-shadow: 3px 3px 0 var(--border-hard);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
   }
 
   .fc-selected {
@@ -117,7 +117,7 @@
     width: 14px;
     height: 14px;
     border-radius: 50%;
-    background: #22c55e;
+    background: var(--green);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -158,7 +158,7 @@
     padding: 1px 6px;
     border-radius: 100px;
     background: rgba(34,197,94,0.1);
-    color: #22c55e;
+    color: var(--green);
     border: 1px solid rgba(34,197,94,0.2);
     font-weight: 500;
   }
@@ -181,5 +181,5 @@
   }
 
   .fc-root:hover .fc-remove { opacity: 1; }
-  .fc-remove:hover { color: #ef4444; background: rgba(239,68,68,0.06); }
+  .fc-remove:hover { color: var(--red); background: rgba(239,68,68,0.06); }
 </style>

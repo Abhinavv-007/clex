@@ -427,9 +427,9 @@
     flex-wrap: wrap;
     padding: 10px 12px;
     border-radius: 14px;
-    border: 1.5px solid var(--border-hard);
+    border: 1px solid var(--border-strong);
     background: color-mix(in srgb, var(--surface-2) 82%, var(--surface));
-    box-shadow: 3px 3px 0 var(--border-hard);
+    box-shadow: var(--shadow-sm);
   }
 
   .ve-toolgroup {
@@ -443,9 +443,9 @@
     min-height: 34px;
     padding: 7px 12px;
     border-radius: 999px;
-    border: 1.5px solid var(--border-hard);
+    border: 1px solid var(--border-strong);
     background: var(--surface);
-    box-shadow: 2px 2px 0 var(--border-hard);
+    box-shadow: var(--shadow-sm);
     font-family: var(--font-display);
     font-size: 12px;
     font-weight: 700;
@@ -455,8 +455,8 @@
   }
 
   .ve-tool:hover {
-    transform: translate(-1px, -1px);
-    box-shadow: 4px 4px 0 var(--border-hard);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
   }
 
   .ve-textarea {

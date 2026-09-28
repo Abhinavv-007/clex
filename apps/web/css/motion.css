@@ -1,0 +1,192 @@
+/* ==========================================================================
+   Clex — motion
+
+   Three rules for everything that moves here:
+     1. Motion explains something. Files drop, shrink, travel, get verified.
+        Nothing moves just to be moving — no floating blobs, no eyes.
+     2. Entrances are one gesture: rise a little, sharpen, settle. Same
+        distance, same curve, everywhere, so the site feels like one thing.
+     3. Everything is progressive. Without JS the content is simply there;
+        with reduced motion it is there and still.
+   ========================================================================== */
+
+/* ── Reveal on scroll ─────────────────────────────────────────────────────
+   Only armed once JS has confirmed it can reveal things (html.js), so a
+   script failure can never leave content invisible. */
+
+.js [data-reveal] {
+  opacity: 0;
+  transform: translate3d(0, 18px, 0);
+  filter: blur(6px);
+  transition:
+    opacity 900ms var(--ease-out),
+    transform 900ms var(--ease-out),
+    filter 900ms var(--ease-out);
+  transition-delay: calc(var(--d, 0) * 1ms);
+}
+
+.js [data-reveal='fade'] {
+  transform: none;
+}
+
+.js [data-reveal='scale'] {
+  transform: translate3d(0, 24px, 0) scale(0.97);
+}
+
+.js [data-reveal].is-in {
+  opacity: 1;
+  transform: none;
+  filter: none;
+}
+
+/* ── Words that rise into place ───────────────────────────────────────────
+   js/motion.js wraps each word of a [data-split] heading in two spans; the
+   inner one rises out of the outer one's clip. */
+
+.split-word {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: bottom;
+  padding-bottom: 0.08em;
+  margin-bottom: -0.08em;
+}
+
+.split-word > span {
+  display: inline-block;
+  transform: translate3d(0, 105%, 0);
+  transition: transform 1000ms var(--ease-out);
+  transition-delay: calc(var(--w, 0) * 70ms + var(--d, 0) * 1ms);
+}
+
+.is-in .split-word > span,
+.split-word.is-in > span {
+  transform: none;
+}
+
+/* ── Handwriting ──────────────────────────────────────────────────────────
+   Every handwritten word is real letter outlines (scripts/handwriting.mjs)
+   written by js/ink.js in one continuous stroke: ink flows in left to right
+   behind a crisp edge, a glowing nib rides the edge along the letters, and a
+   trail is drawn beneath. The ink, nib and trail colours are fixed — the
+   same hand in light and dark mode. Unwritten, a word is invisible; without
+   JS or with reduced motion it is simply there. */
+
+.ink-word {
+  display: inline-block;
+  line-height: 0;
+  white-space: nowrap;
+}
+
+.ink {
+  display: inline-block;
+  overflow: visible;
+}
+
+.ink__nib {
+  opacity: 0;
+  transition: opacity 160ms linear;
+  pointer-events: none;
+}
+
+.ink__nib.is-on {
+  opacity: 1;
+}
+
+.ink__nib-core {
+  fill: #fffbf2;
+}
+
+.ink__nib-glow {
+  fill: #e2bd73;
+  opacity: 0.5;
+}
+
+.ink__trail,
+.ink__swash {
+  fill: none;
+  stroke: #c7a059;
+  stroke-linecap: round;
+  stroke-dasharray: 100000;
+  stroke-dashoffset: 100000;
+}
+
+.ink__trail {
+  stroke-width: var(--trail, 24);
+  opacity: 0.5;
+  transition: opacity 900ms var(--ease) 250ms;
+}
+
+.ink.is-written .ink__trail {
+  opacity: 0;
+}
+
+.ink__swash {
+  stroke-width: calc(var(--trail, 24) * 2);
+}
+
+/* Written, and the fallbacks: the finished word. */
+html:not(.js) .ink__letters,
+.ink.is-written .ink__letters {
+  mask: none;
+}
+
+html:not(.js) .ink__swash,
+.ink.is-written .ink__swash {
+  stroke-dasharray: none;
+  stroke-dashoffset: 0;
+}
+
+/* ── Counters, shimmer, small repeats ─────────────────────────────────── */
+
+[data-count] {
+  font-variant-numeric: tabular-nums;
+}
+
+.shimmer {
+  background: linear-gradient(90deg, var(--surface-2) 0%, var(--surface-3) 40%, var(--surface-2) 80%) 0 0 / 300% 100%;
+  animation: shimmer 1.6s linear infinite;
+}
+
+@keyframes shimmer {
+  to { background-position: -150% 0; }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes float-y {
+  50% { transform: translateY(-6px); }
+}
+
+/* ── Reduced motion: arrive, don't travel ─────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .js [data-reveal],
+  .js [data-reveal='scale'] {
+    transform: none;
+    filter: none;
+    transition: opacity 300ms linear;
+  }
+
+  .split-word > span {
+    transform: none;
+    transition: none;
+  }
+
+  .ink__letters {
+    mask: none;
+  }
+
+  .ink__swash {
+    stroke-dasharray: none !important;
+    stroke-dashoffset: 0 !important;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
+}

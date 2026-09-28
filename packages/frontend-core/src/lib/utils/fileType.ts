@@ -23,16 +23,19 @@ export function getFileCategory(type: string, name?: string): FileCategory {
   return 'other'
 }
 
-// Color accent per file category — used in FileCard
+// Colour per file category — used in FileCard. These are the gems from the
+// Clex mark, read from the site's theme so they follow light and dark mode;
+// the hex after each is the standalone fallback. Returned as CSS colour
+// values, so callers must mix them with color-mix(), not append hex alpha.
 export function getFileCategoryColor(category: FileCategory): string {
   const map: Record<FileCategory, string> = {
-    image: '#22d3ee',   // cyan
-    pdf: '#f59e0b',     // amber
-    document: '#7c3aed', // violet
-    archive: '#8b5cf6', // lighter violet
-    video: '#ec4899',   // pink
-    audio: '#06d6a0',   // teal
-    other: '#64748b',   // slate
+    image: 'var(--amethyst, #6a54a0)',
+    pdf: 'var(--rose, #c06c55)',
+    document: 'var(--moon, #5f82ad)',
+    archive: 'var(--tiger, #a2741f)',
+    video: 'var(--rose, #c06c55)',
+    audio: 'var(--jade, #2e6a4f)',
+    other: 'var(--ink-3, #6b665c)',
   }
   return map[category]
 }

@@ -566,7 +566,7 @@
     color: var(--text-1);
     background: var(--surface-2);
     border-color: var(--border-hard);
-    box-shadow: 2px 2px 0 var(--border-hard);
+    box-shadow: var(--shadow-sm);
   }
 
   .vpm-body {
@@ -590,9 +590,9 @@
     gap: 10px;
     padding: 16px;
     background: var(--surface-2);
-    border: 2px solid var(--border-hard);
+    border: 1px solid var(--border-strong);
     border-radius: 16px;
-    box-shadow: 4px 4px 0 var(--border-hard);
+    box-shadow: var(--shadow-sm);
   }
 
   .vpm-start-btn {
@@ -630,7 +630,7 @@
     min-height: 24px;
     padding: 4px 10px;
     border-radius: 999px;
-    border: 1.5px solid var(--border-hard);
+    border: 1px solid var(--border-strong);
     background: var(--surface-2);
     font-family: var(--font-mono);
     font-size: 10px;
@@ -647,9 +647,9 @@
     min-height: 212px;
     padding: 14px;
     background: var(--surface-2);
-    border: 2px solid var(--border-hard);
+    border: 1px solid var(--border-strong);
     border-radius: 16px;
-    box-shadow: 4px 4px 0 var(--border-hard);
+    box-shadow: var(--shadow-sm);
   }
 
   .vpm-qr-placeholder {
@@ -669,13 +669,13 @@
     text-align: center;
     padding: 16px;
     background: var(--surface);
-    border: 2px solid var(--border-hard);
+    border: 1px solid var(--border-strong);
     border-radius: 12px;
   }
 
   .vpm-link-box {
     padding: 12px;
-    border: 1.5px solid var(--border-hard);
+    border: 1px solid var(--border-strong);
     background: var(--surface);
     border-radius: 12px;
     font-family: var(--font-mono);
@@ -796,8 +796,8 @@
     font-size: 24px;
     font-weight: 700;
     color: #000;
-    border: 2px solid #000;
-    box-shadow: 3px 3px 0 #000;
+    border: 1px solid var(--border-strong);
+    box-shadow: var(--shadow-sm);
   }
 
   .vpm-success-title {

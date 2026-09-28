@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- @head -->
+  <title>A file shared with Clex</title>
+  <meta name="description" content="Someone shared a file with you through Clex. Download it here before the link expires.">
+  <meta name="robots" content="noindex">
+  <link rel="stylesheet" href="/css/pages/pages.css">
+</head>
+<body data-page="share">
+  <!-- @nav -->
+
+  <main id="main">
+    <header class="page-head page-head--compact stage-head tone-dark">
+      <canvas class="stream-canvas" data-stream="soft" aria-hidden="true"></canvas>
+      <div class="stream-veil" aria-hidden="true"></div>
+      <div class="container page-head__inner">
+        <span class="eyebrow eyebrow--center" data-reveal>Shared with you</span>
+        <h1 data-split>A file, <span class="script" data-write="now" data-delay="420">for you</span></h1>
+      </div>
+    </header>
+
+    <section class="section section--tight">
+      <div class="container container--narrow">
+        <div class="share-card" data-share data-state="loading" aria-live="polite">
+          <div class="share-card__loading" aria-hidden="true">
+            <span class="shimmer share-card__sk share-card__sk--icon"></span>
+            <span class="shimmer share-card__sk"></span>
+            <span class="shimmer share-card__sk share-card__sk--short"></span>
+          </div>
+
+          <div class="share-card__ready">
+            <div class="share-card__file">
+              <span class="share-card__icon" aria-hidden="true">
+                <svg viewBox="0 0 48 56" width="48" height="56"><path d="M6 2h24l14 14v34a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V6a4 4 0 0 1 4-4z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M30 2v14h14" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+                <span data-share-ext>FILE</span>
+              </span>
+              <div class="share-card__meta">
+                <h2 class="share-card__name" data-share-name>file</h2>
+                <p class="mono"><span data-share-size>—</span> · <span data-share-type>File</span> · expires <span data-share-expiry>—</span></p>
+              </div>
+            </div>
+            <a class="btn btn--jade btn--lg share-card__download" data-share-download href="#" rel="nofollow">
+              <svg class="btn__arrow btn__arrow--down" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M8 3v8M4.5 7.5 8 11l3.5-3.5M3 13.5h10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <span>Download</span>
+            </a>
+            <p class="share-card__note">Shared through the Clex API. The sender can revoke this link at any time, and it stops working when it expires.</p>
+          </div>
+
+          <div class="share-card__gone">
+            <h2 class="share-card__name">This link has ended</h2>
+            <p data-share-gone>This link has expired.</p>
+            <a class="btn btn--primary" href="/">Go to Clex</a>
+          </div>
+
+          <div class="share-card__missing">
+            <h2 class="share-card__name">We couldn't find that file</h2>
+            <p>Check the link you were given. Share links look like <code>clex.in/share/K9M3JX72A8DR</code>.</p>
+            <a class="btn btn--primary" href="/">Go to Clex</a>
+          </div>
+
+          <div class="share-card__error">
+            <h2 class="share-card__name">Something went wrong</h2>
+            <p data-share-error>Please try again in a moment.</p>
+            <button class="btn btn--primary" type="button" onclick="location.reload()">Try again</button>
+          </div>
+
+          <p class="share-card__token mono">Link <span data-share-token>—</span></p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- @footer -->
+</body>
+</html>

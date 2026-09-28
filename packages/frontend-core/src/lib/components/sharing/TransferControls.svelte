@@ -68,6 +68,6 @@
   .tc-btn--ghost {
     background: transparent;
     border-color: rgba(239, 68, 68, 0.3);
-    color: #ef4444;
+    color: var(--red);
   }
 </style>

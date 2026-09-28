@@ -755,7 +755,7 @@
     font-weight: 400;
     letter-spacing: 0;
     color: transparent;
-    background: linear-gradient(135deg, #6b4dff 0%, #ff7a3d 54%, #ffb800 100%);
+    background: linear-gradient(135deg, var(--violet) 0%, var(--amber) 54%, var(--amber) 100%);
     -webkit-background-clip: text;
     background-clip: text;
     filter: drop-shadow(0 10px 24px rgba(255,122,61,0.16));
@@ -775,9 +775,9 @@
     gap: 6px;
     width: min(100%, 560px);
     padding: 6px;
-    border: 2px solid var(--border-hard);
+    border: 1px solid var(--border-strong);
     background: var(--surface-2);
-    box-shadow: 2px 2px 0 var(--border-hard);
+    box-shadow: var(--shadow-sm);
     border-radius: 14px;
     flex: 0 0 min(100%, 560px);
   }
@@ -806,7 +806,7 @@
     background: var(--surface);
     color: var(--text-1);
     border-color: var(--border-hard);
-    box-shadow: 2px 2px 0 var(--border-hard);
+    box-shadow: var(--shadow-sm);
   }
 
   .va-grid {
@@ -823,7 +823,7 @@
 
   .va-col {
     background: var(--surface);
-    border: 2px solid var(--border-hard);
+    border: 1px solid var(--border-strong);
     box-shadow: var(--shadow-md);
     border-radius: 16px;
     padding: 20px;
@@ -853,8 +853,8 @@
     top: 50%;
     transform: translateY(-50%);
     background: var(--surface);
-    border: 2px solid var(--border-hard);
-    box-shadow: 3px 3px 0 var(--border-hard);
+    border: 1px solid var(--border-strong);
+    box-shadow: var(--shadow-sm);
     border-radius: 10px;
     z-index: 10;
   }
@@ -873,7 +873,7 @@
     height: calc(100vh - 210px);
     min-height: 680px;
     padding: 22px;
-    border: 2px solid var(--border-hard);
+    border: 1px solid var(--border-strong);
     border-radius: 16px;
     background: var(--surface);
     box-shadow: var(--shadow-md);
@@ -952,7 +952,7 @@
     right: 0;
     z-index: 200;
     background: var(--surface);
-    border-top: 2px solid var(--border-hard);
+    border-top: 1px solid var(--border-strong);
     padding: 8px 0 calc(8px + env(safe-area-inset-bottom, 0px));
     justify-content: space-around;
     gap: 0;

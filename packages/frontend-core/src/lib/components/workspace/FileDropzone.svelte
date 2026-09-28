@@ -99,7 +99,7 @@
 
 <style>
   .dropzone {
-    border: 2px dashed var(--border-hard);
+    border: 1.5px dashed var(--border-strong);
     background: var(--surface-2);
     border-radius: 12px;
     padding: 20px 14px;
@@ -110,13 +110,13 @@
     flex-direction: column;
     align-items: center;
     gap: 4px;
-    box-shadow: 3px 3px 0 var(--border-hard);
+    box-shadow: var(--shadow-sm);
   }
 
   .dropzone:hover,
   .dropzone:focus-visible {
-    transform: translate(-1px, -1px);
-    box-shadow: 4px 4px 0 var(--border-hard);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
     outline: none;
   }
 
@@ -130,8 +130,8 @@
     height: 36px;
     border-radius: 10px;
     background: var(--surface);
-    border: 2px solid var(--border-hard);
-    box-shadow: 2px 2px 0 var(--border-hard);
+    border: 1px solid var(--border-strong);
+    box-shadow: var(--shadow-sm);
     display: flex;
     align-items: center;
     justify-content: center;

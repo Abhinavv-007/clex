@@ -5,7 +5,7 @@
  * `_redirects` / `_headers` that make that work.
  *
  * A route can only be flattened if nothing is nested underneath it — turning
- * `vault/` into a file would orphan `vault/secret` and `vault/share`.
+ * `vault/` into a file would orphan `vault/secret`.
  */
 import { readFile, rm, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
@@ -18,8 +18,8 @@ const distDir = resolve(rootDir, 'dist');
 const flatRoutes = [
   'features',
   'how-it-works',
-  'workspace',
   'receive',
+  'share',
   'chain',
   'developers',
   'account',
@@ -33,9 +33,16 @@ const flatRoutes = [
 
 /** Routes that keep their directory because they have children. */
 const nestedRoutes = [
-  'vault',
   'vault/secret',
-  'vault/share',
+];
+
+/**
+ * Pages that now live inside the landing page. Mirrors `legacyRedirects` in
+ * vite.config.js, which applies the same table to the dev and preview servers.
+ */
+const legacyRedirects = [
+  ['/workspace', '/#workspace'],
+  ['/vault', '/?mode=vault#workspace'],
 ];
 
 const HTML_TYPE = 'Content-Type: text/html; charset=utf-8';
@@ -63,9 +70,11 @@ for (const route of flatRoutes) {
 
 // Collapse the trailing-slash form onto the canonical one.
 const redirects = [
+  ...legacyRedirects.flatMap(([from, to]) => [`${from} ${to} 301`, `${from}/ ${to} 301`]),
   ...flattened.map((route) => `/${route}/ /${route} 301`),
+  // One page serves every share token; it reads the token from the path.
+  '/share/* /share 200',
   '/vault/secret/* /vault/secret/index.html 200',
-  '/vault/share/* /vault/share/index.html 200',
 ].join('\n');
 await writeFile(resolve(distDir, '_redirects'), `${redirects}\n`);
 

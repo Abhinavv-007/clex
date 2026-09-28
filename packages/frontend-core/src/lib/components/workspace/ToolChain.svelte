@@ -223,8 +223,8 @@
   /* Processing */
   .tc-processing {
     background: var(--surface-2);
-    border: 2px solid var(--border-hard);
-    box-shadow: 3px 3px 0 var(--border-hard);
+    border: 1px solid var(--border-strong);
+    box-shadow: var(--shadow-sm);
     border-radius: 12px;
     padding: 20px;
     display: flex;
@@ -239,8 +239,8 @@
     height: 44px;
     border-radius: 12px;
     background: var(--surface);
-    border: 2px solid var(--border-hard);
-    box-shadow: 2px 2px 0 var(--border-hard);
+    border: 1px solid var(--border-strong);
+    box-shadow: var(--shadow-sm);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -284,7 +284,7 @@
   .tc-error {
     background: var(--surface);
     border: 2px solid var(--red);
-    box-shadow: 3px 3px 0 var(--red);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--red) 16%, transparent);
     border-radius: 12px;
     padding: 14px;
     display: flex;
@@ -293,7 +293,7 @@
   }
 
   .tc-err-icon {
-    color: #ef4444;
+    color: var(--red);
     flex-shrink: 0;
     margin-top: 1px;
   }
@@ -303,7 +303,7 @@
   .tc-err-msg {
     font-size: 13px;
     font-weight: 500;
-    color: #ef4444;
+    color: var(--red);
   }
 
   .tc-err-dismiss {
@@ -330,9 +330,9 @@
     color: var(--text-3);
     font-size: 13px;
     background: var(--surface-2);
-    border: 2px dashed var(--border-hard);
+    border: 1.5px dashed var(--border-strong);
     border-radius: 12px;
-    box-shadow: 3px 3px 0 var(--border-hard);
+    box-shadow: var(--shadow-sm);
     text-align: center;
   }
 

@@ -149,20 +149,20 @@
     transition: background 150ms, border-color 150ms, transform 150ms, box-shadow 150ms;
     position: relative;
     flex-shrink: 0;
-    box-shadow: 2px 2px 0 transparent;
+    box-shadow: none;
   }
 
   .nl-item:hover {
-    transform: translate(-1px, -1px);
+    transform: translateY(-1px);
     background: var(--raised);
     border-color: var(--border-hard);
-    box-shadow: 4px 4px 0 var(--border-hard);
+    box-shadow: var(--shadow-sm);
   }
 
   .nl-item--active {
     background: color-mix(in srgb, var(--accent) 12%, var(--surface));
     border-color: color-mix(in srgb, var(--accent) 68%, var(--border-hard));
-    box-shadow: 4px 4px 0 var(--border-hard);
+    box-shadow: var(--shadow-sm);
   }
 
   .nl-pin {

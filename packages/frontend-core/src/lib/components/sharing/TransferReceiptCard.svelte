@@ -144,13 +144,13 @@
 
   .tr-badge--ok {
     background: rgba(34, 197, 94, 0.12);
-    color: #22c55e;
+    color: var(--green);
     border: 1px solid rgba(34, 197, 94, 0.3);
   }
 
   .tr-badge--warn {
     background: rgba(245, 158, 11, 0.12);
-    color: #f59e0b;
+    color: var(--amber);
     border: 1px solid rgba(245, 158, 11, 0.3);
   }
 
@@ -294,7 +294,7 @@
     font-size: 10px;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: #22c55e;
+    color: var(--green);
     flex-shrink: 0;
     padding: 2px 8px;
     border-radius: 999px;

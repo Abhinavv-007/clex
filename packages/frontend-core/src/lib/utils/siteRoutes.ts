@@ -7,6 +7,7 @@ export interface SiteRoutes {
   faq: string
   workspace: string
   receive: string
+  share: string
   chain: string
   developers: string
   account: string
@@ -17,12 +18,14 @@ export interface SiteRoutes {
 export const siteRoutes: SiteRoutes = Object.freeze({
   home: '/',
   features: '/features',
-  vault: '/vault',
+  vault: '/?mode=vault#workspace',
   howItWorks: '/how-it-works',
   gettingStarted: '/getting-started',
   faq: '/faq',
-  workspace: '/workspace',
+  // The workspace is the landing page; Vault is a mode of it.
+  workspace: '/#workspace',
   receive: '/receive',
+  share: '/share',
   chain: '/chain',
   developers: '/developers',
   account: '/account',

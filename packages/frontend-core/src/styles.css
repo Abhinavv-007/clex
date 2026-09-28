@@ -1,189 +1,128 @@
-
 /* Webfonts are loaded via a single <link> in each page's <head>.
    They must NOT be @imported here: a CSS @import is discovered only
    after this file has downloaded and parsed, so it serialises the
    font fetch behind the stylesheet fetch and blocks first paint. */
 
-@tailwind base;
+/* No `@tailwind base`. Preflight is a page-level reset, and this sheet is
+   mounted inside a site that has its own; loaded second, preflight's
+   `h1 { font-size: inherit }` and friends silently flattened the site's
+   typography. The two things the apps relied on it for — box-sizing and a
+   solid default border style for the `border` utility — are set by the
+   site's base.css. */
 @tailwind components;
 @tailwind utilities;
 
 /* ─────────────────────────────────────────────────────────
-   NEO-BRUTALIST DESIGN TOKENS — LIGHT MODE
+   APP TOKENS
+
+   The apps name their colours --canvas, --surface, --text-1 … and read
+   them from the host site's tokens, with standalone fallbacks. Each alias
+   reads a *different* site variable (never its own name), so nothing here
+   can form a var() cycle.
+
+   The look is the site's: hairline borders, soft elevation, jade for
+   "live / yours", gold only as a trace. The old neo-brutalist hard offset
+   shadows and black 2px frames are gone; --border-hard and the --shadow-*
+   names are kept because the components use them, and now resolve to the
+   soft equivalents.
 ───────────────────────────────────────────────────────── */
-/* ─────────────────────────────────────────────────────────
-   These tokens DEFER to the host site's design tokens and fall back to
-   standalone values when the app is mounted on its own.
+:root,
+[data-theme='light'] {
+  /* --font-sans, --font-mono and --surface(-2/-3) are the site's own
+     tokens, read directly. Re-declaring them here would form a var()
+     cycle with the site's compatibility aliases. */
 
-   The app previously carried a parallel palette — pure-black borders,
-   white/grey surfaces, Space Grotesk — while the site around it used
-   ink/cream/Geist. Mounted inside the site that produced two visibly
-   different design languages on the same screen, and in dark mode the
-   two sets of surface tokens diverged outright.
+  --canvas:         var(--bg, #f2eee7);
+  --raised:         rgba(33, 29, 22, 0.035);
+  --overlay:        rgba(242, 238, 231, 0.92);
 
-   Deferring through var() rather than re-declaring keeps this
-   order-independent: it does not matter whether this sheet loads before
-   or after the site's tokens.
-───────────────────────────────────────────────────────── */
-:root {
-  --font-sans:    var(--font-body, 'Inter', system-ui, sans-serif);
-  --font-display: var(--font-display, 'Space Grotesk', system-ui, sans-serif);
-  --font-mono:    var(--font-mono, 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace);
+  --border:         var(--line, rgba(33, 29, 22, 0.09));
+  --border-strong:  var(--line-2, rgba(33, 29, 22, 0.15));
+  --border-hard:    var(--line-2, rgba(33, 29, 22, 0.15));
+  --border-focus:   var(--jade, #2e6a4f);
 
-  /* Surfaces */
-  --canvas:         var(--bg-primary, #FAFAFA);
-  --surface:        var(--bg-card, #FFFFFF);
-  --surface-2:      var(--bg-card-soft, #F4F4F5);
-  --surface-3:      var(--bg-secondary, #E4E4E7);
-  --raised:         rgba(0,0,0,0.03);
-  --overlay:        rgba(250,250,250,0.92);
+  --shadow-sm:      var(--shadow-1, 0 1px 2px rgba(40, 32, 18, 0.06));
+  --shadow-md:      var(--shadow-1, 0 1px 3px rgba(40, 32, 18, 0.08));
+  --shadow-lg:      var(--shadow-2, 0 10px 30px -12px rgba(40, 32, 18, 0.16));
+  --shadow-xl:      var(--shadow-3, 0 30px 70px -28px rgba(40, 32, 18, 0.3));
+  --shadow-accent:  0 0 0 3px var(--jade-wash, rgba(46, 106, 79, 0.08));
 
-  /* Borders */
-  --border:         var(--border-color, rgba(0,0,0,0.10));
-  --border-strong:  var(--border-subtle, rgba(0,0,0,0.20));
-  --border-hard:    var(--border-bold, #000000);
-  --border-focus:   var(--accent, #C4B5FD);
+  --text-1:   var(--ink, #1c1b18);
+  --text-2:   var(--ink-2, #4c4840);
+  --text-3:   var(--ink-3, #6b665c);
+  --text-inv: var(--bg, #f2eee7);
 
-  /* Shadows — neo-brutalist hard offset, in the site's ink */
-  --shadow-sm:      3px 3px 0 var(--border-bold, #000000);
-  --shadow-md:      4px 4px 0 var(--border-bold, #000000);
-  --shadow-lg:      6px 6px 0 var(--border-bold, #000000);
-  --shadow-xl:      8px 8px 0 var(--border-bold, #000000);
-  --shadow-accent:  4px 4px 0 var(--accent, #C4B5FD);
+  --accent:         var(--jade, #2e6a4f);
+  --accent-dim:     var(--jade-wash, rgba(46, 106, 79, 0.08));
+  --accent-border:  var(--jade-soft, #dde8df);
+  --accent-text:    var(--jade, #2e6a4f);
+  --accent-fg:      var(--on-jade, #f5f2ea);
 
-  /* Text */
-  --text-1:   var(--text-primary, #0A0A0C);
-  --text-2:   var(--text-secondary, #4A4850);
-  /* Standalone fallback: #8A8790 only reached 3.5:1 on white and 3.2:1 on
-     --surface-2, failing WCAG AA for body text. 5.2:1 / 4.7:1 here. */
-  --text-3:   var(--text-tertiary, #6E6B77);
-  --text-inv: var(--text-inverse, #FFFFFF);
+  /* Status. The vivid names are kept for the components; they now come
+     from the site's gem palette, and every one clears AA as text. */
+  --green:   var(--jade, #2e6a4f);
+  --amber:   var(--warn, #93650f);
+  --red:     var(--danger, #b1402c);
+  --violet:  var(--amethyst, #6a54a0);
+  --cyan:    var(--moon, #5f82ad);
 
-  /* Accent — pastel brand palette */
-  --accent:         #C4B5FD;
-  --accent-dim:     rgba(196,181,253,0.18);
-  --accent-border:  rgba(196,181,253,0.45);
-  --accent-text:    #5B3FC0;
-  --accent-fg:      #000000;
+  --green-text:  var(--jade, #2e6a4f);
+  --amber-text:  var(--warn, #93650f);
+  --red-text:    var(--danger, #b1402c);
+  --violet-text: var(--amethyst, #6a54a0);
+  --cyan-text:   var(--moon, #5f82ad);
 
-  /* Status — vivid values are INDICATOR colours (dots, bars, borders, fills).
-     As small text on a light surface they fail WCAG AA: green 2.2:1,
-     cyan 1.8:1, amber 2.3:1. Use the -text variants for any text. */
-  --green:   #00C851;
-  --amber:   #FF8C00;
-  --red:     #FF2D55;
-  --violet:  #6B4FE0;
-  --cyan:    #00D4FF;
-
-  --green-text:  #058739;
-  --amber-text:  #AB6005;
-  --red-text:    #DB284A;
-  --violet-text: #6B4FE0;
-  --cyan-text:   #067B92;
-
-  /* Spacing and shape */
   --radius:      10px;
   --radius-card: 16px;
   --radius-lg:   20px;
 
-  /* Motion */
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
-  --spring:   cubic-bezier(0.34, 1.56, 0.64, 1);
+  --spring:   cubic-bezier(0.34, 1.36, 0.64, 1);
   --ease-in:  cubic-bezier(0.7, 0, 0.84, 0);
-
-  color-scheme: light;
 }
 
-/* ─────────────────────────────────────────────────────────
-   DARK MODE TOKENS (DEFAULT)
-───────────────────────────────────────────────────────── */
-/* Matches the document theme. `data-theme` is the canonical signal — it is
-   set by the render-blocking bootstrap in each page's <head>, so it is
-   correct before first paint — and `.dark` is kept alongside it because
-   Tailwind's darkMode: 'class' reads the class. */
-[data-theme="dark"],
+[data-theme='dark'],
 .dark {
-  --canvas:         var(--bg-primary, #09090B);
-  --surface:        var(--bg-card, #111116);
-  --surface-2:      var(--bg-card-soft, #18181F);
-  --surface-3:      var(--bg-secondary, #1E1E27);
-  --raised:         rgba(255,255,255,0.04);
-  --overlay:        rgba(9,9,11,0.92);
+  --canvas:         var(--bg, #121210);
+  --raised:         rgba(238, 234, 226, 0.04);
+  --overlay:        rgba(18, 18, 16, 0.92);
 
-  --border:         var(--border-color, rgba(255,255,255,0.08));
-  --border-strong:  var(--border-subtle, rgba(255,255,255,0.16));
-  --border-hard:    var(--border-bold, rgba(255,255,255,0.75));
-  --border-focus:   var(--accent, #FFC6A5);
+  --border:         var(--line, rgba(238, 234, 226, 0.08));
+  --border-strong:  var(--line-2, rgba(238, 234, 226, 0.14));
+  --border-hard:    var(--line-2, rgba(238, 234, 226, 0.14));
+  --border-focus:   var(--jade, #86c8a0);
 
-  /* Dark mode hard shadows are cast in the light border colour */
-  --shadow-sm:      3px 3px 0 var(--border-bold, rgba(255,255,255,0.65));
-  --shadow-md:      4px 4px 0 var(--border-bold, rgba(255,255,255,0.65));
-  --shadow-lg:      6px 6px 0 var(--border-bold, rgba(255,255,255,0.65));
-  --shadow-xl:      8px 8px 0 var(--border-bold, rgba(255,255,255,0.65));
-  --shadow-accent:  4px 4px 0 var(--accent, #FFC6A5);
+  --shadow-sm:      var(--shadow-1, 0 1px 2px rgba(0, 0, 0, 0.3));
+  --shadow-md:      var(--shadow-1, 0 1px 2px rgba(0, 0, 0, 0.3));
+  --shadow-lg:      var(--shadow-2, 0 14px 34px -14px rgba(0, 0, 0, 0.6));
+  --shadow-xl:      var(--shadow-3, 0 34px 80px -30px rgba(0, 0, 0, 0.75));
+  --shadow-accent:  0 0 0 3px var(--jade-wash, rgba(134, 200, 160, 0.07));
 
-  --text-1:   var(--text-primary, #F0F0F5);
-  --text-2:   var(--text-secondary, #9898A8);
-  /* Standalone fallback: #58586A sat at 2.5-2.7:1 on the dark surfaces — the
-     route labels and status captions were barely legible. 5.2-5.9:1 here. */
-  --text-3:   var(--text-tertiary, #8E8EA3);
-  --text-inv: var(--text-inverse, #09090B);
+  --text-1:   var(--ink, #eeeae2);
+  --text-2:   var(--ink-2, #bbb5aa);
+  --text-3:   var(--ink-3, #928c80);
+  --text-inv: var(--bg, #121210);
 
-  /* On the dark surfaces the vivid values already clear AA (8-10:1), so the
-     text variants collapse back to them. Violet is the exception at 3.3:1. */
-  --green-text:  var(--green);
-  --amber-text:  var(--amber);
-  --red-text:    var(--red);
-  --violet-text: #C4B5FD;
-  --cyan-text:   var(--cyan);
+  --accent:         var(--jade, #86c8a0);
+  --accent-dim:     var(--jade-wash, rgba(134, 200, 160, 0.07));
+  --accent-border:  var(--jade-soft, rgba(134, 200, 160, 0.14));
+  --accent-text:    var(--jade, #86c8a0);
+  --accent-fg:      var(--on-jade, #0d1912);
 
-  --accent:         #FFC6A5;
-  --accent-dim:     rgba(255,198,165,0.18);
-  --accent-border:  rgba(255,198,165,0.42);
-  --accent-text:    var(--accent);
-  --accent-fg:      #000000;
+  --green:   var(--jade, #86c8a0);
+  --amber:   var(--warn, #e0b35f);
+  --red:     var(--danger, #ef8a73);
+  --violet:  var(--amethyst, #aa97dc);
+  --cyan:    var(--moon, #9bb8dc);
 
-  --green:   #00E570;
-  --amber:   #FFAA00;
-  --red:     #FF4466;
-  --violet:  #9B7FFF;
-  --cyan:    #22D3EE;
-
-  color-scheme: dark;
+  --green-text:  var(--jade, #86c8a0);
+  --amber-text:  var(--warn, #e0b35f);
+  --red-text:    var(--danger, #ef8a73);
+  --violet-text: var(--amethyst, #aa97dc);
+  --cyan-text:   var(--moon, #9bb8dc);
 }
 
-/* ─────────────────────────────────────────────────────────
-   BASE RESET
-───────────────────────────────────────────────────────── */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-html {
-  scroll-behavior: smooth;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
-}
-
-body {
-  min-width: 320px;
-  background: var(--canvas);
-  color: var(--text-1);
-  font-family: var(--font-sans);
-  font-size: 15px;
-  line-height: 1.6;
-  overflow-x: hidden;
-  transition: background 250ms ease, color 250ms ease;
-}
-
-::selection {
-  background: var(--accent);
-  color: var(--accent-fg);
-}
-
-a { color: inherit; text-decoration: none; }
-img, svg { display: block; max-width: 100%; }
-
-.font-display { font-family: var(--font-display); }
+.font-display { font-family: var(--font-sans); }
 .font-mono { font-family: var(--font-mono); }
 
 /* ─────────────────────────────────────────────────────────
@@ -195,46 +134,38 @@ img, svg { display: block; max-width: 100%; }
   .text-secondary { color: var(--text-2); }
   .text-tertiary  { color: var(--text-3); }
   .text-accent    { color: var(--accent-text); }
+  .text-2xs       { font-size: 11px; line-height: 1.45; }
 }
 
 /* ─────────────────────────────────────────────────────────
-   NEO-BRUTALIST CORE COMPONENTS
+   APP COMPONENTS
 ───────────────────────────────────────────────────────── */
 @layer components {
 
   /* ── CARDS ─────────────────────────────────────────── */
   .nb-card {
     background: var(--surface);
-    border: 2px solid var(--border-hard);
-    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-sm);
     border-radius: var(--radius-card);
-    transition:
-      transform 160ms var(--ease-out),
-      box-shadow 160ms var(--ease-out);
+    transition: border-color 200ms ease, box-shadow 240ms var(--ease-out);
   }
 
   .nb-card:hover {
-    transform: translate(-2px, -2px);
+    border-color: var(--border-strong);
     box-shadow: var(--shadow-lg);
   }
 
   .nb-card-accent {
     background: var(--accent);
-    border: 2px solid #000000;
-    box-shadow: 4px 4px 0 #000000;
+    border: 1px solid var(--accent);
     border-radius: var(--radius-card);
-    color: #000000;
-    transition: transform 160ms var(--ease-out), box-shadow 160ms var(--ease-out);
-  }
-
-  .nb-card-accent:hover {
-    transform: translate(-2px, -2px);
-    box-shadow: 6px 6px 0 #000000;
+    color: var(--accent-fg);
   }
 
   .nb-card-surface {
     background: var(--surface-2);
-    border: 1.5px solid var(--border);
+    border: 1px solid var(--border);
     border-radius: var(--radius-card);
     transition: border-color 180ms ease, background 180ms ease;
   }
@@ -244,104 +175,102 @@ img, svg { display: block; max-width: 100%; }
     background: var(--surface);
   }
 
-  /* ── BUTTONS ────────────────────────────────────────── */
-  .btn {
+  /* ── BUTTONS ──────────────────────────────────────────
+     App buttons use the btn-* names so they never collide with the site's
+     own .btn. Same shape, same motion. */
+  .btn-base {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
-    padding: 12px 22px;
-    border-radius: 10px;
-    font-family: var(--font-display);
+    min-height: 40px;
+    padding: 0 18px;
+    border-radius: 999px;
+    font-family: var(--font-sans);
     font-size: 14px;
-    font-weight: 700;
+    font-weight: 500;
     line-height: 1;
     letter-spacing: -0.01em;
     white-space: nowrap;
     user-select: none;
     cursor: pointer;
-    border: 2px solid transparent;
+    border: 1px solid transparent;
     transition:
-      transform 150ms var(--ease-out),
-      box-shadow 150ms var(--ease-out),
-      background 150ms ease,
-      border-color 150ms ease,
-      color 150ms ease;
+      transform 160ms var(--spring),
+      box-shadow 200ms ease,
+      background 160ms ease,
+      border-color 160ms ease,
+      color 160ms ease;
   }
 
-  .btn:focus-visible {
-    outline: 3px solid var(--accent);
+  .btn-base:focus-visible {
+    outline: 2px solid var(--accent);
     outline-offset: 3px;
   }
 
-  .btn:active { transform: translate(2px, 2px) !important; box-shadow: none !important; }
+  .btn-base:active { transform: scale(0.97); }
 
-  /* Primary — black bg, white text (dark) / white bg, black text (light) */
-  .btn-primary {
-    @apply btn;
-    background: var(--text-1);
-    color: var(--text-inv);
-    border-color: var(--border-hard);
-    box-shadow: var(--shadow-md);
+  .btn-base:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
   }
 
-  .btn-primary:hover {
-    transform: translate(-2px, -2px);
+  .btn-primary {
+    @apply btn-base;
+    background: var(--text-1);
+    color: var(--text-inv);
+    border-color: var(--text-1);
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--text-1) 88%, var(--accent));
     box-shadow: var(--shadow-lg);
   }
 
-  /* Accent CTA — pastel brand gradient */
   .btn-accent {
-    @apply btn;
-    background: linear-gradient(135deg, #C4B5FD 0%, #FFC6A5 52%, #B6F0C4 100%);
-    color: #000000;
-    border: 2px solid #000000;
-    box-shadow: 4px 4px 0 #000000;
+    @apply btn-base;
+    background: var(--accent);
+    color: var(--accent-fg);
+    border-color: var(--accent);
   }
 
-  .btn-accent:hover {
-    transform: translate(-2px, -2px);
-    box-shadow: 6px 6px 0 #000000;
+  .btn-accent:hover:not(:disabled) {
+    background: var(--jade-hi, var(--accent));
+    box-shadow: var(--shadow-lg);
   }
 
-  /* Secondary — outlined */
   .btn-secondary {
-    @apply btn;
-    background: transparent;
+    @apply btn-base;
+    background: var(--surface);
     color: var(--text-1);
-    border-color: var(--border-hard);
-    box-shadow: var(--shadow-sm);
+    border-color: var(--border-strong);
   }
 
-  .btn-secondary:hover {
-    transform: translate(-2px, -2px);
-    box-shadow: var(--shadow-md);
-    background: var(--raised);
+  .btn-secondary:hover:not(:disabled) {
+    border-color: var(--line-3, var(--border-strong));
+    box-shadow: var(--shadow-lg);
   }
 
-  /* Ghost — no border */
   .btn-ghost {
-    @apply btn;
+    @apply btn-base;
     background: transparent;
     color: var(--text-2);
-    border-color: transparent;
-    box-shadow: none;
-    padding: 10px 14px;
+    padding: 0 14px;
   }
 
-  .btn-ghost:hover {
+  .btn-ghost:hover:not(:disabled) {
     color: var(--text-1);
-    border-color: var(--border);
     background: var(--raised);
   }
 
-  /* Icon button */
   .btn-icon {
     @apply btn-ghost;
-    width: 40px;
-    height: 40px;
+    width: 38px;
+    min-height: 38px;
+    height: 38px;
     padding: 0;
-    border-radius: 10px;
+    border-radius: 50%;
   }
 
   /* ── BADGES ─────────────────────────────────────────── */
@@ -349,65 +278,55 @@ img, svg { display: block; max-width: 100%; }
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 5px 11px;
-    border-radius: 6px;
-    border: 1.5px solid var(--border-hard);
-    background: var(--surface);
-    box-shadow: 2px 2px 0 var(--border-hard);
+    height: 24px;
+    padding: 0 10px;
+    border-radius: 999px;
+    border: 0;
+    background: var(--surface-3);
     color: var(--text-2);
     font-family: var(--font-mono);
-    font-size: 11px;
-    font-weight: 700;
+    font-size: 10.5px;
+    font-weight: 500;
     letter-spacing: 0.06em;
     text-transform: uppercase;
   }
 
   .badge-accent {
     @apply badge;
-    background: var(--accent);
-    color: #000000;
-    border-color: #000000;
-    box-shadow: 2px 2px 0 #000000;
+    background: var(--accent-dim);
+    color: var(--accent-text);
   }
 
   .badge-green {
     @apply badge;
-    color: var(--green);
-    border-color: var(--green);
-    background: rgba(0,200,81,0.08);
-    box-shadow: 2px 2px 0 var(--green);
+    background: var(--accent-dim);
+    color: var(--green-text);
   }
 
   .badge-red {
     @apply badge;
-    color: var(--red);
-    border-color: var(--red);
-    background: rgba(255,45,85,0.08);
-    box-shadow: 2px 2px 0 var(--red);
+    background: color-mix(in srgb, var(--red) 12%, transparent);
+    color: var(--red-text);
   }
 
   .badge-violet {
     @apply badge;
-    color: var(--violet);
-    border-color: var(--violet);
-    background: rgba(107,79,224,0.08);
-    box-shadow: 2px 2px 0 var(--violet);
+    background: color-mix(in srgb, var(--violet) 12%, transparent);
+    color: var(--violet-text);
   }
 
   .badge-cyan {
     @apply badge;
-    color: var(--cyan);
-    border-color: var(--cyan);
-    background: rgba(0,212,255,0.08);
-    box-shadow: 2px 2px 0 var(--cyan);
+    background: color-mix(in srgb, var(--cyan) 12%, transparent);
+    color: var(--cyan-text);
   }
 
   /* ── INPUTS ─────────────────────────────────────────── */
   .input {
     width: 100%;
-    padding: 12px 16px;
+    padding: 11px 14px;
     border-radius: 10px;
-    border: 2px solid var(--border);
+    border: 1px solid var(--border-strong);
     background: var(--surface);
     color: var(--text-1);
     font-family: var(--font-sans);
@@ -426,30 +345,11 @@ img, svg { display: block; max-width: 100%; }
   .input-code {
     @apply input;
     font-family: var(--font-mono);
-    font-size: 28px;
-    font-weight: 700;
+    font-size: 26px;
+    font-weight: 500;
     letter-spacing: 0.3em;
     text-align: center;
     text-transform: uppercase;
-  }
-
-  /* ── SECTION LAYOUT ─────────────────────────────────── */
-  .section {
-    padding: 96px 24px;
-  }
-
-  .section-sm {
-    padding: 64px 24px;
-  }
-
-  .container {
-    max-width: 1280px;
-    margin: 0 auto;
-  }
-
-  .container-narrow {
-    max-width: 880px;
-    margin: 0 auto;
   }
 
   /* ── SECTION LABELS ─────────────────────────────────── */
@@ -458,12 +358,12 @@ img, svg { display: block; max-width: 100%; }
     align-items: center;
     gap: 8px;
     font-family: var(--font-mono);
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.14em;
+    font-size: 10.5px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
     color: var(--text-3);
-    margin-bottom: 16px;
+    margin-bottom: 14px;
   }
 
   .section-label-dot {
@@ -471,49 +371,42 @@ img, svg { display: block; max-width: 100%; }
     height: 6px;
     border-radius: 50%;
     background: var(--accent);
-    animation: pulse-dot 2.4s ease-in-out infinite;
   }
 
   /* ── DIVIDERS ────────────────────────────────────────── */
   .divider {
     width: 100%;
-    height: 2px;
+    height: 1px;
     background: var(--border);
   }
 
   .divider-hard {
     width: 100%;
-    height: 2px;
-    background: var(--border-hard);
+    height: 1px;
+    background: var(--border-strong);
   }
 
   /* ── PROGRESS ────────────────────────────────────────── */
   .progress-bar {
     width: 100%;
     height: 6px;
-    border-radius: 3px;
-    background: var(--border);
+    border-radius: 999px;
+    background: var(--surface-3);
     overflow: hidden;
-    border: 1px solid var(--border);
   }
 
   .progress-fill {
     height: 100%;
-    border-radius: 3px;
+    border-radius: 999px;
     background: var(--accent);
     transition: width 260ms ease;
   }
 
-  /* ── GLASS (used only in workspace/receive) ──────────── */
   .glass {
-    background: rgba(255,255,255,0.06);
+    background: var(--glass, rgba(251, 250, 247, 0.72));
     border: 1px solid var(--border);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
-  }
-
-  .dark .glass {
-    background: rgba(255,255,255,0.04);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
   }
 
   /* ── SCROLL ──────────────────────────────────────────── */
@@ -525,63 +418,19 @@ img, svg { display: block; max-width: 100%; }
   .scroll-thin::-webkit-scrollbar { width: 4px; }
   .scroll-thin::-webkit-scrollbar-track { background: transparent; }
   .scroll-thin::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 9999px; }
-
-  /* ── REVEAL ANIMATIONS ───────────────────────────────── */
-  .reveal {
-    opacity: 0;
-    transform: translateY(28px);
-    transition: opacity 700ms var(--ease-out), transform 700ms var(--ease-out);
-  }
-
-  .reveal.is-visible { opacity: 1; transform: translateY(0); }
-  .reveal-1.is-visible { transition-delay: 60ms; }
-  .reveal-2.is-visible { transition-delay: 120ms; }
-  .reveal-3.is-visible { transition-delay: 180ms; }
-  .reveal-4.is-visible { transition-delay: 240ms; }
-  .reveal-5.is-visible { transition-delay: 300ms; }
-  .reveal-6.is-visible { transition-delay: 360ms; }
-
-  .reveal-left {
-    opacity: 0;
-    transform: translateX(-32px);
-    transition: opacity 700ms var(--ease-out), transform 700ms var(--ease-out);
-  }
-
-  .reveal-left.is-visible { opacity: 1; transform: translateX(0); }
-
-  .reveal-right {
-    opacity: 0;
-    transform: translateX(32px);
-    transition: opacity 700ms var(--ease-out), transform 700ms var(--ease-out);
-  }
-
-  .reveal-right.is-visible { opacity: 1; transform: translateX(0); }
-
-  .reveal-scale {
-    opacity: 0;
-    transform: scale(0.94);
-    transition: opacity 600ms var(--ease-out), transform 600ms var(--ease-out);
-  }
-
-  .reveal-scale.is-visible { opacity: 1; transform: scale(1); }
 }
 
 /* ─────────────────────────────────────────────────────────
-   GLOBAL KEYFRAMES
+   KEYFRAMES used by the apps
 ───────────────────────────────────────────────────────── */
 @keyframes fadeUp {
-  from { opacity: 0; transform: translateY(20px); }
+  from { opacity: 0; transform: translateY(12px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes fadeIn {
   from { opacity: 0; }
   to   { opacity: 1; }
-}
-
-@keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50%       { transform: translateY(-8px); }
 }
 
 @keyframes pulse-dot {
@@ -592,38 +441,6 @@ img, svg { display: block; max-width: 100%; }
 @keyframes pulse-ring {
   0%   { transform: scale(1); opacity: 0.8; }
   100% { transform: scale(2); opacity: 0; }
-}
-
-@keyframes shimmer {
-  from { background-position: -200% 0; }
-  to   { background-position: 200% 0; }
-}
-
-@keyframes beam-travel {
-  0%   { transform: translateX(-120%); opacity: 0; }
-  15%  { opacity: 1; }
-  85%  { opacity: 1; }
-  100% { transform: translateX(320%); opacity: 0; }
-}
-
-@keyframes scan-line {
-  0%   { top: -4px; }
-  100% { top: 100%; }
-}
-
-@keyframes ticker {
-  0%   { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
-}
-
-@keyframes clip-reveal {
-  from { clip-path: inset(0 100% 0 0); }
-  to   { clip-path: inset(0 0% 0 0); }
-}
-
-@keyframes count-up {
-  from { opacity: 0; transform: translateY(10px); }
-  to   { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes spin-slow {
@@ -647,18 +464,19 @@ img, svg { display: block; max-width: 100%; }
   align-items: center;
   justify-content: center;
   pointer-events: none;
-  background: rgba(9,9,11,0.6);
-  border: 3px dashed var(--accent);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  background: color-mix(in srgb, var(--canvas) 70%, transparent);
+  border: 2px dashed var(--accent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
-/* ─────────────────────────────────────────────────────────
-   ENTER ANIMATIONS (quick utility classes)
-───────────────────────────────────────────────────────── */
-.enter   { animation: fadeUp 0.5s var(--ease-out) both; }
-.enter-1 { animation: fadeUp 0.6s var(--ease-out) 0.05s both; }
-.enter-2 { animation: fadeUp 0.6s var(--ease-out) 0.12s both; }
-.enter-3 { animation: fadeUp 0.6s var(--ease-out) 0.20s both; }
-.enter-4 { animation: fadeUp 0.6s var(--ease-out) 0.28s both; }
-.enter-5 { animation: fadeUp 0.6s var(--ease-out) 0.36s both; }
+.enter   { animation: fadeUp 0.45s var(--ease-out) both; }
+.enter-1 { animation: fadeUp 0.5s var(--ease-out) 0.04s both; }
+.enter-2 { animation: fadeUp 0.5s var(--ease-out) 0.1s both; }
+.enter-3 { animation: fadeUp 0.5s var(--ease-out) 0.16s both; }
+.enter-4 { animation: fadeUp 0.5s var(--ease-out) 0.22s both; }
+.enter-5 { animation: fadeUp 0.5s var(--ease-out) 0.28s both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .enter, .enter-1, .enter-2, .enter-3, .enter-4, .enter-5 { animation: none; }
+}
