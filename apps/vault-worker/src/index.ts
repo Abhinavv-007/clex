@@ -1,6 +1,7 @@
 import { requireOwner } from './auth'
 import { putObject, getObject, deleteObjects, isConfigured, backendName } from './storage'
 import { mintAnonymousKey } from './anonKeys'
+import { handleAccountKey, handleSyncPull, handleSyncPush } from './accountSync'
 import {
   handleApiKeyCreate,
   handleApiKeyList,
@@ -40,6 +41,9 @@ import {
  *   POST   /vault/api/devices                   — upsert signed-in account device metadata
  *   GET    /vault/api/devices                   — list signed-in account device metadata
  *   DELETE /vault/api/devices/:id               — remove a device from the account registry
+ *   GET    /vault/api/account/key               — the signed-in account's Vault key
+ *   GET    /vault/api/sync?since=N              — account sync: changes after cursor N
+ *   POST   /vault/api/sync                      — account sync: push encrypted changes
  *   GET    /vault/api/health                    — health check
  *
  * Cron (every hour):
@@ -1005,6 +1009,17 @@ export default {
     }
 
     const path = url.pathname
+
+    // ─── Account sync (signed in) ─────────────────────────────────────────
+    if (path === '/vault/api/account/key') {
+      if (method === 'GET') return handleAccountKey(request, env, cors)
+      return err('Method not allowed', 405, cors)
+    }
+    if (path === '/vault/api/sync') {
+      if (method === 'GET') return handleSyncPull(request, env, cors)
+      if (method === 'POST') return handleSyncPush(request, env, cors)
+      return err('Method not allowed', 405, cors)
+    }
 
     const backupMatch = path.match(/^\/vault\/api\/backup\/([a-f0-9]{32})$/i)
     if (backupMatch) {

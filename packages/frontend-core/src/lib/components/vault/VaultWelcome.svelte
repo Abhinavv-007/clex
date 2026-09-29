@@ -6,6 +6,7 @@
   import { fade, fly } from 'svelte/transition'
   import { masterKey, vaultActions } from '$stores/vault'
   import { createVaultNote } from '$lib/vault/createNote'
+  import HelloWord from '$components/ui/HelloWord.svelte'
 
   function openSecrets() {
     vaultActions.setPanel('secrets')
@@ -56,7 +57,7 @@
 
   <div class="vw-copy" in:fly={{ y: 10, duration: 320, delay: 80 }}>
     <span class="vw-kicker"><span class="vw-dot"></span>Your vault is ready, and empty</span>
-    <h2 class="vw-title">Private by default, <em>yours alone</em></h2>
+    <h2 class="vw-title">Private by default, <HelloWord text="yours alone" scale={1.15} delay={250} /></h2>
     <p class="vw-lede">
       Everything here is encrypted in this browser before it is saved. Sync between your devices and the backup that
       lets you restore carry only ciphertext, and nothing from Vault ever reaches the public chain.
@@ -238,16 +239,6 @@
     color: var(--text-1);
   }
 
-  .vw-title em {
-    font-family: var(--font-script);
-    font-style: normal;
-    font-weight: 400;
-    font-size: 1.45em;
-    line-height: 0.7;
-    letter-spacing: 0;
-    color: var(--script-a, var(--accent));
-    -webkit-text-stroke: 0.02em currentColor;
-  }
 
   .vw-lede {
     max-width: 44em;

@@ -8,6 +8,7 @@
   import SharePanel from '$components/workspace/SharePanel.svelte'
   import ReceiveAccessCard from '$components/sharing/ReceiveAccessCard.svelte'
   import TransferQueue from '$components/sharing/TransferQueue.svelte'
+  import HelloWord from '$components/ui/HelloWord.svelte'
   import { initChainInstrumentation, createChainClient } from '$chain/instrument'
 
   /**
@@ -25,7 +26,6 @@
 
   export let receiveBasePath = siteRoutes.receive
   export let receivePathFormat: 'segment' | 'query' = 'segment'
-  export let receiveEntryHref = siteRoutes.receive
   /** Chain API base URL — pass from the mounting script. Empty string = same origin (production). */
   export let chainApiUrl = ''
 
@@ -56,7 +56,10 @@
   // Vault is loaded on first switch rather than up front. It carries yjs,
   // y-webrtc and the crypto/IndexedDB layer — around 250 kB — and the common
   // case is a visitor who came to send a file and never opens it.
-  type Mode = 'transfer' | 'vault'
+  //
+  // Receive is the third mode: someone typed a code on this page, so the
+  // download happens here rather than on a page of its own.
+  type Mode = 'transfer' | 'receive' | 'vault'
 
   export let vaultSignalingUrl = 'wss://signal.clex.in'
   export let vaultApiUrl = '/vault/api'
@@ -70,6 +73,9 @@
   export let embedded = false
 
   let mode: Mode = initialMode
+  let receiveCode = ''
+  let receiveKey = 0
+  let ReceiveAppComponent: typeof import('./ReceiveApp.svelte').default | null = null
   let VaultAppComponent: typeof import('./VaultApp.svelte').default | null = null
   let vaultLoading = false
   let vaultError = ''
@@ -87,7 +93,25 @@
     }
   }
 
-  async function setMode(next: Mode): Promise<void> {
+  async function loadReceive(): Promise<void> {
+    if (ReceiveAppComponent) return
+    ReceiveAppComponent = (await import('./ReceiveApp.svelte')).default
+  }
+
+  async function setMode(next: Mode, code = ''): Promise<void> {
+    if (next === 'receive') {
+      await loadReceive()
+      // A fresh code starts a fresh receive, even if Receive is already open.
+      if (code) {
+        receiveCode = code
+        receiveKey += 1
+      }
+    } else if (mode === 'receive') {
+      // Leaving Receive ends whatever it was doing, so Send starts clean.
+      transferStore.reset()
+      receiveCode = ''
+    }
+    if (next === 'transfer' && mode === 'receive') transferStore.reset()
     mode = next
     if (next === 'vault') await loadVault()
     if (typeof window === 'undefined') return
@@ -104,8 +128,9 @@
     // Anything on the page can ask the workspace to switch — the landing
     // page's "Open Vault" buttons do.
     const onModeRequest = (event: Event) => {
-      const next = (event as CustomEvent<{ mode?: Mode }>).detail?.mode
-      if (next === 'vault' || next === 'transfer') void setMode(next)
+      const detail = (event as CustomEvent<{ mode?: Mode; code?: string }>).detail
+      const next = detail?.mode
+      if (next === 'vault' || next === 'transfer' || next === 'receive') void setMode(next, detail?.code ?? '')
     }
     window.addEventListener('clex:workspace-mode', onModeRequest)
     return () => window.removeEventListener('clex:workspace-mode', onModeRequest)
@@ -117,15 +142,18 @@
     <div class="ws-header">
       <div class="ws-title-block">
         {#if mode === 'vault'}
-          <h1 class="ws-title"><span>Your</span> <em>vault</em></h1>
-          <p class="ws-sub">Encrypted notes, secret links and timed hand-offs — kept on this device.</p>
+          <h1 class="ws-title"><span>Your</span> <HelloWord text="vault" scale={1.4} /></h1>
+          <p class="ws-sub">Encrypted notes and secret links. Sign in and they follow you to every device.</p>
+        {:else if mode === 'receive'}
+          <h1 class="ws-title"><span>Receive</span> <HelloWord text="here" scale={1.4} /></h1>
+          <p class="ws-sub">Straight from the sender's browser to this one. The route is theirs.</p>
         {:else}
-          <h1 class="ws-title"><span>File</span> <em>workspace</em></h1>
+          <h1 class="ws-title"><span>File</span> <HelloWord text="workspace" scale={1.4} /></h1>
           <p class="ws-sub">Drop, prepare and send files from one private workspace.</p>
         {/if}
       </div>
 
-      <div class="ws-modes" class:ws-modes--vault={mode === 'vault'} role="tablist" aria-label="Workspace mode">
+      <div class="ws-modes" data-mode={mode} role="tablist" aria-label="Workspace mode">
         <span class="ws-modes__pill" aria-hidden="true"></span>
         <button
           class="ws-mode"
@@ -135,8 +163,19 @@
           type="button"
           on:click={() => setMode('transfer')}
         >
-          <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M2.5 5.5h9M9 3l2.5 2.5L9 8M13.5 10.5h-9M7 8l-2.5 2.5L7 13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          Transfer
+          <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M8 13V3.5M4.5 7 8 3.5 11.5 7" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Send
+        </button>
+        <button
+          class="ws-mode"
+          class:ws-mode--active={mode === 'receive'}
+          role="tab"
+          aria-selected={mode === 'receive'}
+          type="button"
+          on:click={() => setMode('receive')}
+        >
+          <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M8 3v9.5M4.5 9 8 12.5 11.5 9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Receive
         </button>
         <button
           class="ws-mode"
@@ -166,7 +205,17 @@
       {/if}
     </div>
 
-    {#if mode === 'vault'}
+    {#if mode === 'receive'}
+      <div class="ws-receive-slot">
+        {#if ReceiveAppComponent}
+          {#key receiveKey}
+            <svelte:component this={ReceiveAppComponent} embedded={true} initialCode={receiveCode} />
+          {/key}
+        {:else}
+          <p class="ws-vault-msg">Opening receive…</p>
+        {/if}
+      </div>
+    {:else if mode === 'vault'}
       <div class="ws-vault-slot">
         {#if VaultAppComponent}
           <svelte:component
@@ -186,7 +235,7 @@
     {:else}
     <div class="ws-grid" class:ws-grid--live={transferActive}>
       <aside class="ws-col ws-col-files">
-        <FileList {receiveEntryHref} />
+        <FileList />
       </aside>
 
       <section class="ws-col">
@@ -205,7 +254,7 @@
     <div class="ws-mobile-panel">
       <div class="ws-col">
         {#if activePanel === 'files'}
-          <FileList {receiveEntryHref} />
+          <FileList />
         {:else if activePanel === 'tools'}
           <ToolChain />
         {:else}
@@ -264,19 +313,9 @@
     text-wrap: balance;
   }
 
-  .ws-title em {
-    display: inline-block;
-    font-family: var(--font-script, var(--font-italic));
-    font-style: normal;
-    font-weight: 400;
-    font-size: 1.45em;
-    line-height: 0.8;
-    letter-spacing: 0;
-    padding: 0 0.08em;
-    /* The site's handwriting ink. Sacramento is a hairline, so a touch of
-       stroke gives it the weight of the drawn words on the page. */
-    color: var(--script-a, var(--accent-text));
-    -webkit-text-stroke: 0.02em currentColor;
+  /* The handwritten word is the Clex hand (HelloWord), drawn, not typed. */
+  .ws-title :global(.hello-word) {
+    margin-left: 0.08em;
   }
 
   .ws-sub {
@@ -299,10 +338,11 @@
     line-height: 1.2;
   }
 
-  .ws-page--embedded .ws-title em {
-    font-size: 1.9em;
-    line-height: 0.6;
-    -webkit-text-stroke: 0.028em currentColor;
+  .ws-page--embedded .ws-title {
+    display: flex;
+    align-items: baseline;
+    gap: 0.1em;
+    margin-bottom: 6px;
   }
 
   .ws-page--embedded .ws-sub {
@@ -312,12 +352,12 @@
   }
 
   /* ── Mode switch ──────────────────────────────────────────────────────
-     Transfer and Vault are two modes of one workspace. One pill slides
-     between them. */
+     Send, Receive and Vault are three modes of one workspace. One pill
+     slides between them. */
   .ws-modes {
     position: relative;
     display: inline-grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(3, 1fr);
     padding: 4px;
     border: 1px solid var(--border);
     border-radius: 999px;
@@ -331,15 +371,19 @@
     top: 4px;
     bottom: 4px;
     left: 4px;
-    width: calc(50% - 4px);
+    width: calc((100% - 8px) / 3);
     border-radius: 999px;
     background: var(--surface);
     box-shadow: var(--shadow-sm), 0 0 0 1px var(--border);
     transition: transform 420ms var(--spring);
   }
 
-  .ws-modes--vault .ws-modes__pill {
+  .ws-modes[data-mode='receive'] .ws-modes__pill {
     transform: translateX(100%);
+  }
+
+  .ws-modes[data-mode='vault'] .ws-modes__pill {
+    transform: translateX(200%);
   }
 
   .ws-mode {
@@ -349,9 +393,9 @@
     align-items: center;
     justify-content: center;
     gap: 7px;
-    min-width: 108px;
+    min-width: 96px;
     height: 34px;
-    padding: 0 16px;
+    padding: 0 14px;
     border: 0;
     border-radius: 999px;
     background: transparent;
@@ -373,9 +417,17 @@
     color: var(--accent-text);
   }
 
-  .ws-vault-slot {
+  .ws-vault-slot,
+  .ws-receive-slot {
     min-height: 420px;
     animation: fadeUp 420ms var(--ease-out) both;
+  }
+
+  .ws-receive-slot {
+    display: grid;
+    place-items: start center;
+    border-radius: 18px;
+    background: color-mix(in srgb, var(--surface-2) 60%, transparent);
   }
 
   /* ── How the boxes read ───────────────────────────────────────────────
@@ -412,7 +464,8 @@
   @media (prefers-reduced-motion: reduce) {
     .ws-page :global(.dropzone),
     .ws-modes__pill,
-    .ws-vault-slot { transition: none; animation: none; }
+    .ws-vault-slot,
+    .ws-receive-slot { transition: none; animation: none; }
   }
 
   /* Vault was built as a standalone page, so it clears the nav and sizes

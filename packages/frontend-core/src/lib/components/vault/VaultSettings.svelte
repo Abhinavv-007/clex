@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte'
-  import { masterKey, googleUser, devices, ui, syncState, vaultActions, formatBytes } from '$stores/vault'
+  import { masterKey, googleUser, devices, ui, syncState, accountSync, vaultActions, formatBytes } from '$stores/vault'
   import { getAllDevices, deleteDevice as dbDeleteDevice, clearAllData, detectDeviceName, getDeviceFingerprint } from '$lib/vault/db'
   import { exportKeyAsJson, importKeyFromJson, rotateMasterKey } from '$lib/vault/crypto'
   import { signInWithGoogle, signOutGoogle } from '$lib/vault/auth'
@@ -56,6 +56,9 @@
   }
 
   async function handleRotateKey() {
+    // Signed in, the key is the account's: a new one here would cut this
+    // device off from the account's notes.
+    if ($googleUser) return
     if (!confirmRotate) { confirmRotate = true; return }
     const newKey = await rotateMasterKey()
     vaultActions.setMasterKey(newKey)
@@ -433,6 +436,9 @@
 
         <div class="vst-divider" />
         <div class="vst-section-label" style="color: var(--red);">Danger Zone</div>
+        {#if user}
+          <p class="vst-hint">This Vault uses your account's key, so it stays the same on every device you sign in to. Sign out first to use a key of this device's own.</p>
+        {:else}
         <p class="vst-hint">Rotating your key generates a new one. All existing notes become unreadable and all devices are unpaired.</p>
         {#if confirmRotate}
           <div class="vst-confirm-row" in:slide={{ duration: 160 }}>
@@ -446,6 +452,7 @@
           <button class="btn-secondary vst-danger-btn" on:click={handleRotateKey}>
             Rotate Master Key
           </button>
+        {/if}
         {/if}
       </div>
 
@@ -471,8 +478,17 @@
 
           <div class="vst-notice vst-notice--green">
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M2.5 7l3 3 6-6"/></svg>
-            Same-account vault active. Any device signed into this Google account derives the same vault key, lands in the same sync room, and restores the encrypted backup namespace automatically.
+            {#if $accountSync.state === 'error'}
+              Sync paused: {$accountSync.error}
+            {:else if $accountSync.state === 'syncing'}
+              Syncing this Vault with your account…
+            {:else}
+              Synced with your account{#if $accountSync.lastSync}, last at {new Date($accountSync.lastSync).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}{/if}. Sign in on any device and the same notes are there.
+            {/if}
           </div>
+          <p class="vst-hint">
+            Your account has its own Vault key. Clex's vault service keeps it for your account and gives it only to devices signed in as you. Notes are encrypted with it in this browser before they are sent; the service stores ciphertext and never the text of a note.
+          </p>
 
           {#if authError}<p class="vst-err">{authError}</p>{/if}
           <button class="btn-secondary vst-action-btn" disabled={authBusy} on:click={handleGoogleSignOut}>
@@ -480,10 +496,10 @@
           </button>
         {:else}
           <p class="vst-hint">
-            Sign in to bind this Vault to your Google account. Existing local notes are migrated into the Google-backed vault key, and any other device on the same account joins the same encrypted room automatically.
+            Sign in and this Vault follows you: notes and folders sync to every device signed in to the same Google account, automatically, whenever they change.
           </p>
           <p class="vst-hint">
-            Your encryption key is derived locally via <code>HKDF(googleUID, "clex-vault-v1")</code>. It is <strong>never</strong> sent to or stored by Google or Clex.
+            Your notes on this device move onto your account's Vault key, which only your signed-in devices can fetch. Everything is encrypted in the browser before it leaves; the sync service holds ciphertext only.
           </p>
 
           {#if authError}<p class="vst-err">{authError}</p>{/if}

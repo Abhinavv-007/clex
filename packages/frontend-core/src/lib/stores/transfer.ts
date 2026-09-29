@@ -145,6 +145,13 @@ function createTransferStore() {
         transferId: null,
       }))
     },
+    /**
+     * Records the route in use without resetting anything: a receiver takes
+     * the sender's route from the code and from the signaling server.
+     */
+    syncMethod(method: TransferMethod) {
+      update(s => (s.method === method ? s : { ...s, method }))
+    },
     setRoomCode(roomCode: string) {
       update(s => ({ ...s, roomCode }))
     },

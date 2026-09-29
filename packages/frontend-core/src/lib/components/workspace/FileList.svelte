@@ -1,15 +1,12 @@
 <script lang="ts">
   import { filesStore, hasFiles } from '$stores/files'
   import { uiStore } from '$stores/ui'
-  import { siteRoutes } from '$utils'
   import FileCard from './FileCard.svelte'
   import FileDropzone from './FileDropzone.svelte'
   import ReceiveEntryCard from './ReceiveEntryCard.svelte'
   import { flip } from 'svelte/animate'
   import { slide } from 'svelte/transition'
   import { formatBytes } from '$utils/format'
-
-  export let receiveEntryHref = siteRoutes.receive
 
   $: totalSize = $filesStore.reduce((sum, f) => sum + f.size, 0)
 </script>
@@ -62,7 +59,7 @@
   </section>
 
   <div class="fl-receive-wrap">
-    <ReceiveEntryCard {receiveEntryHref} />
+    <ReceiveEntryCard />
   </div>
 
   {#if $hasFiles}

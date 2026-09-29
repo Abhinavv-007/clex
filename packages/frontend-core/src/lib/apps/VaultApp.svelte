@@ -23,6 +23,7 @@
   import Toast from '$components/ui/Toast.svelte'
   import { uiStore } from '$stores/ui'
   import {
+    accountSync as accountSyncStore,
     googleUser as googleUserStore,
     masterKey as masterKeyStore,
     notes,
@@ -40,7 +41,9 @@
     getAllDeletionTombstones,
     getDeletionTombstone,
     getAllDevices,
+    getNote,
     getNotesByFolder,
+    asRemoteChange,
     openVaultDb,
     detectDeviceName,
     getDeviceFingerprint,
@@ -52,9 +55,11 @@
   } from '$lib/vault/db'
   import { decryptText } from '$lib/vault/crypto'
   import { buildSearchIndex, removeFromIndex, updateInIndex } from '$lib/vault/search'
-  import { initSync, onSyncState, destroySync, runManualSync, setSyncHandlers, syncDeleteFolder, syncDeleteNote } from '$lib/vault/sync'
+  import { initSync, onSyncState, destroySync, runManualSync, setSyncHandlers, syncDeleteFolder, syncDeleteNote, syncFolderRecord, syncNoteRecord } from '$lib/vault/sync'
   import { onVaultAuthChanged, type VaultUser } from '$lib/vault/auth'
   import { fetchVaultBackup, pushVaultBackup, upsertAccountDevice, type BackupSnapshot } from '$lib/vault/backup'
+  import { AccountSync, fetchAccountKey } from '$lib/vault/accountSync'
+  import { signInWithGoogle } from '$lib/vault/auth'
 
   export let signalingUrl = 'wss://signal.clex.in'
   export let vaultApiUrl = '/vault/api'
@@ -71,6 +76,9 @@
   let backupSyncPromise: Promise<void> | null = null
   let backupSyncRoomId = ''
   let authBindingPromise: Promise<void> | null = null
+  let account: AccountSync | null = null
+  let accountUid = ''
+  let signingIn = false
   const VAULT_SHARE_RESUME_KEY = 'clex_vault_resume_share'
 
   function consumePairingCodeFromUrl() {
@@ -243,7 +251,8 @@
 
     try {
       await ensureSyncForRoom(mk.roomId)
-      await syncEncryptedBackup({ silent: false })
+      if (account) await account.syncNow()
+      else await syncEncryptedBackup({ silent: false })
 
       const [mergedNotes, mergedFolders] = await Promise.all([
         getAllNotes(),
@@ -332,6 +341,9 @@
     const { silent = true, pushOnly = false } = options
     const mk = get(masterKeyStore)
     if (!mk) return
+    // Signed in, the account sync carries everything; this keyed backup is
+    // for a Vault that lives on one device (and the devices paired to it).
+    if (account || get(googleUserStore)) return
     if (backupSyncPromise) {
       if (backupSyncRoomId === mk.roomId) return backupSyncPromise
       await backupSyncPromise.catch(() => undefined)
@@ -402,20 +414,13 @@
     ])
 
     const migratedNotes = await Promise.all(storedNotes.map(async (note) => {
-      const [title, body] = await Promise.all([
-        decryptText(note.titleBlob, currentKey.key),
-        decryptText(note.bodyBlob, currentKey.key),
-      ])
-      const [titleBlob, bodyBlob] = await Promise.all([
-        encryptText(title, nextKey.key),
-        encryptText(body, nextKey.key),
-      ])
-
-      return {
-        ...note,
-        titleBlob,
-        bodyBlob,
-      } satisfies StoredNote
+      // A note this key cannot open (already on the next key, or damaged)
+      // is carried over untouched rather than failing the whole move.
+      try {
+        return await reencryptNote(note, currentKey, nextKey)
+      } catch {
+        return note
+      }
     }))
 
     await Promise.all(migratedNotes.map(note => saveNote(note)))
@@ -432,25 +437,153 @@
     })))
   }
 
+  async function reencryptNote(note: StoredNote, fromKey: MasterKey, toKey: MasterKey): Promise<StoredNote> {
+    const [title, body] = await Promise.all([
+      decryptText(note.titleBlob, fromKey.key),
+      decryptText(note.bodyBlob, fromKey.key),
+    ])
+    const [titleBlob, bodyBlob] = await Promise.all([
+      encryptText(title, toKey.key),
+      encryptText(body, toKey.key),
+    ])
+    return { ...note, titleBlob, bodyBlob }
+  }
+
+  // ── Account sync ──────────────────────────────────────────────────────────
+  //
+  // Signed in with Google, the Vault moves onto the account's key (kept by
+  // the vault worker for that account only) and syncs through the worker, so
+  // every device signed in to the account has the same notes. The notes on
+  // this device are re-encrypted under that key and uploaded; anything a
+  // previous version of Clex backed up for this account is brought in too.
+
+  async function applyAccountNote(remote: StoredNote) {
+    await asRemoteChange(async () => {
+      const tomb = await getDeletionTombstone('note', remote.id)
+      if (tomb && tomb.deletedAt >= remote.updatedAt) return
+      const local = await getNote(remote.id)
+      if (local && local.updatedAt >= remote.updatedAt) return
+      await applySyncedNote(remote)
+      syncNoteRecord(remote)
+    })
+  }
+
+  async function applyAccountFolder(remote: StoredFolder) {
+    await asRemoteChange(async () => {
+      const tomb = await getDeletionTombstone('folder', remote.id)
+      if (tomb && tomb.deletedAt >= (remote.updatedAt ?? remote.createdAt)) return
+      const local = (await getAllFolders()).find((f) => f.id === remote.id)
+      if (local && (local.updatedAt ?? local.createdAt) >= (remote.updatedAt ?? remote.createdAt)) return
+      await applySyncedFolder(remote)
+      syncFolderRecord(remote)
+    })
+  }
+
+  async function removeAccountNote(id: string, deletedAt: number) {
+    await asRemoteChange(async () => {
+      const local = await getNote(id)
+      if (local && local.updatedAt > deletedAt) return
+      await saveDeletionTombstone('note', id, deletedAt)
+      if (local) {
+        await dbDeleteNote(id)
+        vaultActions.removeNote(id)
+        removeFromIndex(id)
+        syncDeleteNote(id)
+      }
+    })
+  }
+
+  async function removeAccountFolder(id: string, deletedAt: number) {
+    await asRemoteChange(async () => {
+      const local = (await getAllFolders()).find((f) => f.id === id)
+      if (local && (local.updatedAt ?? local.createdAt) > deletedAt) return
+      await saveDeletionTombstone('folder', id, deletedAt)
+      if (local) {
+        await removeSyncedFolder(id)
+        syncDeleteFolder(id)
+      }
+    })
+  }
+
+  /** Brings in the backup an earlier Clex kept for this account, once. */
+  async function importLegacyAccountBackup(uid: string, accountKey: MasterKey) {
+    const marker = `clex-vault-legacy-import:${uid}`
+    try { if (localStorage.getItem(marker)) return } catch { /* storage blocked: just try */ }
+    try {
+      const legacyKey = await deriveGoogleKey(uid)
+      const snapshot = await fetchVaultBackup(vaultApiUrl, legacyKey).catch(() => null)
+      if (snapshot) {
+        for (const note of snapshot.notes) {
+          try {
+            await applyAccountNote(await reencryptNote(note, legacyKey, accountKey))
+          } catch { /* unreadable: skip */ }
+        }
+        for (const folder of snapshot.folders) await applyAccountFolder(folder)
+        for (const t of snapshot.deletedNotes) await removeAccountNote(t.targetId, t.deletedAt)
+        for (const t of snapshot.deletedFolders) await removeAccountFolder(t.targetId, t.deletedAt)
+      }
+      try { localStorage.setItem(marker, String(Date.now())) } catch { /* ignore */ }
+    } catch (error) {
+      console.warn('[vault] earlier backup could not be imported:', error)
+    }
+  }
+
+  function stopAccountSync() {
+    account?.stop()
+    account = null
+    accountUid = ''
+    accountSyncStore.set({ state: 'off', lastSync: null, error: null })
+  }
+
   async function bindGoogleVault(user: VaultUser | null) {
     vaultActions.setGoogleUser(user)
-    if (!user?.uid) return
+    if (!user?.uid) {
+      stopAccountSync()
+      return
+    }
+    if (account && accountUid === user.uid) return
 
     const currentKey = get(masterKeyStore)
     if (!currentKey) return
 
-    const googleKey = await deriveGoogleKey(user.uid)
-    const nextKey = currentKey.fingerprint === googleKey.fingerprint
-      ? await persistMasterKey(googleKey)
-      : await (async () => {
-          await migrateNotesToMasterKey(currentKey, googleKey)
-          return persistMasterKey(googleKey)
-        })()
+    accountSyncStore.set({ state: 'syncing', lastSync: null, error: null })
+    let accountKey: MasterKey
+    try {
+      accountKey = await fetchAccountKey(vaultApiUrl)
+    } catch (error) {
+      accountSyncStore.set({ state: 'error', lastSync: null, error: error instanceof Error ? error.message : 'Could not reach your account' })
+      return
+    }
 
+    if (currentKey.fingerprint !== accountKey.fingerprint) {
+      await migrateNotesToMasterKey(currentKey, accountKey)
+    }
+    const nextKey = await persistMasterKey(accountKey)
     vaultActions.setMasterKey(nextKey)
     await ensureSyncForRoom(nextKey.roomId)
-    await syncEncryptedBackup()
+    await importLegacyAccountBackup(user.uid, nextKey)
+
+    account?.stop()
+    accountUid = user.uid
+    account = new AccountSync(vaultApiUrl, user.uid, nextKey, {
+      applyNote: applyAccountNote,
+      applyFolder: applyAccountFolder,
+      removeNote: removeAccountNote,
+      removeFolder: removeAccountFolder,
+    }, (status) => accountSyncStore.set(status))
+    account.start()
     await syncSignedInDevice(user.uid)
+  }
+
+  async function startAccountSync() {
+    signingIn = true
+    try {
+      await signInWithGoogle()
+    } catch (error) {
+      uiStore.toast({ type: 'error', message: error instanceof Error ? error.message : 'Sign-in failed' })
+    } finally {
+      signingIn = false
+    }
   }
 
   onMount(async () => {
@@ -527,6 +660,8 @@
 
   onDestroy(() => {
     unsubSync?.()
+    account?.stop()
+    account = null
     destroySync()
     activeSyncRoomId = ''
     bootComplete = false
@@ -590,9 +725,30 @@
             </svg>
           </span>
           <div class="va-lock-copy">
-            <b>Locked to this device</b>
-            <span>AES-GCM 256 · key <code>{$masterKeyStore?.fingerprint ?? '········'}</code>{#if $notes.length} · {$notes.length} note{$notes.length === 1 ? '' : 's'}{/if}</span>
+            {#if $googleUserStore}
+              <b>
+                {#if $accountSyncStore.state === 'syncing'}Syncing to your account…
+                {:else if $accountSyncStore.state === 'error'}Sync paused
+                {:else if $accountSyncStore.state === 'offline'}Offline, will sync when back
+                {:else}Synced to your account{/if}
+              </b>
+              <span>
+                {#if $accountSyncStore.state === 'error'}{$accountSyncStore.error}
+                {:else}{$googleUserStore.email ?? 'Google account'} · key <code>{$masterKeyStore?.fingerprint ?? '········'}</code>{#if $notes.length} · {$notes.length} note{$notes.length === 1 ? '' : 's'}{/if}{/if}
+              </span>
+            {:else}
+              <b>Locked to this device</b>
+              <span>AES-GCM 256 · key <code>{$masterKeyStore?.fingerprint ?? '········'}</code>{#if $notes.length} · {$notes.length} note{$notes.length === 1 ? '' : 's'}{/if}</span>
+            {/if}
           </div>
+          {#if !$googleUserStore}
+            <button class="va-sync-cta" type="button" on:click={startAccountSync} disabled={signingIn}>
+              <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M13 6.5A5 5 0 0 0 4 4.2L2.8 5.5M3 9.5a5 5 0 0 0 9 2.3l1.2-1.3M2.8 2.8v2.7h2.7M13.2 13.2v-2.7h-2.7" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              {signingIn ? 'Opening Google…' : 'Sync across my devices'}
+            </button>
+          {:else if $accountSyncStore.state === 'error'}
+            <button class="va-sync-cta" type="button" on:click={() => account?.syncNow()}>Retry</button>
+          {/if}
         </div>
 
         <nav class="va-nav" role="tablist" aria-label="Vault sections">
@@ -746,6 +902,36 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+
+  /* Signing in is the one step between a Vault on this device and the same
+     Vault on every device, so it sits right in the bar. */
+  .va-sync-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    flex: 0 0 auto;
+    height: 32px;
+    padding: 0 13px;
+    border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border));
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+    color: var(--accent-text, var(--accent));
+    font-family: var(--font-sans);
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+  }
+
+  .va-sync-cta:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--accent) 18%, var(--surface));
+    transform: translateY(-1px);
+  }
+
+  .va-sync-cta:disabled {
+    opacity: 0.6;
+    cursor: progress;
   }
 
   .va-lock-copy code {

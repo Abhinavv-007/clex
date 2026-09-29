@@ -13,10 +13,10 @@
   /* ── Type ─────────────────────────────────────────────────────────────── */
   --font-sans: 'Geist', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  /* Sacramento is a monoline script. Headings draw it as pen strokes
-     (scripts/handwriting.mjs); the apps set it as a font, thickened a touch
-     with --script-stroke so it reads at small sizes. */
-  --font-script: 'Sacramento', 'Snell Roundhand', 'Apple Chancery', cursive;
+  /* Handwriting is drawn, never set as type: every script word is the Clex
+     hand (frontend-core/src/lib/hand). This is only the fallback for the
+     rare place that still asks for a cursive face. */
+  --font-script: 'Snell Roundhand', 'Apple Chancery', cursive;
 
   --fs-2xs: 0.6875rem;
   --fs-xs: 0.75rem;
@@ -139,9 +139,9 @@
   --band-gold: #d4b071;
 
   /* Handwriting ink: deep enough to read on bone. */
-  --script-a: #256b4c;
-  --script-b: #3a8560;
-  --script-c: #a17a2e;
+  --script-a: #1f6446;
+  --script-b: #2f8a60;
+  --script-c: #a8792a;
 
   color-scheme: light;
 }
@@ -203,8 +203,8 @@
   --band-gold: #d4b071;
 
   --script-a: #7cc49a;
-  --script-b: #9ad4af;
-  --script-c: #dcb877;
+  --script-b: #a4dcb8;
+  --script-c: #e2bf7c;
 
   color-scheme: dark;
 }

@@ -64,10 +64,12 @@
 }
 
 /* ── Handwriting ──────────────────────────────────────────────────────────
-   Every handwritten word is a set of pen strokes (scripts/handwriting.mjs)
-   that js/ink.js draws in writing order, like a hand writing it. The ink is
-   a jade-to-gold gradient from the theme's --script-* tokens. Unwritten, a
-   word is invisible; without JS or with reduced motion it is simply there. */
+   Every handwritten word is Bodoni Moda Italic (built into the page
+   by scripts/handwriting.mjs) under a mask that follows the pen's path;
+   js/ink.js draws that path on, so the word is written in one smooth pass
+   like Apple's "hello". The ink is a jade-to-gold gradient from the theme's
+   --script-* tokens. Unwritten, a word is invisible; without JS or with
+   reduced motion it is simply there. */
 
 .ink-word {
   display: inline-block;
@@ -84,15 +86,19 @@
 .ink__b { stop-color: var(--script-b); }
 .ink__c { stop-color: var(--script-c); }
 
-.ink__pen {
-  fill: none;
-  stroke-linecap: round;
+.ink__letters {
   stroke-linejoin: round;
 }
 
-/* Waiting to be written. */
+/* Waiting to be written: the pen has not touched the page. */
 .js .ink:not(.is-writing):not(.is-written) .ink__pen path {
   opacity: 0;
+}
+
+/* Written, or never animated: the letters stand on their own. */
+.ink.is-written .ink__letters,
+html:not(.js) .ink__letters {
+  mask: none;
 }
 
 /* ── Counters, shimmer, small repeats ─────────────────────────────────── */
@@ -133,9 +139,8 @@
     transition: none;
   }
 
-  .js .ink .ink__pen path {
-    opacity: 1 !important;
-    stroke-dasharray: none !important;
+  .ink__letters {
+    mask: none !important;
   }
 
   *,

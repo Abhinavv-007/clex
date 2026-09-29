@@ -4,9 +4,8 @@
   import { transferStore } from '$stores/transfer'
   import { getSignalingBaseUrl } from '$transfer/signaling'
   import { WebRTCTransfer } from '$transfer/webrtc'
-  import { isValidRoomCode } from '$utils/crypto'
+  import { parseRoomCode } from '$utils/crypto'
   import { detectReceivedFileFacts, formatBytes, saveBlobWithSystemFallback, triggerBlobDownload, truncateName } from '$utils'
-  import type { TransferProfile } from '$transfer/types'
   import TransferProgress from './TransferProgress.svelte'
   import TransferHealthCard from './TransferHealthCard.svelte'
   import TransferReceiptCard from './TransferReceiptCard.svelte'
@@ -22,20 +21,22 @@
   let factsRun = 0
 
   $: state = $transferStore.state
-  $: inputError = code.length > 0 && code.length < 6 ? 'Code must be 6 characters' : ''
+  $: parsed = parseRoomCode(code)
+  $: inputError = code.trim().length > 0 && code.trim().length < 6 ? 'The code is 6 characters, like D7KQ2M' : ''
   $: receivedFiles = $transferStore.receivedFiles
   $: void hydrateFileFacts(receivedFiles)
 
   async function connect() {
-    const trimmed = code.trim().toUpperCase()
-    if (!isValidRoomCode(trimmed)) {
-      error = 'Enter a valid 6-character room code'
+    const target = parseRoomCode(code)
+    if (!target) {
+      error = 'Enter the code shown on the sender, like D7KQ2M'
       return
     }
 
     error = ''
     transfer?.destroy()
-    transfer = new WebRTCTransfer(signalingUrl, trimmed, 'receiver', getRequestedProfile())
+    // The route is the sender's, carried by the code's first letter.
+    transfer = new WebRTCTransfer(signalingUrl, target.room, 'receiver', target.mode ?? 'webrtc', { followSender: true })
     try {
       transferStore.setState('preparing')
       await transfer.initReceiver()
@@ -56,9 +57,6 @@
     transfer?.destroy()
   })
 
-  function getRequestedProfile(): TransferProfile {
-    return $transferStore.method === 'local' ? 'local' : 'webrtc'
-  }
 
   async function saveReceivedFile(index: number) {
     const file = receivedFiles[index]
@@ -125,7 +123,7 @@
     <div class="flex flex-col gap-5">
       <div>
         <p class="text-sm text-slate-400 font-medium">
-          Enter the 6-character code
+          Enter the code from the sender
         </p>
       </div>
 
@@ -133,8 +131,8 @@
         <input
           type="text"
           class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-4 text-center font-mono text-[28px] tracking-[0.4em] uppercase text-white placeholder:text-white/20 focus:outline-none focus:border-white/20 transition-all focus:shadow-[0_0_24px_rgba(255,255,255,0.05)]"
-          placeholder="XXXXXX"
-          maxlength="6"
+          placeholder="D7KQ2M"
+          maxlength="8"
           bind:value={code}
           on:keydown={e => e.key === 'Enter' && connect()}
           autocomplete="off"
@@ -148,7 +146,7 @@
       <button
         class="bg-white text-black font-semibold text-[15px] py-3.5 px-6 rounded-xl w-full flex items-center justify-center gap-2 hover:bg-slate-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         on:click={connect}
-        disabled={code.length !== 6}
+        disabled={!parsed}
       >
         Connect & Receive
         <span>→</span>

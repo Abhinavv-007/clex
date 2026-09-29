@@ -2,6 +2,7 @@
   import { transferStore } from '$stores/transfer'
   import type { TransferProfile } from '$transfer/types'
   import { siteRoutes } from '$utils'
+  import { shareCode } from '$utils/crypto'
   import QRCode from './QRCode.svelte'
 
   export let receiveBasePath = siteRoutes.receive
@@ -12,10 +13,13 @@
   let copied = false
 
   $: transferProfile = (($transferStore.method === 'local' ? 'local' : 'webrtc') as TransferProfile)
+  // The link carries the code with its route letter, so whoever opens it
+  // connects the way the sender chose without being asked.
   $: roomCode = $transferStore.roomCode ?? ''
+  $: code = roomCode ? shareCode(roomCode, transferProfile) : ''
   $: receivePageUrl = typeof window !== 'undefined'
-    ? buildReceivePageUrl(window.location.origin, roomCode, transferProfile)
-    : buildReceivePath(roomCode, transferProfile)
+    ? buildReceivePageUrl(window.location.origin, code)
+    : buildReceivePath(code)
 
   async function copyLink() {
     await navigator.clipboard.writeText(receivePageUrl)
@@ -25,18 +29,15 @@
     }, 2000)
   }
 
-  function buildReceivePath(roomCode: string, profile: TransferProfile): string {
+  function buildReceivePath(code: string): string {
     if (receivePathFormat === 'query') {
-      const params = new URLSearchParams({ code: roomCode, mode: profile })
-      return `${receiveBasePath}?${params.toString()}`
+      return `${receiveBasePath}?${new URLSearchParams({ code }).toString()}`
     }
-
-    const params = new URLSearchParams({ mode: profile })
-    return `${receiveBasePath}/${roomCode}?${params.toString()}`
+    return `${receiveBasePath}/${code}`
   }
 
-  function buildReceivePageUrl(origin: string, roomCode: string, profile: TransferProfile): string {
-    return `${origin}${buildReceivePath(roomCode, profile)}`
+  function buildReceivePageUrl(origin: string, code: string): string {
+    return `${origin}${buildReceivePath(code)}`
   }
 </script>
 
@@ -46,7 +47,7 @@
       <p class="rac-label">Receiver Access</p>
       <h3 class="rac-title">Scan or copy the receive link</h3>
     </div>
-    <div class="rac-code">{roomCode}</div>
+    <div class="rac-code"><span class="rac-letter">{code.slice(0, 1)}</span>{code.slice(1)}</div>
   </div>
 
   <div class="rac-qr">
@@ -112,10 +113,14 @@
     background: var(--surface);
     border: 1px solid var(--border);
     box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--border-hard) 8%, transparent);
-    font-family: 'JetBrains Mono', 'Fira Code', monospace;
-    font-size: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
+    font-family: var(--font-mono, 'JetBrains Mono', 'Fira Code', monospace);
+    font-size: 22px;
     font-weight: 700;
-    letter-spacing: 0.28em;
+    letter-spacing: 0.18em;
     color: var(--text-1);
     text-transform: uppercase;
     text-align: center;
@@ -155,5 +160,9 @@
       font-size: 18px;
       letter-spacing: 0.2em;
     }
+  }
+
+  .rac-letter {
+    color: var(--accent);
   }
 </style>

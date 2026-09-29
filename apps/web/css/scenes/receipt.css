@@ -1,7 +1,7 @@
 /* ==========================================================================
    Receipts: a printer prints a transfer receipt line by line, it is torn
-   off at the perforation, and it flies into the chain below, where it
-   becomes the newest block (js/scenes/receipt.js).
+   off at the perforation, and it flies in an arc into the chain below,
+   where it becomes the newest block (js/scenes/receipt.js).
    ========================================================================== */
 
 .receipts {
@@ -219,6 +219,80 @@
   font-size: 9.5px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
+}
+
+/* ── The flight ── */
+
+.receipt-trail {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.receipt-trail path {
+  fill: none;
+  stroke-linecap: round;
+  opacity: 0;
+}
+
+.receipt-trail__line {
+  stroke: url(#receipt-trail-ink);
+  stroke-width: 3;
+}
+
+.receipt-trail__glow {
+  stroke: var(--jade);
+  stroke-width: 14;
+  filter: blur(8px);
+}
+
+.receipt-fleck,
+.receipt-spark {
+  position: absolute;
+  z-index: 4;
+  pointer-events: none;
+}
+
+.receipt-fleck {
+  width: 5px;
+  height: 4px;
+  background: #fbfaf5;
+  box-shadow: 0 1px 2px rgba(40, 32, 18, 0.25);
+  clip-path: polygon(0 0, 100% 30%, 60% 100%);
+}
+
+.receipt-spark {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--jade);
+  box-shadow: 0 0 10px var(--jade);
+}
+
+.receipt-spark--gold {
+  background: var(--gold);
+  box-shadow: 0 0 10px var(--gold);
+}
+
+/* The slot waits for the receipt, then the new block lands with a pulse. */
+.receipts__stage .cblock-slot.is-target {
+  border-color: var(--jade);
+  box-shadow: 0 0 0 4px var(--jade-wash), 0 0 30px -6px var(--jade);
+  transition: border-color 300ms var(--ease), box-shadow 300ms var(--ease);
+}
+
+.receipts__stage .cblock.is-landed {
+  animation: cblock-land 700ms var(--ease-spring) both;
+}
+
+@keyframes cblock-land {
+  0% { transform: scale(0.92); box-shadow: 0 0 0 0 var(--jade); }
+  45% { transform: scale(1.04); box-shadow: 0 0 0 8px var(--jade-wash), 0 0 40px -4px var(--jade); }
+  100% { transform: none; box-shadow: var(--shadow-1); }
 }
 
 /* ── The chain beneath ── */

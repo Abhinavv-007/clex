@@ -35,6 +35,8 @@ export interface StoredFolder {
   parentId: string | null
   createdAt: number
   sortOrder: number
+  /** Last change, for account sync. Folders saved before it existed use createdAt. */
+  updatedAt?: number
 }
 
 export interface StoredDevice {
@@ -66,6 +68,39 @@ export interface StoredDeletionTombstone {
   kind: 'note' | 'folder'
   targetId: string
   deletedAt: number
+}
+
+// ── Change signal ─────────────────────────────────────────────────────────────
+//
+// Every write to notes, folders or tombstones announces itself, so account
+// sync can push soon after an edit without each editor having to know it
+// exists. Writes made while applying changes from the account are marked
+// remote and are not echoed back.
+
+type VaultChangeListener = (change: { remote: boolean }) => void
+const changeListeners = new Set<VaultChangeListener>()
+let applyingRemote = 0
+
+export function onVaultChange(listener: VaultChangeListener): () => void {
+  changeListeners.add(listener)
+  return () => changeListeners.delete(listener)
+}
+
+/** Runs `fn` with its writes marked as coming from the account, not the user. */
+export async function asRemoteChange<T>(fn: () => Promise<T>): Promise<T> {
+  applyingRemote += 1
+  try {
+    return await fn()
+  } finally {
+    applyingRemote -= 1
+  }
+}
+
+function changed(): void {
+  const remote = applyingRemote > 0
+  changeListeners.forEach((listener) => {
+    try { listener({ remote }) } catch { /* a listener must not break a write */ }
+  })
 }
 
 // ── DB Initialization ─────────────────────────────────────────────────────────
@@ -167,10 +202,12 @@ export async function getNote(id: string): Promise<StoredNote | null> {
 
 export async function saveNote(note: StoredNote): Promise<void> {
   await tx<IDBValidKey>('vault-notes', 'readwrite', store => store.put(note))
+  changed()
 }
 
 export async function deleteNote(id: string): Promise<void> {
   await tx<undefined>('vault-notes', 'readwrite', store => store.delete(id))
+  changed()
 }
 
 // ── Folders CRUD ──────────────────────────────────────────────────────────────
@@ -181,6 +218,7 @@ export async function getAllFolders(): Promise<StoredFolder[]> {
 
 export async function saveFolder(folder: StoredFolder): Promise<void> {
   await tx<IDBValidKey>('vault-folders', 'readwrite', store => store.put(folder))
+  changed()
 }
 
 export async function deleteFolder(id: string): Promise<void> {
@@ -198,6 +236,7 @@ export async function deleteFolder(id: string): Promise<void> {
     transaction.oncomplete = () => resolve()
     transaction.onerror = () => reject(transaction.error)
   })
+  changed()
 }
 
 // ── Devices ───────────────────────────────────────────────────────────────────
@@ -263,6 +302,7 @@ export async function saveDeletionTombstone(
     deletedAt,
   }
   await tx<IDBValidKey>('vault-tombstones', 'readwrite', store => store.put(tombstone))
+  changed()
   return tombstone
 }
 

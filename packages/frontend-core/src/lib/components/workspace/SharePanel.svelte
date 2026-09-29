@@ -9,16 +9,21 @@
   export let receivePathFormat: 'segment' | 'query' = 'segment'
 
   function setMethod(method: TransferMethod) {
+    if (routeLocked || method === activeMethod) return
     transferStore.setMethod(method)
   }
 
+  // Only the sender picks the route. The code they share leads with its
+  // letter, so the receiver's browser follows without asking.
   const methods: { id: TransferMethod; label: string; desc: string }[] = [
-    { id: 'webrtc', label: 'Direct',  desc: 'P2P' },
-    { id: 'local',  label: 'Local',   desc: 'LAN' },
+    { id: 'webrtc', label: 'Direct', desc: 'Any network' },
+    { id: 'local',  label: 'Local',  desc: 'Same Wi-Fi' },
   ]
 
   $: activeMethod = $transferStore.method
   $: readyCount = $filesStore.length
+  // The route cannot change under a receiver who is already connecting.
+  $: routeLocked = !['idle', 'complete', 'failed'].includes($transferStore.state)
 </script>
 
 <div class="sp-root">
@@ -43,12 +48,15 @@
     </div>
   {/if}
 
-  <!-- Method tabs -->
-  <div class="sp-tabs">
+  <!-- Route: the sender's choice, carried to the receiver by the code -->
+  <div class="sp-tabs" role="radiogroup" aria-label="Route">
     {#each methods as m}
       <button
         class="sp-tab"
         class:sp-tab-active={activeMethod === m.id}
+        role="radio"
+        aria-checked={activeMethod === m.id}
+        disabled={routeLocked && activeMethod !== m.id}
         on:click={() => setMethod(m.id)}
       >
         <span class="sp-tab-label">{m.label}</span>
@@ -56,6 +64,7 @@
       </button>
     {/each}
   </div>
+  <p class="sp-route-note">The receiver follows your choice on its own</p>
 
   <!-- Content -->
   <div class="sp-content" class:sp-content-disabled={!$hasFiles}>
@@ -111,7 +120,7 @@
   /* Tabs */
   .sp-tabs {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
     gap: 4px;
     padding: 4px;
     background: var(--surface-2);
@@ -125,8 +134,11 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 2px;
-    padding: 7px 4px;
+    justify-content: center;
+    gap: 1px;
+    padding: 8px 4px;
+    min-width: 0;
+    text-align: center;
     border-radius: 8px;
     border: 2px solid transparent;
     background: transparent;
@@ -144,6 +156,22 @@
     box-shadow: var(--shadow-sm);
   }
 
+  .sp-tab:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+  }
+
+
+
+
+  .sp-route-note {
+    margin: -8px 2px 0;
+    font-size: 11px;
+    line-height: 1.45;
+    color: var(--text-3);
+    text-align: center;
+  }
+
   .sp-tab-label {
     font-size: 12px;
     font-weight: 600;
@@ -154,7 +182,12 @@
   .sp-tab-active .sp-tab-label { color: var(--text-1); }
 
   .sp-tab-desc {
-    font-size: 9px;
+    font-size: 10px;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
     color: var(--text-3);
     letter-spacing: 0.04em;
     font-weight: 500;
