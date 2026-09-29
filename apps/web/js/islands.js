@@ -49,7 +49,6 @@ export async function initIslands(page) {
     mount(WorkspaceApp, target, {
       receiveBasePath: routes.receive,
       receivePathFormat: 'query',
-      receiveEntryHref: routes.receive,
       chainApiUrl: import.meta.env.PUBLIC_CHAIN_URL ?? '',
       vaultSignalingUrl: await resolveSignalingUrl(),
       vaultApiUrl: '/vault/api',

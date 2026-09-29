@@ -28,6 +28,7 @@
       parentId: null,
       createdAt: Date.now(),
       sortOrder: $folders.length,
+      updatedAt: Date.now(),
     }
     await saveFolder(folder)
     syncFolderRecord(folder)
@@ -40,7 +41,7 @@
     if (!editName.trim()) { editingFolderId = null; return }
     const folder = $folders.find(f => f.id === id)
     if (!folder) return
-    const updated = { ...folder, name: editName.trim() }
+    const updated = { ...folder, name: editName.trim(), updatedAt: Date.now() }
     await saveFolder(updated)
     syncFolderRecord(updated)
     vaultActions.upsertFolder(updated)

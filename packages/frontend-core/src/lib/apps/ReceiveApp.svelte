@@ -4,23 +4,26 @@
   import { getSignalingBaseUrl } from '$transfer/signaling'
   import { WebRTCTransfer } from '$transfer/webrtc'
   import { zipFiles } from '$tools/zip'
-  import { isValidRoomCode } from '$utils/crypto'
+  import { parseRoomCode, shareCode } from '$utils/crypto'
   import { detectReceivedFileFacts, formatBytes, saveBlobWithSystemFallback, siteRoutes, truncateName, triggerBlobDownload } from '$utils'
-  import type { TransferProfile } from '$transfer/types'
   import TransferProgress from '$components/sharing/TransferProgress.svelte'
   import TransferControls from '$components/sharing/TransferControls.svelte'
   import TransferHealthCard from '$components/sharing/TransferHealthCard.svelte'
   import TransferReceiptCard from '$components/sharing/TransferReceiptCard.svelte'
 
   export let initialCode = ''
-  export let initialMode: TransferProfile = 'webrtc'
   export let homeHref = siteRoutes.home
   export let backHref = siteRoutes.workspace
+  /**
+   * Inside the landing page's workspace rather than a page of its own: no
+   * page padding, no back link, and it connects straight away when handed a
+   * code. Emits nothing — the workspace shows it as its Receive mode.
+   */
+  export let embedded = false
 
   const signalingUrl = getSignalingBaseUrl(import.meta.env.PUBLIC_SIGNALING_URL as string | undefined)
 
   let code = initialCode
-  let selectedMode: TransferProfile = initialMode
   let error = ''
   let transfer: WebRTCTransfer | null = null
   let autoConnecting = false
@@ -29,9 +32,15 @@
   let factsRun = 0
 
   $: state = $transferStore.state
-  $: inputError = code.length > 0 && code.length < 6 ? 'Code must be 6 characters' : ''
+  $: parsed = parseRoomCode(code)
+  $: typed = code.replace(/[\s·\-_.]/g, '')
+  $: inputError = typed.length > 0 && typed.length < 6 ? 'The code is 6 characters, like D7KQ2M' : ''
   $: nearby = $transferStore.nearby
-  $: normalizedCode = code.trim().toUpperCase()
+  // The route is the sender's: read from the code's first letter, and
+  // confirmed by the signaling server once connected.
+  $: route = (connected ? $transferStore.method : parsed?.mode) ?? null
+  $: connected = state !== 'idle' && state !== 'failed'
+  $: normalizedCode = parsed ? (parsed.mode ? shareCode(parsed.room, parsed.mode) : parsed.room) : code.trim().toUpperCase()
   $: receivedFiles = $transferStore.receivedFiles
   $: void hydrateFileFacts(receivedFiles)
 
@@ -40,13 +49,14 @@
 
     const url = new URL(window.location.href)
     const codeParam = url.searchParams.get('code')
+    // Links made before the route letter carried the route as ?mode=.
     const modeParam = url.searchParams.get('mode')
 
-    if (!code && codeParam) {
-      code = codeParam
-    }
-    if (modeParam === 'local' || modeParam === 'webrtc') {
-      selectedMode = modeParam
+    if (!code && codeParam && !embedded) {
+      const legacy = parseRoomCode(codeParam)
+      code = legacy && !legacy.mode && (modeParam === 'local' || modeParam === 'webrtc')
+        ? shareCode(legacy.room, modeParam)
+        : codeParam
     }
 
     if (code.trim()) {
@@ -59,10 +69,10 @@
   })
 
   async function connect(fromAutofill = false) {
-    const trimmed = code.trim().toUpperCase()
-    if (!isValidRoomCode(trimmed)) {
+    const target = parseRoomCode(code)
+    if (!target) {
       if (!fromAutofill) {
-        error = 'Please enter a valid 6-character room code'
+        error = 'Enter the code shown on the sender, like D7KQ2M'
       }
       return
     }
@@ -70,7 +80,12 @@
     error = ''
     autoConnecting = fromAutofill
     transfer?.destroy()
-    transfer = new WebRTCTransfer(signalingUrl, trimmed, 'receiver', selectedMode)
+    transferStore.syncMethod(target.mode ?? 'webrtc')
+    // The route follows the sender: the code's letter sets it up front and
+    // the signaling server has the final word (see WebRTCTransfer).
+    transfer = new WebRTCTransfer(signalingUrl, target.room, 'receiver', target.mode ?? 'webrtc', {
+      followSender: true,
+    })
 
     try {
       await transfer.initReceiver()
@@ -91,10 +106,9 @@
     code = ''
     error = ''
     autoConnecting = false
-    selectedMode = initialMode
     transferStore.reset()
 
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined' && !embedded) {
       const url = new URL(window.location.href)
       url.searchParams.delete('code')
       url.searchParams.delete('mode')
@@ -158,7 +172,7 @@
   }
 </script>
 
-<div class="receive-shell">
+<div class="receive-shell" class:receive-shell--embedded={embedded}>
   <div class="receive-card-wrap">
     <div class="receive-head">
       <div
@@ -176,10 +190,10 @@
 
       <h1 class="receive-title">Receive files</h1>
       <p class="receive-sub">
-        {#if normalizedCode}
-          Room <span class="font-mono receive-code-inline">{normalizedCode}</span>
+        {#if parsed}
+          Code <span class="font-mono receive-code-inline">{normalizedCode}</span>
         {:else}
-          Enter the room code to connect with the sender
+          Type the code from the sender's screen. Their route comes with it
         {/if}
       </p>
 
@@ -198,11 +212,13 @@
             <input
               type="text"
               class="receive-input text-center font-mono uppercase"
-              placeholder="XXXXXX"
-              maxlength="6"
+              placeholder="D7KQ2M"
+              maxlength="8"
+              aria-label="Code from the sender"
               bind:value={code}
               on:keydown={event => event.key === 'Enter' && connect()}
               autocomplete="off"
+              autocapitalize="characters"
               spellcheck="false"
             />
 
@@ -211,27 +227,21 @@
             {/if}
           </div>
 
-          <div class="receive-mode-switch">
-            <button
-              class="receive-mode-btn"
-              class:receive-mode-btn--active={selectedMode === 'webrtc'}
-              on:click={() => (selectedMode = 'webrtc')}
-            >
-              Direct
-            </button>
-            <button
-              class="receive-mode-btn"
-              class:receive-mode-btn--active={selectedMode === 'local'}
-              on:click={() => (selectedMode = 'local')}
-            >
-              Local
-            </button>
-          </div>
+          <p class="receive-route" class:receive-route--set={!!route} aria-live="polite">
+            <span class="receive-route__dot" aria-hidden="true"></span>
+            {#if route === 'local'}
+              Local, same Wi-Fi only. The sender chose it
+            {:else if route === 'webrtc'}
+              Direct, over any network. The sender chose it
+            {:else}
+              The sender's route comes with the code
+            {/if}
+          </p>
 
           <button
             class="btn-primary receive-primary"
             on:click={() => connect()}
-            disabled={normalizedCode.length !== 6}
+            disabled={!parsed}
           >
             Connect & Receive
             <span>→</span>
@@ -332,15 +342,19 @@
           {/if}
           <div class="receive-actions">
             <button class="btn-secondary" on:click={reset}>Receive more</button>
-            <a href={homeHref} class="btn-secondary">Home</a>
+            {#if !embedded}
+              <a href={homeHref} class="btn-secondary">Home</a>
+            {/if}
           </div>
         </div>
       {/if}
     </div>
 
-    <div class="receive-footer">
-      <a href={backHref}>← Back</a>
-    </div>
+    {#if !embedded}
+      <div class="receive-footer">
+        <a href={backHref}>← Back</a>
+      </div>
+    {/if}
   </div>
 </div>
 
@@ -355,6 +369,17 @@
       calc(16px + env(safe-area-inset-right, 0px))
       calc(40px + env(safe-area-inset-bottom, 0px))
       calc(16px + env(safe-area-inset-left, 0px));
+  }
+
+  .receive-shell--embedded {
+    min-height: 0;
+    padding: clamp(8px, 2vw, 24px) 0 clamp(12px, 2vw, 28px);
+  }
+
+  .receive-shell--embedded .receive-head-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 16px;
   }
 
   .receive-card-wrap {
@@ -446,7 +471,7 @@
     box-shadow: var(--shadow-sm);
     color: var(--text-1);
     font-size: 1.875rem;
-    letter-spacing: 0.4em;
+    letter-spacing: 0.32em;
   }
 
   .receive-error {
@@ -456,33 +481,34 @@
     text-align: center;
   }
 
-  .receive-mode-switch {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 6px;
-    padding: 4px;
-    border-radius: 12px;
-    background: var(--surface-2);
-    border: 1px solid var(--border-strong);
-    box-shadow: var(--shadow-sm);
+  .receive-route {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin: 0;
+    font-size: 12.5px;
+    line-height: 1.4;
+    color: var(--text-3);
+    text-align: center;
   }
 
-  .receive-mode-btn {
-    border: 2px solid transparent;
-    border-radius: 8px;
-    background: transparent;
-    padding: 10px 12px;
-    font-family: var(--font-display);
-    font-weight: 600;
+  .receive-route__dot {
+    flex: 0 0 auto;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--border-strong);
+    transition: background 0.25s ease, box-shadow 0.25s ease;
+  }
+
+  .receive-route--set {
     color: var(--text-2);
-    cursor: pointer;
   }
 
-  .receive-mode-btn--active {
-    background: var(--surface);
-    border-color: var(--border-hard);
-    color: var(--text-1);
-    box-shadow: var(--shadow-sm);
+  .receive-route--set .receive-route__dot {
+    background: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent);
   }
 
   .receive-secondary {
@@ -694,16 +720,6 @@
 
     .receive-sub {
       font-size: 13px;
-    }
-
-    .receive-mode-switch {
-      gap: 4px;
-      padding: 3px;
-    }
-
-    .receive-mode-btn {
-      padding: 9px 10px;
-      font-size: 14px;
     }
 
     .receive-state-title {

@@ -11,6 +11,7 @@ import type { MasterKey } from '../vault/crypto'
 import type { SyncState } from '../vault/sync'
 import type { SearchResult } from '../vault/search'
 import type { VaultUser } from '../vault/auth'
+import type { AccountSyncStatus } from '../vault/accountSync'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -60,6 +61,9 @@ export const syncState = writable<SyncState>({
   lastSync: null,
   error: null,
 })
+
+/** Account sync: off until signed in, then syncing / synced / offline / error. */
+export const accountSync = writable<AccountSyncStatus>({ state: 'off', lastSync: null, error: null })
 
 export const ui = writable<VaultUIState>({
   activePanel: 'notes',

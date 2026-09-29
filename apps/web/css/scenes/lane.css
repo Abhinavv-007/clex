@@ -1,6 +1,6 @@
 /* ==========================================================================
-   Direct+ lane (js/scenes/lane.js). Lives on a dark band, so its palette is
-   the band's.
+   Direct+ lane (js/scenes/lane.js). Lives on a band, so it takes the band's
+   tokens in either theme; the canvas picks its own palette to match.
    ========================================================================== */
 
 .lane {
@@ -9,9 +9,9 @@
   border: 1px solid var(--line-2);
   border-radius: clamp(20px, 2.4vw, 30px);
   background:
-    radial-gradient(ellipse 50% 80% at 50% 50%, rgba(143, 209, 169, 0.07), transparent 70%),
-    linear-gradient(180deg, rgba(241, 237, 229, 0.035), rgba(241, 237, 229, 0.01));
-  box-shadow: var(--shadow-3), inset 0 1px 0 rgba(241, 237, 229, 0.06);
+    radial-gradient(ellipse 50% 80% at 50% 50%, var(--jade-wash), transparent 70%),
+    color-mix(in srgb, var(--surface) 70%, transparent);
+  box-shadow: var(--shadow-3), inset 0 1px 0 color-mix(in srgb, var(--ink) 6%, transparent);
   overflow: hidden;
 }
 
@@ -183,7 +183,7 @@
 
 .lane__legend .is-ok { background: var(--jade); }
 .lane__legend .is-retry { background: var(--gold); }
-.lane__legend .is-bad { background: #ef8a73; }
+.lane__legend .is-bad { background: var(--danger); }
 
 .lane__receipt {
   display: flex;
@@ -191,7 +191,7 @@
   gap: 14px;
   padding: 16px clamp(16px, 2.4vw, 28px);
   border-top: 1px solid var(--line);
-  background: rgba(241, 237, 229, 0.02);
+  background: color-mix(in srgb, var(--ink) 2%, transparent);
   opacity: 0.35;
   transition: opacity var(--t-4) var(--ease), background var(--t-4) var(--ease);
 }

@@ -1,161 +1,325 @@
 /* ==========================================================================
-   Clex Link on a Pixel-style phone: metal frame, side buttons, punch-hole
-   camera, status bar, gesture bar, glass glare. The app inside plays out a
-   nearby send (js/scenes/nearby.js).
+   Clex Link on an iPhone 18 Pro Max, standing straight: a titanium frame
+   with the Action button, volume keys, side button and Camera Control; thin
+   even bezels; the Dynamic Island, which opens into a Live Activity when the
+   file lands; an iOS status bar and home indicator. The app inside plays out
+   a nearby send (js/scenes/nearby.js).
+
+   The screen is laid out in iOS points: --u is one point of a 440 pt wide
+   display, so the type and spacing are the phone's own. Frame and screen
+   follow the theme — Silver with the light interface, Deep Blue with the
+   dark one.
    ========================================================================== */
 
-.pixel {
-  --w: min(290px, 74vw);
+.iphone {
+  --w: min(300px, 72vw);
+  --u: calc(var(--w) * 0.918 / 440);
+  --frame-a: #eceef1;
+  --frame-b: #b8bcc3;
+  --frame-c: #8e939b;
+  --frame-edge: rgba(255, 255, 255, 0.85);
+  --btn: linear-gradient(90deg, #a9adb4, #e7e9ec 55%, #b3b7be);
+  --scr-bg: #f2f2f7;
+  --scr-card: #ffffff;
+  --scr-ink: #0b0b0c;
+  --scr-ink-2: #6e6e73;
+  --scr-line: rgba(60, 60, 67, 0.12);
+  --scr-accent: #2e8a5f;
+  --scr-accent-soft: rgba(46, 138, 95, 0.12);
+  --scr-radar: rgba(46, 138, 95, 0.22);
+  --scr-sheet: rgba(255, 255, 255, 0.94);
+  --scr-home: rgba(0, 0, 0, 0.82);
   position: relative;
   width: var(--w);
-  aspect-ratio: 9 / 19.5;
-  padding: calc(var(--w) * 0.03);
-  border-radius: calc(var(--w) * 0.155);
+  aspect-ratio: 78 / 163.4;
+  padding: calc(var(--w) * 0.041);
+  border-radius: calc(var(--w) * 0.205);
   background:
-    linear-gradient(145deg, #5a5751 0%, #26251f 18%, #121210 50%, #2b2a26 82%, #5e5b55 100%);
+    linear-gradient(90deg, var(--frame-c) 0%, var(--frame-a) 3.5%, var(--frame-b) 7%, var(--frame-b) 93%, var(--frame-a) 96.5%, var(--frame-c) 100%);
   box-shadow:
-    inset 0 0 0 1.5px rgba(255, 255, 255, 0.14),
-    inset 0 0 0 4px #0b0b0a,
-    0 1px 0 rgba(255, 255, 255, 0.08),
-    0 50px 80px -30px rgba(0, 0, 0, 0.8),
-    0 20px 40px -20px rgba(0, 0, 0, 0.6);
-  transform: rotate(-4deg);
-  animation: pixel-float 7s var(--ease-in-out) infinite;
+    inset 0 0 0 1px var(--frame-edge),
+    inset 0 0 0 calc(var(--w) * 0.012) var(--frame-b),
+    inset 0 0 0 calc(var(--w) * 0.014) rgba(0, 0, 0, 0.18),
+    0 60px 90px -40px rgba(30, 26, 20, 0.45),
+    0 26px 50px -26px rgba(30, 26, 20, 0.35);
+  animation: iphone-float 8s var(--ease-in-out) infinite;
 }
 
-@keyframes pixel-float {
-  50% { transform: rotate(-4deg) translateY(-8px); }
+[data-theme='dark'] .iphone {
+  --frame-a: #56637a;
+  --frame-b: #2c3445;
+  --frame-c: #161b25;
+  --frame-edge: rgba(190, 205, 235, 0.35);
+  --btn: linear-gradient(90deg, #1d2330, #4f5c73 55%, #222938);
+  --scr-bg: #000000;
+  --scr-card: #1c1c1e;
+  --scr-ink: #f5f5f7;
+  --scr-ink-2: #98989f;
+  --scr-line: rgba(84, 84, 88, 0.45);
+  --scr-accent: #8fd1a9;
+  --scr-accent-soft: rgba(143, 209, 169, 0.16);
+  --scr-radar: rgba(143, 209, 169, 0.24);
+  --scr-sheet: rgba(30, 30, 32, 0.94);
+  --scr-home: rgba(255, 255, 255, 0.85);
+  box-shadow:
+    inset 0 0 0 1px var(--frame-edge),
+    inset 0 0 0 calc(var(--w) * 0.012) var(--frame-b),
+    inset 0 0 0 calc(var(--w) * 0.014) rgba(0, 0, 0, 0.4),
+    0 60px 100px -40px rgba(0, 0, 0, 0.85),
+    0 0 80px -20px rgba(143, 209, 169, 0.18);
 }
 
-.pixel__btn {
+/* Upright, only breathing a little. */
+@keyframes iphone-float {
+  50% { transform: translateY(-7px); }
+}
+
+/* ── Buttons ─────────────────────────────────────────────────────────── */
+
+.iphone__btn {
   position: absolute;
-  right: -3px;
-  width: 4px;
-  border-radius: 0 3px 3px 0;
-  background: linear-gradient(90deg, #1b1a17, #56534c);
+  width: calc(var(--w) * 0.012);
+  background: var(--btn);
 }
 
-.pixel__btn--power { top: 20%; height: 7%; }
-.pixel__btn--vol { top: 31%; height: 14%; }
+.iphone__btn--action,
+.iphone__btn--vol-up,
+.iphone__btn--vol-down {
+  left: calc(var(--w) * -0.009);
+  border-radius: 3px 0 0 3px;
+}
 
-.pixel__screen {
-  --u: calc(var(--w) / 290);
+.iphone__btn--side,
+.iphone__btn--camera {
+  right: calc(var(--w) * -0.009);
+  border-radius: 0 3px 3px 0;
+}
+
+.iphone__btn--action { top: 17%; height: 5.2%; }
+.iphone__btn--vol-up { top: 25.5%; height: 9%; }
+.iphone__btn--vol-down { top: 36.5%; height: 9%; }
+.iphone__btn--side { top: 27%; height: 13.5%; }
+
+/* Camera Control sits flush, a sapphire panel in the frame. */
+.iphone__btn--camera {
+  top: 58%;
+  height: 8%;
+  width: calc(var(--w) * 0.01);
+  background: linear-gradient(90deg, #0f1115, #3a404b 60%, #14171c);
+  box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.25);
+}
+
+/* ── Display ─────────────────────────────────────────────────────────── */
+
+.iphone__screen {
   position: relative;
   height: 100%;
-  border-radius: calc(var(--w) * 0.128);
-  background:
-    radial-gradient(ellipse 90% 50% at 50% 0%, rgba(143, 209, 169, 0.14), transparent 70%),
-    #101311;
-  color: #eeeae2;
-  font-size: calc(var(--u) * 11.5);
+  border-radius: calc(var(--w) * 0.167);
+  background: var(--scr-bg);
+  color: var(--scr-ink);
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', var(--font-sans);
+  font-size: calc(var(--u) * 15);
+  letter-spacing: -0.01em;
   overflow: hidden;
   isolation: isolate;
+  box-shadow: 0 0 0 calc(var(--w) * 0.012) #050506;
 }
 
-.pixel__glare {
+.iphone__glare {
   position: absolute;
   inset: 0;
-  z-index: 5;
-  background: linear-gradient(118deg, rgba(255, 255, 255, 0.09) 0%, rgba(255, 255, 255, 0.02) 32%, transparent 33%);
+  z-index: 7;
+  background: linear-gradient(122deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.03) 30%, transparent 31%);
   pointer-events: none;
+  mix-blend-mode: soft-light;
 }
 
-.pixel__cam {
+/* The Dynamic Island. It opens into a Live Activity when the file lands. */
+.iphone__island {
   position: absolute;
-  top: calc(var(--u) * 12);
+  top: calc(var(--u) * 11);
   left: 50%;
-  z-index: 4;
-  width: calc(var(--u) * 13);
-  height: calc(var(--u) * 13);
-  margin-left: calc(var(--u) * -6.5);
-  border-radius: 50%;
-  background: radial-gradient(circle at 38% 35%, #3a4a5e 0, #0a0d12 45%, #000 70%);
-  box-shadow: 0 0 0 calc(var(--u) * 2) #050505;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  width: calc(var(--u) * 118);
+  height: calc(var(--u) * 35);
+  padding: 0 calc(var(--u) * 12);
+  border-radius: calc(var(--u) * 20);
+  background: #000;
+  color: #f5f5f7;
+  transform: translateX(-50%);
+  transition:
+    width 620ms cubic-bezier(0.3, 1.3, 0.4, 1),
+    height 620ms cubic-bezier(0.3, 1.3, 0.4, 1),
+    border-radius 620ms cubic-bezier(0.3, 1.3, 0.4, 1),
+    top 620ms cubic-bezier(0.3, 1.3, 0.4, 1);
+  overflow: hidden;
 }
 
-.pixel__status {
+.iphone__island-cam {
+  position: absolute;
+  right: calc(var(--u) * 13);
+  top: 50%;
+  width: calc(var(--u) * 11);
+  height: calc(var(--u) * 11);
+  margin-top: calc(var(--u) * -5.5);
+  border-radius: 50%;
+  background: radial-gradient(circle at 36% 34%, #3c4a66 0, #10141c 45%, #020203 72%);
+}
+
+.iphone__island-live {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--u) * 10);
+  min-width: calc(var(--u) * 300);
+  font-size: calc(var(--u) * 13);
+  line-height: 1.25;
+  white-space: nowrap;
+  opacity: 0;
+  transform: scale(0.8);
+  transform-origin: left center;
+  transition: opacity 260ms var(--ease), transform 500ms var(--ease-out);
+}
+
+.iphone__island-live i {
+  flex: 0 0 auto;
+  width: calc(var(--u) * 30);
+  height: calc(var(--u) * 30);
+  border-radius: 50%;
+  background: #34c07a url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='m4.5 8.5 2.2 2.2 4.8-5.2' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/></svg>") center / 70% no-repeat;
+  box-shadow: 0 0 calc(var(--u) * 14) rgba(52, 192, 122, 0.6);
+}
+
+.iphone__island-live span {
+  display: grid;
+}
+
+.iphone__island-live b {
+  font-weight: 600;
+  font-size: calc(var(--u) * 14);
+}
+
+.iphone__island-live small {
+  color: #a1a1a6;
+  font-size: calc(var(--u) * 11.5);
+}
+
+.iphone.is-done .iphone__island {
+  top: calc(var(--u) * 9);
+  width: calc(var(--u) * 396);
+  height: calc(var(--u) * 62);
+  border-radius: calc(var(--u) * 32);
+}
+
+.iphone.is-done .iphone__island-live {
+  opacity: 1;
+  transform: none;
+  transition-delay: 180ms;
+}
+
+.iphone.is-done .iphone__island-cam {
+  opacity: 0;
+}
+
+/* Status bar either side of the island. */
+.iphone__status {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  height: calc(var(--u) * 38);
-  padding: calc(var(--u) * 6) calc(var(--u) * 22) 0;
-  font-size: calc(var(--u) * 11);
-  font-weight: 500;
-}
-
-.pixel__icons {
-  display: flex;
-  gap: calc(var(--u) * 5);
-  align-items: center;
-}
-
-.pixel__app {
-  display: grid;
-  gap: calc(var(--u) * 12);
-  padding: calc(var(--u) * 6) calc(var(--u) * 16) 0;
-}
-
-.pixel__head {
-  display: grid;
-  gap: calc(var(--u) * 3);
-}
-
-.pixel__head b {
-  font-size: calc(var(--u) * 24);
+  height: calc(var(--u) * 56);
+  padding: calc(var(--u) * 4) calc(var(--u) * 34) 0 calc(var(--u) * 46);
+  font-size: calc(var(--u) * 16.5);
   font-weight: 600;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.02em;
 }
 
-.pixel__head span {
+.iphone__icons {
+  display: flex;
+  gap: calc(var(--u) * 6);
+  align-items: center;
+}
+
+.iphone__icons svg {
+  display: block;
+  height: calc(var(--u) * 12);
+  width: auto;
+}
+
+/* ── The app ─────────────────────────────────────────────────────────── */
+
+.iphone__app {
+  display: grid;
+  gap: calc(var(--u) * 14);
+  padding: calc(var(--u) * 6) calc(var(--u) * 20) 0;
+}
+
+.iphone__head {
+  display: grid;
+  gap: calc(var(--u) * 2);
+}
+
+.iphone__head b {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', var(--font-sans);
+  font-size: calc(var(--u) * 34);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+
+.iphone__head span {
   display: flex;
   align-items: center;
-  gap: calc(var(--u) * 6);
-  color: #9d978b;
+  gap: calc(var(--u) * 7);
+  font-size: calc(var(--u) * 14);
+  color: var(--scr-ink-2);
 }
 
-.pixel__head i {
-  width: calc(var(--u) * 6);
-  height: calc(var(--u) * 6);
+.iphone__head i {
+  width: calc(var(--u) * 8);
+  height: calc(var(--u) * 8);
   border-radius: 50%;
-  background: #8fd1a9;
-  box-shadow: 0 0 0 calc(var(--u) * 3) rgba(143, 209, 169, 0.2);
+  background: var(--scr-accent);
+  box-shadow: 0 0 0 calc(var(--u) * 3.5) var(--scr-accent-soft);
 }
 
-.pixel__radar {
+.iphone__radar {
   position: relative;
-  aspect-ratio: 1.45;
-  border-radius: calc(var(--u) * 18);
-  background: radial-gradient(circle at 50% 50%, rgba(143, 209, 169, 0.1), transparent 70%), rgba(255, 255, 255, 0.03);
+  aspect-ratio: 1.5;
+  border-radius: calc(var(--u) * 22);
+  background:
+    radial-gradient(circle at 50% 50%, var(--scr-accent-soft), transparent 70%),
+    var(--scr-card);
   overflow: hidden;
 }
 
-.pixel__ring {
+.iphone__ring {
   position: absolute;
   left: 50%;
   top: 50%;
-  border: 1px solid rgba(143, 209, 169, 0.2);
+  border: 1px solid var(--scr-radar);
   border-radius: 50%;
   transform: translate(-50%, -50%);
 }
 
-.pixel__ring:nth-child(1) { width: 30%; aspect-ratio: 1; }
-.pixel__ring:nth-child(2) { width: 58%; aspect-ratio: 1; }
-.pixel__ring:nth-child(3) { width: 86%; aspect-ratio: 1; }
+.iphone__ring:nth-child(1) { width: 28%; aspect-ratio: 1; }
+.iphone__ring:nth-child(2) { width: 54%; aspect-ratio: 1; }
+.iphone__ring:nth-child(3) { width: 80%; aspect-ratio: 1; }
 
-.pixel__sweep {
+.iphone__sweep {
   position: absolute;
   left: 50%;
   top: 50%;
-  width: 90%;
+  width: 84%;
   aspect-ratio: 1;
   border-radius: 50%;
-  background: conic-gradient(from 0deg, rgba(143, 209, 169, 0.28), transparent 70deg);
+  background: conic-gradient(from 0deg, var(--scr-radar), transparent 70deg);
   transform: translate(-50%, -50%);
   animation: spin 3.2s linear infinite;
 }
 
-.pixel__me,
-.pixel__dot {
+.iphone__me,
+.iphone__dot {
   position: absolute;
   display: grid;
   place-items: center;
@@ -164,236 +328,215 @@
   transform: translate(-50%, -50%);
 }
 
-.pixel__me {
+.iphone__me {
   left: 50%;
   top: 50%;
-  width: calc(var(--u) * 34);
-  height: calc(var(--u) * 34);
-  background: #eeeae2;
-  color: #101311;
-  font-size: calc(var(--u) * 9.5);
+  width: calc(var(--u) * 50);
+  height: calc(var(--u) * 50);
+  background: var(--scr-ink);
+  color: var(--scr-bg);
+  font-size: calc(var(--u) * 13);
+  box-shadow: 0 0 0 calc(var(--u) * 6) var(--scr-accent-soft);
 }
 
-.pixel__dot {
+.iphone__dot {
   left: var(--x);
   top: var(--y);
-  width: calc(var(--u) * 26);
-  height: calc(var(--u) * 26);
-  background: #1f2a24;
-  color: #8fd1a9;
-  box-shadow: 0 0 0 1px rgba(143, 209, 169, 0.5);
+  width: calc(var(--u) * 38);
+  height: calc(var(--u) * 38);
+  background: var(--scr-card);
+  color: var(--scr-accent);
+  font-size: calc(var(--u) * 15);
+  box-shadow: 0 0 0 1.5px var(--scr-accent), 0 4px 14px -4px var(--scr-radar);
   opacity: 0;
   scale: 0.4;
   transition: opacity 400ms var(--ease), scale 500ms var(--ease-spring);
 }
 
-.pixel__peers {
+.iphone__peers {
   display: grid;
-  gap: calc(var(--u) * 7);
   margin: 0;
-  padding: 0;
+  padding: 0 calc(var(--u) * 14);
   list-style: none;
+  border-radius: calc(var(--u) * 22);
+  background: var(--scr-card);
 }
 
-.pixel__peers li {
+.iphone__peers li {
   display: grid;
   grid-template-columns: auto 1fr auto;
   align-items: center;
-  gap: calc(var(--u) * 10);
-  padding: calc(var(--u) * 9) calc(var(--u) * 10);
-  border-radius: calc(var(--u) * 14);
-  background: rgba(255, 255, 255, 0.05);
+  gap: calc(var(--u) * 12);
+  padding: calc(var(--u) * 11) 0;
+  border-bottom: 0.5px solid var(--scr-line);
   opacity: 0;
   transform: translateY(8px);
   transition: opacity 400ms var(--ease), transform 500ms var(--ease-out), background 300ms var(--ease);
 }
 
-.pixel__peers li > span:nth-child(2) {
+.iphone__peers li:last-child {
+  border-bottom: 0;
+}
+
+.iphone__peers li > span:nth-child(2) {
   display: grid;
+  min-width: 0;
 }
 
-.pixel__peers b {
-  font-weight: 500;
+.iphone__peers b {
+  font-weight: 600;
+  font-size: calc(var(--u) * 15.5);
 }
 
-.pixel__peers small {
-  font-size: 0.86em;
-  color: #9d978b;
+.iphone__peers small {
+  font-size: calc(var(--u) * 12.5);
+  color: var(--scr-ink-2);
 }
 
-.pixel__avatar {
+.iphone__avatar {
   display: grid;
   place-items: center;
-  width: calc(var(--u) * 30);
-  height: calc(var(--u) * 30);
+  width: calc(var(--u) * 40);
+  height: calc(var(--u) * 40);
   border-radius: 50%;
-  background: hsl(var(--hue) 35% 32%);
-  color: hsl(var(--hue) 60% 86%);
+  background: linear-gradient(160deg, hsl(var(--hue) 55% 62%), hsl(var(--hue) 45% 44%));
+  color: #fff;
+  font-weight: 600;
+  font-size: calc(var(--u) * 16);
+}
+
+.iphone__send {
+  padding: calc(var(--u) * 6) calc(var(--u) * 15);
+  border-radius: 99px;
+  background: var(--scr-accent-soft);
+  color: var(--scr-accent);
+  font-size: calc(var(--u) * 14);
   font-weight: 600;
 }
 
-.pixel__send {
-  padding: calc(var(--u) * 5) calc(var(--u) * 11);
-  border-radius: 99px;
-  background: rgba(143, 209, 169, 0.14);
-  color: #8fd1a9;
-  font-size: 0.9em;
-  font-weight: 500;
-}
-
-[data-peer].is-found {
+.iphone [data-peer].is-found {
   opacity: 1;
   scale: 1;
   transform: none;
 }
 
-.pixel__peers li.is-picked {
-  background: rgba(143, 209, 169, 0.14);
+.iphone__peers li.is-picked .iphone__send {
+  background: var(--scr-accent);
+  color: var(--scr-bg);
 }
 
-.pixel__sheet {
+/* The send sheet rises from the bottom. */
+.iphone__sheet {
   position: absolute;
-  left: calc(var(--u) * 8);
-  right: calc(var(--u) * 8);
-  bottom: calc(var(--u) * 8);
+  left: calc(var(--u) * 10);
+  right: calc(var(--u) * 10);
+  bottom: calc(var(--u) * 10);
   z-index: 3;
   display: grid;
-  gap: calc(var(--u) * 10);
-  padding: calc(var(--u) * 10) calc(var(--u) * 14) calc(var(--u) * 18);
-  border-radius: calc(var(--u) * 26);
-  background: #1c201d;
-  box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.06);
-  transform: translateY(110%);
-  transition: transform 600ms var(--ease-out);
+  gap: calc(var(--u) * 12);
+  padding: calc(var(--u) * 10) calc(var(--u) * 18) calc(var(--u) * 30);
+  border-radius: calc(var(--u) * 42);
+  background: var(--scr-sheet);
+  backdrop-filter: blur(20px);
+  box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.18), inset 0 0 0 0.5px var(--scr-line);
+  transform: translateY(115%);
+  transition: transform 640ms cubic-bezier(0.2, 0.9, 0.2, 1);
 }
 
-.pixel.is-sending .pixel__sheet {
+.iphone.is-sending .iphone__sheet {
   transform: none;
 }
 
-.pixel__grab {
+.iphone__grab {
   justify-self: center;
-  width: calc(var(--u) * 34);
-  height: calc(var(--u) * 4);
-  border-radius: 4px;
-  background: rgba(255, 255, 255, 0.2);
+  width: calc(var(--u) * 36);
+  height: calc(var(--u) * 5);
+  border-radius: 5px;
+  background: var(--scr-line);
 }
 
-.pixel__sheet-file {
+.iphone__sheet-file {
   display: flex;
   align-items: center;
-  gap: calc(var(--u) * 10);
+  gap: calc(var(--u) * 12);
 }
 
-.pixel__sheet-file .filetype {
-  font-size: calc(var(--u) * 9);
+.iphone__sheet-file .filetype {
+  font-size: calc(var(--u) * 11);
 }
 
-.pixel__sheet-file > span:last-child {
+.iphone__sheet-file > span:last-child {
   display: grid;
 }
 
-.pixel__sheet-file b {
-  font-weight: 500;
+.iphone__sheet-file b {
+  font-weight: 600;
+  font-size: calc(var(--u) * 15.5);
 }
 
-.pixel__sheet-file small {
-  color: #9d978b;
-  font-size: 0.86em;
+.iphone__sheet-file small {
+  color: var(--scr-ink-2);
+  font-size: calc(var(--u) * 12.5);
 }
 
-.pixel__bar {
-  height: calc(var(--u) * 5);
-  border-radius: 5px;
-  background: rgba(255, 255, 255, 0.08);
+.iphone__bar {
+  height: calc(var(--u) * 6);
+  border-radius: 6px;
+  background: var(--scr-line);
   overflow: hidden;
 }
 
-.pixel__bar span {
+.iphone__bar span {
   display: block;
   height: 100%;
   width: calc(var(--p, 0) * 100%);
   border-radius: inherit;
-  background: linear-gradient(90deg, #5fae86, #8fd1a9);
+  background: linear-gradient(90deg, #34a86f, var(--scr-accent));
 }
 
-.pixel__sheet-foot {
+.iphone__sheet-foot {
   display: flex;
   justify-content: space-between;
-  font-size: calc(var(--u) * 9.5);
-  color: #9d978b;
+  font-size: calc(var(--u) * 12);
+  color: var(--scr-ink-2);
 }
 
-.pixel__toast {
-  position: absolute;
-  left: 50%;
-  top: calc(var(--u) * 46);
-  z-index: 4;
-  display: flex;
-  align-items: center;
-  gap: calc(var(--u) * 8);
-  padding: calc(var(--u) * 9) calc(var(--u) * 14);
-  border-radius: 99px;
-  background: #dde8df;
-  color: #1c3a2c;
-  font-size: calc(var(--u) * 10.5);
-  white-space: nowrap;
-  transform: translate(-50%, -160%);
-  opacity: 0;
-  transition: transform 600ms var(--ease-spring), opacity 300ms var(--ease);
-}
-
-.pixel__toast i {
-  width: calc(var(--u) * 14);
-  height: calc(var(--u) * 14);
-  border-radius: 50%;
-  background: #2e6a4f url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='m4.5 8.5 2.2 2.2 4.8-5.2' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/></svg>") center / 80% no-repeat;
-}
-
-.pixel.is-done .pixel__toast {
-  opacity: 1;
-  transform: translate(-50%, 0);
-}
-
-.pixel__touch {
+.iphone__touch {
   position: absolute;
   z-index: 6;
-  width: calc(var(--u) * 34);
-  height: calc(var(--u) * 34);
+  width: calc(var(--u) * 44);
+  height: calc(var(--u) * 44);
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.35);
+  background: color-mix(in srgb, var(--scr-ink) 22%, transparent);
   opacity: 0;
   pointer-events: none;
   transform: translate(-50%, -50%) scale(0.4);
 }
 
-.pixel__touch.is-tap {
-  animation: pixel-tap 600ms var(--ease-out);
+.iphone__touch.is-tap {
+  animation: iphone-tap 600ms var(--ease-out);
 }
 
-@keyframes pixel-tap {
+@keyframes iphone-tap {
   0% { opacity: 0.9; transform: translate(-50%, -50%) scale(0.4); }
   100% { opacity: 0; transform: translate(-50%, -50%) scale(1.6); }
 }
 
-.pixel__gesture {
+.iphone__home {
   position: absolute;
   left: 50%;
-  bottom: calc(var(--u) * 7);
+  bottom: calc(var(--u) * 9);
   z-index: 4;
-  width: calc(var(--u) * 96);
-  height: calc(var(--u) * 4);
-  margin-left: calc(var(--u) * -48);
-  border-radius: 4px;
-  background: rgba(255, 255, 255, 0.55);
+  width: calc(var(--u) * 146);
+  height: calc(var(--u) * 5);
+  margin-left: calc(var(--u) * -73);
+  border-radius: 5px;
+  background: var(--scr-home);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .pixel {
-    animation: none;
-  }
-
-  .pixel__sweep {
+  .iphone,
+  .iphone__sweep {
     animation: none;
   }
 }

@@ -21,12 +21,19 @@ const DAMAGED = 34;
 const PAUSE_AT = 24;
 const HASH = '9f2c71ab e04d5c18 a6e30b7f 4d92e41a';
 
-const C = {
-  jade: '#8fd1a9',
-  jadeDeep: '#2f6f52',
-  gold: '#dcb877',
-  bone: 'rgba(241, 237, 229, ',
-  red: '#ef8a73',
+/**
+ * The lane is drawn on canvas, so it cannot read CSS tokens: it keeps a
+ * palette per theme and picks one every frame. Charcoal glows; bone inks.
+ */
+const PALETTES = {
+  dark: { jade: [143, 209, 169], gold: [220, 184, 119], line: [241, 237, 229], red: [239, 138, 115], chunk: '#e9f7ee', tick: '#0d1912', glow: 1 },
+  light: { jade: [46, 138, 95], gold: [168, 121, 42], line: [33, 29, 22], red: [194, 85, 60], chunk: '#2f8a60', tick: '#f7f5ef', glow: 0.55 },
+};
+let C = PALETTES.dark;
+/** @param {number[]} c @param {number} [a] */
+const rgba = (c, a = 1) => `rgba(${c[0]}, ${c[1]}, ${c[2]}, ${a})`;
+const pickPalette = () => {
+  C = document.documentElement.dataset.theme === 'dark' ? PALETTES.dark : PALETTES.light;
 };
 
 /** @param {HTMLElement} root */
@@ -100,6 +107,7 @@ export function initLane(root) {
   reset();
 
   const draw = (now) => {
+    pickPalette();
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, W, H);
     const g = geo();
@@ -108,7 +116,7 @@ export function initLane(root) {
     ctx.lineWidth = 1;
     for (let k = 0; k < WINDOW; k += 1) {
       const y = trackY(g, k);
-      ctx.strokeStyle = `${C.bone}0.06)`;
+      ctx.strokeStyle = rgba(C.line, 0.08);
       ctx.setLineDash([2, 6]);
       ctx.beginPath();
       ctx.moveTo(g.laneX0, y);
@@ -125,32 +133,32 @@ export function initLane(root) {
         const flash = Math.max(0, 1 - (now - S.flash[i]) / 700);
         roundRect(ctx, x, y, g.cell, g.cell, Math.min(6, g.cell * 0.22));
         if (st === 'acked' || st === 'ok') {
-          ctx.fillStyle = side === 'recv' ? C.jade : 'rgba(143, 209, 169, 0.55)';
-          ctx.shadowColor = 'rgba(143, 209, 169, 0.7)';
-          ctx.shadowBlur = side === 'recv' ? 6 + flash * 18 : 0;
+          ctx.fillStyle = side === 'recv' ? rgba(C.jade) : rgba(C.jade, 0.5);
+          ctx.shadowColor = rgba(C.jade, 0.7 * C.glow);
+          ctx.shadowBlur = side === 'recv' ? (6 + flash * 18) * C.glow : 0;
           ctx.fill();
           ctx.shadowBlur = 0;
         } else if (st === 'queued') {
-          ctx.fillStyle = `${C.bone}0.16)`;
+          ctx.fillStyle = rgba(C.line, 0.14);
           ctx.fill();
         } else if (st === 'sent') {
-          ctx.strokeStyle = `${C.bone}0.28)`;
+          ctx.strokeStyle = rgba(C.line, 0.3);
           ctx.stroke();
         } else if (st === 'retry') {
-          ctx.fillStyle = 'rgba(220, 184, 119, 0.28)';
+          ctx.fillStyle = rgba(C.gold, 0.28);
           ctx.fill();
-          ctx.strokeStyle = C.gold;
+          ctx.strokeStyle = rgba(C.gold);
           ctx.stroke();
         } else if (st === 'bad' || st === 'lost') {
-          ctx.fillStyle = `rgba(239, 138, 115, ${0.25 + flash * 0.5})`;
+          ctx.fillStyle = rgba(C.red, 0.25 + flash * 0.5);
           ctx.fill();
-          ctx.strokeStyle = C.red;
+          ctx.strokeStyle = rgba(C.red);
           ctx.stroke();
         } else {
-          ctx.strokeStyle = `${C.bone}0.1)`;
+          ctx.strokeStyle = rgba(C.line, 0.12);
           ctx.stroke();
         }
-        if (side === 'recv' && st === 'ok' && g.cell > 14) tick(ctx, x + g.cell / 2, y + g.cell / 2, g.cell * 0.22, '#0d1912');
+        if (side === 'recv' && st === 'ok' && g.cell > 14) tick(ctx, x + g.cell / 2, y + g.cell / 2, g.cell * 0.22, C.tick);
       }
     }
 
@@ -163,9 +171,9 @@ export function initLane(root) {
       const lost = f.fate === 'lost' && p > 0.55;
       if (lost) continue;
       const grad = ctx.createLinearGradient(x - 70, y, x, y);
-      const hue = f.retry ? 'rgba(220, 184, 119,' : 'rgba(143, 209, 169,';
-      grad.addColorStop(0, `${hue}0)`);
-      grad.addColorStop(1, `${hue}0.45)`);
+      const hue = f.retry ? C.gold : C.jade;
+      grad.addColorStop(0, rgba(hue, 0));
+      grad.addColorStop(1, rgba(hue, 0.5));
       ctx.strokeStyle = grad;
       ctx.lineWidth = 2;
       ctx.beginPath();
@@ -173,9 +181,9 @@ export function initLane(root) {
       ctx.lineTo(x - s / 2, y);
       ctx.stroke();
       roundRect(ctx, x - s / 2, y - s / 2, s, s, 4);
-      ctx.fillStyle = f.retry ? C.gold : '#e9f7ee';
-      ctx.shadowColor = f.retry ? 'rgba(220, 184, 119, 0.9)' : 'rgba(143, 209, 169, 0.9)';
-      ctx.shadowBlur = 14;
+      ctx.fillStyle = f.retry ? rgba(C.gold) : C.chunk;
+      ctx.shadowColor = rgba(f.retry ? C.gold : C.jade, 0.9 * C.glow);
+      ctx.shadowBlur = 14 * C.glow;
       ctx.fill();
       ctx.shadowBlur = 0;
     }
@@ -190,7 +198,7 @@ export function initLane(root) {
       ctx.translate(d.x, trackY(g, d.track) + t * t * 60);
       ctx.rotate(t * 1.6);
       roundRect(ctx, -s / 2, -s / 2, s, s, 3);
-      ctx.fillStyle = C.red;
+      ctx.fillStyle = rgba(C.red);
       ctx.fill();
       ctx.restore();
     }
@@ -198,7 +206,7 @@ export function initLane(root) {
 
     // ACKs (and one NACK) running back to the sender.
     const ackY = g.top + g.gh + Math.min(14, (H - g.top - g.gh) * 0.5);
-    ctx.strokeStyle = `${C.bone}0.08)`;
+    ctx.strokeStyle = rgba(C.line, 0.1);
     ctx.beginPath();
     ctx.moveTo(g.laneX0, ackY);
     ctx.lineTo(g.laneX1, ackY);
@@ -206,9 +214,9 @@ export function initLane(root) {
     for (const a of S.acks) {
       const p = Math.min(1, (now - a.t0) / a.dur);
       const x = g.laneX1 - (g.laneX1 - g.laneX0) * p;
-      ctx.fillStyle = a.ok ? C.jade : C.red;
-      ctx.shadowColor = a.ok ? 'rgba(143, 209, 169, 0.9)' : 'rgba(239, 138, 115, 0.9)';
-      ctx.shadowBlur = 8;
+      ctx.fillStyle = rgba(a.ok ? C.jade : C.red);
+      ctx.shadowColor = rgba(a.ok ? C.jade : C.red, 0.9 * C.glow);
+      ctx.shadowBlur = 8 * C.glow;
       ctx.beginPath();
       ctx.arc(x, ackY, 2.6, 0, Math.PI * 2);
       ctx.fill();

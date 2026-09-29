@@ -1,4 +1,5 @@
 import { decryptText, encryptText, type EncryptedBlob, type MasterKey } from './crypto'
+import { getGoogleIdToken } from './auth'
 import type { StoredDeletionTombstone, StoredFolder, StoredNote } from './db'
 
 export interface BackupSnapshot {
@@ -94,6 +95,21 @@ export async function fetchVaultBackup(
   }
 }
 
+/**
+ * Headers for the account's device list. The worker only accepts a verified
+ * Firebase ID token as proof of who is asking (X-Vault-UID is cross-checked
+ * against it, never trusted on its own), so every call carries one.
+ */
+async function accountHeaders(uid: string, json = false): Promise<Record<string, string>> {
+  const token = await getGoogleIdToken()
+  if (!token) throw new Error('Sign in to see this account\'s devices')
+  return {
+    Authorization: `Bearer ${token}`,
+    'X-Vault-UID': uid,
+    ...(json ? { 'Content-Type': 'application/json' } : {}),
+  }
+}
+
 export async function upsertAccountDevice(
   vaultApiUrl: string,
   uid: string,
@@ -101,10 +117,7 @@ export async function upsertAccountDevice(
 ): Promise<void> {
   const response = await fetch(`${vaultApiUrl}/devices`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Vault-UID': uid,
-    },
+    headers: await accountHeaders(uid, true),
     body: JSON.stringify(device),
   })
 
@@ -119,7 +132,7 @@ export async function fetchAccountDevices(
   uid: string,
 ): Promise<AccountDeviceRecord[]> {
   const response = await fetch(`${vaultApiUrl}/devices`, {
-    headers: { 'X-Vault-UID': uid },
+    headers: await accountHeaders(uid),
   })
 
   if (!response.ok) {
@@ -138,7 +151,7 @@ export async function removeAccountDevice(
 ): Promise<void> {
   const response = await fetch(`${vaultApiUrl}/devices/${encodeURIComponent(deviceId)}`, {
     method: 'DELETE',
-    headers: { 'X-Vault-UID': uid },
+    headers: await accountHeaders(uid),
   })
 
   if (!response.ok) {

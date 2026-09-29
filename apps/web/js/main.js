@@ -43,6 +43,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (page === 'home') {
     import('./hero.js').then((m) => m.initHero());
   }
+  // The dust the sections sit in, on the pages people read rather than use.
+  if (['home', 'features', 'how-it-works', 'chain', 'developers', 'getting-started', 'faq'].includes(page)) {
+    import('./ambient.js').then((m) => m.initAmbient());
+  }
   import('./scenes/index.js').then((m) => {
     if (document.querySelector(m.SCENE_SELECTOR)) m.initScenes();
   });

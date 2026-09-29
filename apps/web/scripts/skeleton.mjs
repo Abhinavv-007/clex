@@ -9,8 +9,9 @@
  * lifting only when a run dead-ends. What comes back is a list of smooth
  * strokes, in writing order, in font units.
  *
- * Works best on a monoline script, where the centre line at a fixed pen
- * width redraws the letter faithfully.
+ * On a monoline script the centre line at a fixed pen width redraws the
+ * letter; on a high-contrast italic it is the path a pen would take through
+ * it, which is what the handwriting's draw-on mask follows.
  */
 
 /** Curve flattening steps per segment. */
@@ -540,8 +541,9 @@ function toPath(pts) {
 
 /**
  * @param {{ type: string }[]} commands outline of the word, font units, y down
- * @param {{ pxPerStroke?: number }} [opts]
- * @returns {{ strokes: { d: string, length: number }[], width: number, box: { x1: number, y1: number, x2: number, y2: number } }}
+ * @param {{ pxPerStroke?: number, coarse?: number }} [opts] coarse: spacing of the
+ *   output points, in strokes (0.7 follows every turn; a mask can be coarser)
+ * @returns {{ strokes: { d: string, length: number }[], width: number, maxWidth: number, box: { x1: number, y1: number, x2: number, y2: number } }}
  */
 export function penStrokes(commands, opts = {}) {
   const polys = flatten(commands);
@@ -549,7 +551,7 @@ export function penStrokes(commands, opts = {}) {
   for (const p of polys) for (const [x, y] of p) {
     x1 = Math.min(x1, x); y1 = Math.min(y1, y); x2 = Math.max(x2, x); y2 = Math.max(y2, y);
   }
-  if (!Number.isFinite(x1)) return { strokes: [], width: 0, box: { x1: 0, y1: 0, x2: 0, y2: 0 } };
+  if (!Number.isFinite(x1)) return { strokes: [], width: 0, maxWidth: 0, box: { x1: 0, y1: 0, x2: 0, y2: 0 } };
 
   // First pass at a rough scale to measure the pen, then the real one.
   const measure = (scale) => {
@@ -588,10 +590,13 @@ export function penStrokes(commands, opts = {}) {
     if (!raw.length) continue;
     let pts = resample(raw, Math.max(1, strokePx * 0.35));
     pts = smooth(pts, 3);
-    pts = resample(pts, Math.max(1.5, strokePx * 0.7));
+    pts = resample(pts, Math.max(1.5, strokePx * (opts.coarse ?? 0.7)));
     const u = pts.map(toUnits);
     const length = len(u);
     strokes.push({ d: toPath(u.length > 1 && length < strokePx / scale * 0.6 ? [u[0]] : u), length: Math.max(1, length) });
   }
-  return { strokes, width: strokePx / scale, box: { x1, y1, x2, y2 } };
+  // The thickest parts of a high-contrast face are far wider than its median
+  // stroke; whatever draws over the letters needs to know how wide they get.
+  const heavy = Math.max(strokePx, (widths[Math.floor(widths.length * 0.97)] || strokePx / 2) * 2);
+  return { strokes, width: strokePx / scale, maxWidth: heavy / scale, box: { x1, y1, x2, y2 } };
 }

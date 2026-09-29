@@ -72,16 +72,25 @@ describe('partials', () => {
 })
 
 describe('handwriting', () => {
-  it('turns a script word into pen strokes with accessible text', () => {
+  it('turns a script word into drawn-on handwriting with accessible text', () => {
     const out: string = inkify('<h2>One tab, <span class="script">three moves</span></h2>')
     expect(out).toContain('class="ink-word"')
     expect(out).toContain('<span class="visually-hidden">three moves</span>')
     expect(out).toMatch(/<svg class="ink" viewBox="[-\d ]+"/)
-    // Strokes, in writing order, each normalised so it can be drawn on.
-    const strokes = out.match(/<path d="M[^"]+" pathLength="1" data-l="\d+"\/>/g) || []
-    expect(strokes.length).toBeGreaterThan(3)
+    // The letters are the typeface's own outline, drawn on through a mask
+    // that follows the pen's path, stroke by stroke.
+    expect(out).toMatch(/<path class="ink__letters" d="M[^"]+" fill="url\(#ink1g\)"[^>]*mask="url\(#ink1m\)"/)
+    const pen = out.match(/<path d="M[^"]+" pathLength="1" data-l="\d+"\/>/g) || []
+    expect(pen.length).toBeGreaterThan(1)
     expect(out).toContain('class="ink__pen"')
     expect(out).toContain('data-write')
+  })
+
+  it('keeps the app words in step with the hand', async () => {
+    const { buildWords, OUT } = await import('./scripts/hand-words.mjs')
+    const { readFileSync } = await import('node:fs')
+    // Regenerate with: node apps/web/scripts/hand-words.mjs
+    expect(readFileSync(OUT, 'utf8')).toBe(buildWords())
   })
 
   it('keeps the attributes a word was given, and scales on request', () => {
@@ -99,7 +108,7 @@ describe('handwriting', () => {
 
   it('gives every word on a page its own ids', () => {
     const out: string = inkify('<span class="script">a</span><span class="script">b</span>')
-    const ids = [...out.matchAll(/id="(ink\d+)i"/g)].map((m) => m[1])
+    const ids = [...out.matchAll(/id="(ink\d+)g"/g)].map((m) => m[1])
     expect(new Set(ids).size).toBe(2)
   })
 

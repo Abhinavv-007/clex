@@ -114,6 +114,13 @@ export class WebRTCTransfer {
   private readonly roomCode: string
 
   private profile: TransferProfile
+  /**
+   * A receiver never chooses the route: it starts from the code's route
+   * letter and, if the sender's room says otherwise, switches before any
+   * candidate is gathered. Only the receiver side does this; the sender's
+   * choice is what the signaling server hands out.
+   */
+  private followSender = false
   private signalingUnsubscribe: (() => void) | null = null
 
   // Sender state (legacy)
@@ -183,12 +190,14 @@ export class WebRTCTransfer {
     signalingUrl: string,
     roomCode: string,
     role: 'sender' | 'receiver',
-    profile: TransferProfile = 'webrtc'
+    profile: TransferProfile = 'webrtc',
+    options: { followSender?: boolean } = {}
   ) {
     this.signaling = new SignalingClient(signalingUrl, roomCode)
     this.roomCode = roomCode
     this.role = role
     this.profile = profile
+    this.followSender = role === 'receiver' && options.followSender === true
   }
 
   // ─── Public API ────────────────────────────────────────────────────────────
@@ -1547,12 +1556,12 @@ export class WebRTCTransfer {
       try {
         switch (event.type) {
           case 'joined':
-            this.profile = event.mode
+            this.adoptRoute(event.mode)
             this.logDiagnostic(`joined_${event.role}`)
             break
 
           case 'peer_joined':
-            this.profile = event.mode
+            this.adoptRoute(event.mode)
             if (event.peerChainId) {
               transferStore.setPeerChainId(event.peerChainId)
             }
@@ -1605,6 +1614,30 @@ export class WebRTCTransfer {
         this.failTransfer('Transfer negotiation failed unexpectedly.', 'signaling_event_error')
       }
     })
+  }
+
+  /**
+   * Takes the room's route from the signaling server. For a receiver that
+   * follows the sender, a different route also reconfigures the peer
+   * connection — safe here because nothing has been negotiated yet: the
+   * receiver only gathers candidates once the sender's offer arrives.
+   */
+  private adoptRoute(mode: TransferProfile): void {
+    if (mode !== 'webrtc' && mode !== 'local') return
+    const changed = mode !== this.profile
+    this.profile = mode
+    if (!changed) return
+    if (this.followSender) {
+      transferStore.syncMethod(mode)
+      if (this.pc && this.pc.signalingState === 'stable' && !this.pc.remoteDescription) {
+        try {
+          this.pc.setConfiguration(getRTCConfig(mode) as RTCConfiguration)
+          this.logDiagnostic(`route_followed_${mode}`)
+        } catch (err) {
+          console.warn('Could not switch the receiver to the sender route:', err)
+        }
+      }
+    }
   }
 
   private async createOfferIfNeeded(): Promise<void> {

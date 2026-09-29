@@ -35,7 +35,13 @@ export function planJoin(
     return { ok: false, code: 'ROOM_FULL' }
   }
 
-  const mode = currentMode ?? requestedMode ?? 'webrtc'
+  // The route is the sender's to choose. A receiver that got into the room
+  // first (or asked for a route of its own) does not get to set it: the
+  // sender's request replaces it, and both peers hear the result in
+  // peer_joined.
+  const mode = role === 'sender' && requestedMode
+    ? requestedMode
+    : currentMode ?? requestedMode ?? 'webrtc'
   const roomReadyBeforeJoin = isRoomReady(presence)
   const nextPresence = {
     ...presence,

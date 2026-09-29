@@ -1,6 +1,7 @@
 /* ==========================================================================
    Clex Link: nearby devices appear on the radar, you tap one, the file
-   goes, it is verified. Loops while on screen.
+   goes, it is verified and the Dynamic Island opens into a Live Activity
+   saying so. Loops while on screen.
    ========================================================================== */
 
 import { reducedMotion, sleep, whileVisible, tween } from './util.js';
@@ -8,9 +9,9 @@ import { reducedMotion, sleep, whileVisible, tween } from './util.js';
 /** @param {HTMLElement} root */
 export function initNearby(root) {
   const peers = (i) => root.querySelectorAll(`[data-peer="${i}"]`);
-  const screen = root.querySelector('.pixel__screen');
-  const touch = root.querySelector('.pixel__touch');
-  const bar = root.querySelector('.pixel__bar');
+  const screen = root.querySelector('.iphone__screen');
+  const touch = root.querySelector('.iphone__touch');
+  const bar = root.querySelector('.iphone__bar');
   const state = root.querySelector('[data-nearby-state]');
   const pct = root.querySelector('[data-nearby-pct]');
   const set = (el, t) => { if (el) el.textContent = t; };
@@ -45,8 +46,8 @@ export function initNearby(root) {
     if (!alive()) return;
 
     // Tap "Send" on Maya's phone.
-    const row = root.querySelector('.pixel__peers li[data-peer="0"]');
-    const btn = row?.querySelector('.pixel__send');
+    const row = root.querySelector('.iphone__peers li[data-peer="0"]');
+    const btn = row?.querySelector('.iphone__send');
     if (btn && touch instanceof HTMLElement && screen) {
       const s = screen.getBoundingClientRect();
       const b = btn.getBoundingClientRect();

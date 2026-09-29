@@ -138,17 +138,20 @@ function initSheet(nav) {
 
 /**
  * Links to the workspace scroll to it when it is on the current page, and
- * links to Vault switch the workspace into Vault mode first.
+ * links to Vault or to receiving switch the workspace into that mode first,
+ * so nothing sends the visitor off to another page.
  */
 export function initWorkspaceLinks() {
   const target = document.getElementById('workspace');
 
-  document.querySelectorAll('[data-scroll-workspace], [data-open-vault]').forEach((link) => {
+  document.querySelectorAll('[data-scroll-workspace], [data-open-vault], [data-open-receive]').forEach((link) => {
     link.addEventListener('click', (event) => {
       if (!target) return; // not on the landing page: follow the link
       event.preventDefault();
       if (link.hasAttribute('data-open-vault')) {
         window.dispatchEvent(new CustomEvent('clex:workspace-mode', { detail: { mode: 'vault' } }));
+      } else if (link.hasAttribute('data-open-receive')) {
+        window.dispatchEvent(new CustomEvent('clex:workspace-mode', { detail: { mode: 'receive' } }));
       }
       target.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'start' });
       history.replaceState(null, '', `${location.pathname}${location.search}#workspace`);

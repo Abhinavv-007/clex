@@ -39,6 +39,26 @@ describe('room-session', () => {
     })
   })
 
+  it('lets the sender set the route even when the receiver joined first', () => {
+    const receiverJoin = planJoin({ sender: 0, receiver: 0 }, 'receiver', 'webrtc', null)
+    expect(receiverJoin).toMatchObject({ ok: true, mode: 'webrtc' })
+
+    const senderJoin = planJoin({ sender: 0, receiver: 1 }, 'sender', 'local', 'webrtc')
+    expect(senderJoin).toEqual({
+      ok: true,
+      mode: 'local',
+      roomReady: true,
+      becameReady: true,
+    })
+  })
+
+  it('never lets a receiver change a route the sender already set', () => {
+    expect(planJoin({ sender: 1, receiver: 0 }, 'receiver', 'webrtc', 'local')).toMatchObject({
+      ok: true,
+      mode: 'local',
+    })
+  })
+
   it('rejects duplicate joins for the same role', () => {
     expect(planJoin({ sender: 1, receiver: 0 }, 'sender', null, 'webrtc')).toEqual({
       ok: false,

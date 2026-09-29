@@ -2,12 +2,13 @@
    Clex — the stream
 
    The hero's backdrop: a river of light made of file chunks (ink on the
-   bone stage in light mode). Tens of
-   thousands of points flow left to right along a ribbon that twists in 3D —
-   gold dust, a few pale motes, and brighter jade packets riding through
+   bone stage in light mode). Tens of thousands of points flow left to right
+   along a ribbon that twists in 3D — gold dust, a few pale motes, and
+   brighter jade packets, drawn as little rounded chunks, riding through
    faster. The ribbon narrows as it passes behind the headline and fans out
-   at the edges. The pointer parts the stream and lights it up; scrolling
-   draws it down toward the workspace below.
+   at the edges. It pours in from the left when the page opens, a wave of
+   light runs through it when the headline's word is written, the pointer
+   parts and swirls it, and scrolling draws it down toward the workspace.
 
    Every position is computed on the GPU from time, so the CPU does nothing
    per frame but set four uniforms. It pauses off screen and in background
@@ -29,6 +30,8 @@ uniform float u_pointerOn;
 uniform float u_center;
 uniform float u_gain;
 uniform float u_light;   // 1 on the bone stage: inked particles, not light
+uniform float u_intro;   // 0..1 as the river first pours in from the left
+uniform float u_wave;    // x of a wave of light running through the river
 varying vec4 v_color;
 varying float v_glow;
 
@@ -52,25 +55,36 @@ void main() {
   float persp = 1.0 / (1.35 - z * 1.1);
   vec2 pos = vec2(x, y) * persp;
 
-  // The pointer parts the stream and lights what it touches.
+  // The pointer parts the stream, swirls it and lights what it touches.
   vec2 d = pos - u_pointer;
   float near = exp(-dot(d, d) * 14.0) * u_pointerOn;
-  pos += normalize(d + 1e-4) * near * 0.09;
+  vec2 away = normalize(d + 1e-4);
+  pos += (away * 0.07 + vec2(-away.y, away.x) * 0.06) * near;
+
+  // A wave of light runs through when the headline's word is written.
+  float crest = exp(-pow((xn - u_wave) * 5.5, 2.0));
 
   gl_Position = vec4(pos.x / u_aspect, pos.y, 0.0, 1.0);
 
   float depth = clamp(z / max(width, 0.001) * 0.5 + 0.5, 0.0, 1.0);
   float edge = smoothstep(1.18, 0.78, abs(xn));
-  float size = a_p.w * persp * u_dpr * (1.0 + near * 1.6);
+  float chunk = a_kind > 2.5 && a_kind < 3.5 ? mix(1.0, 0.72, u_light) : 1.0;
+  float size = a_p.w * persp * u_dpr * chunk * (1.0 + near * 1.6 + crest * 1.1);
   gl_PointSize = size;
 
   vec3 gold = mix(vec3(0.86, 0.71, 0.45), vec3(0.62, 0.47, 0.2), u_light);
   vec3 jade = mix(vec3(0.55, 0.82, 0.66), vec3(0.16, 0.44, 0.31), u_light);
   vec3 bone = mix(vec3(0.95, 0.93, 0.89), vec3(0.42, 0.39, 0.34), u_light);
   vec3 c = a_kind < 0.5 ? gold : (a_kind < 1.5 ? jade : (a_kind < 2.5 ? bone : (a_kind < 3.5 ? mix(jade, bone, 0.35 * (1.0 - u_light)) : mix(gold, jade, fract(a_p.x * 7.3)))));
-  float a = a_kind < 0.5 ? 0.85 : (a_kind < 1.5 ? 1.0 : (a_kind < 2.5 ? 0.55 : (a_kind < 3.5 ? 1.0 : 0.07)));
+  float a = a_kind < 0.5 ? 0.85 : (a_kind < 1.5 ? 1.0 : (a_kind < 2.5 ? 0.55 : (a_kind < 3.5 ? mix(1.0, 0.7, u_light) : 0.07)));
   a *= mix(0.3, 1.0, depth) * edge * u_gain * mix(1.0, 0.72, u_light);
-  v_color = vec4(c + near * mix(0.35, -0.08, u_light), a * (1.0 + near * 1.4));
+  // Pouring in: nothing right of the front yet, and the front itself bright.
+  float front = mix(-1.4, 1.4, u_intro);
+  float poured = smoothstep(front + 0.04, front - 0.18, xn);
+  float lip = exp(-pow((xn - front) * 9.0, 2.0)) * (1.0 - u_intro);
+  a *= poured;
+  vec3 lit = c + (near + crest * 0.8 + lip) * mix(0.35, -0.1, u_light);
+  v_color = vec4(lit, a * (1.0 + near * 1.4 + crest * 0.9 + lip * 1.5));
   v_glow = a_kind > 2.5 && a_kind < 3.5 ? 1.0 : (a_kind > 3.5 ? -1.0 : 0.0);
 }
 `;
@@ -83,9 +97,19 @@ void main() {
   vec2 p = gl_PointCoord - 0.5;
   float r = length(p);
   float core = smoothstep(0.5, 0.0, r);
-  // Packets have a hot core and a wide halo; bokeh is a flat soft disc.
-  float soft = v_glow < -0.5 ? smoothstep(0.5, 0.3, r) : pow(core, v_glow > 0.5 ? 2.6 : 1.4);
-  gl_FragColor = vec4(v_color.rgb, v_color.a * soft);
+  float soft;
+  if (v_glow > 0.5) {
+    // Packets are file chunks: a small rounded square in a soft halo.
+    vec2 q = abs(p) - vec2(0.13);
+    float box = length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - 0.05;
+    soft = smoothstep(0.03, -0.02, box) + pow(core, 2.4) * 0.55;
+  } else if (v_glow < -0.5) {
+    // Bokeh: a flat soft disc.
+    soft = smoothstep(0.5, 0.3, r);
+  } else {
+    soft = pow(core, 1.4);
+  }
+  gl_FragColor = vec4(v_color.rgb, v_color.a * min(1.0, soft));
 }
 `;
 
@@ -136,6 +160,8 @@ export function initStream() {
     center: gl.getUniformLocation(program, 'u_center'),
     gain: gl.getUniformLocation(program, 'u_gain'),
     light: gl.getUniformLocation(program, 'u_light'),
+    intro: gl.getUniformLocation(program, 'u_intro'),
+    wave: gl.getUniformLocation(program, 'u_wave'),
   };
 
   // Light adds up on charcoal; on bone the particles are ink and must not.
@@ -169,6 +195,11 @@ export function initStream() {
   let visible = true;
   let raf = 0;
   const t0 = performance.now() - 14000; // start mid-flow, not from an empty river
+  // The river pours in from the left on arrival, once.
+  const born = performance.now();
+  const INTRO_MS = soft ? 1400 : 2300;
+  // And a wave of light runs through it when the headline's word is written.
+  let waveAt = -1;
 
   const draw = (now) => {
     const t = still ? 20 : (now - t0) / 1000;
@@ -183,6 +214,10 @@ export function initStream() {
     gl.uniform1f(u.center, soft ? -0.42 : -0.16);
     gl.uniform1f(u.gain, soft ? 0.8 : 1);
     gl.uniform1f(u.light, light);
+    const intro = still ? 1 : Math.min(1, (now - born) / INTRO_MS);
+    gl.uniform1f(u.intro, 1 - Math.pow(1 - intro, 3));
+    const wt = waveAt < 0 ? 9 : (now - waveAt) / 1000;
+    gl.uniform1f(u.wave, wt < 3 ? -1.5 + wt * 1.25 : 9);
     gl.drawArrays(gl.POINTS, 0, COUNT);
   };
 
@@ -219,6 +254,10 @@ export function initStream() {
   });
 
   const host = canvas.closest('section') || canvas;
+  host.addEventListener('clex:ink-written', () => {
+    waveAt = performance.now();
+    sync();
+  });
   if (window.matchMedia('(hover: hover)').matches) {
     host.addEventListener('pointermove', (event) => {
       const box = canvas.getBoundingClientRect();

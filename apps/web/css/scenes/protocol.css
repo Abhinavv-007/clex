@@ -97,8 +97,8 @@
   border: 1px solid var(--line-2);
   border-radius: var(--r-xl);
   background:
-    radial-gradient(ellipse 60% 50% at 50% 20%, rgba(143, 209, 169, 0.06), transparent 70%),
-    rgba(241, 237, 229, 0.025);
+    radial-gradient(ellipse 60% 50% at 50% 20%, var(--jade-wash), transparent 70%),
+    color-mix(in srgb, var(--ink) 2.5%, transparent);
 }
 
 .seq svg {
@@ -111,7 +111,7 @@
 }
 
 .seq__actor rect {
-  fill: rgba(241, 237, 229, 0.06);
+  fill: color-mix(in srgb, var(--ink) 6%, transparent);
   stroke: var(--line-2);
 }
 
@@ -196,23 +196,23 @@
 }
 
 .seq__msg--lost .seq__line {
-  stroke: #ef8a73;
+  stroke: var(--danger);
   stroke-dasharray: 1 1;
 }
 
 .seq__x {
-  stroke: #ef8a73;
+  stroke: var(--danger);
   stroke-width: 2.4;
   stroke-linecap: round;
 }
 
 .seq__sub--bad {
-  fill: #ef8a73;
+  fill: var(--danger);
 }
 
 .seq__msg--bad .seq__line,
 .seq__msg--bad .seq__head {
-  stroke: #ef8a73;
+  stroke: var(--danger);
 }
 
 .seq__flag {
@@ -221,7 +221,7 @@
 }
 
 .seq__flag-text {
-  fill: #ef8a73;
+  fill: var(--danger);
   font-size: 11px;
   text-anchor: middle;
 }

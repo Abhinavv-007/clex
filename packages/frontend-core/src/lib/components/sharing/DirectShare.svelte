@@ -7,6 +7,7 @@
   import { getSignalingBaseUrl } from '$transfer/signaling'
   import type { TransferProfile } from '$transfer/types'
   import { siteRoutes } from '$utils'
+  import { routeLetter, shareCode } from '$utils/crypto'
   import { formatBytes } from '$utils/format'
   import TransferProgress from './TransferProgress.svelte'
   import TransferControls from './TransferControls.svelte'
@@ -24,8 +25,11 @@
   $: state = $transferStore.state
   $: nearby = $transferStore.nearby
   $: transferProfile = (($transferStore.method === 'local' ? 'local' : 'webrtc') as TransferProfile)
-  // Room code comes from the store — generated once, persists across method tab switches
+  // The five random characters come from the store and stay the same when the
+  // route changes; the code (and the room) is the route letter plus those five.
   $: roomCode = $transferStore.roomCode ?? ''
+  $: letter = routeLetter(transferProfile)
+  $: code = shareCode(roomCode, transferProfile)
 
   onDestroy(() => {
     transfer?.destroy()
@@ -49,7 +53,7 @@
       blob: f.processed?.blob ?? f.file,
     }))
 
-    transfer = new WebRTCTransfer(signalingUrl, roomCode, 'sender', transferProfile)
+    transfer = new WebRTCTransfer(signalingUrl, code, 'sender', transferProfile)
     try {
       await transfer.initSender(transferFiles)
     } catch (err) {
@@ -80,7 +84,9 @@
       <!-- Room code -->
       <div class="ds-section">
         <p class="ds-label">Share this code with the receiver</p>
-        <div class="code-display">{roomCode}</div>
+        <div class="code-display" aria-label="Code {code}">
+          <span class="code-letter" title={transferProfile === 'local' ? 'L is for Local' : 'D is for Direct'}>{letter}</span>{roomCode}
+        </div>
       </div>
 
       <div class="ds-ready-summary">
@@ -121,7 +127,7 @@
       </div>
       <p class="ds-state-title">Waiting for receiver…</p>
       <p class="ds-state-sub">
-        Room code: <span class="code-inline">{roomCode}</span>
+        Code: <span class="code-inline">{code}</span>
       </p>
       <button class="btn-secondary ds-cancel-btn" on:click={reset}>Cancel</button>
     </div>
@@ -184,7 +190,11 @@
       </div>
       <p class="error-msg">{$transferStore.error}</p>
       <div class="error-tip">
-        Try <strong>Local</strong> mode if you are on the same network, or check that both devices can reach the signaling server.
+        {#if transferProfile === 'local'}
+          Local only connects on the same Wi-Fi. Switch to <strong>Direct</strong> if the other device is elsewhere, then share the new code.
+        {:else}
+          Check that both devices are online. On the same Wi-Fi, <strong>Local</strong> can connect where Direct cannot.
+        {/if}
       </div>
       <button class="btn-secondary ds-cancel-btn" on:click={reset}>Try again</button>
     </div>
@@ -292,10 +302,14 @@
 
   /* Code display */
   .code-display {
-    font-family: 'JetBrains Mono', 'Fira Code', monospace;
-    font-size: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-mono, 'JetBrains Mono', 'Fira Code', monospace);
+    font-size: clamp(18px, 1.6vw, 24px);
     font-weight: 700;
-    letter-spacing: 0.28em;
+    letter-spacing: 0.16em;
+    white-space: nowrap;
     color: var(--text-1);
     text-align: center;
     padding: 12px 16px;
@@ -304,6 +318,12 @@
     border-radius: 10px;
     text-transform: uppercase;
     user-select: all;
+  }
+
+  /* The route letter leads the code in the accent colour: part of the code,
+     and still readable as the route. */
+  .code-letter {
+    color: var(--accent);
   }
 
   /* Buttons */
@@ -503,7 +523,7 @@
 
     .code-display {
       font-size: 22px;
-      letter-spacing: 0.2em;
+      letter-spacing: 0.14em;
       padding: 11px 12px;
     }
 

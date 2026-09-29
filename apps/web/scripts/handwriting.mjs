@@ -1,32 +1,32 @@
 /**
  * Handwriting, at build time.
  *
- * Every <span class="script">word</span> in a page becomes that word written
- * with a pen: Sacramento, a monoline script, is traced down to the centre
- * line of each letter (scripts/skeleton.mjs) and the page gets those lines as
- * SVG strokes, in the order a hand would draw them, plus the plain text for
- * screen readers and search. js/ink.js then draws the strokes one after
- * another at an even pace, the way the word would be written, with no cursor
- * or nib: just the ink appearing.
+ * Every <span class="script">word</span> becomes that word set in an
+ * elegant high-contrast italic and written on, stroke by stroke, the way
+ * Apple writes "hello": one smooth pass of the pen, then it simply stays.
  *
- * Because the letters are strokes, the weight is ours to choose. They are
- * set a little heavier than the font so they read well at every size. The
- * ink is a jade-to-gold gradient taken from theme tokens, so it stays
- * readable on bone and on charcoal alike.
+ * The letters are Bodoni Moda Italic (Indestructible Type, SIL OFL), so the
+ * shapes are exact. To write them on, the word's outline is traced down to
+ * the line a pen would follow through it (scripts/skeleton.mjs); that line,
+ * stroked wide enough to cover the heaviest part of a letter, is a mask over
+ * the letters, and js/ink.js grows it along its length. What you see is the
+ * typeface itself appearing in writing order.
  *
- * Built here so the browser downloads no font and no font parser for the
- * effect: the strokes are already paths in the HTML.
+ * Built here so the browser downloads no font and no parser for the effect:
+ * the letters and their pen path are already SVG in the HTML. The same
+ * markup feeds the apps (words.json, written by scripts/hand-words.mjs).
  */
 import { readFileSync } from 'node:fs';
 import opentype from 'opentype.js';
 import { penStrokes } from './skeleton.mjs';
 
-const FONT_PATH = new URL('../fonts/Sacramento-Regular.ttf', import.meta.url);
+const FONT_PATH = new URL('../fonts/BodoniModa-Italic.ttf', import.meta.url);
 
-/** How much larger the script sets than the text around it. */
-const DEFAULT_SCALE = 1.6;
-/** Pen weight relative to the font's own stroke. */
-const WEIGHT = 1.32;
+/** Size relative to the surrounding text. */
+const DEFAULT_SCALE = 1.3;
+/** The mask's pen, as a share of the heaviest stroke in the word: wide
+ *  enough to uncover every edge, narrow enough not to run ahead. */
+const MASK = 1.3;
 
 let font;
 function getFont() {
@@ -37,13 +37,14 @@ function getFont() {
   return font;
 }
 
-/** Tracing a word is the slow part; each distinct word is traced once. */
+/** Tracing a phrase is the slow part; each distinct phrase is traced once. */
 const traced = new Map();
 function trace(text) {
   if (!traced.has(text)) {
     const f = getFont();
     const path = f.getPath(text, 0, 0, f.unitsPerEm, { kerning: true });
-    traced.set(text, penStrokes(path.commands));
+    const pen = penStrokes(path.commands, { pxPerStroke: 12, coarse: 1.8 });
+    traced.set(text, { outline: path.toPathData(0), ...pen });
   }
   return traced.get(text);
 }
@@ -53,13 +54,13 @@ function decode(s) {
   return s
     .replace(/&nbsp;/g, ' ')
     .replace(/&amp;/g, '&')
-    .replace(/&#39;|&apos;/g, "'")
+    .replace(/&#39;|&apos;|&rsquo;|’/g, "'")
     .replace(/&quot;/g, '"');
 }
 
 /** @param {string} s */
 function escapeHtml(s) {
-  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
 /** @param {number} n */
@@ -75,39 +76,31 @@ export function inkWord(text, opts) {
   const f = getFont();
   const upm = f.unitsPerEm;
   const scale = opts.scale ?? DEFAULT_SCALE;
-  const { strokes, width, box } = trace(text);
+  const { outline, strokes, width, maxWidth, box } = trace(text);
   if (!strokes.length) return escapeHtml(text);
 
-  const pen = width * WEIGHT;
-  const pad = pen;
-  const left = Math.min(0, box.x1) - pad;
-  const right = Math.max(f.getAdvanceWidth(text, upm, { kerning: true }), box.x2) + pad;
-  const top = Math.min(-upm * 0.5, box.y1) - pad;
-  const bottom = Math.max(upm * 0.12, box.y2 + pad);
+  const pad = maxWidth;
+  const left = box.x1 - pad;
+  const top = Math.min(box.y1, -upm * 0.5) - pad;
+  const right = box.x2 + pad;
+  const bottom = Math.max(box.y2, upm * 0.1) + pad;
   const w = right - left;
   const h = bottom - top;
 
   const k = scale / upm;
-  // Ascenders and descenders may reach past the text around it but must not
-  // push the lines of a heading apart.
+  // Loops and descenders may reach past the line but must not push the lines
+  // of a heading apart, so the box is pulled back by negative margins.
   const above = -top * k;
   const below = bottom * k;
-  const marginTop = Math.min(0, 1.08 - above);
-  const marginBottom = Math.min(0, 0.42 - below);
-  // The ink's own edges, which reach past the letters' outlines by the extra
-  // pen weight, are what should sit next to the words around it.
-  const spill = (pen - width) / 2;
-  const marginLeft = (left - (box.x1 - spill)) * k + 0.05;
-  const marginRight = ((box.x2 + spill) - right) * k + 0.03;
-
   const style = [
     `width:${em(w * k)}`,
     `height:${em(h * k)}`,
     `vertical-align:${em(-below)}`,
-    `margin:${em(marginTop)} ${em(marginRight)} ${em(marginBottom)} ${em(marginLeft)}`,
+    `margin:${em(Math.min(0, 0.95 - above))} ${em(-pad * k + 0.04)} ${em(Math.min(0, 0.28 - below))} ${em(-pad * k + 0.08)}`,
   ].join(';');
 
-  const paths = strokes
+  const id = opts.uid;
+  const pen = strokes
     .map((s) => `<path d="${s.d}" pathLength="1" data-l="${r0(s.length)}"/>`)
     .join('');
 
@@ -115,10 +108,13 @@ export function inkWord(text, opts) {
   return `<span class="${cls}"${opts.attrs ?? ''}>`
     + `<span class="visually-hidden">${escapeHtml(text)}</span>`
     + `<svg class="ink" viewBox="${r0(left)} ${r0(top)} ${r0(w)} ${r0(h)}" style="${style}" aria-hidden="true" focusable="false">`
-    + `<defs><linearGradient id="${opts.uid}i" gradientUnits="userSpaceOnUse" x1="${r0(box.x1)}" y1="0" x2="${r0(box.x2)}" y2="0">`
+    + `<defs><linearGradient id="${id}g" gradientUnits="userSpaceOnUse" x1="${r0(box.x1)}" y1="0" x2="${r0(box.x2)}" y2="0">`
     + '<stop offset="0" class="ink__a"/><stop offset="0.55" class="ink__b"/><stop offset="1" class="ink__c"/>'
-    + '</linearGradient></defs>'
-    + `<g class="ink__pen" stroke="url(#${opts.uid}i)" stroke-width="${r0(pen)}">${paths}</g>`
+    + '</linearGradient>'
+    + `<mask id="${id}m" maskUnits="userSpaceOnUse" x="${r0(left)}" y="${r0(top)}" width="${r0(w)}" height="${r0(h)}">`
+    + `<g class="ink__pen" fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round" stroke-width="${r0(Math.max(width * 2, maxWidth * MASK))}">${pen}</g>`
+    + '</mask></defs>'
+    + `<path class="ink__letters" d="${outline}" fill="url(#${id}g)" mask="url(#${id}m)"/>`
     + '</svg></span>';
 }
 
