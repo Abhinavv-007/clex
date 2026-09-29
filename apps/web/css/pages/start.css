@@ -81,7 +81,7 @@
 
 .gs-step h3 {
   font-size: clamp(1.7rem, 1.2rem + 1.6vw, 2.5rem);
-  letter-spacing: -0.04em;
+  letter-spacing: -0.026em;
   line-height: 1.05;
 }
 

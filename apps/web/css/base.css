@@ -73,23 +73,6 @@ body::before {
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.45  0 0 0 0 0.4  0 0 0 0 0.32  0 0 0 0.09 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
 }
 
-/* The ambient field (js/ambient.js): motes behind every section below the
-   hero. Above the grain, below the content. */
-canvas.ambient {
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 1200ms var(--ease);
-}
-
-canvas.ambient.is-live {
-  opacity: 1;
-}
-
 /* Lift content above the grain. :where() keeps this at zero specificity so
    any component that positions itself (the fixed nav, toasts) still wins. */
 :where(body > *) {
@@ -209,6 +192,18 @@ h4 {
   text-wrap: balance;
 }
 
+/* Headings are set in the heading face; h4 stays with the interface. */
+h1,
+h2,
+h3 {
+  font-family: var(--font-heading);
+}
+
+h1,
+h2 {
+  font-weight: 700;
+}
+
 h1 {
   font-size: var(--fs-h1);
   line-height: var(--lh-tight);
@@ -318,6 +313,7 @@ p {
    class the app sets on the element still wins. */
 
 :where(.app-scope) :is(h1, h2, h3, h4, h5, h6) {
+  font-family: inherit;
   font-size: inherit;
   font-weight: inherit;
   letter-spacing: inherit;

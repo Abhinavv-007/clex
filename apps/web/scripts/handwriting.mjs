@@ -1,16 +1,18 @@
 /**
  * Handwriting, at build time.
  *
- * Every <span class="script">word</span> becomes that word set in an
- * elegant high-contrast italic and written on, stroke by stroke, the way
- * Apple writes "hello": one smooth pass of the pen, then it simply stays.
+ * Every <span class="script">word</span> becomes that word in a connected
+ * script, written on stroke by stroke the way Apple writes "hello": one
+ * smooth pass of the pen, then it simply stays.
  *
- * The letters are Bodoni Moda Italic (Indestructible Type, SIL OFL), so the
- * shapes are exact. To write them on, the word's outline is traced down to
- * the line a pen would follow through it (scripts/skeleton.mjs); that line,
- * stroked wide enough to cover the heaviest part of a letter, is a mask over
- * the letters, and js/ink.js grows it along its length. What you see is the
- * typeface itself appearing in writing order.
+ * The letters are Norican (Vernon Adams, SIL OFL), a joined script with a
+ * steady, fairly heavy stroke, so it holds its own beside the bold heading
+ * face and sits on the same baseline. To write it on, the word's outline is
+ * traced down to the line a pen would follow through it
+ * (scripts/skeleton.mjs); that line, stroked wide enough to cover the
+ * heaviest part of a letter, is a mask over the letters, and js/ink.js grows
+ * it along its length. What you see is the typeface itself appearing in
+ * writing order, and because the letters join, the pen rarely lifts.
  *
  * Built here so the browser downloads no font and no parser for the effect:
  * the letters and their pen path are already SVG in the HTML. The same
@@ -20,10 +22,12 @@ import { readFileSync } from 'node:fs';
 import opentype from 'opentype.js';
 import { penStrokes } from './skeleton.mjs';
 
-const FONT_PATH = new URL('../fonts/BodoniModa-Italic.ttf', import.meta.url);
+const FONT_PATH = new URL('../fonts/Norican-Regular.ttf', import.meta.url);
 
-/** Size relative to the surrounding text. */
-const DEFAULT_SCALE = 1.3;
+/** Size relative to the surrounding text. At 1.2 Norican's x-height (0.42em)
+ *  lands just under the heading face's (0.53em) and its loops rise above
+ *  the capitals, which is where a script reads as the same line of text. */
+const DEFAULT_SCALE = 1.2;
 /** The mask's pen, as a share of the heaviest stroke in the word: wide
  *  enough to uncover every edge, narrow enough not to run ahead. */
 const MASK = 1.3;

@@ -1,0 +1,169 @@
+/* ==========================================================================
+   The rail (js/rail.js): a page's sections as chunk groups down the right
+   edge. Cells fill jade as a section is read and turn gold once it is
+   passed. Names appear on hover or focus; on very wide screens the current
+   one stays visible.
+   ========================================================================== */
+
+.rail {
+  position: fixed;
+  top: 50%;
+  right: clamp(12px, 1.4vw, 26px);
+  z-index: 50;
+  display: none;
+  transform: translate3d(12px, -50%, 0);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 500ms var(--ease), transform 700ms var(--ease-out);
+}
+
+@media (min-width: 1180px) and (min-height: 560px) {
+  .rail {
+    display: grid;
+    justify-items: end;
+    gap: 12px;
+  }
+}
+
+.rail.is-shown {
+  opacity: 1;
+  transform: translate3d(0, -50%, 0);
+  pointer-events: auto;
+}
+
+.rail__list {
+  display: grid;
+  gap: 9px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rail__group {
+  position: relative;
+  display: flex;
+  justify-content: flex-end;
+  padding: 2px 4px;
+  margin: -2px -4px;
+  border-radius: 6px;
+  color: var(--ink-3);
+  text-decoration: none;
+  outline-offset: 2px;
+}
+
+.rail__cells {
+  display: grid;
+  gap: 3px;
+}
+
+.rail__cells i {
+  display: block;
+  width: 7px;
+  height: 7px;
+  border-radius: 2px;
+  box-shadow: inset 0 0 0 1px var(--line-2);
+  transition: background-color 380ms var(--ease), box-shadow 380ms var(--ease), transform 380ms var(--ease-out);
+}
+
+.rail__cells i.is-in {
+  background: var(--jade);
+  box-shadow: none;
+}
+
+.rail__group.is-done .rail__cells i {
+  background: var(--gold);
+  box-shadow: none;
+  opacity: 0.75;
+}
+
+.rail__group.is-now .rail__cells i.is-in:last-of-type,
+.rail__group.is-now .rail__cells i.is-in:has(+ i:not(.is-in)) {
+  transform: scale(1.25);
+}
+
+/* The name, to the left of its group. */
+.rail__label {
+  position: absolute;
+  top: 50%;
+  right: calc(100% + 10px);
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 5px 9px;
+  border-radius: 8px;
+  background: var(--glass-strong, var(--surface));
+  box-shadow: var(--shadow-1), inset 0 0 0 1px var(--line);
+  backdrop-filter: blur(10px);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.2;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  color: var(--ink-2);
+  opacity: 0;
+  transform: translate3d(6px, -50%, 0);
+  pointer-events: none;
+  transition: opacity 240ms var(--ease), transform 320ms var(--ease-out);
+}
+
+.rail__num {
+  color: var(--ink-4, var(--ink-3));
+}
+
+.rail__group.is-now .rail__num {
+  color: var(--jade);
+}
+
+.rail:hover .rail__label,
+.rail:focus-within .rail__label {
+  opacity: 1;
+  transform: translate3d(0, -50%, 0);
+}
+
+.rail__group:hover .rail__label,
+.rail__group:focus-visible .rail__label {
+  color: var(--ink);
+}
+
+.rail__group:hover .rail__cells i:not(.is-in) {
+  box-shadow: inset 0 0 0 1px var(--line-3);
+}
+
+/* With a wide margin, the current section's name stays out. */
+@media (min-width: 1560px) {
+  .rail__group.is-now .rail__label {
+    opacity: 1;
+    transform: translate3d(0, -50%, 0);
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
+  }
+
+  .rail:hover .rail__group.is-now .rail__label {
+    background: var(--glass-strong, var(--surface));
+    box-shadow: var(--shadow-1), inset 0 0 0 1px var(--line);
+  }
+}
+
+.rail__read {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-3);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rail,
+  .rail__cells i,
+  .rail__label {
+    transition: none;
+  }
+}
+
+@media print {
+  .rail {
+    display: none !important;
+  }
+}

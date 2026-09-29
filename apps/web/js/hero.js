@@ -1,6 +1,7 @@
 /* ==========================================================================
    Clex — landing hero extras. The headline's handwriting is js/ink.js; the
-   particle stream is js/stream.js. This is the workspace's rise.
+   particle stream behind it is js/stream.js and the chunk
+   manifest around it js/manifest.js. This is the workspace's rise.
    ========================================================================== */
 
 import { reducedMotion } from './motion.js';

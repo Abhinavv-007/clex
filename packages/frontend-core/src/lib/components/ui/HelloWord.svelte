@@ -1,7 +1,7 @@
 <script lang="ts">
   /**
    * A handwritten word inside the apps, in the same hand the site draws
-   * (Bodoni Moda Italic, written on like Apple's "hello"). The markup is built ahead
+   * (Norican, a joined script, written on like Apple's "hello"). The markup is built ahead
    * of time by apps/web/scripts/hand-words.mjs into hand/words.json; a word
    * not in that list falls back to plain text. It writes itself when it
    * appears, and again when the text changes.

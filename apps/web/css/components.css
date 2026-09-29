@@ -649,7 +649,8 @@ html.theme-switching .nav {
 
 /* ── Stage heads ────────────────────────────────────────────────────────────
    Every page opens on the same stage: inset from the page edges, with the
-   particle stream (js/stream.js) running behind the title and the title's
+   particle stream (js/stream.js) running behind the title, the chunk
+   manifest (js/manifest.js) filling the margins around it, and the title's
    handwritten word writing itself. It follows the theme: a warm bone panel
    with inked particles in light mode, charcoal with glowing ones in dark.
    The landing hero is the tallest of them. */
@@ -678,7 +679,7 @@ html.theme-switching .nav {
 .stream-canvas {
   position: absolute;
   inset: 0;
-  z-index: -2;
+  z-index: -3;
   width: 100%;
   height: 100%;
   opacity: 0;
@@ -689,11 +690,12 @@ html.theme-switching .nav {
   opacity: 1;
 }
 
-/* Keeps the headline clear of the busiest part of the stream. */
+/* Keeps the headline clear of the busiest part of the stream. The chunk
+   manifest sits above both, in the margins. */
 .stream-veil {
   position: absolute;
   inset: 0;
-  z-index: -1;
+  z-index: -2;
   pointer-events: none;
   background:
     radial-gradient(ellipse 34% 30% at 50% 40%, rgba(248, 245, 239, 0.72), transparent 72%),
@@ -704,6 +706,21 @@ html.theme-switching .nav {
   background:
     radial-gradient(ellipse 34% 30% at 50% 40%, rgba(12, 12, 11, 0.6), transparent 72%),
     linear-gradient(180deg, rgba(12, 12, 11, 0.35), transparent 22%, transparent 78%, rgba(12, 12, 11, 0.5));
+}
+
+.manifest-canvas {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 1200ms var(--ease);
+}
+
+.manifest-canvas.is-live {
+  opacity: 1;
 }
 
 .page-head {
@@ -764,18 +781,6 @@ html.theme-switching .nav {
 
 [data-theme='dark'] .page-head .ink-word {
   filter: drop-shadow(0 0 22px rgba(95, 170, 130, 0.3));
-}
-
-/* The circuit field canvas: the 2D fallback when WebGL is missing. */
-.field {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  -webkit-mask-image: radial-gradient(ellipse 80% 70% at 50% 40%, #000 35%, transparent 80%);
-  mask-image: radial-gradient(ellipse 80% 70% at 50% 40%, #000 35%, transparent 80%);
 }
 
 /* ── Dark tone ─────────────────────────────────────────────────────────────
@@ -1118,8 +1123,9 @@ html.theme-switching .nav {
 }
 
 .footer__line {
+  font-family: var(--font-heading);
   font-size: clamp(1.8rem, 1.2rem + 2.4vw, 3.2rem);
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: var(--track-tight);
   line-height: 1.1;
 }
@@ -1263,9 +1269,10 @@ html.theme-switching .nav {
   margin-top: -0.04em;
   margin-bottom: -0.3em;
   text-align: center;
+  font-family: var(--font-heading);
   font-size: clamp(8rem, 30vw, 26rem);
   font-weight: 600;
-  letter-spacing: -0.07em;
+  letter-spacing: -0.05em;
   line-height: 0.9;
   color: transparent;
   -webkit-text-stroke: 1px var(--gold-line);

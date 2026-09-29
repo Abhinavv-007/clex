@@ -27,25 +27,21 @@ document.addEventListener('DOMContentLoaded', async () => {
   initStorageNotice();
 
   // Decoration loads after the page is interactive and never blocks it.
-  if (document.querySelector('canvas[data-field]')) {
-    import('./field.js').then((m) => m.initFields());
-  }
+  // The particle stream runs behind the headline (where WebGL is missing
+  // the page head simply goes without it) and the chunk manifest fills the
+  // margins around it.
   if (document.querySelector('canvas[data-stream]')) {
-    // The WebGL stream; where WebGL is missing, the 2D circuit field instead.
-    import('./stream.js').then(async (m) => {
-      if (m.initStream()) return;
-      const canvas = document.querySelector('canvas[data-stream]');
-      canvas?.setAttribute('data-field', 'hero');
-      canvas?.classList.add('is-live');
-      (await import('./field.js')).initFields();
-    });
+    import('./stream.js').then((m) => m.initStream());
+  }
+  if (document.querySelector('canvas[data-manifest]')) {
+    import('./manifest.js').then((m) => m.initManifest());
   }
   if (page === 'home') {
     import('./hero.js').then((m) => m.initHero());
   }
-  // The dust the sections sit in, on the pages people read rather than use.
+  // The section rail, on the pages people read rather than use.
   if (['home', 'features', 'how-it-works', 'chain', 'developers', 'getting-started', 'faq'].includes(page)) {
-    import('./ambient.js').then((m) => m.initAmbient());
+    import('./rail.js').then((m) => m.initRail());
   }
   import('./scenes/index.js').then((m) => {
     if (document.querySelector(m.SCENE_SELECTOR)) m.initScenes();

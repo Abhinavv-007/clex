@@ -49,9 +49,10 @@
 
 .numbers dd {
   margin: 0;
+  font-family: var(--font-heading);
   font-size: clamp(2.4rem, 1.6rem + 3vw, 4.2rem);
   font-weight: 600;
-  letter-spacing: -0.05em;
+  letter-spacing: -0.034em;
   line-height: 1;
   background: linear-gradient(180deg, var(--ink), color-mix(in srgb, var(--ink) 55%, var(--jade)));
   -webkit-background-clip: text;
@@ -659,9 +660,10 @@
 
 .head-stats dd {
   margin: 0;
+  font-family: var(--font-heading);
   font-size: clamp(1.8rem, 1.3rem + 2vw, 2.8rem);
   font-weight: 600;
-  letter-spacing: -0.04em;
+  letter-spacing: -0.028em;
   font-variant-numeric: tabular-nums;
 }
 
