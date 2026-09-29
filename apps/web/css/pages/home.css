@@ -3,8 +3,9 @@
    ========================================================================== */
 
 /* ── Hero ─────────────────────────────────────────────────────────────────
-   A dark stage, inset from the page edges, dark in both themes: the one
-   cinematic moment. The stream (js/stream.js) runs behind the headline. */
+   The tallest stage head: inset from the page edges, with the particle
+   stream (js/stream.js) running behind the headline and files arriving
+   chunk by chunk in the margins around it (js/manifest.js). */
 
 .hero {
   display: grid;
@@ -44,9 +45,9 @@
 
 .hero__title {
   font-size: var(--fs-display);
-  line-height: 0.96;
-  letter-spacing: -0.055em;
-  font-weight: 600;
+  line-height: 0.94;
+  letter-spacing: -0.032em;
+  font-weight: 700;
   color: var(--ink);
 }
 
@@ -439,7 +440,7 @@
 
 .flow__step h3 {
   font-size: clamp(2.1rem, 1.5rem + 2.2vw, 3.3rem);
-  letter-spacing: -0.045em;
+  letter-spacing: -0.028em;
   line-height: 1;
 }
 

@@ -13,6 +13,9 @@
   /* ── Type ─────────────────────────────────────────────────────────────── */
   --font-sans: 'Geist', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  /* Headings: a variable grotesk whose optical size tightens it as it grows,
+     heavy enough to carry the handwriting beside it. */
+  --font-heading: 'Bricolage Grotesque', var(--font-sans);
   /* Handwriting is drawn, never set as type: every script word is the Clex
      hand (frontend-core/src/lib/hand). This is only the fallback for the
      rare place that still asks for a cursive face. */
@@ -34,8 +37,8 @@
   --lh-snug: 1.2;
   --lh-body: 1.6;
 
-  --track-tight: -0.035em;
-  --track-display: -0.05em;
+  --track-tight: -0.022em;
+  --track-display: -0.03em;
   --track-caps: 0.12em;
 
   /* ── Space & shape ────────────────────────────────────────────────────── */

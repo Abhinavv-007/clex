@@ -12,8 +12,9 @@
 
    Every position is computed on the GPU from time, so the CPU does nothing
    per frame but set four uniforms. It pauses off screen and in background
-   tabs, renders one still frame under reduced motion, and falls back to the
-   2D circuit field where WebGL is unavailable.
+   tabs and renders one still frame under reduced motion. Where WebGL is
+   unavailable the canvas stays empty and the chunk manifest (js/manifest.js)
+   carries the page head on its own.
    ========================================================================== */
 
 import { reducedMotion } from './motion.js';

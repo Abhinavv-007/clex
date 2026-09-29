@@ -2,7 +2,7 @@
    Clex — the pen
 
    Writes every handwritten word on the site, the way Apple writes "hello".
-   The markup from scripts/handwriting.mjs is the word in Bodoni Moda Italic with
+   The markup from scripts/handwriting.mjs is the word in Norican, a joined script, with
    the pen's path as a mask; the pen (frontend-core/hand/pen.js) draws that
    path on in one smooth pass when the word comes into view, and then the
    word just stays.

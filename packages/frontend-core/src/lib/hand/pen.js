@@ -6,12 +6,12 @@
  * cursor, no glint, nothing that keeps moving.
  */
 
-/** Pen speed, in font units per millisecond. "control" takes about 1.9 s. */
-const SPEED = 5.4;
+/** Pen speed, in font units per millisecond. "control" takes about 1.6 s. */
+const SPEED = 10.5;
 const MIN_MS = 900;
-const MAX_MS = 3200;
+const MAX_MS = 2600;
 /** A pen lift between strokes, in font units of travel. */
-const LIFT = 110;
+const LIFT = 60;
 
 const reduced = () =>
   typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;

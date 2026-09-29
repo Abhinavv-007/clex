@@ -27,10 +27,11 @@
 
 .statement__text {
   max-width: 19em;
+  font-family: var(--font-heading);
   font-size: clamp(1.9rem, 1rem + 3.4vw, 4.3rem);
-  font-weight: 600;
+  font-weight: 700;
   line-height: 1.1;
-  letter-spacing: -0.045em;
+  letter-spacing: -0.026em;
   text-align: center;
   text-wrap: balance;
 }

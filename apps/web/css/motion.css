@@ -39,33 +39,52 @@
   filter: none;
 }
 
-/* ── Words that rise into place ───────────────────────────────────────────
-   js/motion.js wraps each word of a [data-split] heading in two spans; the
-   inner one rises out of the outer one's clip. */
+/* ── Headings that set themselves ─────────────────────────────────────────
+   js/motion.js wraps each word of a [data-split] heading in a .split-word.
+   Words arrive one after another: each rises a little out of a soft focus
+   while a feathered edge sweeps across it left to right, so it reads as
+   being set letter by letter without splitting the letters (which would
+   lose the face's kerning). There is no clipping box, so every word keeps
+   its own baseline and sits level with the handwriting beside it. The
+   padding lets descenders and overhangs sit inside the mask. */
 
 .split-word {
   display: inline-block;
-  overflow: hidden;
-  vertical-align: bottom;
-  padding-bottom: 0.08em;
-  margin-bottom: -0.08em;
+  padding: 0.14em 0.08em 0.24em;
+  margin: -0.14em -0.08em -0.24em;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translate3d(0, 0.28em, 0);
+  filter: blur(0.08em);
+  -webkit-mask-image: linear-gradient(100deg, #000 42%, transparent 58%);
+  mask-image: linear-gradient(100deg, #000 42%, transparent 58%);
+  -webkit-mask-size: 280% 100%;
+  mask-size: 280% 100%;
+  -webkit-mask-position: 100% 0;
+  mask-position: 100% 0;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  transition:
+    opacity 600ms var(--ease-out),
+    transform 1150ms var(--ease-out),
+    filter 1000ms var(--ease-out),
+    -webkit-mask-position 1250ms cubic-bezier(0.45, 0, 0.2, 1),
+    mask-position 1250ms cubic-bezier(0.45, 0, 0.2, 1);
+  transition-delay: calc(var(--w, 0) * 85ms + var(--d, 0) * 1ms);
 }
 
-.split-word > span {
-  display: inline-block;
-  transform: translate3d(0, 105%, 0);
-  transition: transform 1000ms var(--ease-out);
-  transition-delay: calc(var(--w, 0) * 70ms + var(--d, 0) * 1ms);
-}
-
-.is-in .split-word > span,
-.split-word.is-in > span {
+.is-in .split-word,
+.split-word.is-in {
+  opacity: 1;
   transform: none;
+  filter: none;
+  -webkit-mask-position: 0 0;
+  mask-position: 0 0;
 }
 
 /* ── Handwriting ──────────────────────────────────────────────────────────
-   Every handwritten word is Bodoni Moda Italic (built into the page
-   by scripts/handwriting.mjs) under a mask that follows the pen's path;
+   Every handwritten word is Norican, a connected script (built into the
+   page by scripts/handwriting.mjs), under a mask that follows the pen's path;
    js/ink.js draws that path on, so the word is written in one smooth pass
    like Apple's "hello". The ink is a jade-to-gold gradient from the theme's
    --script-* tokens. Unwritten, a word is invisible; without JS or with
@@ -134,8 +153,12 @@ html:not(.js) .ink__letters {
     transition: opacity 300ms linear;
   }
 
-  .split-word > span {
+  .split-word {
+    opacity: 1;
     transform: none;
+    filter: none;
+    -webkit-mask: none;
+    mask: none;
     transition: none;
   }
 

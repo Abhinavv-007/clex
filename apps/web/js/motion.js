@@ -100,9 +100,10 @@ function initStagger(root) {
 /* ── Split headings ─────────────────────────────────────────────────────── */
 
 /**
- * Wraps each word in `.split-word > span` so it can rise out of its own clip.
- * Inline elements inside the heading (a .script accent, a <br>) are kept as
- * they are; a <br> stays a line break and an element counts as one word.
+ * Wraps each word in a `.split-word`, numbered so the words arrive in
+ * reading order. Inline elements inside the heading (a .script accent, a
+ * <br>) are kept as they are; a <br> stays a line break and any other
+ * element counts as one word.
  */
 function initSplit(root) {
   root.querySelectorAll('[data-split]').forEach((el) => {
@@ -113,14 +114,12 @@ function initSplit(root) {
 
     let index = 0;
     const wrap = (/** @type {Node} */ node) => {
-      const outer = document.createElement('span');
-      outer.className = 'split-word';
-      outer.setAttribute('aria-hidden', 'true');
-      const inner = document.createElement('span');
-      inner.style.setProperty('--w', String(index++));
-      outer.append(inner);
-      inner.append(node);
-      return outer;
+      const span = document.createElement('span');
+      span.className = 'split-word';
+      span.setAttribute('aria-hidden', 'true');
+      span.style.setProperty('--w', String(index++));
+      span.append(node);
+      return span;
     };
 
     for (const node of [...el.childNodes]) {
@@ -134,9 +133,9 @@ function initSplit(root) {
         }
         node.replaceWith(frag);
       } else if (node instanceof HTMLElement && node.classList.contains('ink-word')) {
-        // Handwriting is not clipped into a rising word: its flourishes
-        // reach past the line. It writes itself once its line has risen.
-        if (!node.dataset.delay) node.dataset.delay = String(index * 70 + 420);
+        // Handwriting is written, not set: the pen starts once the words
+        // before it are nearly in place.
+        if (!node.dataset.delay) node.dataset.delay = String(index * 85 + 520);
       } else if (node instanceof HTMLElement && node.tagName !== 'BR') {
         node.replaceWith(wrap(node.cloneNode(true)));
       }
