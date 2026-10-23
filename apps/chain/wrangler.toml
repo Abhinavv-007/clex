@@ -18,6 +18,12 @@ binding = "DB"
 database_name = "clex-chain"
 database_id = "b2a1c87d-ae8d-4d92-957d-b04fa74c15b0"
 
+# The api worker's KV namespace (DRIVE_SESSION_STORE there), bound here only
+# to read clex.in/admin console sessions. See src/adminSession.ts.
+[[kv_namespaces]]
+binding = "ADMIN_SESSIONS"
+id = "eea542853aed48cb94933b5ec022e35d"
+
 [vars]
 ALLOWED_ORIGIN = "*"
 
@@ -38,6 +44,10 @@ new_sqlite_classes = ["ChainLedger"]
 binding = "DB"
 database_name = "clex-chain"
 database_id = "b2a1c87d-ae8d-4d92-957d-b04fa74c15b0"
+
+[[env.production.kv_namespaces]]
+binding = "ADMIN_SESSIONS"
+id = "eea542853aed48cb94933b5ec022e35d"
 
 [[env.production.routes]]
 pattern = "clex.in/chain/*"

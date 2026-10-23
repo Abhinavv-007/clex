@@ -336,6 +336,8 @@ export default defineConfig({
     proxy: {
       ...(process.env.CLEX_VAULT_ORIGIN ? { '/vault/api': { target: process.env.CLEX_VAULT_ORIGIN, changeOrigin: true } } : {}),
       ...(process.env.CLEX_CHAIN_ORIGIN ? { '/chain/': { target: process.env.CLEX_CHAIN_ORIGIN, changeOrigin: true } } : {}),
+      // The admin console's sign-in and sessions, e.g. CLEX_API_ORIGIN=http://127.0.0.1:8788
+      ...(process.env.CLEX_API_ORIGIN ? { '/api/': { target: process.env.CLEX_API_ORIGIN, changeOrigin: true } } : {}),
     },
   },
   preview: {

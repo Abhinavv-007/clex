@@ -326,7 +326,14 @@
     html = html.replace(/==(.+?)==/g, '<mark class="ve-mark">$1</mark>')
 
     // Links
-    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="ve-link" target="_blank" rel="noopener">$1</a>')
+    // Only web, mail and in-page targets become links. The text is already
+    // escaped, but a `javascript:` or `data:` href would still run on click,
+    // and notes arrive from paired devices and imports.
+    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (match, text, href) => {
+      const target = String(href).trim().replace(/&amp;/g, '&')
+      if (!/^(https?:\/\/|mailto:|#|\/(?!\/))/i.test(target)) return match
+      return `<a href="${href.trim()}" class="ve-link" target="_blank" rel="noopener noreferrer">${text}</a>`
+    })
 
     // Paragraphs — wrap bare lines
     html = html.replace(/^(?!<[a-z]|$)(.+)$/gm, '<p class="ve-p">$1</p>')
@@ -343,6 +350,7 @@
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;')
   }
 
   onMount(() => {

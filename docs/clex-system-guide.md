@@ -616,22 +616,43 @@ Known room error codes in the service types:
 
 ### 8.3 API worker routes
 
-Base service: `apps/api`
+Base service: `apps/api`. Google Drive OAuth is gone; the worker now carries
+the transfer-metadata API and the admin console's sign-in.
 
-| Route | Method | Purpose | Notes |
-| --- | --- | --- | --- |
-| `/api/auth/google/status` | `GET` | tells the browser whether OAuth is configured | returns `{ configured, missing }` |
-| `/api/auth/google` | `GET` | starts Google OAuth | accepts optional `return_to` |
-| `/api/auth/google/callback` | `GET` | handles Google callback and code exchange | sets short-lived one-time token cookie |
-| `/api/auth/gdrive/token` | `GET` | returns the one-time token and clears its cookie | called with credentials included |
+| Route | Method | Purpose |
+| --- | --- | --- |
+| `/api/health` | `GET` | public liveness probe |
+| `/api/transfers` | `POST` | create a transfer session; returns `code`, `receive_url` and a one-time `manage_token` |
+| `/api/transfers/:id` | `GET` / `DELETE` | read a session / cancel it (`Authorization: Bearer <manage_token>`) |
+| `/api/transfers/:id/events` | `POST` | append a lifecycle event |
+| `/api/admin/*` | various | console sign-in, sessions, sign-in log, passkeys, transfer sessions, metrics |
 
-#### Important API worker cookies
+### 8.3a The admin console (`clex.in/admin`)
 
-| Cookie | Purpose |
-| --- | --- |
-| `gdrive_state` | CSRF/state validation during OAuth |
-| `gdrive_return_to` | frontend origin to redirect back to |
-| `gdrive_token_once` | one-time access token pickup |
+- **Sign-in**: the admin secret (`CLEX_ADMIN_SECRET`, a worker secret on
+  `apps/api`) or a registered passkey (user verification required). Eight
+  failed attempts from one address lock it out for 15 minutes; every attempt
+  is logged for 90 days.
+- **Session**: an HttpOnly, Secure, SameSite=Strict cookie
+  (`__Host-clex_admin`) valid for 8 hours. The page never sees the token.
+  Every console request must also send `X-Clex-Admin: 1` from the clex.in
+  origin (CSRF guard).
+- **One session, three workers**: the session lives in the api worker's KV
+  namespace, which the vault worker binds as `VAULT_TOKENS` and the chain
+  worker as `ADMIN_SESSIONS`, so `/vault/api/admin/*` and `/chain/admin/*`
+  accept the same cookie.
+- **lnch.in proxy**: read-only admin routes still accept `X-Admin-Secret`.
+
+| Section | Data source | Controls |
+| --- | --- | --- |
+| Overview | all three workers + public health probes | — |
+| Users | vault D1 (keys, uploads, attachments, Vault sync) | revoke keys, take down uploads, wipe Vault, purge user |
+| API keys | `api_keys` | edit name / rate / max size, revoke, restore |
+| Uploads | `api_uploads` | take down (revoke + delete bytes) |
+| Transfers | chain ledger + API transfer sessions | cancel an API session |
+| Vault | vault D1 + secret KV | delete attachment, burn secret |
+| Security | api KV | revoke sessions, add / remove passkeys |
+| System | health + config of every worker | run the deletion queue now |
 
 ### 8.4 Chain worker routes
 

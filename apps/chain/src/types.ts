@@ -1,6 +1,11 @@
 export interface Env {
   DB: D1Database
   LEDGER: DurableObjectNamespace
+  /**
+   * The api worker's KV namespace, where clex.in/admin console sessions live.
+   * Optional: without it only X-Admin-Secret reaches the admin routes.
+   */
+  ADMIN_SESSIONS?: KVNamespace
   ALLOWED_ORIGIN: string
   /**
    * Server-side admin secret consumed by /chain/admin/* and forwarded by

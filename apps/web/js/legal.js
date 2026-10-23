@@ -21,7 +21,9 @@ export function initLegal() {
     const li = document.createElement('li');
     const a = document.createElement('a');
     a.href = `#${h.id}`;
-    a.innerHTML = `<span>${String(i + 1).padStart(2, '0')}</span>${h.textContent}`;
+    const num = document.createElement('span');
+    num.textContent = String(i + 1).padStart(2, '0');
+    a.append(num, h.textContent || '');
     li.append(a);
     list.append(li);
     links.set(h, a);

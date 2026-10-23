@@ -1,4 +1,5 @@
 export { ChainLedger } from './ledger'
+import { checkAdmin } from './adminSession'
 import { isFinalStatus, statusesBelow, VALID_ROUTES, VALID_STATUSES, type Env, type TransferFile } from './types'
 
 // ── Singleton ledger DO name ──────────────────────────────────────────────────
@@ -25,6 +26,25 @@ function json(data: unknown, init: ResponseInit & { headers?: HeadersInit } = {}
     headers: { 'Content-Type': 'application/json', ...((init.headers ?? {}) as Record<string, string>) },
   })
 }
+
+/** A positive integer query param, defaulted and clamped; never NaN. */
+function intParam(url: URL, name: string, fallback: number, min: number, max: number): number {
+  const raw = Number.parseInt(url.searchParams.get(name) ?? '', 10)
+  if (!Number.isFinite(raw)) return fallback
+  return Math.min(max, Math.max(min, raw))
+}
+
+function parseFiles(raw: string): unknown[] {
+  try {
+    const parsed = JSON.parse(raw)
+    return Array.isArray(parsed) ? parsed : []
+  } catch {
+    return []
+  }
+}
+
+const MAX_FILES_PER_SESSION = 500
+const DAY_MS = 24 * 60 * 60 * 1000
 
 function isValidChainId(id: unknown): id is string {
   return typeof id === 'string' && /^[0-9a-f]{32}$/.test(id)
@@ -84,6 +104,9 @@ async function handleCreateSession(req: Request, env: Env, cors: HeadersInit): P
   if (!Array.isArray(body.files) || body.files.length === 0) {
     return json({ error: 'files must be a non-empty array' }, { status: 400, headers: cors })
   }
+  if (body.files.length > MAX_FILES_PER_SESSION) {
+    return json({ error: `at most ${MAX_FILES_PER_SESSION} files per session` }, { status: 400, headers: cors })
+  }
 
   // Reject implausibly large meta payloads but otherwise let new fields through
   // without storing them — the client persists receipts locally for now.
@@ -95,7 +118,7 @@ async function handleCreateSession(req: Request, env: Env, cors: HeadersInit): P
   const sanitizedFiles: TransferFile[] = (body.files as TransferFile[]).map(f => ({
     category: String(f?.category ?? 'other').slice(0, 32),
     type:     String(f?.type     ?? 'application/octet-stream').slice(0, 128),
-    size:     Math.max(0, Number(f?.size) || 0),
+    size:     Math.min(Number.MAX_SAFE_INTEGER, Math.max(0, Math.floor(Number(f?.size) || 0))),
     hash:     typeof f?.hash === 'string' && /^[0-9a-f]{64}$/.test(f.hash) ? f.hash : null,
   }))
 
@@ -230,8 +253,8 @@ type SessionRow = {
 
 async function handleExplorer(req: Request, env: Env, cors: HeadersInit): Promise<Response> {
   const url = new URL(req.url)
-  const page  = Math.max(1, parseInt(url.searchParams.get('page')  || '1'))
-  const limit = Math.min(50, Math.max(1, parseInt(url.searchParams.get('limit') || '20')))
+  const page  = intParam(url, 'page', 1, 1, 100_000)
+  const limit = intParam(url, 'limit', 20, 1, 50)
 
   const [rows, total] = await Promise.all([
     env.DB.prepare(`
@@ -243,7 +266,7 @@ async function handleExplorer(req: Request, env: Env, cors: HeadersInit): Promis
   ])
 
   return json({
-    sessions: rows.results.map(r => ({ ...r, files: JSON.parse(r.files_json), files_json: undefined })),
+    sessions: rows.results.map(r => ({ ...r, files: parseFiles(r.files_json), files_json: undefined })),
     total: total?.c ?? 0,
     page,
     limit,
@@ -265,7 +288,7 @@ async function handleSessionDetail(req: Request, env: Env, cors: HeadersInit, se
 
   return json({
     ...session,
-    files: JSON.parse(session.files_json),
+    files: parseFiles(session.files_json),
     files_json: undefined,
     events: events.results,
   }, { headers: cors })
@@ -273,8 +296,8 @@ async function handleSessionDetail(req: Request, env: Env, cors: HeadersInit, se
 
 async function handleChains(req: Request, env: Env, cors: HeadersInit): Promise<Response> {
   const url = new URL(req.url)
-  const page  = Math.max(1, parseInt(url.searchParams.get('page')  || '1'))
-  const limit = Math.min(50, Math.max(1, parseInt(url.searchParams.get('limit') || '20')))
+  const page  = intParam(url, 'page', 1, 1, 100_000)
+  const limit = intParam(url, 'limit', 20, 1, 50)
 
   const [rows, total] = await Promise.all([
     env.DB.prepare(`
@@ -304,22 +327,13 @@ async function handleStats(env: Env, cors: HeadersInit): Promise<Response> {
   }, { headers: cors })
 }
 
-// ── Admin endpoints (gated by CLEX_ADMIN_SECRET) ───────────────────────────────
+// ── Admin endpoints (clex.in/admin session, or X-Admin-Secret) ────────────────
 
-function safeEqual(a: string, b: string): boolean {
-  if (typeof a !== 'string' || typeof b !== 'string') return false
-  if (a.length !== b.length) return false
-  let mismatch = 0
-  for (let i = 0; i < a.length; i += 1) mismatch |= a.charCodeAt(i) ^ b.charCodeAt(i)
-  return mismatch === 0
-}
-
-function isAdminAuthorized(req: Request, env: Env): boolean {
-  const expected = env.CLEX_ADMIN_SECRET || env.ADMIN_SECRET || ''
-  if (!expected) return false
-  const provided = req.headers.get('x-admin-secret') || ''
-  if (!provided) return false
-  return safeEqual(provided, expected)
+/** Every admin route here is read-only, so the lnch.in secret is accepted too. */
+async function adminDenied(req: Request, env: Env, cors: HeadersInit): Promise<Response | null> {
+  const auth = await checkAdmin(req, env, env.ADMIN_SESSIONS, true)
+  if (auth.ok) return null
+  return json({ error: auth.error }, { status: auth.status, headers: adminHeaders(cors) })
 }
 
 function adminHeaders(cors: HeadersInit): HeadersInit {
@@ -327,16 +341,34 @@ function adminHeaders(cors: HeadersInit): HeadersInit {
 }
 
 async function handleAdminSummary(req: Request, env: Env, cors: HeadersInit): Promise<Response> {
-  if (!isAdminAuthorized(req, env)) return json({ error: 'unauthorized' }, { status: 401, headers: cors })
-  const since = Math.floor(Date.now() / 1000) - 24 * 60 * 60
-  const [sessions, completed, cancelled, failed, chains, recent24h] = await Promise.all([
+  const denied = await adminDenied(req, env, cors)
+  if (denied) return denied
+  // started_at is in milliseconds (Date.now()). This used to compare it with
+  // a seconds timestamp, so "last 24h" counted every transfer ever made.
+  const now = Date.now()
+  const since = now - DAY_MS
+  const since30 = now - 30 * DAY_MS
+  const [sessions, completed, cancelled, failed, chains, recent24h, byStatus, byRoute, perf, series] = await Promise.all([
     env.DB.prepare('SELECT COUNT(*) AS n FROM transfer_sessions').first<{ n: number }>(),
     env.DB.prepare("SELECT COUNT(*) AS n FROM transfer_sessions WHERE status='completed'").first<{ n: number }>(),
     env.DB.prepare("SELECT COUNT(*) AS n FROM transfer_sessions WHERE status='cancelled'").first<{ n: number }>(),
     env.DB.prepare("SELECT COUNT(*) AS n FROM transfer_sessions WHERE status='failed'").first<{ n: number }>(),
     env.DB.prepare('SELECT COUNT(*) AS n FROM chain_ids').first<{ n: number }>(),
     env.DB.prepare('SELECT COUNT(*) AS n FROM transfer_sessions WHERE started_at >= ?').bind(since).first<{ n: number }>(),
+    env.DB.prepare('SELECT status, COUNT(*) AS n FROM transfer_sessions GROUP BY status').all<{ status: string; n: number }>(),
+    env.DB.prepare('SELECT route, COUNT(*) AS n FROM transfer_sessions GROUP BY route').all<{ route: string; n: number }>(),
+    env.DB.prepare(`SELECT AVG(duration_ms) AS avg_ms, MAX(ledger_index) AS ledger_height
+                    FROM transfer_sessions WHERE status = 'completed'`).first<{ avg_ms: number | null; ledger_height: number | null }>(),
+    env.DB.prepare(`SELECT date(started_at / 1000, 'unixepoch') AS d, COUNT(*) AS n,
+                           COALESCE(SUM(status = 'completed'), 0) AS ok
+                    FROM transfer_sessions WHERE started_at >= ? GROUP BY d ORDER BY d`).bind(since30)
+      .all<{ d: string; n: number; ok: number }>(),
   ])
+  const seriesMap = new Map((series.results ?? []).map(r => [r.d, r]))
+  const days = Array.from({ length: 30 }, (_, i) => {
+    const day = new Date(now - (29 - i) * DAY_MS).toISOString().slice(0, 10)
+    return { day, transfers: seriesMap.get(day)?.n ?? 0, completed: seriesMap.get(day)?.ok ?? 0 }
+  })
   return json(
     {
       service: 'clex-chain',
@@ -349,6 +381,11 @@ async function handleAdminSummary(req: Request, env: Env, cors: HeadersInit): Pr
         chain_ids: chains?.n ?? 0,
       },
       last24h: { transfers: recent24h?.n ?? 0 },
+      by_status: Object.fromEntries((byStatus.results ?? []).map(r => [r.status, r.n])),
+      by_route: Object.fromEntries((byRoute.results ?? []).map(r => [r.route, r.n])),
+      avg_completed_ms: perf?.avg_ms != null ? Math.round(perf.avg_ms) : null,
+      ledger_height: perf?.ledger_height ?? null,
+      series: days,
       config: {
         admin_secret_set: Boolean(env.CLEX_ADMIN_SECRET || env.ADMIN_SECRET),
         allowed_origin: env.ALLOWED_ORIGIN ?? null,
@@ -371,27 +408,40 @@ interface AdminSessionRow {
 }
 
 async function handleAdminTransfers(req: Request, env: Env, cors: HeadersInit): Promise<Response> {
-  if (!isAdminAuthorized(req, env)) return json({ error: 'unauthorized' }, { status: 401, headers: cors })
+  const denied = await adminDenied(req, env, cors)
+  if (denied) return denied
   const url = new URL(req.url)
-  const limit = Math.min(100, Math.max(1, parseInt(url.searchParams.get('limit') || '20')))
-  const status = url.searchParams.get('status')
-  const where = status ? 'WHERE status = ?' : ''
-  const stmt = env.DB.prepare(`
-    SELECT id, sender_chain_id, receiver_chain_id, route, status, started_at,
-           completed_at, duration_ms, files_json
-    FROM transfer_sessions ${where}
-    ORDER BY started_at DESC
-    LIMIT ?
-  `)
-  const rows = await (status ? stmt.bind(status, limit) : stmt.bind(limit)).all<AdminSessionRow>()
+  const limit = intParam(url, 'limit', 20, 1, 100)
+  const offset = intParam(url, 'offset', 0, 0, 1_000_000)
+  const statusRaw = url.searchParams.get('status')
+  const status = statusRaw && (VALID_STATUSES as readonly string[]).includes(statusRaw) ? statusRaw : null
+  const chain = (url.searchParams.get('chain') || '').toLowerCase()
+  const where: string[] = []
+  const binds: unknown[] = []
+  if (status) { where.push('status = ?'); binds.push(status) }
+  if (/^[0-9a-f]{4,32}$/.test(chain)) {
+    where.push('(sender_chain_id LIKE ? OR receiver_chain_id LIKE ? OR id LIKE ?)')
+    binds.push(`${chain}%`, `${chain}%`, `${chain}%`)
+  }
+  const clause = where.length ? `WHERE ${where.join(' AND ')}` : ''
+  const [rows, total] = await Promise.all([
+    env.DB.prepare(`
+      SELECT id, sender_chain_id, receiver_chain_id, route, status, started_at,
+             completed_at, duration_ms, files_json
+      FROM transfer_sessions ${clause}
+      ORDER BY started_at DESC
+      LIMIT ? OFFSET ?
+    `).bind(...binds, limit, offset).all<AdminSessionRow>(),
+    env.DB.prepare(`SELECT COUNT(*) AS n FROM transfer_sessions ${clause}`).bind(...binds).first<{ n: number }>(),
+  ])
   return json(
     {
       service: 'clex-chain',
       generatedAt: Math.floor(Date.now() / 1000),
       count: rows.results?.length ?? 0,
+      total: total?.n ?? 0,
       transfers: (rows.results ?? []).map((r) => {
-        let files: unknown = null
-        try { files = JSON.parse(r.files_json) } catch { /* ignore */ }
+        const files = parseFiles(r.files_json)
         return {
           id: r.id,
           sender_chain_id: r.sender_chain_id,
@@ -410,7 +460,8 @@ async function handleAdminTransfers(req: Request, env: Env, cors: HeadersInit): 
 }
 
 async function handleAdminHealth(req: Request, env: Env, cors: HeadersInit): Promise<Response> {
-  if (!isAdminAuthorized(req, env)) return json({ error: 'unauthorized' }, { status: 401, headers: cors })
+  const denied = await adminDenied(req, env, cors)
+  if (denied) return denied
   let dbReachable = false
   try {
     await env.DB.prepare('SELECT 1').first()
@@ -441,9 +492,10 @@ interface AdminAuditRow {
 }
 
 async function handleAdminAudit(req: Request, env: Env, cors: HeadersInit): Promise<Response> {
-  if (!isAdminAuthorized(req, env)) return json({ error: 'unauthorized' }, { status: 401, headers: cors })
+  const denied = await adminDenied(req, env, cors)
+  if (denied) return denied
   const url = new URL(req.url)
-  const limit = Math.min(200, Math.max(1, parseInt(url.searchParams.get('limit') || '50')))
+  const limit = intParam(url, 'limit', 50, 1, 200)
   const events = await env.DB.prepare(
     `SELECT session_id, status, ts FROM transfer_events ORDER BY ts DESC LIMIT ?`,
   ).bind(limit).all<AdminAuditRow>()
@@ -468,6 +520,16 @@ export default {
 
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors })
 
+    try {
+      return await route(request, env, url, cors)
+    } catch (err) {
+      console.error('clex-chain unhandled error', err)
+      return json({ error: 'internal_error' }, { status: 500, headers: cors })
+    }
+  },
+} satisfies ExportedHandler<Env>
+
+async function route(request: Request, env: Env, url: URL, cors: HeadersInit): Promise<Response> {
     // GET /chain/ — the Worker route clex.in/chain/* intercepts the trailing-slash
     // page request before Pages can serve it. Redirect to the canonical /chain page.
     if (request.method === 'GET' && (url.pathname === '/chain/' || url.pathname === '/chain')) {
@@ -564,7 +626,7 @@ export default {
         const chainIds = await env.DB.prepare(
           'SELECT COUNT(*) AS n FROM chain_ids',
         ).first<{ n: number }>()
-        const since = Math.floor(Date.now() / 1000) - 24 * 60 * 60
+        const since = Date.now() - DAY_MS
         const recent = await env.DB.prepare(
           'SELECT COUNT(*) AS n FROM transfer_sessions WHERE started_at >= ?',
         )
@@ -596,6 +658,5 @@ export default {
       }
     }
 
-    return new Response('Not found', { status: 404 })
-  },
-} satisfies ExportedHandler<Env>
+    return json({ error: 'Not found' }, { status: 404, headers: cors })
+}

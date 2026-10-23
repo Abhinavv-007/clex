@@ -36,19 +36,25 @@ export class ChainLedger implements DurableObject {
       return new Response('Bad JSON', { status: 400 })
     }
 
-    const count = (await this.state.storage.get<number>('count')) ?? 0
-    const lastHash = (await this.state.storage.get<string>('last_hash')) ?? '0'.repeat(64)
+    if (typeof body?.data !== 'string' || body.data.length > 8192) {
+      return new Response('Bad record', { status: 400 })
+    }
 
-    const nextIndex = count + 1
-    const recordHash = await sha256hex(`${nextIndex}:${lastHash}:${body.data}`)
+    // The input gate only holds while storage is being read or written; the
+    // await on crypto.subtle.digest in between opens it, so two appends could
+    // read the same count and both claim the next index. Running the whole
+    // read-hash-write under blockConcurrencyWhile keeps the chain linear.
+    const record = await this.state.blockConcurrencyWhile(async () => {
+      const count = (await this.state.storage.get<number>('count')) ?? 0
+      const lastHash = (await this.state.storage.get<string>('last_hash')) ?? '0'.repeat(64)
 
-    await this.state.storage.put('count', nextIndex)
-    await this.state.storage.put('last_hash', recordHash)
+      const nextIndex = count + 1
+      const recordHash = await sha256hex(`${nextIndex}:${lastHash}:${body.data}`)
 
-    return Response.json({
-      ledger_index: nextIndex,
-      previous_hash: lastHash,
-      record_hash: recordHash,
+      await this.state.storage.put({ count: nextIndex, last_hash: recordHash })
+      return { ledger_index: nextIndex, previous_hash: lastHash, record_hash: recordHash }
     })
+
+    return Response.json(record)
   }
 }

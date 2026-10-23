@@ -2,6 +2,7 @@ import { normalizeRequestedMode, planJoin } from './room-session'
 import type { ClientMessage, ServerMessage, TransferProfile, TransferRole } from './types'
 
 const ROOM_TTL_MS = 30 * 60 * 1000 // 30 minutes
+const MAX_MESSAGE_CHARS = 64 * 1024
 const ROOM_MODE_KEY = 'mode'
 const CHAIN_TAG_PREFIX = 'chain:'
 const CHAIN_ID_RE = /^[0-9a-f]{32}$/
@@ -78,7 +79,9 @@ export class Room implements DurableObject {
   }
 
   async webSocketMessage(ws: WebSocket, message: string | ArrayBuffer): Promise<void> {
-    if (typeof message !== 'string') return
+    // SDP and ICE are a few kilobytes; anything far larger is not signaling
+    // and is dropped rather than relayed to the peer.
+    if (typeof message !== 'string' || message.length > MAX_MESSAGE_CHARS) return
 
     let msg: ClientMessage
     try {

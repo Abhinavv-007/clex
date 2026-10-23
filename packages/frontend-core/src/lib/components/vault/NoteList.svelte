@@ -69,7 +69,7 @@
 
         <div class="nl-title">
           {#if highlight}
-            {@html highlight.title || note.title || 'Untitled'}
+            {#if highlight.title}{@html highlight.title}{:else}{note.title || 'Untitled'}{/if}
           {:else}
             {note.title || 'Untitled'}
           {/if}

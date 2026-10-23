@@ -35,6 +35,7 @@ import {
 } from './apiKeys'
 import type { Env } from './index'
 import { requireOwner } from './auth'
+import { readFilename, tooLarge } from './requestLimits'
 
 const MAX_EXPIRES_IN = 7 * 24 * 60 * 60   // 7 days
 const DEFAULT_EXPIRES_IN = 24 * 60 * 60    // 24 hours
@@ -175,31 +176,32 @@ export async function handleApiUploadCreate(
     perKeyMaxBytes = apiKeysModule.UI_UPLOAD_MAX_BYTES
   }
 
-  const rawFilename = request.headers.get('X-Filename')
-  if (!rawFilename) return errorResponse('X-Filename header required', 400, cors)
-  const filename = decodeURIComponent(rawFilename).slice(0, 255)
-  const contentType = request.headers.get('Content-Type') ?? 'application/octet-stream'
+  const filename = readFilename(request.headers.get('X-Filename'))
+  if (!filename) return errorResponse('X-Filename header required', 400, cors)
+  const contentType = (request.headers.get('Content-Type') ?? 'application/octet-stream').slice(0, 128)
 
   const expiresInRaw = parseInt(request.headers.get('X-Expires-In') ?? '', 10)
   const expiresIn = Number.isFinite(expiresInRaw)
     ? Math.min(MAX_EXPIRES_IN, Math.max(MIN_EXPIRES_IN, expiresInRaw))
     : DEFAULT_EXPIRES_IN
 
+  const effectiveCeiling = perKeyMaxBytes < 0
+    ? apiKeysModule.ABSOLUTE_FILE_SIZE_CEILING
+    : Math.min(perKeyMaxBytes, apiKeysModule.ABSOLUTE_FILE_SIZE_CEILING)
+  const overLimit = () => errorResponse(
+    `File exceeds the per-key limit (${(effectiveCeiling / 1024 / 1024).toFixed(0)} MB). Raise it on the key settings page.`,
+    413,
+    cors,
+  )
+  // Refuse before reading: a declared body over the limit never has to be
+  // buffered in the worker's memory just to be rejected.
+  if (tooLarge(request, effectiveCeiling)) return overLimit()
+
   const buffer = await request.arrayBuffer()
   const fileBytes = buffer.byteLength
   if (fileBytes <= 0) return errorResponse('Empty request body', 400, cors)
 
-  const effectiveCeiling = perKeyMaxBytes < 0
-    ? apiKeysModule.ABSOLUTE_FILE_SIZE_CEILING
-    : Math.min(perKeyMaxBytes, apiKeysModule.ABSOLUTE_FILE_SIZE_CEILING)
-  if (fileBytes > effectiveCeiling) {
-    const limitMB = (effectiveCeiling / 1024 / 1024).toFixed(0)
-    return errorResponse(
-      `File exceeds the per-key limit (${limitMB} MB). Raise it on the key settings page.`,
-      413,
-      cors,
-    )
-  }
+  if (fileBytes > effectiveCeiling) return overLimit()
 
   const id = randomHex(16)
   const shareToken = randomShareToken()
@@ -415,7 +417,7 @@ export async function handleApiUploadDownload(
 
   // `attachment` with an RFC 5987 filename so non-ASCII names survive.
   const disposition =
-    `attachment; filename="${row.filename.replace(/[^\x20-\x7e]/g, '_').replace(/"/g, '')}"; ` +
+    `attachment; filename="${row.filename.replace(/[^\x20-\x7e]/g, '_').replace(/["\\]/g, '')}"; ` +
     `filename*=UTF-8''${encodeURIComponent(row.filename)}`
 
   return new Response(object.body, {
@@ -426,6 +428,11 @@ export async function handleApiUploadDownload(
       'Content-Length': String(row.size_bytes),
       'Content-Disposition': disposition,
       'Cache-Control': 'private, no-store',
+      // The type is whatever the uploader claimed. nosniff plus a sandbox CSP
+      // means a share can never render as a live page on clex.in, even if a
+      // browser ignores the attachment disposition.
+      'X-Content-Type-Options': 'nosniff',
+      'Content-Security-Policy': "sandbox; default-src 'none'",
     },
   })
 }
