@@ -508,8 +508,8 @@ async function revokeUploads(env: Env, where: string, binds: unknown[]): Promise
     env.DB.prepare(`SELECT id, storage_path FROM api_uploads WHERE ${where}`).bind(...binds),
   )
   if (!rows.length) return { revoked: 0, pending: 0 }
-  for (let i = 0; i < rows.length; i += 50) {
-    const ids = rows.slice(i, i + 50).map(r => r.id)
+  for (let i = 0; i < rows.length; i += 100) {
+    const ids = rows.slice(i, i + 100).map(r => r.id)
     const ph = ids.map(() => '?').join(', ')
     await env.DB.prepare(`UPDATE api_uploads SET revoked_at = COALESCE(revoked_at, unixepoch()) WHERE id IN (${ph})`).bind(...ids).run()
   }

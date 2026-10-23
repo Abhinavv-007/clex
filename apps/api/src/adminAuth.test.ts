@@ -11,9 +11,14 @@ function memoryKv() {
     async get(key: string) { return store.get(key)?.value ?? null },
     async put(key: string, value: string, opts?: { metadata?: unknown }) { store.set(key, { value, metadata: opts?.metadata }) },
     async delete(key: string) { store.delete(key) },
-    async list({ prefix = '', limit = 1000 }: { prefix?: string; limit?: number } = {}) {
-      const keys = [...store.keys()].filter(k => k.startsWith(prefix)).sort().slice(0, limit)
-      return { keys: keys.map(name => ({ name, metadata: store.get(name)?.metadata })), list_complete: true, cursor: undefined }
+    // Pages like KV: lexicographic order, at most `limit` (and 1,000) per call.
+    async list({ prefix = '', limit = 1000, cursor }: { prefix?: string; limit?: number; cursor?: string } = {}) {
+      const all = [...store.keys()].filter(k => k.startsWith(prefix)).sort()
+      const start = cursor ? Number(cursor) : 0
+      const end = start + Math.min(limit, 1000)
+      const keys = all.slice(start, end)
+      const complete = end >= all.length
+      return { keys: keys.map(name => ({ name, metadata: store.get(name)?.metadata })), list_complete: complete, cursor: complete ? undefined : String(end) }
     },
   }
   return { kv: kv as unknown as KVNamespace, store }
@@ -212,5 +217,15 @@ describe('admin session guard', () => {
       headers: { cookie, 'x-clex-admin': '1' },
     }), env)
     expect(res.status).toBe(401)
+  })
+
+  it('finds the newest legacy sign-ins even past many pages of older ones', async () => {
+    const { env, store } = makeEnv()
+    for (let i = 0; i < 25_000; i += 1) {
+      const ts = 1_600_000_000 + i
+      store.set(`admin:login:${ts}:${String(i).padStart(8, '0')}`, { value: JSON.stringify({ id: `old${i}`, created_at: ts, method: 'password', result: 'failure' }) })
+    }
+    const logins = await listAdminLogins(env, 3)
+    expect(logins.map(l => l.id)).toEqual(['old24999', 'old24998', 'old24997'])
   })
 })

@@ -402,22 +402,31 @@ export async function listAdminLogins(env: Env, limit: number): Promise<LoginRec
 }
 
 /**
+ * Each list call is one KV operation and an invocation may make 1,000. This
+ * stays clear of that while covering 900,000 legacy entries — far more than
+ * the old format's 90-day retention could plausibly hold.
+ */
+const LEGACY_MAX_PAGES = 900
+
+/**
  * Sign-ins recorded before the current log format, which keep their 90-day
- * retention in KV. Their keys sort oldest-first, so the newest are at the end
- * of the listing; only the ones shown are read.
+ * retention in KV. KV lists keys in lexicographic order, which for these keys
+ * is oldest-first, so the newest are only reached by listing to the end. The
+ * listing is walked to completion keeping just the last `limit` names, then
+ * only those are read.
  */
 async function listLegacyLogins(env: Env, limit: number): Promise<LoginRecord[]> {
-  const names: string[] = []
+  let tail: string[] = []
   let cursor: string | undefined
   let pages = 0
   do {
     const page = await env.DRIVE_SESSION_STORE.list({ prefix: LEGACY_LOGIN_PREFIX, cursor })
-    names.push(...page.keys.map(k => k.name))
+    tail = [...tail, ...page.keys.map(k => k.name)].slice(-limit)
     cursor = page.list_complete ? undefined : page.cursor
     pages += 1
-  } while (cursor && pages < 20)
+  } while (cursor && pages < LEGACY_MAX_PAGES)
 
-  const newest = names.slice(-limit).reverse()
+  const newest = tail.reverse()
   const rows = await Promise.all(newest.map(async (name): Promise<LoginRecord | null> => {
     try {
       const raw = await env.DRIVE_SESSION_STORE.get(name)

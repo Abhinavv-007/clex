@@ -16,11 +16,20 @@
  */
 import { deleteObjects, type StorageEnv } from './storage'
 
-const BATCH = 200
-/** Upper bound per run, so one invocation stays well inside its CPU budget. */
-const MAX_BATCHES = 10
-/** Rows per statement; D1 caps bound parameters per query. */
-const CHUNK = 50
+/**
+ * D1 limits shape these numbers: a statement takes at most 100 bound
+ * parameters, and a Free-plan invocation may run at most 50 queries — every
+ * statement inside a batch() counts. So rows are grouped into multi-row
+ * statements, and a sweep is sized to stay well under the query budget:
+ * per batch one SELECT, one queue DELETE, at most four requeue upserts and
+ * one attachments DELETE, i.e. 7 queries, times MAX_BATCHES = 35.
+ */
+const BATCH = 100
+const MAX_BATCHES = 5
+/** Ids per `IN (...)` statement: one parameter each. */
+const ID_CHUNK = 100
+/** Rows per requeue upsert: three parameters each. */
+const UPSERT_CHUNK = 33
 
 export interface CleanupEnv extends StorageEnv {
   DB: D1Database
@@ -31,7 +40,7 @@ export interface StoredRow {
   storage_path: string
 }
 
-function chunks<T>(items: T[], size = CHUNK): T[][] {
+function chunks<T>(items: T[], size: number): T[][] {
   const out: T[][] = []
   for (let i = 0; i < items.length; i += size) out.push(items.slice(i, i + size))
   return out
@@ -57,14 +66,19 @@ export async function deleteStored(
   const failed = rows.filter(r => failedPaths.has(r.storage_path))
 
   const statements: D1PreparedStatement[] = []
-  for (const group of chunks(deleted)) {
+  for (const group of chunks(deleted, ID_CHUNK)) {
     const ph = group.map(() => '?').join(', ')
     statements.push(env.DB.prepare(`DELETE FROM pending_deletions WHERE id IN (${ph})`).bind(...group.map(r => r.id)))
   }
-  for (const r of failed) {
+  // One multi-row upsert per group, not one statement per row: when storage
+  // is down every row in a batch fails, and a statement each would blow the
+  // per-invocation query limit and roll the whole requeue back.
+  const retryAt = now + RETRY_AFTER_SECONDS
+  for (const group of chunks(failed, UPSERT_CHUNK)) {
+    const values = group.map(() => '(?, ?, ?)').join(', ')
     statements.push(env.DB.prepare(
-      'INSERT OR REPLACE INTO pending_deletions (id, storage_path, delete_at) VALUES (?, ?, ?)'
-    ).bind(r.id, r.storage_path, now + RETRY_AFTER_SECONDS))
+      `INSERT OR REPLACE INTO pending_deletions (id, storage_path, delete_at) VALUES ${values}`
+    ).bind(...group.flatMap(r => [r.id, r.storage_path, retryAt])))
   }
   if (statements.length) await env.DB.batch(statements)
 
@@ -73,7 +87,7 @@ export async function deleteStored(
 
 /** Removes attachment metadata rows. Their queue rows are handled by deleteStored. */
 export async function dropAttachmentRows(env: CleanupEnv, ids: string[]): Promise<void> {
-  const statements = chunks(ids).map((group) => {
+  const statements = chunks(ids, ID_CHUNK).map((group) => {
     const ph = group.map(() => '?').join(', ')
     return env.DB.prepare(`DELETE FROM attachments WHERE id IN (${ph})`).bind(...group)
   })
