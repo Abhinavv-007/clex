@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Env } from './env'
 import { handleAdminLogin, handleAdminLogout, handleAdminMe } from './adminPanel'
-import { LOGIN_MAX_ATTEMPTS, listAdminLogins } from './adminAuth'
+import { LOGIN_MAX_ATTEMPTS, legacyPageBudget, listAdminLogins } from './adminAuth'
 import { LoginThrottle } from './loginThrottle'
 
 /** In-memory KV with the bits of the API the admin code uses, metadata included. */
@@ -227,5 +227,13 @@ describe('admin session guard', () => {
     }
     const logins = await listAdminLogins(env, 3)
     expect(logins.map(l => l.id)).toEqual(['old24999', 'old24998', 'old24997'])
+  })
+
+  it('keeps the legacy walk plus its reads under the 1,000 KV operations per request', () => {
+    // The audit endpoint accepts up to 500 records: listing pages, reading
+    // each record, and the request's own session/list calls must all fit.
+    for (const reads of [1, 100, 500]) {
+      expect(legacyPageBudget(reads) + reads + 16).toBeLessThanOrEqual(1000)
+    }
   })
 })

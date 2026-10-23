@@ -401,12 +401,22 @@ export async function listAdminLogins(env: Env, limit: number): Promise<LoginRec
   return [...logins, ...await listLegacyLogins(env, limit - logins.length)]
 }
 
+/** Workers KV allows this many operations per invocation. */
+const KV_OPS_PER_INVOCATION = 1000
 /**
- * Each list call is one KV operation and an invocation may make 1,000. This
- * stays clear of that while covering 900,000 legacy entries — far more than
- * the old format's 90-day retention could plausibly hold.
+ * Operations the rest of an audit request may spend: the session read and
+ * touch in requireAdmin, and the list of new-format entries, with room over.
  */
-const LEGACY_MAX_PAGES = 900
+const KV_OPS_RESERVED = 16
+
+/**
+ * How many legacy pages may be listed when `reads` records will then be read
+ * one `get` each: every list call and every read is one KV operation, and the
+ * whole request must stay under the per-invocation limit. Exported for tests.
+ */
+export function legacyPageBudget(reads: number): number {
+  return Math.max(1, KV_OPS_PER_INVOCATION - KV_OPS_RESERVED - reads)
+}
 
 /**
  * Sign-ins recorded before the current log format, which keep their 90-day
@@ -424,7 +434,7 @@ async function listLegacyLogins(env: Env, limit: number): Promise<LoginRecord[]>
     tail = [...tail, ...page.keys.map(k => k.name)].slice(-limit)
     cursor = page.list_complete ? undefined : page.cursor
     pages += 1
-  } while (cursor && pages < LEGACY_MAX_PAGES)
+  } while (cursor && pages < legacyPageBudget(limit))
 
   const newest = tail.reverse()
   const rows = await Promise.all(newest.map(async (name): Promise<LoginRecord | null> => {
