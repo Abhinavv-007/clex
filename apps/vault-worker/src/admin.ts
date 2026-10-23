@@ -30,8 +30,8 @@
  */
 import type { Env } from './index'
 import { checkAdmin } from './adminSession'
-import { backendName, deleteObjects, isConfigured } from './storage'
-import { runPendingDeletions } from './cleanup'
+import { backendName, isConfigured } from './storage'
+import { deleteStored, dropAttachmentRows, runPendingDeletions } from './cleanup'
 
 type Cors = Record<string, string>
 
@@ -499,39 +499,34 @@ async function listUploads(url: URL, env: Env, cors: Cors): Promise<Response> {
   return json({ total: total?.n ?? 0, limit, offset, uploads: (rows.results ?? []).map(u => shapeUpload(u, now)) }, 200, cors)
 }
 
-/** Stops the link at once and deletes the bytes. */
-async function revokeUploads(env: Env, where: string, binds: unknown[]): Promise<number> {
+/**
+ * Stops the links at once and deletes the bytes. A link is revoked whether or
+ * not its bytes went: a delete that failed stays queued for the cron's retry.
+ */
+async function revokeUploads(env: Env, where: string, binds: unknown[]): Promise<{ revoked: number; pending: number }> {
   const rows = await all<{ id: string; storage_path: string }>(
     env.DB.prepare(`SELECT id, storage_path FROM api_uploads WHERE ${where}`).bind(...binds),
   )
-  if (!rows.length) return 0
-  await deleteObjects(env, rows.map(r => r.storage_path))
+  if (!rows.length) return { revoked: 0, pending: 0 }
   for (let i = 0; i < rows.length; i += 50) {
     const ids = rows.slice(i, i + 50).map(r => r.id)
     const ph = ids.map(() => '?').join(', ')
-    await env.DB.batch([
-      env.DB.prepare(`UPDATE api_uploads SET revoked_at = COALESCE(revoked_at, unixepoch()) WHERE id IN (${ph})`).bind(...ids),
-      env.DB.prepare(`DELETE FROM pending_deletions WHERE id IN (${ph})`).bind(...ids),
-    ])
+    await env.DB.prepare(`UPDATE api_uploads SET revoked_at = COALESCE(revoked_at, unixepoch()) WHERE id IN (${ph})`).bind(...ids).run()
   }
-  return rows.length
+  const { failed } = await deleteStored(env, rows)
+  return { revoked: rows.length, pending: failed.length }
 }
 
-async function deleteAttachments(env: Env, where: string, binds: unknown[]): Promise<number> {
+async function deleteAttachments(env: Env, where: string, binds: unknown[]): Promise<{ deleted: number; pending: number }> {
   const rows = await all<{ id: string; storage_path: string }>(
     env.DB.prepare(`SELECT id, storage_path FROM attachments WHERE ${where}`).bind(...binds),
   )
-  if (!rows.length) return 0
-  await deleteObjects(env, rows.map(r => r.storage_path))
-  for (let i = 0; i < rows.length; i += 50) {
-    const ids = rows.slice(i, i + 50).map(r => r.id)
-    const ph = ids.map(() => '?').join(', ')
-    await env.DB.batch([
-      env.DB.prepare(`DELETE FROM attachments WHERE id IN (${ph})`).bind(...ids),
-      env.DB.prepare(`DELETE FROM pending_deletions WHERE id IN (${ph})`).bind(...ids),
-    ])
-  }
-  return rows.length
+  if (!rows.length) return { deleted: 0, pending: 0 }
+  const { failed } = await deleteStored(env, rows)
+  // The metadata goes either way: the queue row (kept on failure) is what
+  // the cron needs to retry the bytes.
+  await dropAttachmentRows(env, rows.map(r => r.id))
+  return { deleted: rows.length, pending: failed.length }
 }
 
 async function listAttachments(url: URL, env: Env, cors: Cors): Promise<Response> {
@@ -623,16 +618,16 @@ export async function handleAdmin(req: Request, env: Env, cors: Cors, path: stri
 
     const upload = path.match(/^\/uploads\/([0-9a-f]{32})\/revoke$/)
     if (upload && method === 'POST') {
-      const n = await revokeUploads(env, 'id = ?', [upload[1]])
-      if (!n) return fail('upload_not_found', 404, cors)
-      return json({ ok: true, revoked: n }, 200, cors)
+      const r = await revokeUploads(env, 'id = ?', [upload[1]])
+      if (!r.revoked) return fail('upload_not_found', 404, cors)
+      return json({ ok: true, ...r }, 200, cors)
     }
 
     const attachment = path.match(/^\/attachments\/([0-9a-f]{16,64})$/)
     if (attachment && method === 'DELETE') {
-      const n = await deleteAttachments(env, 'id = ?', [attachment[1]])
-      if (!n) return fail('attachment_not_found', 404, cors)
-      return json({ ok: true, deleted: n }, 200, cors)
+      const r = await deleteAttachments(env, 'id = ?', [attachment[1]])
+      if (!r.deleted) return fail('attachment_not_found', 404, cors)
+      return json({ ok: true, ...r }, 200, cors)
     }
 
     const secret = path.match(/^\/secrets\/([a-f0-9]{8,64})$/)
@@ -655,10 +650,14 @@ export async function handleAdmin(req: Request, env: Env, cors: Cors, path: stri
         result.keys_revoked = r.meta.changes ?? 0
       }
       if (action === 'revoke-uploads' || action === 'purge') {
-        result.uploads_revoked = await revokeUploads(env, 'user_id = ? AND revoked_at IS NULL', [uid])
+        const r = await revokeUploads(env, 'user_id = ? AND revoked_at IS NULL', [uid])
+        result.uploads_revoked = r.revoked
+        result.bytes_pending_retry = r.pending
       }
       if (action === 'purge') {
-        result.attachments_deleted = await deleteAttachments(env, 'user_id = ?', [uid])
+        const r = await deleteAttachments(env, 'user_id = ?', [uid])
+        result.attachments_deleted = r.deleted
+        result.bytes_pending_retry = (result.bytes_pending_retry ?? 0) + r.pending
       }
       if (action === 'wipe-vault' || action === 'purge') {
         const have = await tables(env)

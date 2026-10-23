@@ -10,7 +10,7 @@ import { appendCors, type Env } from './env'
 import { base64urlEncode, randomBytes } from './crypto'
 import {
   ADMIN_SESSION_TTL,
-  LOGIN_MAX_FAILURES,
+  LOGIN_MAX_ATTEMPTS,
   LOGIN_WINDOW_SECONDS,
   adminError,
   adminSecretConfigured,
@@ -27,8 +27,9 @@ import {
   nowSeconds,
   putWebauthnChallenge,
   readSessionCookie,
-  recordLoginFailure,
+  reserveLoginAttempt,
   requireAdmin,
+  sameOrigin,
   sessionCookie,
   startAdminSession,
   takeWebauthnChallenge,
@@ -158,18 +159,34 @@ async function putAdminPasskey(env: Env, row: AdminPasskeyRow): Promise<void> {
 
 // ── Sign-in ───────────────────────────────────────────────────────────────
 
-async function lockedResponse(request: Request, env: Env, method: 'password' | 'passkey'): Promise<Response | null> {
-  const ip = clientIp(request)
-  const wait = await loginLockedFor(env, ip)
-  if (!wait) return null
-  await logAdminLogin(env, {
-    method, result: 'locked', reason: 'too_many_failures', ip, ua: userAgent(request),
-    country: clientCountry(request), passkey_id: null,
-  })
+/**
+ * Sign-in requests must come from this site, as JSON. A page on another site
+ * can POST `text/plain` without a CORS preflight, and sign-ins are counted per
+ * address — so without this, any page an operator visited could spend that
+ * operator's attempts and lock them out. Requiring JSON forces a preflight the
+ * CORS allow-list refuses, and a foreign Origin is turned away before anything
+ * is counted. Clients that send no Origin (curl) are not browsers and can only
+ * spend their own address's attempts.
+ */
+function rejectForeignSignIn(request: Request, env: Env): Response | null {
+  if (!sameOrigin(request, env)) return jsonResponse({ error: 'origin_not_allowed' }, request, env, 403)
+  const type = (request.headers.get('content-type') || '').toLowerCase()
+  if (!type.startsWith('application/json')) return jsonResponse({ error: 'json_required' }, request, env, 415)
+  return null
+}
+
+function tooManyAttempts(request: Request, env: Env, wait: number): Response {
   return jsonResponse(
     { error: 'too_many_attempts', retry_after: wait },
     request, env, 429, { 'retry-after': String(wait) },
   )
+}
+
+async function logLocked(request: Request, env: Env, method: 'password' | 'passkey'): Promise<void> {
+  await logAdminLogin(env, {
+    method, result: 'locked', reason: 'too_many_attempts', ip: clientIp(request), ua: userAgent(request),
+    country: clientCountry(request), passkey_id: null,
+  })
 }
 
 function signedIn(request: Request, env: Env, session: AdminSession, extra: Record<string, unknown> = {}): Response {
@@ -184,8 +201,8 @@ export async function handleAdminLogin(request: Request, env: Env): Promise<Resp
   const ua = userAgent(request)
   const country = clientCountry(request)
 
-  const locked = await lockedResponse(request, env, 'password')
-  if (locked) return locked
+  const foreign = rejectForeignSignIn(request, env)
+  if (foreign) return foreign
 
   if (!adminSecretConfigured(env)) {
     return jsonResponse({ error: 'admin_secret_not_configured' }, request, env, 503)
@@ -195,8 +212,14 @@ export async function handleAdminLogin(request: Request, env: Env): Promise<Resp
   if (!body) return jsonResponse({ error: 'invalid_json' }, request, env, 400)
   const secret = typeof body.secret === 'string' ? body.secret.trim() : ''
 
+  // The attempt is counted before the secret is checked; see loginThrottle.ts.
+  const wait = await reserveLoginAttempt(env, ip)
+  if (wait) {
+    await logLocked(request, env, 'password')
+    return tooManyAttempts(request, env, wait)
+  }
+
   if (!(await verifyAdminSecret(env, secret))) {
-    await recordLoginFailure(env, ip)
     await logAdminLogin(env, { method: 'password', result: 'failure', reason: 'bad_secret', ip, ua, country, passkey_id: null })
     return jsonResponse({ error: 'invalid_secret' }, request, env, 401)
   }
@@ -223,7 +246,7 @@ export async function handleAdminMe(request: Request, env: Env): Promise<Respons
     config: {
       rp_id: rpIdFor(request, env),
       session_ttl: ADMIN_SESSION_TTL,
-      lockout: { max_failures: LOGIN_MAX_FAILURES, window_seconds: LOGIN_WINDOW_SECONDS },
+      lockout: { max_attempts: LOGIN_MAX_ATTEMPTS, window_seconds: LOGIN_WINDOW_SECONDS },
     },
   }, request, env)
 }
@@ -279,8 +302,11 @@ export async function handleAdminLogins(request: Request, env: Env): Promise<Res
 // ── Passkeys ──────────────────────────────────────────────────────────────
 
 export async function handlePasskeyLoginBegin(request: Request, env: Env): Promise<Response> {
-  const locked = await lockedResponse(request, env, 'passkey')
-  if (locked) return locked
+  const foreign = rejectForeignSignIn(request, env)
+  if (foreign) return foreign
+  // Handing out a challenge proves nothing, so it only checks the lock.
+  const wait = await loginLockedFor(env, clientIp(request))
+  if (wait) return tooManyAttempts(request, env, wait)
 
   const passkeys = await listAdminPasskeys(env)
   if (passkeys.length === 0) {
@@ -307,8 +333,8 @@ export async function handlePasskeyLoginFinish(request: Request, env: Env): Prom
   const ua = userAgent(request)
   const country = clientCountry(request)
 
-  const locked = await lockedResponse(request, env, 'passkey')
-  if (locked) return locked
+  const foreign = rejectForeignSignIn(request, env)
+  if (foreign) return foreign
 
   const body = await readJson<{
     handle?: string
@@ -317,8 +343,13 @@ export async function handlePasskeyLoginFinish(request: Request, env: Env): Prom
   }>(request)
   if (!body) return jsonResponse({ error: 'invalid_json' }, request, env, 400)
 
+  const wait = await reserveLoginAttempt(env, ip)
+  if (wait) {
+    await logLocked(request, env, 'passkey')
+    return tooManyAttempts(request, env, wait)
+  }
+
   const fail = async (reason: string, error: string, passkeyId: string | null = null) => {
-    await recordLoginFailure(env, ip)
     await logAdminLogin(env, { method: 'passkey', result: 'failure', reason, ip, ua, country, passkey_id: passkeyId })
     return jsonResponse({ error }, request, env, 401)
   }

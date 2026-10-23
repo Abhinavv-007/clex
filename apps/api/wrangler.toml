@@ -14,6 +14,17 @@ crons = []
 binding = "DRIVE_SESSION_STORE"
 id = "eea542853aed48cb94933b5ec022e35d"
 
+# Admin sign-in attempts, counted atomically per address (src/loginThrottle.ts).
+# SQLite-backed, as the free plan requires for new Durable Object classes.
+[durable_objects]
+bindings = [
+  { name = "LOGIN_THROTTLE", class_name = "LoginThrottle" }
+]
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["LoginThrottle"]
+
 [vars]
 ALLOWED_ORIGIN = "*"
 FRONTEND_BASE_URL = "http://localhost:3000"
@@ -34,6 +45,15 @@ routes = [
 
 [env.production.triggers]
 crons = []
+
+[env.production.durable_objects]
+bindings = [
+  { name = "LOGIN_THROTTLE", class_name = "LoginThrottle" }
+]
+
+[[env.production.migrations]]
+tag = "v1"
+new_sqlite_classes = ["LoginThrottle"]
 
 [[env.production.kv_namespaces]]
 binding = "DRIVE_SESSION_STORE"

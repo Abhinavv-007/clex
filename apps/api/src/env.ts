@@ -16,6 +16,8 @@ export interface Env {
    * recognise a console session.
    */
   DRIVE_SESSION_STORE: KVNamespace
+  /** Counts admin sign-in attempts per address, atomically. See loginThrottle.ts. */
+  LOGIN_THROTTLE?: DurableObjectNamespace
   ALLOWED_ORIGIN: string
   FRONTEND_BASE_URL: string
   WEBAUTHN_RP_ID?: string
