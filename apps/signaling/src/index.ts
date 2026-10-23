@@ -52,10 +52,28 @@ function corsHeaders(origin: string, allowedOriginsStr: string): HeadersInit {
   }
 }
 
+/**
+ * A browser always sends Origin on a WebSocket upgrade, and CORS does not
+ * apply to WebSockets, so without this any site could open rooms on this
+ * worker from its visitors' browsers. Native clients (the CLI, the Android
+ * app) send no Origin and are unaffected.
+ */
+function upgradeOriginAllowed(origin: string, allowedOriginsStr: string): boolean {
+  if (!origin || allowedOriginsStr === '*') return true
+  return allowedOriginsStr.split(',').map(s => s.trim()).includes(origin)
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url)
     const origin = request.headers.get('Origin') ?? ''
+
+    if (
+      request.headers.get('Upgrade')?.toLowerCase() === 'websocket' &&
+      !upgradeOriginAllowed(origin, env.ALLOWED_ORIGIN)
+    ) {
+      return new Response('Origin not allowed', { status: 403 })
+    }
 
     // CORS preflight
     if (request.method === 'OPTIONS') {

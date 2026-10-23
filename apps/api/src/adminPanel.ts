@@ -1,17 +1,40 @@
-import type { Env } from './env'
+/**
+ * /api/admin/* — sign-in, sessions, sign-in audit and passkeys.
+ *
+ * Everything the console shows about users, keys and uploads lives in the
+ * vault worker's D1 database and is served by /vault/api/admin/*; transfer
+ * sessions and worker metrics are in ./transfers. This module owns who may
+ * open the console at all.
+ */
+import { appendCors, type Env } from './env'
 import { base64urlEncode, randomBytes } from './crypto'
 import {
+  ADMIN_SESSION_TTL,
+  LOGIN_MAX_FAILURES,
+  LOGIN_WINDOW_SECONDS,
   adminError,
+  adminSecretConfigured,
+  clearLoginFailures,
+  clearSessionCookie,
+  clientCountry,
   clientIp,
   deleteAdminSession,
+  listAdminLogins,
+  listAdminSessions,
+  logAdminLogin,
+  loginLockedFor,
   newId,
   nowSeconds,
   putWebauthnChallenge,
+  readSessionCookie,
+  recordLoginFailure,
   requireAdmin,
+  sessionCookie,
   startAdminSession,
   takeWebauthnChallenge,
   userAgent,
   verifyAdminSecret,
+  type AdminSession,
 } from './adminAuth'
 import { rpOriginsFromEnv, verifyAssertion, verifyRegistration } from './webauthn'
 
@@ -19,6 +42,8 @@ interface AdminPasskeyRow {
   id: string
   credential_id: string
   public_key: string
+  /** COSE algorithm: -7 ES256, -257 RS256. Rows from before this field are ES256. */
+  alg?: number
   counter: number
   transports: string | null
   label: string | null
@@ -29,34 +54,79 @@ interface AdminPasskeyRow {
   revoked_at: number | null
 }
 
-function jsonResponse(data: unknown, request: Request, env: Env, status = 200): Response {
-  const headers = new Headers({ 'content-type': 'application/json; charset=utf-8' })
-  const origin = request.headers.get('origin')
-  if (origin) {
-    headers.set('Access-Control-Allow-Origin', origin)
-    headers.set('Access-Control-Allow-Credentials', 'true')
-    headers.set('Vary', 'Origin')
-  } else if (env.ALLOWED_ORIGIN === '*') {
-    headers.set('Access-Control-Allow-Origin', '*')
-  }
-  headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Admin-Session, X-Admin-Secret')
-  headers.set('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS')
+const PASSKEY_PREFIX = 'admin:passkey:'
+const PASSKEY_LOOKUP_PREFIX = 'admin:passkey:lookup:'
+
+export function jsonResponse(
+  data: unknown,
+  request: Request,
+  env: Env,
+  status = 200,
+  extra: Record<string, string> = {},
+): Response {
+  const headers = new Headers({
+    'content-type': 'application/json; charset=utf-8',
+    'cache-control': 'private, no-store',
+    ...extra,
+  })
+  appendCors(headers, request, env)
   return new Response(JSON.stringify(data), { status, headers })
+}
+
+function withCookie(response: Response, cookie: string): Response {
+  const headers = new Headers(response.headers)
+  headers.append('Set-Cookie', cookie)
+  return new Response(response.body, { status: response.status, headers })
 }
 
 function rpIdFor(request: Request, env: Env): string {
   return env.WEBAUTHN_RP_ID || new URL(env.FRONTEND_BASE_URL || request.url).hostname
 }
 
-async function listAdminPasskeys(env: Env): Promise<AdminPasskeyRow[]> {
+function parseTransports(raw: string | null): string[] | undefined {
+  if (!raw) return undefined
+  try {
+    const parsed = JSON.parse(raw)
+    return Array.isArray(parsed) ? parsed.filter((t): t is string => typeof t === 'string') : undefined
+  } catch {
+    return undefined
+  }
+}
+
+async function readJson<T>(request: Request): Promise<T | null> {
+  try {
+    return await request.json() as T
+  } catch {
+    return null
+  }
+}
+
+function publicSession(session: AdminSession) {
+  return {
+    session_id: session.session_id.slice(0, 12),
+    created_at: session.created_at,
+    expires_at: session.expires_at,
+    last_seen_at: session.last_seen_at ?? session.created_at,
+    method: session.method,
+    ip: session.ip,
+    ua: session.ua,
+    passkey_label: session.passkey_label ?? null,
+  }
+}
+
+// ── Passkey storage ───────────────────────────────────────────────────────
+
+async function listAdminPasskeys(env: Env, includeRevoked = false): Promise<AdminPasskeyRow[]> {
   const rows: AdminPasskeyRow[] = []
-  const list = await env.DRIVE_SESSION_STORE.list({ prefix: 'admin:passkey:', limit: 1000 })
+  const list = await env.DRIVE_SESSION_STORE.list({ prefix: PASSKEY_PREFIX, limit: 1000 })
   await Promise.all(list.keys.map(async key => {
+    // The lookup index shares the prefix; its values are bare ids.
+    if (key.name.startsWith(PASSKEY_LOOKUP_PREFIX)) return
     const raw = await env.DRIVE_SESSION_STORE.get(key.name)
     if (!raw) return
     try {
       const row = JSON.parse(raw) as AdminPasskeyRow
-      if (!row.revoked_at) rows.push(row)
+      if (includeRevoked || !row.revoked_at) rows.push(row)
     } catch {
       // ignore malformed stored rows
     }
@@ -65,9 +135,10 @@ async function listAdminPasskeys(env: Env): Promise<AdminPasskeyRow[]> {
 }
 
 async function getAdminPasskey(env: Env, credentialId: string): Promise<AdminPasskeyRow | null> {
-  const id = await env.DRIVE_SESSION_STORE.get(`admin:passkey:lookup:${credentialId}`)
+  if (!credentialId || credentialId.length > 1024) return null
+  const id = await env.DRIVE_SESSION_STORE.get(`${PASSKEY_LOOKUP_PREFIX}${credentialId}`)
   if (!id) return null
-  const raw = await env.DRIVE_SESSION_STORE.get(`admin:passkey:${id}`)
+  const raw = await env.DRIVE_SESSION_STORE.get(`${PASSKEY_PREFIX}${id}`)
   if (!raw) return null
   try {
     const row = JSON.parse(raw) as AdminPasskeyRow
@@ -80,106 +151,187 @@ async function getAdminPasskey(env: Env, credentialId: string): Promise<AdminPas
 
 async function putAdminPasskey(env: Env, row: AdminPasskeyRow): Promise<void> {
   await Promise.all([
-    env.DRIVE_SESSION_STORE.put(`admin:passkey:${row.id}`, JSON.stringify(row)),
-    env.DRIVE_SESSION_STORE.put(`admin:passkey:lookup:${row.credential_id}`, row.id),
+    env.DRIVE_SESSION_STORE.put(`${PASSKEY_PREFIX}${row.id}`, JSON.stringify(row)),
+    env.DRIVE_SESSION_STORE.put(`${PASSKEY_LOOKUP_PREFIX}${row.credential_id}`, row.id),
   ])
 }
 
-async function logAdminLogin(
-  env: Env,
-  fields: {
-    method: 'password' | 'passkey'
-    result: 'success' | 'failure'
-    reason: string | null
-    ip: string | null
-    ua: string | null
-    passkey_id: string | null
-  },
-): Promise<void> {
-  const record = { id: newId(), created_at: nowSeconds(), ...fields }
-  await env.DRIVE_SESSION_STORE.put(`admin:login:${record.created_at}:${record.id}`, JSON.stringify(record), {
-    expirationTtl: 60 * 60 * 24 * 90,
+// ── Sign-in ───────────────────────────────────────────────────────────────
+
+async function lockedResponse(request: Request, env: Env, method: 'password' | 'passkey'): Promise<Response | null> {
+  const ip = clientIp(request)
+  const wait = await loginLockedFor(env, ip)
+  if (!wait) return null
+  await logAdminLogin(env, {
+    method, result: 'locked', reason: 'too_many_failures', ip, ua: userAgent(request),
+    country: clientCountry(request), passkey_id: null,
   })
+  return jsonResponse(
+    { error: 'too_many_attempts', retry_after: wait },
+    request, env, 429, { 'retry-after': String(wait) },
+  )
+}
+
+function signedIn(request: Request, env: Env, session: AdminSession, extra: Record<string, unknown> = {}): Response {
+  return withCookie(
+    jsonResponse({ ok: true, session: publicSession(session), ...extra }, request, env),
+    sessionCookie(request, session.session_id),
+  )
 }
 
 export async function handleAdminLogin(request: Request, env: Env): Promise<Response> {
   const ip = clientIp(request)
   const ua = userAgent(request)
-  let body: { secret?: string } = {}
-  try {
-    body = await request.json() as { secret?: string }
-  } catch {
-    return jsonResponse({ error: 'invalid_json' }, request, env, 400)
+  const country = clientCountry(request)
+
+  const locked = await lockedResponse(request, env, 'password')
+  if (locked) return locked
+
+  if (!adminSecretConfigured(env)) {
+    return jsonResponse({ error: 'admin_secret_not_configured' }, request, env, 503)
   }
 
-  if (!verifyAdminSecret(env, (body.secret || '').trim())) {
-    await logAdminLogin(env, { method: 'password', result: 'failure', reason: 'bad_secret', ip, ua, passkey_id: null })
+  const body = await readJson<{ secret?: unknown }>(request)
+  if (!body) return jsonResponse({ error: 'invalid_json' }, request, env, 400)
+  const secret = typeof body.secret === 'string' ? body.secret.trim() : ''
+
+  if (!(await verifyAdminSecret(env, secret))) {
+    await recordLoginFailure(env, ip)
+    await logAdminLogin(env, { method: 'password', result: 'failure', reason: 'bad_secret', ip, ua, country, passkey_id: null })
     return jsonResponse({ error: 'invalid_secret' }, request, env, 401)
   }
 
+  await clearLoginFailures(env, ip)
   const session = await startAdminSession(env, 'password', ip, ua)
-  await logAdminLogin(env, { method: 'password', result: 'success', reason: null, ip, ua, passkey_id: null })
-  return jsonResponse({ session_id: session.session_id, expires_at: session.expires_at, method: session.method }, request, env)
+  await logAdminLogin(env, { method: 'password', result: 'success', reason: null, ip, ua, country, passkey_id: null })
+  return signedIn(request, env, session)
 }
 
 export async function handleAdminLogout(request: Request, env: Env): Promise<Response> {
-  const guard = await requireAdmin(env, request)
-  if ('error' in guard) return guard.error
-  const sessionId = request.headers.get('x-admin-session')
+  // Signing out always clears the cookie, even when the session has already
+  // expired, so the browser never keeps a dead credential around.
+  const sessionId = readSessionCookie(request)
   if (sessionId) await deleteAdminSession(env, sessionId)
-  return jsonResponse({ ok: true }, request, env)
+  return withCookie(jsonResponse({ ok: true }, request, env), clearSessionCookie(request))
 }
 
 export async function handleAdminMe(request: Request, env: Env): Promise<Response> {
   const guard = await requireAdmin(env, request)
-  if ('error' in guard) return guard.error
-  return jsonResponse({ session: guard.session }, request, env)
+  if (!guard.ok) return guard.error
+  return jsonResponse({
+    session: publicSession(guard.session as AdminSession),
+    config: {
+      rp_id: rpIdFor(request, env),
+      session_ttl: ADMIN_SESSION_TTL,
+      lockout: { max_failures: LOGIN_MAX_FAILURES, window_seconds: LOGIN_WINDOW_SECONDS },
+    },
+  }, request, env)
 }
 
+// ── Sessions ──────────────────────────────────────────────────────────────
+
+export async function handleAdminSessions(request: Request, env: Env): Promise<Response> {
+  const guard = await requireAdmin(env, request)
+  if (!guard.ok) return guard.error
+  const current = guard.session?.session_id ?? ''
+  const sessions = await listAdminSessions(env)
+  // The listing never carries a full session id — those are bearer
+  // credentials. A 12-character handle is enough to pick one to revoke.
+  return jsonResponse({
+    sessions: sessions.map(s => ({
+      ...s,
+      session_id: s.session_id.slice(0, 12),
+      current: s.session_id === current,
+    })),
+  }, request, env)
+}
+
+export async function handleAdminSessionRevoke(request: Request, env: Env, id: string): Promise<Response> {
+  const guard = await requireAdmin(env, request)
+  if (!guard.ok) return guard.error
+  const current = guard.session?.session_id ?? ''
+
+  if (id === 'others') {
+    const sessions = await listAdminSessions(env)
+    const others = sessions.filter(s => s.session_id !== current)
+    await Promise.all(others.map(s => deleteAdminSession(env, s.session_id)))
+    return jsonResponse({ ok: true, revoked: others.length }, request, env)
+  }
+
+  if (!/^[0-9a-f]{12}$/.test(id)) return jsonResponse({ error: 'invalid_session_id' }, request, env, 400)
+  const target = (await listAdminSessions(env)).find(s => s.session_id.startsWith(id))
+  if (!target) return jsonResponse({ error: 'session_not_found' }, request, env, 404)
+  await deleteAdminSession(env, target.session_id)
+  const isCurrent = target.session_id === current
+  const response = jsonResponse({ ok: true, revoked: 1, signed_out: isCurrent }, request, env)
+  return isCurrent ? withCookie(response, clearSessionCookie(request)) : response
+}
+
+export async function handleAdminLogins(request: Request, env: Env): Promise<Response> {
+  const guard = await requireAdmin(env, request, { allowSecret: true })
+  if (!guard.ok) return guard.error
+  const raw = Number.parseInt(new URL(request.url).searchParams.get('limit') || '100', 10)
+  const limit = Math.min(Math.max(Number.isFinite(raw) ? raw : 100, 1), 500)
+  const logins = await listAdminLogins(env, limit)
+  return jsonResponse({ logins }, request, env)
+}
+
+// ── Passkeys ──────────────────────────────────────────────────────────────
+
 export async function handlePasskeyLoginBegin(request: Request, env: Env): Promise<Response> {
+  const locked = await lockedResponse(request, env, 'passkey')
+  if (locked) return locked
+
+  const passkeys = await listAdminPasskeys(env)
+  if (passkeys.length === 0) {
+    return jsonResponse({ error: 'no_passkeys_registered' }, request, env, 404)
+  }
+
   const rpId = rpIdFor(request, env)
   const challenge = base64urlEncode(randomBytes(32))
   const handle = newId()
   await putWebauthnChallenge(env, handle, { challenge, purpose: 'login', issued_at: nowSeconds() })
-  const allowCredentials = (await listAdminPasskeys(env)).map(row => ({
+  const allowCredentials = passkeys.map(row => ({
     id: row.credential_id,
     type: 'public-key',
-    transports: row.transports ? JSON.parse(row.transports) : undefined,
+    transports: parseTransports(row.transports),
   }))
   return jsonResponse({
     handle,
-    publicKey: { challenge, rpId, timeout: 60_000, userVerification: 'preferred', allowCredentials },
+    publicKey: { challenge, rpId, timeout: 60_000, userVerification: 'required', allowCredentials },
   }, request, env)
 }
 
 export async function handlePasskeyLoginFinish(request: Request, env: Env): Promise<Response> {
   const ip = clientIp(request)
   const ua = userAgent(request)
-  let body: {
+  const country = clientCountry(request)
+
+  const locked = await lockedResponse(request, env, 'passkey')
+  if (locked) return locked
+
+  const body = await readJson<{
     handle?: string
     credentialId?: string
     response?: { authenticatorData?: string; clientDataJSON?: string; signature?: string }
-  } = {}
+  }>(request)
+  if (!body) return jsonResponse({ error: 'invalid_json' }, request, env, 400)
+
+  const fail = async (reason: string, error: string, passkeyId: string | null = null) => {
+    await recordLoginFailure(env, ip)
+    await logAdminLogin(env, { method: 'passkey', result: 'failure', reason, ip, ua, country, passkey_id: passkeyId })
+    return jsonResponse({ error }, request, env, 401)
+  }
+
+  const challenge = await takeWebauthnChallenge(env, String(body.handle || ''))
+  if (!challenge || challenge.purpose !== 'login') return fail('challenge_missing', 'challenge_not_found')
+
+  const stored = await getAdminPasskey(env, String(body.credentialId || ''))
+  if (!stored) return fail('unknown_credential', 'unknown_credential')
+
+  let newSignCount: number
   try {
-    body = await request.json() as typeof body
-  } catch {
-    return jsonResponse({ error: 'invalid_json' }, request, env, 400)
-  }
-
-  const challenge = await takeWebauthnChallenge(env, body.handle || '')
-  if (!challenge || challenge.purpose !== 'login') {
-    await logAdminLogin(env, { method: 'passkey', result: 'failure', reason: 'challenge_missing', ip, ua, passkey_id: null })
-    return jsonResponse({ error: 'challenge_not_found' }, request, env, 401)
-  }
-
-  const stored = await getAdminPasskey(env, body.credentialId || '')
-  if (!stored) {
-    await logAdminLogin(env, { method: 'passkey', result: 'failure', reason: 'unknown_credential', ip, ua, passkey_id: null })
-    return jsonResponse({ error: 'unknown_credential' }, request, env, 401)
-  }
-
-  try {
-    await verifyAssertion({
+    const result = await verifyAssertion({
       authenticatorDataB64: body.response?.authenticatorData || '',
       clientDataJsonB64: body.response?.clientDataJSON || '',
       signatureB64: body.response?.signature || '',
@@ -187,32 +339,48 @@ export async function handlePasskeyLoginFinish(request: Request, env: Env): Prom
       expectedRpId: rpIdFor(request, env),
       expectedOrigins: rpOriginsFromEnv(rpIdFor(request, env)),
       storedPublicKeyB64: stored.public_key,
-      alg: -7,
+      alg: stored.alg ?? -7,
       storedSignCount: stored.counter,
     })
+    newSignCount = result.newSignCount
   } catch (e) {
-    await logAdminLogin(env, { method: 'passkey', result: 'failure', reason: `verify:${(e as Error).message}`, ip, ua, passkey_id: stored.id })
-    return jsonResponse({ error: 'passkey_verification_failed' }, request, env, 401)
+    return fail(`verify:${(e as Error).message}`, 'passkey_verification_failed', stored.id)
   }
 
+  // Persisting the counter is what makes the regression check above mean
+  // anything: it used to stay at its registration value forever, so a cloned
+  // authenticator was never detected.
+  stored.counter = newSignCount
   stored.last_used_at = nowSeconds()
   stored.last_used_ip = ip
   await putAdminPasskey(env, stored)
-  const session = await startAdminSession(env, 'passkey', ip, ua)
-  await logAdminLogin(env, { method: 'passkey', result: 'success', reason: null, ip, ua, passkey_id: stored.id })
-  return jsonResponse({ session_id: session.session_id, expires_at: session.expires_at, method: session.method, passkey: { id: stored.id, label: stored.label } }, request, env)
+  await clearLoginFailures(env, ip)
+  const session = await startAdminSession(env, 'passkey', ip, ua, stored.label)
+  await logAdminLogin(env, { method: 'passkey', result: 'success', reason: null, ip, ua, country, passkey_id: stored.id })
+  return signedIn(request, env, session, { passkey: { id: stored.id, label: stored.label } })
 }
 
 export async function handlePasskeys(request: Request, env: Env): Promise<Response> {
   const guard = await requireAdmin(env, request)
-  if ('error' in guard) return guard.error
+  if (!guard.ok) return guard.error
   const passkeys = await listAdminPasskeys(env)
-  return jsonResponse({ passkeys: passkeys.map(({ public_key, counter, revoked_at, ...rest }) => rest) }, request, env)
+  return jsonResponse({
+    passkeys: passkeys.map(row => ({
+      id: row.id,
+      label: row.label,
+      alg: row.alg ?? -7,
+      transports: parseTransports(row.transports) ?? [],
+      created_at: row.created_at,
+      created_ip: row.created_ip,
+      last_used_at: row.last_used_at,
+      last_used_ip: row.last_used_ip,
+    })),
+  }, request, env)
 }
 
 export async function handlePasskeyRegisterBegin(request: Request, env: Env): Promise<Response> {
   const guard = await requireAdmin(env, request)
-  if ('error' in guard) return guard.error
+  if (!guard.ok) return guard.error
   const rpId = rpIdFor(request, env)
   const challenge = base64urlEncode(randomBytes(32))
   const handle = newId()
@@ -220,7 +388,7 @@ export async function handlePasskeyRegisterBegin(request: Request, env: Env): Pr
   const excludeCredentials = (await listAdminPasskeys(env)).map(row => ({
     id: row.credential_id,
     type: 'public-key',
-    transports: row.transports ? JSON.parse(row.transports) : undefined,
+    transports: parseTransports(row.transports),
   }))
   return jsonResponse({
     handle,
@@ -230,7 +398,7 @@ export async function handlePasskeyRegisterBegin(request: Request, env: Env): Pr
       challenge,
       pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }],
       timeout: 60_000,
-      authenticatorSelection: { residentKey: 'preferred', userVerification: 'preferred' },
+      authenticatorSelection: { residentKey: 'preferred', userVerification: 'required' },
       attestation: 'none',
       excludeCredentials,
     },
@@ -239,19 +407,15 @@ export async function handlePasskeyRegisterBegin(request: Request, env: Env): Pr
 
 export async function handlePasskeyRegisterFinish(request: Request, env: Env): Promise<Response> {
   const guard = await requireAdmin(env, request)
-  if ('error' in guard) return guard.error
-  let body: {
+  if (!guard.ok) return guard.error
+  const body = await readJson<{
     handle?: string
     label?: string
-    response?: { attestationObject?: string; clientDataJSON?: string; transports?: string[] }
-  } = {}
-  try {
-    body = await request.json() as typeof body
-  } catch {
-    return jsonResponse({ error: 'invalid_json' }, request, env, 400)
-  }
+    response?: { attestationObject?: string; clientDataJSON?: string; transports?: unknown }
+  }>(request)
+  if (!body) return jsonResponse({ error: 'invalid_json' }, request, env, 400)
 
-  const challenge = await takeWebauthnChallenge(env, body.handle || '')
+  const challenge = await takeWebauthnChallenge(env, String(body.handle || ''))
   if (!challenge || challenge.purpose !== 'register') {
     return jsonResponse({ error: 'challenge_not_found' }, request, env, 400)
   }
@@ -266,17 +430,21 @@ export async function handlePasskeyRegisterFinish(request: Request, env: Env): P
       expectedOrigins: rpOriginsFromEnv(rpIdFor(request, env)),
     })
   } catch (e) {
-    return jsonResponse({ error: `webauthn_verification_failed:${(e as Error).message}` }, request, env, 400)
+    return jsonResponse({ error: 'webauthn_verification_failed', detail: (e as Error).message }, request, env, 400)
   }
 
+  const transports = Array.isArray(body.response?.transports)
+    ? (body.response.transports as unknown[]).filter((t): t is string => typeof t === 'string' && t.length < 32).slice(0, 8)
+    : null
   const id = newId()
   const row: AdminPasskeyRow = {
     id,
     credential_id: result.credentialId,
     public_key: result.publicKeyB64,
+    alg: result.alg,
     counter: result.signCount,
-    transports: Array.isArray(body.response?.transports) ? JSON.stringify(body.response.transports) : null,
-    label: (body.label || 'Admin passkey').slice(0, 80),
+    transports: transports ? JSON.stringify(transports) : null,
+    label: (typeof body.label === 'string' && body.label.trim() ? body.label.trim() : 'Admin passkey').slice(0, 80),
     created_at: nowSeconds(),
     created_ip: clientIp(request),
     last_used_at: null,
@@ -284,164 +452,36 @@ export async function handlePasskeyRegisterFinish(request: Request, env: Env): P
     revoked_at: null,
   }
   await putAdminPasskey(env, row)
-  return jsonResponse({ ok: true, passkey: { id, label: row.label, credential_id: row.credential_id, alg: result.alg } }, request, env)
+  return jsonResponse({ ok: true, passkey: { id, label: row.label, alg: result.alg } }, request, env)
 }
 
 export async function handlePasskeyRevoke(request: Request, env: Env, id: string): Promise<Response> {
   const guard = await requireAdmin(env, request)
-  if ('error' in guard) return guard.error
-  const raw = await env.DRIVE_SESSION_STORE.get(`admin:passkey:${id}`)
+  if (!guard.ok) return guard.error
+  const raw = await env.DRIVE_SESSION_STORE.get(`${PASSKEY_PREFIX}${id}`)
   if (!raw) return jsonResponse({ error: 'passkey_not_found' }, request, env, 404)
-  const row = JSON.parse(raw) as AdminPasskeyRow
+  let row: AdminPasskeyRow
+  try {
+    row = JSON.parse(raw) as AdminPasskeyRow
+  } catch {
+    return jsonResponse({ error: 'passkey_unreadable' }, request, env, 500)
+  }
   row.revoked_at = nowSeconds()
-  await env.DRIVE_SESSION_STORE.put(`admin:passkey:${row.id}`, JSON.stringify(row))
-  await env.DRIVE_SESSION_STORE.delete(`admin:passkey:lookup:${row.credential_id}`)
+  await env.DRIVE_SESSION_STORE.put(`${PASSKEY_PREFIX}${row.id}`, JSON.stringify(row))
+  await env.DRIVE_SESSION_STORE.delete(`${PASSKEY_LOOKUP_PREFIX}${row.credential_id}`)
   return jsonResponse({ ok: true }, request, env)
 }
 
+/** Read-only routes also accept the lnch.in proxy's X-Admin-Secret. */
 export async function requireAdminOrSecret(request: Request, env: Env): Promise<Response | null> {
+  const guard = await requireAdmin(env, request, { allowSecret: true })
+  return guard.ok ? null : guard.error
+}
+
+/** Mutating routes accept only a signed-in console session. */
+export async function requireAdminSession(request: Request, env: Env): Promise<Response | null> {
   const guard = await requireAdmin(env, request)
-  if (!('error' in guard)) return null
-  const expected = env.CLEX_ADMIN_SECRET || env.ADMIN_SECRET || ''
-  const provided = request.headers.get('x-admin-secret') || ''
-  if (expected && provided && verifyAdminSecret(env, provided)) return null
-  return adminError('admin_session_required')
+  return guard.ok ? null : guard.error
 }
 
-export async function handleAdminUsers(request: Request, env: Env): Promise<Response> {
-  const authError = await requireAdminOrSecret(request, env)
-  if (authError) return authError
-  const url = new URL(request.url)
-  const limit = Math.min(Math.max(Number.parseInt(url.searchParams.get('limit') || '100', 10) || 100, 1), 200)
-  const sessions = await listJsonPrefix<{ sub: string; email: string | null; displayName: string | null; picture: string | null; createdAt: number; updatedAt: number }>(
-    env,
-    'gdrive:session:',
-    limit,
-  )
-  const keys = await listApiKeyRecords(env, 1000)
-  const users = new Map<string, { id: string; firebase_uid: string; email: string | null; display_name: string | null; picture: string | null; created_at: number; last_seen_at: number | null }>()
-  for (const session of sessions) {
-    const existing = users.get(session.sub)
-    const created = Math.floor((session.createdAt || Date.now()) / 1000)
-    const updated = Math.floor((session.updatedAt || session.createdAt || Date.now()) / 1000)
-    if (!existing || updated > (existing.last_seen_at || 0)) {
-      users.set(session.sub, {
-        id: session.sub,
-        firebase_uid: session.sub,
-        email: session.email,
-        display_name: session.displayName,
-        picture: session.picture,
-        created_at: existing?.created_at ? Math.min(existing.created_at, created) : created,
-        last_seen_at: updated,
-      })
-    }
-  }
-  for (const key of keys) {
-    if (users.has(key.ownerSub)) continue
-    users.set(key.ownerSub, {
-      id: key.ownerSub,
-      firebase_uid: key.ownerSub,
-      email: key.ownerEmail,
-      display_name: null,
-      picture: null,
-      created_at: key.createdAt,
-      last_seen_at: key.lastUsedAt || key.createdAt,
-    })
-  }
-  return jsonResponse({ total: users.size, users: Array.from(users.values()).slice(0, limit) }, request, env)
-}
-
-export async function handleAdminUserDetail(request: Request, env: Env, uid: string): Promise<Response> {
-  const authError = await requireAdminOrSecret(request, env)
-  if (authError) return authError
-  const sessions = await listJsonPrefix<{ sub: string; email: string | null; displayName: string | null; picture: string | null; createdAt: number; updatedAt: number; accessTokenExpiresAt?: number; scope?: string[] }>(
-    env,
-    'gdrive:session:',
-    1000,
-  )
-  const userSessions = sessions.filter(session => session.sub === uid)
-  const keys = await listApiKeyRecordsForOwner(env, uid)
-  if (userSessions.length === 0 && keys.length === 0) return jsonResponse({ error: 'user_not_found' }, request, env, 404)
-  userSessions.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0))
-  const latest = userSessions[0] || null
-  return jsonResponse({
-    user: {
-      id: uid,
-      firebase_uid: uid,
-      email: latest?.email || keys[0]?.ownerEmail || null,
-      display_name: latest?.displayName || null,
-      picture: latest?.picture || null,
-      created_at: userSessions.length > 0
-        ? Math.floor(Math.min(...userSessions.map(s => s.createdAt || Date.now())) / 1000)
-        : (keys[keys.length - 1]?.createdAt || keys[0]?.createdAt || nowSeconds()),
-      last_seen_at: latest
-        ? Math.floor((latest.updatedAt || latest.createdAt || Date.now()) / 1000)
-        : (Math.max(...keys.map(k => k.lastUsedAt || k.createdAt)) || null),
-    },
-    keys,
-    security: {
-      sessions: userSessions.map(session => ({
-        email: session.email,
-        scope: session.scope || [],
-        created_at: Math.floor((session.createdAt || Date.now()) / 1000),
-        updated_at: Math.floor((session.updatedAt || session.createdAt || Date.now()) / 1000),
-        access_token_expires_at: session.accessTokenExpiresAt ? Math.floor(session.accessTokenExpiresAt / 1000) : null,
-      })),
-    },
-  }, request, env)
-}
-
-export async function handleAdminFeed(request: Request, env: Env): Promise<Response> {
-  const authError = await requireAdminOrSecret(request, env)
-  if (authError) return authError
-  const limit = Math.min(Number.parseInt(new URL(request.url).searchParams.get('limit') || '50', 10) || 50, 200)
-  const keyCreations = (await listApiKeyRecords(env, limit)).map(key => ({
-    id: key.id,
-    user_id: key.ownerSub,
-    email: key.ownerEmail,
-    display_name: null,
-    name: key.label,
-    key_prefix: key.prefix,
-    created_at: key.createdAt,
-    last_used_at: key.lastUsedAt,
-    revoked_at: key.revokedAt,
-  }))
-  return jsonResponse({ key_creations: keyCreations, api_calls: [], ip_log: [] }, request, env)
-}
-
-async function listJsonPrefix<T>(env: Env, prefix: string, limit: number): Promise<T[]> {
-  const out: T[] = []
-  const list = await env.DRIVE_SESSION_STORE.list({ prefix, limit })
-  await Promise.all(list.keys.map(async key => {
-    const raw = await env.DRIVE_SESSION_STORE.get(key.name)
-    if (!raw) return
-    try {
-      out.push(JSON.parse(raw) as T)
-    } catch {
-      // ignore malformed KV rows
-    }
-  }))
-  return out
-}
-
-interface AdminApiKeyRecord {
-  id: string
-  ownerSub: string
-  ownerEmail: string | null
-  label: string
-  prefix: string
-  createdAt: number
-  lastUsedAt: number | null
-  revokedAt: number | null
-}
-
-async function listApiKeyRecords(env: Env, limit: number): Promise<AdminApiKeyRecord[]> {
-  const rows = await listJsonPrefix<AdminApiKeyRecord & { revoked?: boolean }>(env, 'apikey:meta:', limit)
-  return rows
-    .sort((a, b) => b.createdAt - a.createdAt)
-    .map(row => ({ ...row, revokedAt: row.revokedAt ?? (row.revoked ? row.createdAt : null) }))
-}
-
-async function listApiKeyRecordsForOwner(env: Env, ownerSub: string): Promise<AdminApiKeyRecord[]> {
-  return (await listApiKeyRecords(env, 1000)).filter(key => key.ownerSub === ownerSub)
-}
+export { adminError }

@@ -81,10 +81,25 @@ export function updateInIndex(note: SearchEntry): void {
 
 // ── Search ────────────────────────────────────────────────────────────────────
 
-function highlight(text: string, terms: string[]): string {
-  if (!terms.length) return text
+/**
+ * Returns HTML: the text, escaped, with each term wrapped in <mark>. The
+ * result is rendered with {@html}, and note titles and bodies arrive from
+ * paired devices and imports, so every byte of the text is escaped — only the
+ * <mark> tags added here are markup.
+ */
+export function highlight(text: string, terms: string[]): string {
+  if (!terms.length) return escapeHtml(text)
   const pattern = new RegExp(`(${terms.map(t => escapeRe(t)).join('|')})`, 'gi')
-  return text.replace(pattern, '<mark>$1</mark>')
+  return text
+    .split(pattern)
+    .map((part, i) => (i % 2 === 1 ? `<mark>${escapeHtml(part)}</mark>` : escapeHtml(part)))
+    .join('')
+}
+
+function escapeHtml(s: string): string {
+  return s.replace(/[&<>"']/g, ch => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch] as string
+  ))
 }
 
 function escapeRe(s: string): string {

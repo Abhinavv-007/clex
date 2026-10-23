@@ -1,218 +1,336 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script>
-    // Theme bootstrap — must stay inline and render-blocking so the correct
-    // palette is committed before first paint. Mirrors readTheme() in js/theme.js.
-    (() => {
-      try {
-        const saved = localStorage.getItem('clex-theme-v3');
-        const theme = (saved === 'dark' || saved === 'light')
-          ? saved
-          : (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-        document.documentElement.setAttribute('data-theme', theme);
-        document.documentElement.classList.toggle('dark', theme === 'dark');
-        document.documentElement.style.colorScheme = theme;
-      } catch {
-        document.documentElement.setAttribute('data-theme', 'light');
-        document.documentElement.classList.remove('dark');
-        document.documentElement.style.colorScheme = 'light';
-      }
-    })();
-  </script>
-  <link rel="icon" type="image/png" href="/brand/clex-logo.png">
-  <link rel="apple-touch-icon" href="/brand/clex-logo.png">
-  <title>Admin · Clex AI control room</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
   <meta name="robots" content="noindex,nofollow">
-  <meta name="description" content="Restricted operator console for Clex.">
-  <!-- Fonts: one request, from <head>, so they download in parallel with the
-       stylesheets instead of being chained behind a CSS @import. Geist is the
-       interface face, Geist Mono the data, Sacramento the accent. -->
+  <meta name="referrer" content="no-referrer">
+  <!-- The console carries its own head rather than the shared @head
+       partial: that one loads the whole site's entry script (workspace islands,
+       Firebase, the transfer stack), none of which belongs here. The fonts,
+       theme bootstrap and stylesheets are the same, so it looks the same.
+       Its CSP (scripts/flatten-pages-output.mjs) allows this page's inline
+       script by hash. -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&family=Geist+Mono:wght@400;500&family=Sacramento&display=swap">
-
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Geist:wght@300..700&family=Geist+Mono:wght@400;500&display=swap">
+  <link rel="icon" type="image/png" href="/brand/clex-logo.png">
+  <link rel="apple-touch-icon" href="/brand/clex-logo.png">
+  <script>
+    (() => {
+      const root = document.documentElement;
+      let theme = 'light';
+      try {
+        const saved = localStorage.getItem('clex-theme-v3');
+        theme = saved === 'dark' || saved === 'light'
+          ? saved
+          : (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+      } catch { /* storage blocked: light */ }
+      root.dataset.theme = theme;
+      root.classList.toggle('dark', theme === 'dark');
+      root.style.colorScheme = theme;
+      root.classList.add('js');
+    })();
+  </script>
+  <title>Control room — Clex admin</title>
+  <meta name="description" content="Restricted operator console for Clex.">
   <link rel="stylesheet" href="/css/tokens.css">
   <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/motion.css">
   <link rel="stylesheet" href="/css/pages/admin.css">
+  <script type="module" src="/js/admin/index.js"></script>
 </head>
 <body data-page="admin">
-  <main class="admin-shell">
-    <!-- ── Login view ── -->
-    <section class="admin-login" id="admin-login">
-      <div class="admin-login__card">
-        <div class="admin-login__brand">
-          <span class="admin-login__mark"></span>
-          <span class="admin-login__crumb">CLEX · ADMIN</span>
-        </div>
-        <h1 class="admin-login__title">
-          Clex AI<br>
-          <em>control room.</em>
-        </h1>
-        <p class="admin-login__lede">
-          Restricted area. Sign in with the admin secret or a registered passkey.
-        </p>
+  <a class="skip-link" href="#adm-view">Skip to content</a>
 
-        <div class="seg" role="tablist" aria-label="Authentication method">
-          <button class="seg__opt is-active" data-method="password" role="tab">Password</button>
-          <button class="seg__opt" data-method="passkey" role="tab">Passkey</button>
-        </div>
+  <!-- ═══ Booting: shown until the session check answers ═══ -->
+  <div class="adm-boot" id="adm-boot" role="status" aria-live="polite">
+    <img src="/brand/clex-logo.png" alt="" class="adm-boot__mark nav__mark-img nav__mark-img--light" width="44" height="44">
+    <img src="/brand/clex-logo-dark.png" alt="" class="adm-boot__mark nav__mark-img nav__mark-img--dark" width="44" height="44">
+    <span class="adm-boot__text">Opening the control room…</span>
+  </div>
 
-        <form id="admin-login-form" class="admin-login__form" autocomplete="off" novalidate>
-          <label class="admin-field" data-method="password">
-            <span class="admin-field__label">ADMIN SECRET</span>
-            <input
-              class="admin-field__input"
-              type="password"
-              id="admin-secret"
-              autocomplete="current-password"
-              placeholder="••••••••••••••••"
-              spellcheck="false"
-              required>
+  <!-- ═══ Sign in ═══ -->
+  <div class="adm-login" id="adm-login" hidden>
+    <header class="adm-login__bar">
+      <a href="/" class="nav__brand" aria-label="Clex home">
+        <span class="nav__mark" aria-hidden="true">
+          <img src="/brand/clex-logo.png" alt="" class="nav__mark-img nav__mark-img--light" width="28" height="28">
+          <img src="/brand/clex-logo-dark.png" alt="" class="nav__mark-img nav__mark-img--dark" width="28" height="28">
+        </span>
+        <span class="nav__word">Clex</span>
+      </a>
+      <button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch colour theme">
+        <svg class="theme-toggle__icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+          <mask id="theme-toggle-moon-a">
+            <rect x="0" y="0" width="24" height="24" fill="#fff"/>
+            <circle class="theme-toggle__bite" cx="24" cy="4" r="7" fill="#000"/>
+          </mask>
+          <circle class="theme-toggle__core" cx="12" cy="12" r="5" fill="currentColor" mask="url(#theme-toggle-moon-a)"/>
+          <g class="theme-toggle__rays" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+            <path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/>
+          </g>
+        </svg>
+      </button>
+    </header>
+
+    <main class="stage-head adm-login__stage" id="adm-login-main">
+      <canvas class="stream-canvas" data-stream="soft" aria-hidden="true"></canvas>
+      <div class="stream-veil" aria-hidden="true"></div>
+      <canvas class="manifest-canvas" data-manifest="soft" aria-hidden="true"></canvas>
+
+      <div class="adm-login__inner">
+        <span class="eyebrow eyebrow--center">Operator console</span>
+        <h1 class="adm-login__title">Control <span class="script" data-write="now" data-delay="300">room</span></h1>
+        <p class="lede adm-login__lede">Restricted. Every sign-in, success or not, is written to the audit log.</p>
+
+        <form class="adm-login__card" id="adm-login-form" novalidate>
+          <div class="tabs adm-login__tabs" role="tablist" aria-label="Sign-in method">
+            <span class="tabs__pill" aria-hidden="true"></span>
+            <button class="tabs__btn" type="button" role="tab" aria-selected="true" data-method="password">Admin secret</button>
+            <button class="tabs__btn" type="button" role="tab" aria-selected="false" data-method="passkey">Passkey</button>
+          </div>
+
+          <label class="adm-field" data-for="password">
+            <span class="adm-field__label">Admin secret</span>
+            <span class="adm-field__wrap">
+              <input class="input adm-field__input" type="password" id="adm-secret" name="secret"
+                autocomplete="current-password" spellcheck="false" placeholder="••••••••••••••••" required>
+              <button class="adm-field__reveal" type="button" id="adm-secret-reveal" aria-label="Show secret" aria-pressed="false">
+                <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M2.5 12s3.5-6.5 9.5-6.5S21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="2.8" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+              </button>
+            </span>
           </label>
 
-          <div class="admin-passkey-blurb" data-method="passkey" hidden>
-            Tap continue to sign in with a hardware-backed passkey already registered to this admin.
-          </div>
+          <p class="adm-login__blurb" data-for="passkey" hidden>
+            Use a passkey registered to this console — Touch ID, Windows Hello, or a hardware key.
+            It must be unlocked with a fingerprint, face or PIN.
+          </p>
 
-          <button type="submit" class="btn-gold" id="admin-continue">Continue</button>
-          <p class="admin-error" id="admin-error" hidden></p>
+          <button class="btn btn--primary btn--lg adm-login__submit" type="submit" id="adm-continue">
+            <span id="adm-continue-label">Sign in</span>
+            <svg class="btn__arrow" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M3 8h9M8.5 4.5 12 8l-3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <p class="adm-login__error" id="adm-login-error" role="alert" hidden></p>
         </form>
+
+        <p class="adm-login__foot"><span class="status-dot"></span>8-hour sessions · HttpOnly cookie · lockout after failures</p>
       </div>
-    </section>
+    </main>
+  </div>
 
-    <!-- ── Dashboard view ── -->
-    <section class="admin-dash" id="admin-dash" hidden>
-      <aside class="admin-dash__rail">
-        <div class="admin-dash__brand">
-          <span class="admin-login__mark"></span>
-          <span>Clex / Admin</span>
-        </div>
-        <nav class="admin-dash__nav" id="admin-nav">
-          <button class="nav-item is-active" data-tab="overview"><span class="nav-item__dot"></span>Overview</button>
-          <button class="nav-item" data-tab="users"><span class="nav-item__dot"></span>Users</button>
-          <button class="nav-item" data-tab="feed"><span class="nav-item__dot"></span>Live feed</button>
-          <button class="nav-item" data-tab="audit"><span class="nav-item__dot"></span>Audit log</button>
-          <button class="nav-item" data-tab="passkeys"><span class="nav-item__dot"></span>Passkeys</button>
-        </nav>
-        <div class="admin-dash__rail-bottom">
-          <div class="admin-session" id="admin-session-meta">—</div>
-          <button class="btn-ghost" id="admin-logout">Sign out</button>
-        </div>
-      </aside>
-
-      <div class="admin-dash__main">
-        <header class="admin-dash__head">
-          <div>
-            <h1 class="admin-dash__title">Admin <em>Control</em></h1>
-            <p class="admin-dash__lede">
-              Users, sessions, transfers, audit, passkeys.
-            </p>
-          </div>
-          <div class="admin-dash__head-actions">
-            <button class="btn-ghost" id="admin-refresh">Refresh</button>
-          </div>
-        </header>
-
-        <!-- ── Overview tab ── -->
-        <section class="tab-panel is-active" id="tab-overview" data-tab="overview">
-          <div class="tile-grid" id="overview-tiles"></div>
-          <div class="card-grid">
-            <div class="card">
-              <div class="card__head">
-                <h2 class="card__title"><em>Recent</em> transfers</h2>
-                <span class="card__lede">last 20 KV-tracked transfer sessions</span>
-              </div>
-              <div class="card__body" id="overview-transfers"><div class="empty">loading…</div></div>
-            </div>
-            <div class="card">
-              <div class="card__head">
-                <h2 class="card__title"><em>Service</em> health</h2>
-                <span class="card__lede">cron, bindings, version</span>
-              </div>
-              <div class="card__body" id="overview-health"><div class="empty">loading…</div></div>
-            </div>
-          </div>
-        </section>
-
-        <!-- ── Users tab ── -->
-        <section class="tab-panel" id="tab-users" data-tab="users">
-          <div class="users-toolbar">
-            <input class="users-search" id="users-search" placeholder="Search by email or UID…">
-            <button class="btn-ghost" id="users-refresh">Refresh</button>
-          </div>
-          <div class="card">
-            <div class="card__body">
-              <div class="users-table" id="users-table"><div class="empty">loading…</div></div>
-            </div>
-          </div>
-        </section>
-
-        <!-- ── Live feed tab ── -->
-        <section class="tab-panel" id="tab-feed" data-tab="feed">
-          <div class="feed-grid">
-            <div class="card">
-              <div class="card__head">
-                <h2 class="card__title"><em>API key</em> creations</h2>
-                <span class="card__lede">who created which key, when</span>
-              </div>
-              <div class="card__body" id="feed-keys"><div class="empty">loading…</div></div>
-            </div>
-            <div class="card">
-              <div class="card__head">
-                <h2 class="card__title"><em>API</em> calls</h2>
-                <span class="card__lede">recent route hits per user</span>
-              </div>
-              <div class="card__body" id="feed-api"><div class="empty">loading…</div></div>
-            </div>
-            <div class="card">
-              <div class="card__head">
-                <h2 class="card__title"><em>User</em> IP history</h2>
-                <span class="card__lede">signed-in account access by IP and time</span>
-              </div>
-              <div class="card__body" id="feed-ip"><div class="empty">loading…</div></div>
-            </div>
-          </div>
-        </section>
-
-        <!-- ── Audit tab ── -->
-        <section class="tab-panel" id="tab-audit" data-tab="audit">
-          <div class="card">
-            <div class="card__head">
-              <h2 class="card__title"><em>Login</em> events</h2>
-              <span class="card__lede">password and passkey admin sign-in attempts</span>
-            </div>
-            <div class="card__body" id="audit-list"><div class="empty">loading…</div></div>
-          </div>
-          <div class="card">
-            <div class="card__head">
-              <h2 class="card__title"><em>Worker</em> events</h2>
-              <span class="card__lede">process boot + 5xx response surface</span>
-            </div>
-            <div class="card__body" id="audit-system"><div class="empty">loading…</div></div>
-          </div>
-        </section>
-
-        <!-- ── Passkeys tab ── -->
-        <section class="tab-panel" id="tab-passkeys" data-tab="passkeys">
-          <div class="card">
-            <div class="card__head">
-              <h2 class="card__title"><em>Registered</em> passkeys</h2>
-              <span class="card__lede">Hardware-backed sign-in keys for this admin.</span>
-            </div>
-            <div class="card__body" id="passkeys-list"><div class="empty">loading…</div></div>
-            <div class="card__foot">
-              <button class="btn-gold" id="passkey-add">+ Add a passkey on this device</button>
-              <p class="passkey-msg" id="passkey-msg" hidden></p>
-            </div>
-          </div>
-        </section>
+  <!-- ═══ Console ═══ -->
+  <div class="adm" id="adm" hidden>
+    <aside class="adm-rail" id="adm-rail" aria-label="Console">
+      <div class="adm-rail__head">
+        <a href="/" class="nav__brand adm-rail__brand" aria-label="Clex home">
+          <span class="nav__mark" aria-hidden="true">
+            <img src="/brand/clex-logo.png" alt="" class="nav__mark-img nav__mark-img--light" width="28" height="28">
+            <img src="/brand/clex-logo-dark.png" alt="" class="nav__mark-img nav__mark-img--dark" width="28" height="28">
+          </span>
+          <span class="nav__word">Clex</span>
+        </a>
+        <span class="tag tag--gold">Admin</span>
       </div>
-    </section>
-  </main>
 
-  <script type="module" src="/js/admin/index.js"></script>
+      <nav class="adm-nav" id="adm-nav" aria-label="Sections">
+        <span class="adm-nav__group">Monitor</span>
+        <a href="#overview" class="adm-nav__item" data-view="overview">
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="8" rx="1.8"/><rect x="13.5" y="3.5" width="7" height="5" rx="1.8"/><rect x="3.5" y="14.5" width="7" height="6" rx="1.8"/><rect x="13.5" y="11.5" width="7" height="9" rx="1.8"/></svg>
+          <span>Overview</span>
+        </a>
+        <a href="#system" class="adm-nav__item" data-view="system">
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M3 12h4l2.5-6 5 12 2.5-6H21"/></svg>
+          <span>System</span>
+          <span class="adm-nav__badge" data-badge="system" hidden></span>
+        </a>
+        <span class="adm-nav__group">People &amp; data</span>
+        <a href="#users" class="adm-nav__item" data-view="users">
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="9" cy="8.5" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5"/><path d="M15.5 5.2a3.5 3.5 0 0 1 0 6.6M17.8 14.8c1.9.8 3.2 2.5 3.7 5.2"/></svg>
+          <span>Users</span>
+          <span class="adm-nav__count" data-count-for="users"></span>
+        </a>
+        <a href="#keys" class="adm-nav__item" data-view="keys">
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="8" cy="15" r="4"/><path d="m11 12 8-8m-3 3 3 3m-6 0 2 2"/></svg>
+          <span>API keys</span>
+          <span class="adm-nav__count" data-count-for="keys"></span>
+        </a>
+        <a href="#uploads" class="adm-nav__item" data-view="uploads">
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 15V4M7.5 8.5 12 4l4.5 4.5M5 15v3.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V15"/></svg>
+          <span>Uploads</span>
+          <span class="adm-nav__count" data-count-for="uploads"></span>
+        </a>
+        <a href="#transfers" class="adm-nav__item" data-view="transfers">
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M4 8h13m0 0-3.5-3.5M17 8l-3.5 3.5M20 16H7m0 0 3.5-3.5M7 16l3.5 3.5"/></svg>
+          <span>Transfers</span>
+        </a>
+        <a href="#vault" class="adm-nav__item" data-view="vault">
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect x="4" y="10.5" width="16" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/><circle cx="12" cy="15.5" r="1.4"/></svg>
+          <span>Vault</span>
+        </a>
+        <span class="adm-nav__group">Access</span>
+        <a href="#security" class="adm-nav__item" data-view="security">
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 3.5 5 6v5.5c0 4.3 2.9 7.6 7 9 4.1-1.4 7-4.7 7-9V6l-7-2.5Z"/><path d="m9 12 2 2 4-4"/></svg>
+          <span>Security</span>
+          <span class="adm-nav__badge" data-badge="security" hidden></span>
+        </a>
+      </nav>
+
+      <div class="adm-rail__foot">
+        <ul class="adm-services" id="adm-services" aria-label="Service status">
+          <li data-service="api"><span class="status-dot"></span>API</li>
+          <li data-service="vault"><span class="status-dot"></span>Vault</li>
+          <li data-service="chain"><span class="status-dot"></span>Chain</li>
+          <li data-service="signal"><span class="status-dot"></span>Signal</li>
+        </ul>
+        <div class="adm-me" id="adm-me">
+          <span class="adm-me__avatar" aria-hidden="true">A</span>
+          <span class="adm-me__text">
+            <b>Operator</b>
+            <small id="adm-me-meta">—</small>
+          </span>
+          <button class="adm-icon-btn" type="button" id="adm-logout" aria-label="Sign out" title="Sign out">
+            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M14 4.5h3.5A1.5 1.5 0 0 1 19 6v12a1.5 1.5 0 0 1-1.5 1.5H14M10 16l4-4-4-4M14 12H4.5"/></svg>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <div class="adm-main">
+      <header class="adm-top">
+        <button class="adm-icon-btn adm-top__menu" type="button" id="adm-menu" aria-label="Open sections" aria-expanded="false" aria-controls="adm-rail">
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h10"/></svg>
+        </button>
+        <div class="adm-top__title">
+          <span class="eyebrow" id="adm-crumb">Control room</span>
+        </div>
+        <div class="adm-top__actions">
+          <span class="adm-top__stamp mono" id="adm-stamp" aria-live="polite"></span>
+          <label class="adm-switch" title="Refresh every 60 seconds">
+            <input type="checkbox" id="adm-auto">
+            <span class="adm-switch__track" aria-hidden="true"></span>
+            <span class="adm-switch__label">Live</span>
+          </label>
+          <button class="btn btn--ghost btn--sm" type="button" id="adm-refresh">
+            <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 5v6h-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>Refresh</span>
+          </button>
+          <button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch colour theme">
+            <svg class="theme-toggle__icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+              <mask id="theme-toggle-moon-b">
+                <rect x="0" y="0" width="24" height="24" fill="#fff"/>
+                <circle class="theme-toggle__bite" cx="24" cy="4" r="7" fill="#000"/>
+              </mask>
+              <circle class="theme-toggle__core" cx="12" cy="12" r="5" fill="currentColor" mask="url(#theme-toggle-moon-b)"/>
+              <g class="theme-toggle__rays" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+                <path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/>
+              </g>
+            </svg>
+          </button>
+        </div>
+      </header>
+
+      <main class="adm-view" id="adm-view" tabindex="-1">
+        <section class="adm-section" data-section="overview" hidden>
+          <header class="adm-section__head">
+            <div>
+              <h1 class="adm-h1">Everything, <span class="script">at a glance</span></h1>
+              <p class="adm-lede">People, keys, uploads, transfers and service health across every Clex worker.</p>
+            </div>
+          </header>
+          <div class="adm-section__body" data-body="overview"></div>
+        </section>
+
+        <section class="adm-section" data-section="users" hidden>
+          <header class="adm-section__head">
+            <div>
+              <h1 class="adm-h1">Every <span class="script">user</span></h1>
+              <p class="adm-lede">Signed-in accounts and anonymous devices that hold a key, an upload, a file or a synced Vault.</p>
+            </div>
+          </header>
+          <div class="adm-section__body" data-body="users"></div>
+        </section>
+
+        <section class="adm-section" data-section="keys" hidden>
+          <header class="adm-section__head">
+            <div>
+              <h1 class="adm-h1">API <span class="script">keys</span></h1>
+              <p class="adm-lede">Every key ever minted. Adjust a key's limits, revoke it, or bring it back.</p>
+            </div>
+          </header>
+          <div class="adm-section__body" data-body="keys"></div>
+        </section>
+
+        <section class="adm-section" data-section="uploads" hidden>
+          <header class="adm-section__head">
+            <div>
+              <h1 class="adm-h1">Shared <span class="script">files</span></h1>
+              <p class="adm-lede">Uploads made through the API and CLI, and the share links that serve them.</p>
+            </div>
+          </header>
+          <div class="adm-section__body" data-body="uploads"></div>
+        </section>
+
+        <section class="adm-section" data-section="transfers" hidden>
+          <header class="adm-section__head">
+            <div>
+              <h1 class="adm-h1">Transfers, <span class="script">in flight</span></h1>
+              <p class="adm-lede">The public chain ledger of device-to-device transfers, and transfer sessions opened through the API.</p>
+            </div>
+          </header>
+          <div class="adm-section__body" data-body="transfers"></div>
+        </section>
+
+        <section class="adm-section" data-section="vault" hidden>
+          <header class="adm-section__head">
+            <div>
+              <h1 class="adm-h1">The <span class="script">Vault</span></h1>
+              <p class="adm-lede">Synced accounts, attachments and secret links. Contents are encrypted in the browser; only sizes and times are visible here.</p>
+            </div>
+          </header>
+          <div class="adm-section__body" data-body="vault"></div>
+        </section>
+
+        <section class="adm-section" data-section="security" hidden>
+          <header class="adm-section__head">
+            <div>
+              <h1 class="adm-h1">Who <span class="script">holds the keys</span></h1>
+              <p class="adm-lede">Console sessions, every sign-in attempt, and the passkeys that can open this room.</p>
+            </div>
+          </header>
+          <div class="adm-section__body" data-body="security"></div>
+        </section>
+
+        <section class="adm-section" data-section="system" hidden>
+          <header class="adm-section__head">
+            <div>
+              <h1 class="adm-h1">Under <span class="script">the hood</span></h1>
+              <p class="adm-lede">Worker health, bindings, configuration, request metrics and maintenance.</p>
+            </div>
+          </header>
+          <div class="adm-section__body" data-body="system"></div>
+        </section>
+      </main>
+    </div>
+    <div class="adm-scrim" id="adm-scrim" hidden></div>
+  </div>
+
+  <!-- Overlays, filled by js/admin/ui.js -->
+  <aside class="adm-drawer" id="adm-drawer" aria-modal="true" role="dialog" aria-labelledby="adm-drawer-title" hidden>
+    <div class="adm-drawer__panel">
+      <header class="adm-drawer__head">
+        <h2 class="adm-drawer__title" id="adm-drawer-title"></h2>
+        <button class="adm-icon-btn" type="button" data-drawer-close aria-label="Close">
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+        </button>
+      </header>
+      <div class="adm-drawer__body" id="adm-drawer-body"></div>
+    </div>
+  </aside>
+  <dialog class="adm-dialog" id="adm-dialog" aria-labelledby="adm-dialog-title"></dialog>
+  <div class="adm-toasts" id="adm-toasts" aria-live="polite" aria-atomic="false"></div>
+  <div class="adm-tooltip" id="adm-tooltip" role="tooltip" hidden></div>
 </body>
 </html>

@@ -1,5 +1,8 @@
 import { requireOwner } from './auth'
 import { putObject, getObject, deleteObjects, isConfigured, backendName } from './storage'
+import { runPendingDeletions } from './cleanup'
+import { handleAdmin } from './admin'
+import { readFilename, tooLarge } from './requestLimits'
 import { mintAnonymousKey } from './anonKeys'
 import { handleAccountKey, handleSyncPull, handleSyncPush } from './accountSync'
 import {
@@ -45,6 +48,7 @@ import {
  *   GET    /vault/api/sync?since=N              — account sync: changes after cursor N
  *   POST   /vault/api/sync                      — account sync: push encrypted changes
  *   GET    /vault/api/health                    — health check
+ *   *      /vault/api/admin/*                   — operator console (see admin.ts)
  *
  * Cron (every hour):
  *   Queries pending_deletions where delete_at <= now(), deletes from Supabase,
@@ -83,10 +87,6 @@ export interface Env {
   ANON_KEY_SECRET?: string
 }
 
-// ── Boot timestamp (per-instance, resets on cold start) ───────────────────────
-
-const VAULT_BOOTED_AT = Date.now()
-
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const STORAGE_BUCKET = 'attachments'
@@ -94,6 +94,8 @@ const MAX_FILE_BYTES = 10 * 1024 * 1024          // 10 MB per file
 const DAILY_QUOTA_BYTES = 100 * 1024 * 1024      // 100 MB per user per day
 const QUOTA_KV_TTL = 25 * 60 * 60               // 25 hours in seconds
 const DELETE_AFTER_MS = 24 * 60 * 60 * 1000     // 24 hours in ms
+const MAX_BACKUP_BYTES = 5 * 1024 * 1024         // one encrypted Vault snapshot
+const MAX_PAIRING_BYTES = 64 * 1024              // one SDP offer or answer
 
 // ── CORS ──────────────────────────────────────────────────────────────────────
 
@@ -222,6 +224,14 @@ function normalizeSecretPolicy(input?: Partial<SecretPolicy>): SecretPolicy {
   }
 }
 
+function parseSecret(raw: string): SecretRecord | null {
+  try {
+    return JSON.parse(raw) as SecretRecord
+  } catch {
+    return null
+  }
+}
+
 async function handleSecretCreate(req: Request, env: Env, cors: Record<string, string>): Promise<Response> {
   let body: {
     encryptedPayload?: string
@@ -232,8 +242,11 @@ async function handleSecretCreate(req: Request, env: Env, cors: Record<string, s
   }
   try { body = await req.json() } catch { return err('Invalid JSON', 400, cors) }
 
-  const { encryptedPayload, iv, title, ttlSeconds = 86400 } = body
-  if (!encryptedPayload || !iv) return err('encryptedPayload and iv required', 400, cors)
+  const { encryptedPayload, iv, ttlSeconds = 86400 } = body
+  if (typeof encryptedPayload !== 'string' || !encryptedPayload || typeof iv !== 'string' || !iv || iv.length > 64) {
+    return err('encryptedPayload and iv required', 400, cors)
+  }
+  const title = typeof body.title === 'string' ? body.title.slice(0, 120) : undefined
 
   const maxSize = parseInt(env.MAX_SECRET_SIZE ?? '50000')
   if (encryptedPayload.length > maxSize * 1.4) return err('Payload too large', 413, cors)
@@ -263,7 +276,8 @@ async function handleSecretFetch(id: string, env: Env, cors: Record<string, stri
   const raw = await env.VAULT_SECRETS.get(`secret:${id}`)
   if (!raw) return json({ gone: true, reason: 'not_found' }, 410, cors)
 
-  const record: SecretRecord = JSON.parse(raw)
+  const record = parseSecret(raw)
+  if (!record) return json({ gone: true, reason: 'not_found' }, 410, cors)
   const policy = normalizeSecretPolicy(record.policy)
   if (record.alreadyOpened && policy.viewOnce) {
     return json({ gone: true, reason: 'already_opened', openedAt: record.openedAt }, 410, cors)
@@ -297,7 +311,8 @@ async function handleSecretFetch(id: string, env: Env, cors: Record<string, stri
 async function handleSecretStatus(id: string, env: Env, cors: Record<string, string>): Promise<Response> {
   const raw = await env.VAULT_SECRETS.get(`secret:${id}`)
   if (!raw) return json({ exists: false }, 200, cors)
-  const record: SecretRecord = JSON.parse(raw)
+  const record = parseSecret(raw)
+  if (!record) return json({ exists: false }, 200, cors)
   const policy = normalizeSecretPolicy(record.policy)
   return json({
     exists: true,
@@ -334,11 +349,15 @@ async function handleFileUpload(req: Request, env: Env, cors: Record<string, str
   const userId = auth.owner.uid
 
   const subscriptionId = req.headers.get('X-Subscription-ID') ?? 'default'
-  const rawFilename = req.headers.get('X-Filename')
-  if (!rawFilename) return err('X-Filename header required', 400, cors)
-  const filename = decodeURIComponent(rawFilename)
+  if (!/^[A-Za-z0-9_-]{1,64}$/.test(subscriptionId)) return err('X-Subscription-ID must be 1-64 of [A-Za-z0-9_-]', 400, cors)
+  const filename = readFilename(req.headers.get('X-Filename'))
+  if (!filename) return err('X-Filename header required', 400, cors)
 
-  const contentType = req.headers.get('Content-Type') ?? 'application/octet-stream'
+  const contentType = (req.headers.get('Content-Type') ?? 'application/octet-stream').slice(0, 128)
+  // Refuse an oversized body before reading it into memory.
+  if (tooLarge(req, MAX_FILE_BYTES)) {
+    return err('File exceeds 10MB limit', 413, cors)
+  }
   const buffer = await req.arrayBuffer()
   const fileBytes = buffer.byteLength
 
@@ -462,7 +481,7 @@ async function handleFileDownload(
   // Streamed by this worker rather than via a provider signed URL, so the
   // ownership check above and the bytes travel the same request and access
   // cannot outlive a revoke.
-  const safeName = row.filename.replace(/[^\x20-\x7e]/g, '_').replace(/"/g, '')
+  const safeName = row.filename.replace(/[^\x20-\x7e]/g, '_').replace(/["\\]/g, '')
   return new Response(object.body, {
     status: 200,
     headers: {
@@ -472,6 +491,10 @@ async function handleFileDownload(
       'Content-Disposition':
         `attachment; filename="${safeName}"; filename*=UTF-8''${encodeURIComponent(row.filename)}`,
       'Cache-Control': 'private, no-store',
+      // The type is whatever the uploader claimed; never let a browser render
+      // it as a page on this origin.
+      'X-Content-Type-Options': 'nosniff',
+      'Content-Security-Policy': "sandbox; default-src 'none'",
     },
   })
 }
@@ -566,34 +589,6 @@ async function handleSubscriptionDelete(
   return json({ ok: true, deleted: rows.length }, 200, cors)
 }
 
-// ── Cron: pending deletions ───────────────────────────────────────────────────
-
-/**
- * Runs every hour via Cron Trigger.
- * Fetches rows from pending_deletions where delete_at <= now(),
- * deletes each file from Supabase Storage, then cleans up D1.
- */
-async function runPendingDeletions(env: Env): Promise<void> {
-  const now = Math.floor(Date.now() / 1000)
-
-  const result = await env.DB.prepare(
-    'SELECT id, storage_path FROM pending_deletions WHERE delete_at <= ? LIMIT 200'
-  ).bind(now).all<{ id: string; storage_path: string }>()
-
-  const rows = result.results ?? []
-  if (rows.length === 0) return
-
-  const paths = rows.map(r => r.storage_path)
-  await deleteObjects(env, paths)
-
-  const ids = rows.map(r => r.id)
-  const placeholders = ids.map(() => '?').join(', ')
-  await env.DB.batch([
-    env.DB.prepare(`DELETE FROM pending_deletions WHERE id IN (${placeholders})`).bind(...ids),
-    env.DB.prepare(`DELETE FROM attachments WHERE id IN (${placeholders})`).bind(...ids),
-  ])
-}
-
 // ── Device Pairing ────────────────────────────────────────────────────────────
 
 interface PairingOffer {
@@ -637,9 +632,13 @@ async function handleBackupPut(
   cors: Record<string, string>,
 ): Promise<Response> {
   if (!isRoomId(roomId)) return err('Invalid room id', 400, cors)
+  if (tooLarge(req, MAX_BACKUP_BYTES)) return err('Backup is too large', 413, cors)
 
+  let text: string
+  try { text = await req.text() } catch { return err('Invalid body', 400, cors) }
+  if (text.length > MAX_BACKUP_BYTES) return err('Backup is too large', 413, cors)
   let body: Partial<BackupSnapshotRecord>
-  try { body = await req.json() } catch { return err('Invalid JSON', 400, cors) }
+  try { body = JSON.parse(text) } catch { return err('Invalid JSON', 400, cors) }
 
   if (
     typeof body.fingerprint !== 'string' ||
@@ -717,6 +716,8 @@ async function handleAccountDeviceUpsert(
     return err('Device payload is incomplete', 400, cors)
   }
 
+  if (body.id.length > 128 || body.roomId.length > 64) return err('Device payload is invalid', 400, cors)
+
   const nextDevice: AccountDeviceRecord = {
     id: body.id,
     name: body.name.slice(0, 96),
@@ -769,14 +770,17 @@ async function handleAccountDeviceDelete(
 async function handlePairingOffer(req: Request, env: Env, cors: Record<string, string>): Promise<Response> {
   let body: { offer?: string; deviceInfo?: string }
   try { body = await req.json() } catch { return err('Invalid JSON', 400, cors) }
-  if (!body.offer) return err('offer required', 400, cors)
+  if (typeof body.offer !== 'string' || !body.offer) return err('offer required', 400, cors)
+  if (body.offer.length > MAX_PAIRING_BYTES || String(body.deviceInfo ?? '').length > 4096) {
+    return err('Pairing offer is too large', 413, cors)
+  }
 
   const code = random8Digit()
   const now = Date.now()
   const record: PairingOffer = {
     code,
     offer: body.offer,
-    deviceInfo: body.deviceInfo ?? '{}',
+    deviceInfo: typeof body.deviceInfo === 'string' ? body.deviceInfo : '{}',
     createdAt: now,
     expiresAt: now + 300_000,
   }
@@ -789,7 +793,8 @@ async function handlePairingFetch(code: string, env: Env, cors: Record<string, s
   const raw = await env.VAULT_SIGNALS.get(`pairing:${code}`)
   if (!raw) return json({ found: false }, 404, cors)
 
-  const record: PairingOffer = JSON.parse(raw)
+  let record: PairingOffer
+  try { record = JSON.parse(raw) as PairingOffer } catch { return json({ found: false }, 404, cors) }
   if (Date.now() > record.expiresAt) {
     await env.VAULT_SIGNALS.delete(`pairing:${code}`)
     return json({ found: false, reason: 'expired' }, 404, cors)
@@ -800,10 +805,18 @@ async function handlePairingFetch(code: string, env: Env, cors: Record<string, s
 async function handlePairingAnswer(code: string, req: Request, env: Env, cors: Record<string, string>): Promise<Response> {
   let body: { answer?: string; deviceInfo?: string }
   try { body = await req.json() } catch { return err('Invalid JSON', 400, cors) }
-  if (!body.answer) return err('answer required', 400, cors)
+  if (typeof body.answer !== 'string' || !body.answer) return err('answer required', 400, cors)
+  if (body.answer.length > MAX_PAIRING_BYTES || String(body.deviceInfo ?? '').length > 4096) {
+    return err('Pairing answer is too large', 413, cors)
+  }
+  // An answer is only accepted for an offer that exists, so this route
+  // cannot be used to park arbitrary data under any 8-digit code.
+  if (!(await env.VAULT_SIGNALS.get(`pairing:${code}`))) {
+    return json({ found: false, reason: 'expired' }, 404, cors)
+  }
   const record: PairingAnswerRecord = {
     answer: body.answer,
-    deviceInfo: body.deviceInfo ?? '{}',
+    deviceInfo: typeof body.deviceInfo === 'string' ? body.deviceInfo : '{}',
   }
   await env.VAULT_SIGNALS.put(`pairing-answer:${code}`, JSON.stringify(record), { expirationTtl: 60 })
   return json({ ok: true }, 200, cors)
@@ -830,175 +843,9 @@ async function handlePairingDelete(code: string, env: Env, cors: Record<string, 
   return json({ ok: true }, 200, cors)
 }
 
-// ── Admin (gated by CLEX_ADMIN_SECRET) ────────────────────────────────────────
-
-function safeEqual(a: string, b: string): boolean {
-  if (typeof a !== 'string' || typeof b !== 'string') return false
-  if (a.length !== b.length) return false
-  let mismatch = 0
-  for (let i = 0; i < a.length; i += 1) mismatch |= a.charCodeAt(i) ^ b.charCodeAt(i)
-  return mismatch === 0
-}
-
-function isAdminAuthorized(req: Request, env: Env): boolean {
-  const expected = env.CLEX_ADMIN_SECRET || env.ADMIN_SECRET || ''
-  if (!expected) return false
-  const provided = req.headers.get('x-admin-secret') || ''
-  if (!provided) return false
-  return safeEqual(provided, expected)
-}
-
-const VAULT_ADMIN_HEADERS: Record<string, string> = { 'Cache-Control': 'private, no-store' }
-
-async function handleVaultAdminSummary(req: Request, env: Env, cors: Record<string, string>): Promise<Response> {
-  if (!isAdminAuthorized(req, env)) {
-    return json({ error: 'unauthorized' }, 401, { ...cors, ...VAULT_ADMIN_HEADERS })
-  }
-  let attachments = 0
-  let pendingDeletions = 0
-  let activeShares = 0
-  let dbReachable = false
-  try {
-    const [att, pend, shares] = await Promise.all([
-      env.DB.prepare('SELECT COUNT(*) AS n FROM attachments').first<{ n: number }>(),
-      env.DB.prepare('SELECT COUNT(*) AS n FROM pending_deletions').first<{ n: number }>(),
-      env.DB.prepare("SELECT COUNT(*) AS n FROM attachments WHERE deleted_at IS NULL OR deleted_at > strftime('%s','now')*1000").first<{ n: number }>(),
-    ])
-    attachments = att?.n ?? 0
-    pendingDeletions = pend?.n ?? 0
-    activeShares = shares?.n ?? 0
-    dbReachable = true
-  } catch {
-    // Older databases may not have `deleted_at` — fall back to the simpler query.
-    try {
-      const att = await env.DB.prepare('SELECT COUNT(*) AS n FROM attachments').first<{ n: number }>()
-      attachments = att?.n ?? 0
-      dbReachable = true
-    } catch { /* ignore */ }
-  }
-  return json(
-    {
-      service: 'clex-vault',
-      generatedAt: Math.floor(Date.now() / 1000),
-      process: {
-        booted_at: Math.floor(VAULT_BOOTED_AT / 1000),
-        uptime_ms: Date.now() - VAULT_BOOTED_AT,
-        runtime: 'cloudflare-workers',
-      },
-      bindings: {
-        d1: dbReachable,
-        kv_vault_secrets: typeof env.VAULT_SECRETS?.put === 'function',
-        kv_vault_tokens: typeof env.VAULT_TOKENS?.put === 'function',
-        kv_vault_signals: typeof env.VAULT_SIGNALS?.put === 'function',
-        kv_upload_quota: typeof env.UPLOAD_QUOTA?.put === 'function',
-      },
-      config: {
-        storage_backend: 'r2',
-        storage_configured: isConfigured(env),
-        allowed_origin: env.ALLOWED_ORIGIN ?? null,
-        max_secret_size: env.MAX_SECRET_SIZE ?? null,
-        admin_secret_set: Boolean(env.CLEX_ADMIN_SECRET || env.ADMIN_SECRET),
-      },
-      counts: {
-        attachments,
-        pending_deletions: pendingDeletions,
-        active_shares: activeShares,
-      },
-    },
-    200,
-    { ...cors, ...VAULT_ADMIN_HEADERS },
-  )
-}
-
-async function handleVaultAdminHealth(req: Request, env: Env, cors: Record<string, string>): Promise<Response> {
-  if (!isAdminAuthorized(req, env)) {
-    return json({ error: 'unauthorized' }, 401, { ...cors, ...VAULT_ADMIN_HEADERS })
-  }
-  let dbReachable = false
-  try {
-    await env.DB.prepare('SELECT 1').first()
-    dbReachable = true
-  } catch { /* ignore */ }
-  return json(
-    {
-      ok: true,
-      service: 'clex-vault',
-      ts: Math.floor(Date.now() / 1000),
-      version: 'phase-2-admin-api',
-      booted_at: Math.floor(VAULT_BOOTED_AT / 1000),
-      uptime_ms: Date.now() - VAULT_BOOTED_AT,
-      bindings: {
-        d1: dbReachable,
-        kv: typeof env.VAULT_SECRETS?.put === 'function',
-      },
-      storage_configured: isConfigured(env),
-    },
-    200,
-    { ...cors, ...VAULT_ADMIN_HEADERS },
-  )
-}
-
-interface VaultAdminAttachmentRow {
-  id: string
-  user_id: string | null
-  size_bytes: number | null
-  mime_type: string | null
-  created_at: number | null
-}
-
-async function handleVaultAdminAttachments(req: Request, env: Env, cors: Record<string, string>): Promise<Response> {
-  if (!isAdminAuthorized(req, env)) {
-    return json({ error: 'unauthorized' }, 401, { ...cors, ...VAULT_ADMIN_HEADERS })
-  }
-  const url = new URL(req.url)
-  const limit = Math.min(100, Math.max(1, parseInt(url.searchParams.get('limit') || '20')))
-  let rows: VaultAdminAttachmentRow[] = []
-  try {
-    const res = await env.DB.prepare(
-      `SELECT id, user_id, size_bytes, mime_type, created_at
-         FROM attachments
-         ORDER BY created_at DESC
-         LIMIT ?`,
-    ).bind(limit).all<VaultAdminAttachmentRow>()
-    rows = res.results ?? []
-  } catch { /* ignore */ }
-  return json(
-    {
-      service: 'clex-vault',
-      generatedAt: Math.floor(Date.now() / 1000),
-      count: rows.length,
-      attachments: rows,
-    },
-    200,
-    { ...cors, ...VAULT_ADMIN_HEADERS },
-  )
-}
-
-async function handleVaultAdminAudit(req: Request, env: Env, cors: Record<string, string>): Promise<Response> {
-  if (!isAdminAuthorized(req, env)) {
-    return json({ error: 'unauthorized' }, 401, { ...cors, ...VAULT_ADMIN_HEADERS })
-  }
-  return json(
-    {
-      service: 'clex-vault',
-      generatedAt: Math.floor(Date.now() / 1000),
-      events: [
-        {
-          type: 'process.boot',
-          ts: Math.floor(VAULT_BOOTED_AT / 1000),
-          details: { runtime: 'cloudflare-workers' },
-        },
-      ],
-    },
-    200,
-    { ...cors, ...VAULT_ADMIN_HEADERS },
-  )
-}
-
 // ── Main Handler ──────────────────────────────────────────────────────────────
 
-export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
+async function route(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url)
     const origin = request.headers.get('Origin') ?? ''
     const cors = corsHeaders(origin, env.ALLOWED_ORIGIN ?? '*')
@@ -1104,24 +951,13 @@ export default {
       return err('Method not allowed', 405, cors)
     }
 
-    // ─── Admin (gated by CLEX_ADMIN_SECRET) ────────────────────────────────
-    // Mounted under /vault/api/admin/* and /api/admin/* so the lnch.in proxy
-    // can target either prefix.
-    if (method === 'GET' &&
-        (path === '/vault/api/admin/summary' || path === '/api/admin/summary')) {
-      return handleVaultAdminSummary(request, env, cors)
-    }
-    if (method === 'GET' &&
-        (path === '/vault/api/admin/health' || path === '/api/admin/health')) {
-      return handleVaultAdminHealth(request, env, cors)
-    }
-    if (method === 'GET' &&
-        (path === '/vault/api/admin/attachments' || path === '/api/admin/attachments')) {
-      return handleVaultAdminAttachments(request, env, cors)
-    }
-    if (method === 'GET' &&
-        (path === '/vault/api/admin/audit' || path === '/api/admin/audit')) {
-      return handleVaultAdminAudit(request, env, cors)
+    // ─── Admin (clex.in/admin console session, or X-Admin-Secret) ─────────
+    // Mounted under /vault/api/admin/* and, for the lnch.in proxy, the older
+    // /api/admin/* alias (reachable only on the workers.dev hostname).
+    const adminMatch = path.match(/^\/(?:vault\/)?api\/admin(\/.*)$/)
+    if (adminMatch) {
+      const res = await handleAdmin(request, env, cors, adminMatch[1])
+      if (res) return res
     }
 
     // Health — consumed by lnch.in's LaunchOps health probe.
@@ -1204,9 +1040,22 @@ export default {
     }
 
     return err('Not found', 404, cors)
+}
+
+export default {
+  async fetch(request: Request, env: Env): Promise<Response> {
+    try {
+      return await route(request, env)
+    } catch (e) {
+      // A thrown error used to surface as Cloudflare's HTML error page with no
+      // CORS headers, which browsers report as a network failure.
+      console.error('clex-vault unhandled error', e)
+      const cors = corsHeaders(request.headers.get('Origin') ?? '', env.ALLOWED_ORIGIN ?? '*')
+      return err('Internal error', 500, cors)
+    }
   },
 
-  // Runs every hour — cleans up expired files from Supabase + D1
+  // Runs every hour — deletes stored bytes whose time is up (see cleanup.ts)
   async scheduled(_event: ScheduledEvent, env: Env): Promise<void> {
     await runPendingDeletions(env)
   },

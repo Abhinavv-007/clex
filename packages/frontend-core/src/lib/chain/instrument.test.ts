@@ -43,8 +43,11 @@ function makeStubClient() {
   const events: RecordedEvent[] = []
   const sessions: Array<{ chainId: string; route: string; files: unknown[] }> = []
   let sessionCounter = 0
-  let resolveCreate: ((value: { session_id: string; ledger_index: number }) => void) | null = null
-  let createPromise: Promise<{ session_id: string; ledger_index: number }> | null = null
+  // A test may release createSession before the instrument has reached it
+  // (hashing the files takes a variable number of ticks), so the release is
+  // a latch rather than a callback that only works if the call is pending.
+  let released = false
+  let resolveCreate: (() => void) | null = null
 
   const client: ChainClient = {
     register: vi.fn(async (_: string) => undefined),
@@ -53,11 +56,8 @@ function makeStubClient() {
       sessionCounter += 1
       const result = { session_id: `session-${sessionCounter}`, ledger_index: sessionCounter }
       // Allow tests to control createSession resolution timing
-      createPromise = new Promise(resolve => {
-        resolveCreate = resolve
-      })
-      const settled = await createPromise
-      return settled
+      if (!released) await new Promise<void>(resolve => { resolveCreate = resolve })
+      return result
     }),
     appendEvent: vi.fn(async (sessionId: string, status: string, receiverChainId?: string) => {
       events.push({ sessionId, status, receiverChainId })
@@ -68,7 +68,10 @@ function makeStubClient() {
     client,
     events,
     sessions,
-    resolveCreate: () => resolveCreate?.({ session_id: `session-${sessionCounter}`, ledger_index: sessionCounter }),
+    resolveCreate: () => {
+      released = true
+      resolveCreate?.()
+    },
     autoResolve: () => {
       // Default: resolve immediately when called
       const original = client.createSession as ReturnType<typeof vi.fn>

@@ -119,7 +119,9 @@ function parseAuthData(buf: Uint8Array): AuthDataParsed {
   if (buf.length < 37) throw new Error('authData too short');
   const rpIdHash = buf.slice(0, 32);
   const flags = buf[32];
-  const signCount = (buf[33] << 24) | (buf[34] << 16) | (buf[35] << 8) | buf[36];
+  // `>>> 0` keeps the counter unsigned: with the high bit set, a plain `<<`
+  // produced a negative number and every later login looked like a regression.
+  const signCount = ((buf[33] << 24) | (buf[34] << 16) | (buf[35] << 8) | buf[36]) >>> 0;
   let cursor = 37;
   let aaguid: Uint8Array | undefined;
   let credentialId: Uint8Array | undefined;
@@ -289,6 +291,7 @@ export async function verifyRegistration(
     throw new Error('Missing attested credential data');
   }
   if (!(authData.flags & 0x01)) throw new Error('User presence required');
+  if (!(authData.flags & 0x04)) throw new Error('User verification required');
 
   const rpHash = await sha256Hex(input.expectedRpId);
   if (!buffersEqual(authData.rpIdHash, hexToBytes(rpHash))) throw new Error('Bad rpId');
@@ -344,6 +347,9 @@ export async function verifyAssertion(
   const authData = base64urlDecode(input.authenticatorDataB64);
   const parsed = parseAuthData(authData);
   if (!(parsed.flags & 0x01)) throw new Error('User presence required');
+  // The admin console is the most privileged surface on the site: a passkey
+  // must be unlocked (biometric or PIN), not merely touched.
+  if (!(parsed.flags & 0x04)) throw new Error('User verification required');
 
   const rpHash = await sha256Hex(input.expectedRpId);
   if (!buffersEqual(parsed.rpIdHash, hexToBytes(rpHash))) throw new Error('Bad rpId');

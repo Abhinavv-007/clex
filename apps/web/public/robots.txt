@@ -7,5 +7,7 @@ Disallow: /workspace/
 Disallow: /receive/
 Disallow: /vault/secret/
 Disallow: /vault/share/
+Disallow: /admin
+Disallow: /share/
 
 Sitemap: https://clex.in/sitemap.xml

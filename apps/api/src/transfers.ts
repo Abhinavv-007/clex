@@ -30,7 +30,8 @@
  * have something to integrate against today.
  */
 import { appendCors, type Env } from './env'
-import { requireAdminOrSecret } from './adminPanel'
+import { requireAdminOrSecret, requireAdminSession } from './adminPanel'
+import { safeEqual, sha256Hex } from './crypto'
 
 const TRANSFER_KV_PREFIX = 'transfer:'
 const TRANSFER_CODE_KV_PREFIX = 'transfer-code:'
@@ -73,6 +74,27 @@ export interface TransferRecord {
   expires_at: number
   events: TransferEvent[]
   client_label: string | null
+  /**
+   * SHA-256 of the manage token handed to the creator. Cancelling needs the
+   * token: the receive code alone is short and is shown to the receiver, so it
+   * must not be enough to kill someone else's transfer. Records created before
+   * this field existed have none and stay cancellable by code.
+   */
+  manage_hash?: string
+}
+
+/** What the admin listing needs, kept in the KV key's metadata. */
+interface TransferMeta {
+  code: string
+  status: TransferStatus
+  file_name: string | null
+  file_size_bytes: number | null
+  file_mime: string | null
+  route: 'p2p' | 'fallback' | null
+  created_at: number
+  expires_at: number
+  events_count: number
+  client_label: string | null
 }
 
 interface AdminMetrics {
@@ -106,9 +128,13 @@ function metrics(): AdminMetrics {
   return globalThis.__clexApiAdminMetrics
 }
 
+/** Distinct routes tracked per isolate; anything past this is pooled. */
+const MAX_TRACKED_ROUTES = 64
+
 export function bumpMetric(route: string, status: number, latencyMs: number): void {
   const m = metrics()
   m.totalRequests += 1
+  if (!m.perRoute.has(route) && m.perRoute.size >= MAX_TRACKED_ROUTES) route = '(other)'
   const r =
     m.perRoute.get(route) ??
     { total: 0, success: 0, errors: 0, lastSeen: 0, latencySum: 0 }
@@ -138,11 +164,16 @@ function generateId(): string {
 }
 
 function generateCode(): string {
-  const buf = new Uint8Array(CODE_LENGTH)
-  crypto.getRandomValues(buf)
+  // Rejection sampling: 256 is not a multiple of the alphabet size, so a
+  // plain modulo would make the first letters of the alphabet more likely.
+  const limit = 256 - (256 % CODE_ALPHABET.length)
   let out = ''
-  for (let i = 0; i < CODE_LENGTH; i += 1) {
-    out += CODE_ALPHABET[buf[i] % CODE_ALPHABET.length]
+  while (out.length < CODE_LENGTH) {
+    const buf = new Uint8Array(CODE_LENGTH * 2)
+    crypto.getRandomValues(buf)
+    for (const b of buf) {
+      if (b < limit && out.length < CODE_LENGTH) out += CODE_ALPHABET[b % CODE_ALPHABET.length]
+    }
   }
   return out
 }
@@ -157,12 +188,27 @@ async function readTransfer(env: Env, id: string): Promise<TransferRecord | null
   }
 }
 
+function transferMeta(record: TransferRecord): TransferMeta {
+  return {
+    code: record.code,
+    status: record.status,
+    file_name: record.file_name ? record.file_name.slice(0, 120) : null,
+    file_size_bytes: record.file_size_bytes,
+    file_mime: record.file_mime ? record.file_mime.slice(0, 64) : null,
+    route: record.route,
+    created_at: record.created_at,
+    expires_at: record.expires_at,
+    events_count: record.events.length,
+    client_label: record.client_label ? record.client_label.slice(0, 64) : null,
+  }
+}
+
 async function writeTransfer(env: Env, record: TransferRecord): Promise<void> {
   const ttlSeconds = Math.max(60, Math.floor((record.expires_at - Date.now()) / 1000))
   await env.DRIVE_SESSION_STORE.put(
     `${TRANSFER_KV_PREFIX}${record.id}`,
     JSON.stringify(record),
-    { expirationTtl: ttlSeconds },
+    { expirationTtl: ttlSeconds, metadata: transferMeta(record) },
   )
   await env.DRIVE_SESSION_STORE.put(
     `${TRANSFER_CODE_KV_PREFIX}${record.code}`,
@@ -229,6 +275,7 @@ export async function handleCreateTransfer(request: Request, env: Env): Promise<
 
   const now = Date.now()
   const id = generateId()
+  const manageToken = `${generateId()}${generateId()}`
   // Try a few times in case of code collision (extremely rare for 24^6).
   let code = generateCode()
   for (let attempt = 0; attempt < 5; attempt += 1) {
@@ -256,6 +303,7 @@ export async function handleCreateTransfer(request: Request, env: Env): Promise<
       },
     ],
     client_label: clientLabel,
+    manage_hash: await sha256Hex(manageToken),
   }
 
   await writeTransfer(env, record)
@@ -269,6 +317,8 @@ export async function handleCreateTransfer(request: Request, env: Env): Promise<
       status: record.status,
       expires_at: Math.floor(record.expires_at / 1000),
       created_at: Math.floor(record.created_at / 1000),
+      // Shown once. Send it as `Authorization: Bearer <manage_token>` to cancel.
+      manage_token: manageToken,
     },
     { status: 201 },
     request,
@@ -387,6 +437,17 @@ export async function handleCancelTransfer(
 
   const recordRaw = await readTransfer(env, id)
   if (!recordRaw) return jsonResponse({ error: 'not_found' }, { status: 404 }, request, env)
+  if (recordRaw.manage_hash) {
+    const auth = request.headers.get('authorization') || ''
+    const token = auth.toLowerCase().startsWith('bearer ') ? auth.slice(7).trim() : ''
+    if (!token || !safeEqual(await sha256Hex(token), recordRaw.manage_hash)) {
+      return jsonResponse({ error: 'manage_token_required' }, { status: 401 }, request, env)
+    }
+  }
+  return cancelTransfer(request, env, recordRaw)
+}
+
+async function cancelTransfer(request: Request, env: Env, recordRaw: TransferRecord, by = 'owner'): Promise<Response> {
   let record = ensureExpiry(recordRaw)
   if (record.status === 'completed') {
     return jsonResponse(
@@ -410,7 +471,7 @@ export async function handleCancelTransfer(
     status: 'cancelled',
     events: [
       ...record.events,
-      { type: 'transfer.cancelled', ts: Math.floor(now / 1000) },
+      { type: 'transfer.cancelled', ts: Math.floor(now / 1000), details: { by } },
     ].slice(-TRANSFER_EVENT_LIMIT),
   }
   await writeTransfer(env, record)
@@ -425,10 +486,6 @@ export async function handleCancelTransfer(
 }
 
 // ─── Admin ──────────────────────────────────────────────────────────────
-
-function unauthorized(request: Request, env: Env): Response {
-  return jsonResponse({ error: 'unauthorized' }, { status: 401 }, request, env)
-}
 
 function serializeRoutes() {
   const m = metrics()
@@ -472,7 +529,13 @@ export async function handleAdminSummary(request: Request, env: Env): Promise<Re
       config: {
         allowed_origin: env.ALLOWED_ORIGIN ?? null,
         admin_secret_set: Boolean(env.CLEX_ADMIN_SECRET || env.ADMIN_SECRET),
+        webauthn_rp_id: env.WEBAUTHN_RP_ID ?? null,
+        frontend_base_url: env.FRONTEND_BASE_URL ?? null,
       },
+      // Counters live in this isolate's memory: they reset whenever
+      // Cloudflare starts a fresh isolate and each isolate counts only the
+      // requests it served. They describe recent traffic, not all-time totals.
+      metrics_scope: 'isolate',
       metrics: {
         total_requests: m.totalRequests,
         per_route: serializeRoutes(),
@@ -491,38 +554,54 @@ export async function handleAdminTransfers(request: Request, env: Env): Promise<
   if (authError) return authError
 
   const url = new URL(request.url)
-  const limitRaw = url.searchParams.get('limit')
-  const limit = Math.min(
-    TRANSFER_RECENT_LIMIT,
-    Math.max(1, Number.parseInt(limitRaw ?? '20', 10) || 20),
-  )
+  const limitRaw = Number.parseInt(url.searchParams.get('limit') ?? '50', 10)
+  const limit = Math.min(200, Math.max(1, Number.isFinite(limitRaw) ? limitRaw : 50))
+  const statusFilter = url.searchParams.get('status')
 
-  // KV doesn't have a useful "list with values" guarantee for our scale,
-  // so we list keys and read each one. With expirationTtl set to <=7d
-  // and small payloads this is fine for an admin overview.
-  const list = await env.DRIVE_SESSION_STORE.list({
-    prefix: TRANSFER_KV_PREFIX,
-    limit,
-  })
-  const records: TransferRecord[] = []
-  for (const key of list.keys) {
-    const raw = await env.DRIVE_SESSION_STORE.get(key.name)
-    if (!raw) continue
-    try {
-      records.push(JSON.parse(raw) as TransferRecord)
-    } catch {
-      // skip malformed
-    }
-  }
-  records.sort((a, b) => b.created_at - a.created_at)
+  // KV lists keys alphabetically, not by time, so the newest transfers can
+  // only be found by reading every key. The record summary rides in each
+  // key's metadata, so that is one list call per thousand transfers rather
+  // than one read per transfer; only records written before metadata existed
+  // are fetched individually.
+  const rows: (TransferMeta & { transfer_id: string })[] = []
+  let cursor: string | undefined
+  let pages = 0
+  do {
+    const page = await env.DRIVE_SESSION_STORE.list<TransferMeta>({ prefix: TRANSFER_KV_PREFIX, cursor })
+    await Promise.all(page.keys.map(async key => {
+      const id = key.name.slice(TRANSFER_KV_PREFIX.length)
+      if (key.metadata) {
+        rows.push({ transfer_id: id, ...key.metadata })
+        return
+      }
+      const record = await readTransfer(env, id)
+      if (record) rows.push({ transfer_id: id, ...transferMeta(record) })
+    }))
+    cursor = page.list_complete ? undefined : page.cursor
+    pages += 1
+  } while (cursor && pages < 10)
+
+  const now = Date.now()
+  const normalized = rows.map(row => ({
+    ...row,
+    status: row.status === 'created' && now > row.expires_at ? 'expired' as const : row.status,
+  }))
+  const counts = normalized.reduce<Record<string, number>>((acc, row) => {
+    acc[row.status] = (acc[row.status] ?? 0) + 1
+    return acc
+  }, {})
+  const filtered = statusFilter ? normalized.filter(row => row.status === statusFilter) : normalized
+  filtered.sort((a, b) => b.created_at - a.created_at)
 
   return jsonResponse(
     {
       service: 'clex-api',
-      generatedAt: Math.floor(Date.now() / 1000),
-      count: records.length,
-      transfers: records.map((r) => ({
-        transfer_id: r.id,
+      generatedAt: Math.floor(now / 1000),
+      total: normalized.length,
+      counts,
+      count: Math.min(limit, filtered.length),
+      transfers: filtered.slice(0, limit).map(r => ({
+        transfer_id: r.transfer_id,
         code: r.code,
         status: r.status,
         file_name: r.file_name,
@@ -531,7 +610,7 @@ export async function handleAdminTransfers(request: Request, env: Env): Promise<
         route: r.route,
         created_at: Math.floor(r.created_at / 1000),
         expires_at: Math.floor(r.expires_at / 1000),
-        events_count: r.events.length,
+        events_count: r.events_count,
         client_label: r.client_label,
       })),
     },
@@ -539,6 +618,28 @@ export async function handleAdminTransfers(request: Request, env: Env): Promise<
     request,
     env,
   )
+}
+
+/** DELETE /api/admin/transfers/:id — the operator's cancel, no token needed. */
+export async function handleAdminTransferCancel(request: Request, env: Env, codeOrId: string): Promise<Response> {
+  const authError = await requireAdminSession(request, env)
+  if (authError) return authError
+  const id = await resolveTransferId(env, codeOrId)
+  if (!id) return jsonResponse({ error: 'not_found' }, { status: 404 }, request, env)
+  const record = await readTransfer(env, id)
+  if (!record) return jsonResponse({ error: 'not_found' }, { status: 404 }, request, env)
+  return cancelTransfer(request, env, record, 'admin')
+}
+
+/** GET /api/admin/transfers/:id — full record, events included. */
+export async function handleAdminTransferDetail(request: Request, env: Env, codeOrId: string): Promise<Response> {
+  const authError = await requireAdminOrSecret(request, env)
+  if (authError) return authError
+  const id = await resolveTransferId(env, codeOrId)
+  const record = id ? await readTransfer(env, id) : null
+  if (!record) return jsonResponse({ error: 'not_found' }, { status: 404 }, request, env)
+  const { manage_hash: _hidden, ...rest } = ensureExpiry(record)
+  return jsonResponse({ transfer: rest }, { status: 200 }, request, env)
 }
 
 export async function handleAdminHealth(request: Request, env: Env): Promise<Response> {

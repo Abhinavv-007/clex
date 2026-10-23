@@ -255,7 +255,6 @@ export async function handleApiKeyCreate(
 
   let body: {
     name?: string
-    email?: string
     maxFileBytes?: number
     ratePerMinute?: number
   } = {}
@@ -277,7 +276,10 @@ export async function handleApiKeyCreate(
   const id = `ck_id_${randomHex(16)}`
   const prefix = plaintext.slice(0, KEY_PREFIX_VISIBLE_LEN)
   const name = sanitizeName(body.name)
-  const email = typeof body.email === 'string' && body.email.trim() ? body.email.trim().slice(0, 320) : owner.email
+  // The email on the key is the verified one from the sign-in token. It used
+  // to be taken from the request body when present, so a caller could stamp
+  // any address onto their key and it would show up as theirs to operators.
+  const email = owner.email
   const maxFileBytes = clampFileSize(body.maxFileBytes)
   const ratePerMinute = clampRate(body.ratePerMinute)
   const createdAt = Math.floor(Date.now() / 1000)
