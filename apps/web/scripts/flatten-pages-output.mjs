@@ -127,13 +127,25 @@ async function adminHeaders() {
   ];
 }
 
+// One block per path. Cloudflare Pages does not merge two blocks that name
+// the same path: a second `/admin` block holding the console's security
+// headers replaced the first, which held its content type, so /admin was
+// served as application/octet-stream and — with nosniff — downloaded instead
+// of rendering. Every header for a path is therefore collected here first.
+/** @type {Map<string, string[]>} */
+const blocks = new Map();
+const add = (/** @type {string} */ path, /** @type {string[]} */ lines) => {
+  blocks.set(path, [...(blocks.get(path) ?? []), ...lines]);
+};
+add('/*', SITE_HEADERS);
 // Extensionless files need an explicit content type.
-const headers = [
-  `/*\n${SITE_HEADERS.map((h) => `  ${h}`).join('\n')}`,
-  ...flattened.map((route) => `/${route}\n  ${HTML_TYPE}`),
-  ...nestedRoutes.map((route) => `/${route}/index.html\n  ${HTML_TYPE}`),
-  `/admin\n${(await adminHeaders()).map((h) => `  ${h}`).join('\n')}`,
-].join('\n\n');
+for (const route of flattened) add(`/${route}`, [HTML_TYPE]);
+for (const route of nestedRoutes) add(`/${route}/index.html`, [HTML_TYPE]);
+add('/admin', await adminHeaders());
+
+const headers = [...blocks]
+  .map(([path, lines]) => `${path}\n${lines.map((h) => `  ${h}`).join('\n')}`)
+  .join('\n\n');
 await writeFile(resolve(distDir, '_headers'), `${headers}\n`);
 
 console.log(`flatten-pages-output: ${flattened.length} routes flattened, ${nestedRoutes.length} nested`);
