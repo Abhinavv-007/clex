@@ -401,23 +401,42 @@ export async function listAdminLogins(env: Env, limit: number): Promise<LoginRec
   return [...logins, ...await listLegacyLogins(env, limit - logins.length)]
 }
 
+/** Workers KV allows this many operations per invocation. */
+const KV_OPS_PER_INVOCATION = 1000
+/**
+ * Operations the rest of an audit request may spend: the session read and
+ * touch in requireAdmin, and the list of new-format entries, with room over.
+ */
+const KV_OPS_RESERVED = 16
+
+/**
+ * How many legacy pages may be listed when `reads` records will then be read
+ * one `get` each: every list call and every read is one KV operation, and the
+ * whole request must stay under the per-invocation limit. Exported for tests.
+ */
+export function legacyPageBudget(reads: number): number {
+  return Math.max(1, KV_OPS_PER_INVOCATION - KV_OPS_RESERVED - reads)
+}
+
 /**
  * Sign-ins recorded before the current log format, which keep their 90-day
- * retention in KV. Their keys sort oldest-first, so the newest are at the end
- * of the listing; only the ones shown are read.
+ * retention in KV. KV lists keys in lexicographic order, which for these keys
+ * is oldest-first, so the newest are only reached by listing to the end. The
+ * listing is walked to completion keeping just the last `limit` names, then
+ * only those are read.
  */
 async function listLegacyLogins(env: Env, limit: number): Promise<LoginRecord[]> {
-  const names: string[] = []
+  let tail: string[] = []
   let cursor: string | undefined
   let pages = 0
   do {
     const page = await env.DRIVE_SESSION_STORE.list({ prefix: LEGACY_LOGIN_PREFIX, cursor })
-    names.push(...page.keys.map(k => k.name))
+    tail = [...tail, ...page.keys.map(k => k.name)].slice(-limit)
     cursor = page.list_complete ? undefined : page.cursor
     pages += 1
-  } while (cursor && pages < 20)
+  } while (cursor && pages < legacyPageBudget(limit))
 
-  const newest = names.slice(-limit).reverse()
+  const newest = tail.reverse()
   const rows = await Promise.all(newest.map(async (name): Promise<LoginRecord | null> => {
     try {
       const raw = await env.DRIVE_SESSION_STORE.get(name)

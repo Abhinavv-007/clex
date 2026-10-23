@@ -24,16 +24,33 @@ function fakeEnv(failing: Set<string>) {
         if (sql.startsWith('DELETE FROM pending_deletions')) stmt.args.forEach((id) => pending.delete(String(id)))
         else if (sql.startsWith('DELETE FROM attachments')) stmt.args.forEach((id) => attachments.delete(String(id)))
         else if (sql.startsWith('INSERT OR REPLACE INTO pending_deletions')) {
-          const [id, storage_path, delete_at] = stmt.args as [string, string, number]
-          pending.set(id, { storage_path, delete_at })
+          for (let i = 0; i < stmt.args.length; i += 3) {
+            const [id, storage_path, delete_at] = stmt.args.slice(i, i + 3) as [string, string, number]
+            pending.set(id, { storage_path, delete_at })
+          }
         }
       },
     }
     return stmt
   }
   const deletedPaths: string[] = []
+  const queries = { count: 0, maxParams: 0 }
+  const counted = (sql: string) => {
+    const stmt = prepare(sql)
+    const bind = stmt.bind
+    stmt.bind = (...args: unknown[]) => {
+      queries.maxParams = Math.max(queries.maxParams, args.length)
+      return bind(...args)
+    }
+    const all = stmt.all
+    stmt.all = async () => { queries.count += 1; return all() }
+    return stmt
+  }
   const env = {
-    DB: { prepare, async batch(stmts: { run: () => void }[]) { stmts.forEach((s) => s.run()) } },
+    DB: {
+      prepare: counted,
+      async batch(stmts: { run: () => void }[]) { queries.count += stmts.length; stmts.forEach((s) => s.run()) },
+    },
     FILES: {
       async delete(paths: string[]) {
         if (paths.some((p) => failing.has(p))) throw new Error('R2 unavailable')
@@ -41,7 +58,7 @@ function fakeEnv(failing: Set<string>) {
       },
     },
   }
-  return { env: env as never, pending, attachments, deletedPaths }
+  return { env: env as never, pending, attachments, deletedPaths, queries }
 }
 
 describe('deleteStored', () => {
@@ -77,5 +94,28 @@ describe('runPendingDeletions', () => {
     expect(await runPendingDeletions(env, 200)).toBe(2)
     expect(pending.size).toBe(0)
     expect(attachments.size).toBe(0)
+  })
+
+  it('stays inside D1 limits when storage is down for a whole sweep', async () => {
+    const failing = new Set<string>()
+    const { env, pending, queries } = fakeEnv(failing)
+    for (let i = 0; i < 1000; i += 1) {
+      pending.set(`id${i}`, { storage_path: `p/${i}`, delete_at: 10 })
+      failing.add(`p/${i}`)
+    }
+    expect(await runPendingDeletions(env, 100)).toBe(0)
+    // Free plan: 50 queries per invocation, 100 bound parameters per statement.
+    expect(queries.count).toBeLessThanOrEqual(50)
+    expect(queries.maxParams).toBeLessThanOrEqual(100)
+    expect(pending.size).toBe(1000)
+  })
+
+  it('stays inside D1 limits on a full successful sweep', async () => {
+    const { env, pending, queries } = fakeEnv(new Set())
+    for (let i = 0; i < 1000; i += 1) pending.set(`id${i}`, { storage_path: `p/${i}`, delete_at: 10 })
+    const removed = await runPendingDeletions(env, 100)
+    expect(removed).toBe(500)
+    expect(queries.count).toBeLessThanOrEqual(50)
+    expect(queries.maxParams).toBeLessThanOrEqual(100)
   })
 })
