@@ -1,6 +1,6 @@
 import { requireOwner } from './auth'
-import { putObject, getObject, deleteObjects, isConfigured, backendName } from './storage'
-import { runPendingDeletions } from './cleanup'
+import { putObject, getObject, isConfigured, backendName } from './storage'
+import { deleteStored, dropAttachmentRows, runPendingDeletions } from './cleanup'
 import { handleAdmin } from './admin'
 import { readFilename, tooLarge } from './requestLimits'
 import { mintAnonymousKey } from './anonKeys'
@@ -506,16 +506,14 @@ async function handleFileDownload(
  */
 async function handleFileDelete(fileId: string, userId: string, env: Env, cors: Record<string, string>): Promise<Response> {
   const row = await env.DB.prepare(
-    'SELECT storage_path FROM attachments WHERE id = ? AND user_id = ?'
-  ).bind(fileId, userId).first<{ storage_path: string }>()
+    'SELECT id, storage_path FROM attachments WHERE id = ? AND user_id = ?'
+  ).bind(fileId, userId).first<{ id: string; storage_path: string }>()
 
   if (!row) return err('File not found or access denied', 404, cors)
 
-  await deleteObjects(env, [row.storage_path])
-  await env.DB.batch([
-    env.DB.prepare('DELETE FROM attachments WHERE id = ?').bind(fileId),
-    env.DB.prepare('DELETE FROM pending_deletions WHERE id = ?').bind(fileId),
-  ])
+  // A delete storage did not confirm stays queued for the cron's retry.
+  await deleteStored(env, [row])
+  await dropAttachmentRows(env, [row.id])
 
   return json({ ok: true }, 200, cors)
 }
@@ -574,17 +572,9 @@ async function handleSubscriptionDelete(
   const rows = result.results ?? []
   if (rows.length === 0) return json({ ok: true, deleted: 0 }, 200, cors)
 
-  // Delete all from Supabase in one call
-  const paths = rows.map(r => r.storage_path)
-  await deleteObjects(env, paths)
-
-  // Delete all D1 records in a batch
-  const ids = rows.map(r => r.id)
-  const placeholders = ids.map(() => '?').join(', ')
-  await env.DB.batch([
-    env.DB.prepare(`DELETE FROM attachments WHERE id IN (${placeholders})`).bind(...ids),
-    env.DB.prepare(`DELETE FROM pending_deletions WHERE id IN (${placeholders})`).bind(...ids),
-  ])
+  // Deletes that storage did not confirm stay queued for the cron's retry.
+  await deleteStored(env, rows)
+  await dropAttachmentRows(env, rows.map(r => r.id))
 
   return json({ ok: true, deleted: rows.length }, 200, cors)
 }

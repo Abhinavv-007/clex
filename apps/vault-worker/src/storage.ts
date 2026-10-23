@@ -154,25 +154,38 @@ export async function getObject(
   return { body }
 }
 
-/** Best-effort delete. Never throws: cleanup must not fail the request. */
-export async function deleteObjects(env: StorageEnv, paths: string[]): Promise<void> {
-  if (paths.length === 0) return
-  try {
-    if (env.FILES) {
+/**
+ * Deletes objects. Never throws — cleanup must not fail the request — but
+ * reports which paths could not be deleted, so callers keep those in the
+ * deletion queue for the hourly retry instead of forgetting the bytes.
+ */
+export async function deleteObjects(env: StorageEnv, paths: string[]): Promise<string[]> {
+  if (paths.length === 0) return []
+  if (env.FILES) {
+    try {
       await env.FILES.delete(paths)
-      return
+      return []
+    } catch {
+      return [...paths]
     }
-    const kv = env.FILE_CHUNKS
-    if (!kv) return
-    await Promise.all(paths.map(async (path) => {
+  }
+  const kv = env.FILE_CHUNKS
+  // No store bound: nothing can be deleted now, so everything stays queued.
+  if (!kv) return [...paths]
+  const failed: string[] = []
+  await Promise.all(paths.map(async (path) => {
+    try {
       const manifest = await kv.get<KvManifest>(manifestKey(path), 'json').catch(() => null)
       const count = manifest?.chunks ?? 1
-      await kv.delete(manifestKey(path))
+      // Chunks first, manifest last: if this fails part-way the manifest still
+      // records how many chunks the retry has to remove.
       await Promise.all(Array.from({ length: count }, (_, i) => kv.delete(chunkKey(path, i))))
-    }))
-  } catch {
-    /* best effort, same as the previous implementation */
-  }
+      await kv.delete(manifestKey(path))
+    } catch {
+      failed.push(path)
+    }
+  }))
+  return failed
 }
 
 /**

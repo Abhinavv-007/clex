@@ -13,6 +13,10 @@ import {
   handlePasskeys,
 } from './adminPanel'
 import { appendCors, type Env } from './env'
+
+// Durable Object classes are exported from the entry module; nothing else may
+// be (a non-handler export stops the Workers runtime from starting).
+export { LoginThrottle } from './loginThrottle'
 import {
   bumpMetric,
   handleAdminAudit,

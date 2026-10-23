@@ -30,6 +30,7 @@
  */
 import type { Env } from './env'
 import { randomHex, safeEqual, sha256Hex } from './crypto'
+import { LOGIN_MAX_ATTEMPTS, LOGIN_WINDOW_SECONDS, decide, type ThrottleReply } from './loginThrottle'
 
 export const ADMIN_COOKIE = '__Host-clex_admin'
 /** `__Host-` cookies require HTTPS; plain-HTTP dev uses this name instead. */
@@ -47,9 +48,7 @@ const LOGIN_LOG_TTL = 60 * 60 * 24 * 90
 /** A session's last-seen stamp is refreshed at most this often. */
 const TOUCH_INTERVAL = 5 * 60
 
-/** Failed sign-ins allowed per address per window before it is locked out. */
-export const LOGIN_MAX_FAILURES = 8
-export const LOGIN_WINDOW_SECONDS = 15 * 60
+export { LOGIN_MAX_ATTEMPTS, LOGIN_WINDOW_SECONDS }
 
 export interface AdminSession {
   session_id: string
@@ -247,7 +246,7 @@ export function clearSessionCookie(request: Request): string {
  * POST/DELETE and on cross-origin GETs; a missing Origin on a same-origin GET
  * is normal.
  */
-function sameOrigin(request: Request, env: Env): boolean {
+export function sameOrigin(request: Request, env: Env): boolean {
   const origin = request.headers.get('origin')
   if (!origin) return true
   const self = new URL(request.url).origin
@@ -310,47 +309,62 @@ export function adminError(error: string, status = 401, extra: Record<string, st
 
 // ── Sign-in throttling ────────────────────────────────────────────────────
 
-interface RateRecord {
-  failures: number
-  first_at: number
+async function addressKey(ip: string | null): Promise<string> {
+  return (await sha256Hex(ip || 'unknown')).slice(0, 32)
 }
 
-async function rateKey(ip: string | null): Promise<string> {
-  return `${RATE_PREFIX}${(await sha256Hex(ip || 'unknown')).slice(0, 32)}`
-}
-
-/** Seconds until this address may try again, or 0 when it is not locked. */
-export async function loginLockedFor(env: Env, ip: string | null): Promise<number> {
-  const raw = await env.DRIVE_SESSION_STORE.get(await rateKey(ip))
-  if (!raw) return 0
-  try {
-    const rec = JSON.parse(raw) as RateRecord
-    if (rec.failures < LOGIN_MAX_FAILURES) return 0
-    return Math.max(0, rec.first_at + LOGIN_WINDOW_SECONDS - nowSeconds())
-  } catch {
-    return 0
+/**
+ * Runs one throttle operation for this address. Production uses the
+ * LoginThrottle Durable Object, which counts atomically (see
+ * loginThrottle.ts). The KV path is only a fallback for a deployment without
+ * the binding: KV cannot count atomically, so there it is best-effort.
+ */
+async function throttle(env: Env, ip: string | null, op: 'peek' | 'attempt' | 'clear'): Promise<ThrottleReply> {
+  const id = await addressKey(ip)
+  if (env.LOGIN_THROTTLE) {
+    const stub = env.LOGIN_THROTTLE.get(env.LOGIN_THROTTLE.idFromName(id))
+    const res = await stub.fetch(`https://throttle/${op}`, { method: 'POST' })
+    return await res.json() as ThrottleReply
   }
-}
 
-export async function recordLoginFailure(env: Env, ip: string | null): Promise<void> {
-  const key = await rateKey(ip)
+  const key = `${RATE_PREFIX}${id}`
   const now = nowSeconds()
-  let rec: RateRecord = { failures: 0, first_at: now }
-  const raw = await env.DRIVE_SESSION_STORE.get(key)
-  if (raw) {
-    try {
-      const prev = JSON.parse(raw) as RateRecord
-      if (prev.first_at + LOGIN_WINDOW_SECONDS > now) rec = prev
-    } catch { /* start a fresh window */ }
+  let current = null
+  try {
+    const raw = await env.DRIVE_SESSION_STORE.get(key)
+    current = raw ? JSON.parse(raw) : null
+  } catch { /* start a fresh window */ }
+  const { next, reply } = decide(current, op, now)
+  if (next) {
+    await env.DRIVE_SESSION_STORE.put(key, JSON.stringify(next), {
+      expirationTtl: Math.max(60, next.first_at + LOGIN_WINDOW_SECONDS - now),
+    })
+  } else if (current) {
+    await env.DRIVE_SESSION_STORE.delete(key)
   }
-  rec.failures += 1
-  await env.DRIVE_SESSION_STORE.put(key, JSON.stringify(rec), {
-    expirationTtl: Math.max(60, rec.first_at + LOGIN_WINDOW_SECONDS - now),
-  })
+  return reply
 }
 
+/** Seconds until this address may try again, or 0. Counts nothing. */
+export async function loginLockedFor(env: Env, ip: string | null): Promise<number> {
+  const reply = await throttle(env, ip, 'peek')
+  return reply.allowed ? 0 : reply.retryAfter
+}
+
+/**
+ * Takes one sign-in attempt for this address, before the credential is
+ * checked. Returns 0 when the attempt may go ahead, or the seconds until the
+ * address may try again. Taking the slot first is what bounds parallel
+ * guessing: no request is checked without having been counted.
+ */
+export async function reserveLoginAttempt(env: Env, ip: string | null): Promise<number> {
+  const reply = await throttle(env, ip, 'attempt')
+  return reply.allowed ? 0 : reply.retryAfter
+}
+
+/** A successful sign-in clears the address's count. */
 export async function clearLoginFailures(env: Env, ip: string | null): Promise<void> {
-  await env.DRIVE_SESSION_STORE.delete(await rateKey(ip))
+  await throttle(env, ip, 'clear')
 }
 
 // ── Sign-in log ───────────────────────────────────────────────────────────
@@ -377,9 +391,54 @@ export async function logAdminLogin(
   })
 }
 
+/** Where sign-ins were logged before this format: oldest-first keys, the record in the value. */
+const LEGACY_LOGIN_PREFIX = 'admin:login:'
+
 export async function listAdminLogins(env: Env, limit: number): Promise<LoginRecord[]> {
   const page = await env.DRIVE_SESSION_STORE.list<LoginRecord>({ prefix: LOGIN_LOG_PREFIX, limit })
-  return page.keys.map(key => key.metadata).filter((m): m is LoginRecord => Boolean(m))
+  const logins = page.keys.map(key => key.metadata).filter((m): m is LoginRecord => Boolean(m))
+  if (logins.length >= limit) return logins
+  return [...logins, ...await listLegacyLogins(env, limit - logins.length)]
+}
+
+/**
+ * Sign-ins recorded before the current log format, which keep their 90-day
+ * retention in KV. Their keys sort oldest-first, so the newest are at the end
+ * of the listing; only the ones shown are read.
+ */
+async function listLegacyLogins(env: Env, limit: number): Promise<LoginRecord[]> {
+  const names: string[] = []
+  let cursor: string | undefined
+  let pages = 0
+  do {
+    const page = await env.DRIVE_SESSION_STORE.list({ prefix: LEGACY_LOGIN_PREFIX, cursor })
+    names.push(...page.keys.map(k => k.name))
+    cursor = page.list_complete ? undefined : page.cursor
+    pages += 1
+  } while (cursor && pages < 20)
+
+  const newest = names.slice(-limit).reverse()
+  const rows = await Promise.all(newest.map(async (name): Promise<LoginRecord | null> => {
+    try {
+      const raw = await env.DRIVE_SESSION_STORE.get(name)
+      if (!raw) return null
+      const rec = JSON.parse(raw) as Partial<LoginRecord>
+      return {
+        id: String(rec.id ?? name.slice(-32)),
+        created_at: Number(rec.created_at) || 0,
+        method: rec.method === 'passkey' ? 'passkey' : 'password',
+        result: rec.result === 'success' ? 'success' : 'failure',
+        reason: rec.reason ?? null,
+        ip: rec.ip ?? null,
+        ua: rec.ua ?? null,
+        country: rec.country ?? null,
+        passkey_id: rec.passkey_id ?? null,
+      }
+    } catch {
+      return null
+    }
+  }))
+  return rows.filter((r): r is LoginRecord => r !== null)
 }
 
 // ── WebAuthn challenges ───────────────────────────────────────────────────

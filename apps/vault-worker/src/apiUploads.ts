@@ -26,7 +26,8 @@
  * they've shipped through each key on the management page.
  */
 
-import { putObject, getObject, deleteObjects, downloadUrlFor, isConfigured } from './storage'
+import { putObject, getObject, downloadUrlFor, isConfigured } from './storage'
+import { deleteStored } from './cleanup'
 import {
   checkAndConsumeRate,
   findKeyByPlaintext,
@@ -338,11 +339,10 @@ export async function handleApiUploadDelete(
   ).bind(uploadId, uid).first<UploadRow>()
   if (!row) return errorResponse('Upload not found', 404, cors)
 
-  await deleteObjects(env, [row.storage_path])
-  await env.DB.batch([
-    env.DB.prepare('UPDATE api_uploads SET revoked_at = unixepoch() WHERE id = ?').bind(uploadId),
-    env.DB.prepare('DELETE FROM pending_deletions WHERE id = ?').bind(uploadId),
-  ])
+  // Revoked first, so the link stops at once; a delete storage did not
+  // confirm stays queued for the cron's retry.
+  await env.DB.prepare('UPDATE api_uploads SET revoked_at = unixepoch() WHERE id = ?').bind(uploadId).run()
+  await deleteStored(env, [{ id: row.id, storage_path: row.storage_path }])
   return jsonResponse({ ok: true }, 200, cors)
 }
 
